@@ -244,6 +244,16 @@ generate_jigsaw_svg <- function(seed = NULL, tabsize = 20, jitter = 4,
 #' @param puzzle_data Output from generate_jigsaw_svg()
 #' @param filename Output filename (default: "jigsaw.svg")
 save_jigsaw_svg <- function(puzzle_data, filename = "jigsaw.svg") {
+  # Ensure output directory exists
+  if (!dir.exists("output")) {
+    dir.create("output", recursive = TRUE)
+  }
+  
+  # Add output/ prefix if not already present
+  if (!grepl("^output/", filename)) {
+    filename <- file.path("output", filename)
+  }
+  
   writeLines(puzzle_data$svg, filename)
   cat("Saved jigsaw puzzle to:", filename, "\n")
 }

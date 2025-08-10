@@ -4,22 +4,33 @@
 .RData
 .Ruserdata
 .Rproj.user/
-*.Rproj
 
 # Temporary files
 *~
 .DS_Store
 Thumbs.db
 
-# Generated output files (keep examples)
-svg_puzzle_*rings_*.png
-svg_puzzle_*rings.svg
+# renv (track lock file but not library)
+renv/library/
+renv/local/
+renv/cellar/
+renv/lock/
+renv/python/
+renv/sandbox/
+renv/staging/
+!renv/activate.R
+!renv.lock
 
 # R package development
-man/
-NAMESPACE
 .Rd2pdf*
 .Rbuildignore
+
+# Generated output files (generated dynamically)
+output/*
+!output/.gitkeep
+
+# Keep a few example files for documentation
+!output/example_*
 
 # IDE files
 .vscode/
@@ -30,5 +41,8 @@ NAMESPACE
 *.temp
 .cache/
 
-# Keep example outputs but ignore dynamic generations
-!svg_puzzle_3rings_combined.png
+# Legacy generated files from old structure
+svg_puzzle_*rings_*.png
+svg_puzzle_*rings.svg
+hexagonal_puzzle.svg
+circular_puzzle.svg
