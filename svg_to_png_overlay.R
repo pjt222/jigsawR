@@ -29,13 +29,13 @@ puzzle_variations <- list(
   list(
     seed = 9999,
     rings = 3,
-    diameter = 200,
-    tabsize = 20,
+    diameter = 180,
+    tabsize = 35,
     jitter = 3,
-    base_filename = "svg_puzzle_3rings",
+    base_filename = "puzzle_3",
     size_px = 2000,
     line_color = "black",
-    line_width = 2.0
+    line_width = 1.0
   )
 )
 
