@@ -11,13 +11,15 @@
 #' @param size_px Output size in pixels
 #' @param line_color Color for puzzle lines
 #' @param line_width Width for puzzle lines
+#' @param transparent_background Logical, whether to make combined image background transparent
 #' @return List with file paths and parameters, or NULL if failed
 #' @export
 generate_svg_puzzle_layers <- function(seed = 1234, diameter = 240, rings = 4,
                                       tabsize = 27, jitter = 5, 
                                       base_filename = "svg_puzzle", 
                                       size_px = 2000,
-                                      line_color = "black", line_width = 2.0) {
+                                      line_color = "black", line_width = 2.0,
+                                      transparent_background = FALSE) {
   
   cat("Generating SVG puzzle (seed:", seed, ", rings:", rings, ")...\n")
   
@@ -61,7 +63,7 @@ generate_svg_puzzle_layers <- function(seed = 1234, diameter = 240, rings = 4,
   # Ensure we use the full paths with output/ prefix
   background_file_full <- if (!grepl("^output/", background_file)) file.path("output", background_file) else background_file
   overlay_file_full <- if (!grepl("^output/", overlay_file)) file.path("output", overlay_file) else overlay_file
-  combination_success <- combine_image_layers(background_file_full, overlay_file_full, combined_file)
+  combination_success <- combine_image_layers(background_file_full, overlay_file_full, combined_file, transparent_background)
   
   return(list(
     svg_file = svg_file,
@@ -104,7 +106,8 @@ generate_puzzle_variations <- function(variations) {
       base_filename = variation$base_filename %||% paste0("svg_puzzle_", i),
       size_px = variation$size_px %||% 2000,
       line_color = variation$line_color %||% "black",
-      line_width = variation$line_width %||% 2.0
+      line_width = variation$line_width %||% 2.0,
+      transparent_background = variation$transparent_background %||% FALSE
     )
     
     # Generate puzzle using main function

@@ -32,10 +32,11 @@ puzzle_variations <- list(
     diameter = 180,
     tabsize = 35,
     jitter = 3,
-    base_filename = "puzzle_3",
+    base_filename = "puzzle_3_opaque",
     size_px = 2000,
     line_color = "black",
-    line_width = 1.0
+    line_width = 1.5,
+    transparent_background = FALSE  # Set to FALSE to compare with white background
   )
 )
 

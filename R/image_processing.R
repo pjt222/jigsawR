@@ -103,9 +103,10 @@ convert_svg_to_png <- function(svg_content, output_file, width_px = 2000, height
 #' @param background_file Path to background PNG file
 #' @param overlay_file Path to overlay PNG file
 #' @param combined_file Output path for combined image
+#' @param transparent_background Logical, whether to make final background transparent
 #' @return TRUE if successful, FALSE otherwise
 #' @export
-combine_image_layers <- function(background_file, overlay_file, combined_file) {
+combine_image_layers <- function(background_file, overlay_file, combined_file, transparent_background = FALSE) {
   
   # Ensure output directory exists and add prefix if needed
   if (!dir.exists("output")) {
@@ -122,7 +123,38 @@ combine_image_layers <- function(background_file, overlay_file, combined_file) {
     tryCatch({
       background <- magick::image_read(background_file)
       overlay <- magick::image_read(overlay_file)
+      
+      # Combine the layers first
       combined <- magick::image_composite(background, overlay, operator = "over")
+      
+      if (transparent_background) {
+        # Create a circular mask to make areas outside the circle transparent
+        img_info <- magick::image_info(combined)
+        width <- img_info$width
+        height <- img_info$height
+        
+        # Create circular mask - everything outside circle becomes transparent
+        # Calculate center and radius based on image dimensions
+        center_x <- width / 2
+        center_y <- height / 2
+        # Puzzle circle diameter / canvas_size ratio ≈ 0.833 (180/216)
+        # So radius = (diameter/canvas_size) * (image_size/2) = 0.833 * (width/2)
+        radius <- min(width, height) * 0.833 / 2  # More precise puzzle circle size
+        
+        # Create SVG circle mask - white circle on black background
+        # This makes the circle area opaque and everything outside transparent
+        mask_svg <- sprintf(
+          '<svg width="%d" height="%d"><rect width="100%%" height="100%%" fill="black"/><circle cx="%g" cy="%g" r="%g" fill="white"/></svg>',
+          width, height, center_x, center_y, radius
+        )
+        
+        # Apply circular mask to make background transparent outside circle
+        mask <- magick::image_read_svg(mask_svg, width = width, height = height)
+        combined <- magick::image_composite(combined, mask, operator = "copyopacity")
+        
+        cat("  Applied circular transparency mask\n")
+      }
+      
       magick::image_write(combined, combined_file, quality = 95)
       cat("  Combined PNG saved:", combined_file, "\n")
       return(TRUE)
