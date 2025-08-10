@@ -44,6 +44,9 @@ output/*
 # Claude Code settings (contains permissions but no sensitive data)
 .claude/
 
+# Debug scripts (local development)
+debug_scripts/
+
 # Legacy generated files from old structure
 svg_puzzle_*rings_*.png
 svg_puzzle_*rings.svg
