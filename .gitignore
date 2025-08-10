@@ -1,0 +1,34 @@
+# R specific
+.Rhistory
+.Rdata
+.RData
+.Ruserdata
+.Rproj.user/
+*.Rproj
+
+# Temporary files
+*~
+.DS_Store
+Thumbs.db
+
+# Generated output files (keep examples)
+svg_puzzle_*rings_*.png
+svg_puzzle_*rings.svg
+
+# R package development
+man/
+NAMESPACE
+.Rd2pdf*
+.Rbuildignore
+
+# IDE files
+.vscode/
+.idea/
+
+# System files
+*.tmp
+*.temp
+.cache/
+
+# Keep example outputs but ignore dynamic generations
+!svg_puzzle_3rings_combined.png
