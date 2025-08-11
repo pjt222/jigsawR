@@ -26,11 +26,7 @@ renv/staging/
 .Rbuildignore
 
 # Generated output files (generated dynamically)
-output/*
-!output/.gitkeep
-
-# Keep a few example files for documentation
-!output/example_*
+output/
 
 # IDE files
 .vscode/
