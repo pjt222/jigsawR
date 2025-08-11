@@ -1,0 +1,296 @@
+/* Custom CSS for jigsawR Shiny App */
+
+/* General styling */
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #f5f6fa;
+}
+
+/* Header styling */
+.container-fluid > h2 {
+  padding-bottom: 10px;
+  border-bottom: 3px solid #3498db;
+  margin-bottom: 20px;
+}
+
+/* Sidebar panel improvements */
+.well {
+  background-color: white;
+  border: 1px solid #e1e8ed;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+/* Button styling */
+.btn-primary {
+  background-color: #3498db;
+  border-color: #2980b9;
+  font-weight: 600;
+  padding: 10px;
+}
+
+.btn-primary:hover {
+  background-color: #2980b9;
+  border-color: #21618c;
+}
+
+.btn-success {
+  background-color: #27ae60;
+  border-color: #229954;
+}
+
+.btn-success:hover {
+  background-color: #229954;
+  border-color: #1e8449;
+}
+
+.btn-default {
+  background-color: #95a5a6;
+  border-color: #7f8c8d;
+  color: white;
+}
+
+.btn-default:hover {
+  background-color: #7f8c8d;
+  border-color: #707b7c;
+  color: white;
+}
+
+/* Input styling */
+.form-control {
+  border-radius: 4px;
+  border: 1px solid #cbd5e0;
+}
+
+.form-control:focus {
+  border-color: #3498db;
+  box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+}
+
+/* Slider styling */
+.irs-bar {
+  background: #3498db;
+  border-top: 1px solid #2980b9;
+  border-bottom: 1px solid #2980b9;
+}
+
+.irs-bar-edge {
+  background: #3498db;
+  border: 1px solid #2980b9;
+}
+
+.irs-single {
+  background: #3498db;
+}
+
+/* Radio button styling */
+.radio label {
+  font-weight: normal;
+  cursor: pointer;
+}
+
+.radio input[type="radio"]:checked + span {
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+/* Tab panel styling */
+.nav-tabs > li.active > a {
+  background-color: white;
+  border-bottom-color: white;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.nav-tabs > li > a {
+  color: #7f8c8d;
+  background-color: #ecf0f1;
+  margin-right: 2px;
+}
+
+.nav-tabs > li > a:hover {
+  background-color: #d5dbdb;
+  border-color: #d5dbdb;
+}
+
+/* SVG container improvements */
+.svg-container {
+  background: white;
+  border: 2px solid #e1e8ed;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 600px;
+  position: relative;
+}
+
+.svg-container svg {
+  max-width: 100%;
+  max-height: 100%;
+  height: auto;
+  width: auto;
+}
+
+/* Parameter summary box */
+.parameter-summary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 8px;
+  padding: 15px 20px;
+  margin-top: 20px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.parameter-summary h5 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  font-weight: 600;
+  border-bottom: 2px solid rgba(255,255,255,0.3);
+  padding-bottom: 8px;
+}
+
+.parameter-summary p {
+  margin: 0;
+  line-height: 1.8;
+}
+
+.parameter-summary strong {
+  color: #ffd700;
+  font-weight: 600;
+}
+
+/* Section styling */
+.sidebar-section {
+  background: white;
+  border: 1px solid #e1e8ed;
+  border-radius: 8px;
+  padding: 15px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.section-title {
+  color: #2c3e50;
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 15px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #3498db;
+}
+
+/* Help tab styling */
+.help-content {
+  background: white;
+  padding: 30px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.help-content h4 {
+  color: #2c3e50;
+  border-bottom: 2px solid #3498db;
+  padding-bottom: 10px;
+  margin-bottom: 20px;
+}
+
+.help-content ul {
+  line-height: 1.8;
+}
+
+.help-content li {
+  margin-bottom: 8px;
+}
+
+/* Tip box styling */
+.tip-box {
+  background: linear-gradient(135deg, #fff3cd 0%, #ffeeba 100%);
+  border: 1px solid #ffc107;
+  border-radius: 6px;
+  padding: 12px;
+  margin-top: 20px;
+}
+
+.tip-box p {
+  margin: 0;
+  color: #856404;
+}
+
+/* Loading animation */
+.progress {
+  height: 25px;
+  background-color: #f0f0f0;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.progress-bar {
+  background: linear-gradient(90deg, #3498db, #2980b9);
+  animation: progress-animation 2s ease-in-out infinite;
+}
+
+@keyframes progress-animation {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Responsive improvements */
+@media (max-width: 768px) {
+  .sidebar-section {
+    margin-bottom: 15px;
+    padding: 10px;
+  }
+  
+  .svg-container {
+    min-height: 400px;
+    padding: 10px;
+  }
+  
+  .btn-block {
+    margin-bottom: 10px;
+  }
+}
+
+/* Icon animations */
+.fa-puzzle-piece {
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+/* Hover effects */
+.sidebar-section:hover {
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  transition: box-shadow 0.3s ease;
+}
+
+input[type="number"]:hover,
+select:hover {
+  border-color: #3498db;
+  transition: border-color 0.3s ease;
+}
+
+/* Success/Error states */
+.success-message {
+  background-color: #d4edda;
+  border: 1px solid #c3e6cb;
+  color: #155724;
+  padding: 10px;
+  border-radius: 4px;
+  margin: 10px 0;
+}
+
+.error-message {
+  background-color: #f8d7da;
+  border: 1px solid #f5c6cb;
+  color: #721c24;
+  padding: 10px;
+  border-radius: 4px;
+  margin: 10px 0;
+}
