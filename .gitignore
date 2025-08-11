@@ -26,11 +26,7 @@ renv/staging/
 .Rbuildignore
 
 # Generated output files (generated dynamically)
-output/*
-!output/.gitkeep
-
-# Keep a few example files for documentation
-!output/example_*
+output/
 
 # IDE files
 .vscode/
@@ -43,6 +39,9 @@ output/*
 
 # Claude Code settings (contains permissions but no sensitive data)
 .claude/
+
+# Debug scripts (local development)
+debug_scripts/
 
 # Legacy generated files from old structure
 svg_puzzle_*rings_*.png

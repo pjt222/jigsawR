@@ -8,7 +8,7 @@ This repository contains R translations of Draradech's JavaScript jigsaw puzzle 
 
 ### Core Components
 
-- **jigswa.R**: Direct R translation of rectangular jigsaw puzzle generator
+- **jigsaw.R**: Direct R translation of rectangular jigsaw puzzle generator
   - Uses environment-based state management (`.jigsaw_env`) 
   - Implements custom random number generator for reproducible puzzles
   - Generates SVG paths for horizontal cuts, vertical cuts, and borders
@@ -32,10 +32,15 @@ jigsawR/
 │   ├── gradient_background.R    # Circular gradient generation functions
 │   ├── svg_utils.R             # SVG enhancement utilities
 │   ├── image_processing.R      # PNG conversion and layer combination
-│   └── main_generator.R        # Main orchestration functions
+│   ├── main_generator.R        # Main orchestration functions
+│   ├── individual_pieces.R     # Individual piece extraction (initial)
+│   ├── individual_pieces_correct.R  # Corrected piece generation
+│   ├── bezier_utils.R          # Bezier curve manipulation utilities
+│   └── generate_individual_pieces_proper.R  # Full implementation
 ├── man/                    # Documentation (auto-generated)
 ├── inst/examples/          # Example scripts
-│   └── generate_puzzles.R       # Package usage examples
+│   ├── generate_puzzles.R       # Package usage examples
+│   └── individual_pieces_demo.R # Individual pieces demonstration
 ├── output/                 # Generated puzzle files directory
 └── svg_to_png_overlay.R    # Backward-compatible entry point
 ```
@@ -45,6 +50,8 @@ jigsawR/
 - **R/svg_utils.R**: `create_enhanced_puzzle_svg()`, `save_enhanced_svg()`
 - **R/image_processing.R**: `convert_svg_to_png()`, `combine_image_layers()`, `check_conversion_tools()`
 - **R/main_generator.R**: `generate_svg_puzzle_layers()`, `generate_puzzle_variations()`
+- **R/individual_pieces_correct.R**: `generate_2x2_individual_pieces()`, `generate_individual_pieces()`
+- **R/bezier_utils.R**: `parse_svg_path()`, `reverse_path_segments()`, `flip_path_segments()`, `create_complementary_edge()`
 
 **Output Directory:**
 - All generated files (SVG, PNG) are automatically placed in `output/` directory
@@ -60,6 +67,9 @@ Rscript svg_to_png_overlay.R
 
 # Package development example
 Rscript inst/examples/generate_puzzles.R
+
+# Individual puzzle pieces example
+Rscript inst/examples/individual_pieces_demo.R
 
 # Individual puzzle generators (located in R/ directory)
 Rscript R/rectangular_puzzle.R    # Rectangular puzzles
@@ -86,6 +96,9 @@ puzzle_variations <- list(
 )
 results <- generate_puzzle_variations(puzzle_variations)
 
+# Generate individual pieces (2x2 puzzle)
+result <- generate_2x2_individual_pieces(seed = 42, width = 200, height = 200)
+
 # Update dependencies if needed
 renv::snapshot()              # Save current package state
 ```
@@ -93,7 +106,7 @@ renv::snapshot()              # Save current package state
 ### Testing Individual Functions
 ```r
 # Load functions interactively
-source("jigswa.R")
+source("jigsaw.R")
 
 # Generate custom puzzle
 puzzle <- generate_jigsaw_svg(seed = 1234, xn = 10, yn = 8)
@@ -148,6 +161,13 @@ Both puzzle generators use R environments to maintain global state:
 - `generate_svg_puzzle_layers()`: Main orchestration function (main_generator.R)
 - `generate_puzzle_variations()`: Batch processing workflow (main_generator.R)
 
+**Individual Piece Generation:**
+- `generate_2x2_individual_pieces()`: Hardcoded correct 2x2 implementation
+- `generate_individual_pieces()`: General interface (currently 2x2 only)
+- `parse_svg_path()`: SVG path parsing utilities
+- `reverse_path_segments()`: Bezier curve reversal
+- `create_complementary_edge()`: Generate complementary edges for adjacent pieces
+
 ## Important Implementation Details
 
 - **Exact JS Translation**: Both generators are direct ports maintaining mathematical precision
@@ -157,6 +177,7 @@ Both puzzle generators use R environments to maintain global state:
 - **R Package Structure**: Professional package organization with proper DESCRIPTION and exports
 - **renv Integration**: Reproducible development environment with locked dependencies
 - **Dedicated Output Directory**: All generated files automatically organized in `output/`
+- **Individual Pieces**: Support for generating separate SVG files for each puzzle piece with proper complementary edges
 
 ## Dependencies
 
@@ -180,3 +201,24 @@ renv::restore()
 
 # The .Rprofile automatically activates renv and provides development guidance
 ```
+
+## Development Philosophy
+
+### Code Over Output Files
+**IMPORTANT**: We focus on refining scripts rather than tinkering with output files. Reproducible code ensures data quality. Even if we achieve data quality through manual adjustments, this will not provide reliable code.
+
+### Current Focus
+We are working on individual puzzle piece generation with proper complementary edges. The next phase will explore the inner curves and ensure mathematically correct bezier transformations for all piece boundaries.
+
+### Principles
+1. **Reproducibility First**: All outputs must be reproducible from scripts with the same seed
+2. **Script Refinement**: Fix issues in the code, not in the output files
+3. **Mathematical Correctness**: Ensure bezier curves and transformations are mathematically sound
+4. **Incremental Development**: Start with 2x2 puzzles, then expand to larger sizes
+5. **Test-Driven**: Verify outputs programmatically, not just visually
+
+# important-instruction-reminders
+Do what has been asked; nothing more, nothing less.
+NEVER create files unless they're absolutely necessary for achieving your goal.
+ALWAYS prefer editing an existing file to creating a new one.
+NEVER proactively create documentation files (*.md) or README files. Only create documentation files if explicitly requested by the User.
