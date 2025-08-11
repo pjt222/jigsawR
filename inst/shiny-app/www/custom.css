@@ -135,29 +135,32 @@ body {
 
 /* Parameter summary box */
 .parameter-summary {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  background: #f8f9fa;
+  color: #2c3e50;
+  border: 1px solid #dee2e6;
   border-radius: 8px;
   padding: 15px 20px;
   margin-top: 20px;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
 
 .parameter-summary h5 {
   margin-top: 0;
   margin-bottom: 15px;
   font-weight: 600;
-  border-bottom: 2px solid rgba(255,255,255,0.3);
+  color: #2c3e50;
+  border-bottom: 2px solid #3498db;
   padding-bottom: 8px;
 }
 
 .parameter-summary p {
   margin: 0;
   line-height: 1.8;
+  color: #495057;
 }
 
 .parameter-summary strong {
-  color: #ffd700;
+  color: #2c3e50;
   font-weight: 600;
 }
 

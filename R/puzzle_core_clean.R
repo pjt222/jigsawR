@@ -287,19 +287,36 @@ generate_single_piece <- function(xi, yi, puzzle_structure) {
 #' @param colors Optional vector of colors for pieces
 #' @return SVG string
 #' @export
-generate_puzzle_svg <- function(puzzle_structure, mode = "complete", colors = NULL) {
+generate_puzzle_svg <- function(puzzle_structure, mode = "complete", colors = NULL, background = "white") {
   
   xn <- puzzle_structure$grid[2]
   yn <- puzzle_structure$grid[1]
   width <- puzzle_structure$size[1]
   height <- puzzle_structure$size[2]
   
-  # Start SVG
+  # Start SVG with background handling
   svg <- sprintf('<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" version="1.1" 
-     width="%.0f" height="%.0f" viewBox="0 0 %.0f %.0f">
-<rect width="100%%" height="100%%" fill="white"/>
-<g id="puzzle">\n', width, height, width, height)
+     width="%.0f" height="%.0f" viewBox="0 0 %.0f %.0f">\n', width, height, width, height)
+  
+  # Add background based on type
+  if (background == "gradient") {
+    svg <- paste0(svg, '  <defs>
+    <radialGradient id="bg-gradient" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" style="stop-color:#e3f2fd;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#bbdefb;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#90caf9;stop-opacity:1" />
+    </radialGradient>
+  </defs>
+  <rect width="100%" height="100%" fill="url(#bg-gradient)"/>\n')
+  } else if (background == "none" || background == "") {
+    # No background rect
+  } else {
+    # Solid color background
+    svg <- paste0(svg, sprintf('  <rect width="100%%" height="100%%" fill="%s"/>\n', background))
+  }
+  
+  svg <- paste0(svg, '<g id="puzzle">\n')
   
   # Generate pieces
   if (mode == "complete") {

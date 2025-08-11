@@ -77,7 +77,7 @@ generate_puzzle <- function(type = "rectangular",
   
   # Generate SVGs based on output mode
   if (output == "complete" || output == "both") {
-    svg_complete <- generate_puzzle_svg(puzzle_structure, mode = "complete")
+    svg_complete <- generate_puzzle_svg(puzzle_structure, mode = "complete", background = background)
     result$svg_complete <- svg_complete
     
     if (save_files) {
@@ -89,7 +89,7 @@ generate_puzzle <- function(type = "rectangular",
   }
   
   if (output == "individual" || output == "both") {
-    svg_individual <- generate_puzzle_svg(puzzle_structure, mode = "individual", colors = colors)
+    svg_individual <- generate_puzzle_svg(puzzle_structure, mode = "individual", colors = colors, background = background)
     result$svg_individual <- svg_individual
     
     if (save_files) {

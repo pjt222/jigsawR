@@ -106,7 +106,8 @@ translate_svg_path <- function(path_string, x_offset, y_offset) {
 generate_separated_puzzle_svg <- function(puzzle_structure, 
                                          offset = 10, 
                                          colors = NULL,
-                                         stroke_width = 1.5) {
+                                         stroke_width = 1.5,
+                                         background = "white") {
   
   xn <- puzzle_structure$grid[2]
   yn <- puzzle_structure$grid[1]
@@ -130,11 +131,28 @@ generate_separated_puzzle_svg <- function(puzzle_structure,
   # Start SVG with expanded viewBox
   svg <- sprintf('<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" version="1.1" 
-     width="%.0f" height="%.0f" viewBox="%.0f %.0f %.0f %.0f">
-<rect width="100%%" height="100%%" fill="white"/>
-<g id="separated-puzzle">\n', 
+     width="%.0f" height="%.0f" viewBox="%.0f %.0f %.0f %.0f">\n', 
     canvas_width, canvas_height, 
     -padding, -padding, canvas_width, canvas_height)
+  
+  # Add background based on type
+  if (background == "gradient") {
+    svg <- paste0(svg, '  <defs>
+    <radialGradient id="bg-gradient" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" style="stop-color:#e3f2fd;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#bbdefb;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#90caf9;stop-opacity:1" />
+    </radialGradient>
+  </defs>
+  <rect width="100%" height="100%" fill="url(#bg-gradient)"/>\n')
+  } else if (background == "none" || background == "") {
+    # No background rect
+  } else {
+    # Solid color background
+    svg <- paste0(svg, sprintf('  <rect width="100%%" height="100%%" fill="%s"/>\n', background))
+  }
+  
+  svg <- paste0(svg, '<g id="separated-puzzle">\n')
   
   # Generate each piece with offset
   piece_num <- 0

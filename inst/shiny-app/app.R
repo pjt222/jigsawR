@@ -46,12 +46,6 @@ ui <- fluidPage(
         width: 100%;
         height: 100%;
       }
-      .parameter-summary {
-        background: #f8f9fa;
-        border-radius: 4px;
-        padding: 10px;
-        margin-top: 10px;
-      }
       .sidebar-section {
         margin-bottom: 20px;
         padding: 10px;
@@ -326,7 +320,8 @@ server <- function(input, output, session) {
           puzzle_structure = puzzle_struct,
           offset = input$offset,
           colors = colors,
-          stroke_width = input$stroke_width
+          stroke_width = input$stroke_width,
+          background = input$background
         )
         
       } else {
