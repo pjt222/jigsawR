@@ -197,8 +197,35 @@ generate_individual_pieces_svg <- function(seed = 1234, xn = 5, yn = 4,
                                            tabsize = 20, jitter = 4,
                                            width = 300, height = 200,
                                            stroke_width = 1.5,
-                                           piece_colors = NULL) {
+                                           piece_colors = NULL,
+                                           type = "rectangular",
+                                           diameter = 240,
+                                           do_warp = FALSE,
+                                           do_trunc = FALSE) {
   
+  # Route to appropriate function based on puzzle type
+  if (type == "hexagonal") {
+    # Source hexagonal functions if not already loaded
+    if (!exists("generate_hexagonal_individual_pieces")) {
+      source(system.file("R", "hexagonal_individual_pieces.R", package = "jigsawR"))
+    }
+    
+    # For hexagonal puzzles, xn represents rings
+    return(generate_hexagonal_individual_pieces(
+      rings = xn,
+      seed = seed,
+      diameter = diameter,
+      tabsize = ifelse(tabsize == 20, 27, tabsize),  # Use hex default if rect default
+      jitter = ifelse(jitter == 4, 5, jitter),
+      do_warp = do_warp,
+      do_trunc = do_trunc,
+      colors = piece_colors,
+      stroke_width = stroke_width,
+      save_files = TRUE
+    ))
+  }
+  
+  # Rectangular puzzle implementation continues as before
   # Extract tab data
   tab_data <- extract_puzzle_tab_data(seed, xn, yn, tabsize, jitter, width, height)
   init_jigsaw(seed = seed, tabsize = tabsize, jitter = jitter, 

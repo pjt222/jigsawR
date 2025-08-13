@@ -212,35 +212,80 @@ generate_separated_puzzle_svg <- function(puzzle_structure,
 
 #' Enhanced puzzle generation with separation option
 #' 
-#' Extends generate_puzzle_svg to support piece separation.
+#' Extends generate_puzzle_svg to support piece separation for both
+#' rectangular and hexagonal puzzles.
 #' 
-#' @param puzzle_structure Output from generate_puzzle_core()
+#' @param puzzle_structure Output from generate_puzzle_core() or extract_hexagonal_puzzle_structure()
 #' @param mode "complete", "individual", or "separated"
 #' @param colors Optional vector of colors for pieces
 #' @param offset Separation distance for "separated" mode (in mm)
 #' @param show_guides Show alignment guides in separated mode
+#' @param arrangement For hexagonal: "hexagonal" or "rectangular" packing
 #' @return SVG string
 #' @export
 generate_puzzle_svg_enhanced <- function(puzzle_structure, 
                                         mode = "complete", 
                                         colors = NULL,
                                         offset = 0,
-                                        show_guides = TRUE) {
+                                        show_guides = TRUE,
+                                        arrangement = "hexagonal") {
   
-  if (mode == "separated" || (mode == "individual" && offset > 0)) {
-    # Use separation function
-    return(generate_separated_puzzle_svg(
-      puzzle_structure = puzzle_structure,
-      offset = offset,
-      colors = colors
-    ))
+  # Check puzzle type
+  puzzle_type <- puzzle_structure$type
+  if (is.null(puzzle_type)) {
+    # Assume rectangular for backward compatibility
+    puzzle_type <- "rectangular"
+  }
+  
+  if (puzzle_type == "hexagonal") {
+    # Source hexagonal functions if not already loaded
+    if (!exists("generate_separated_hexagonal_svg")) {
+      source(system.file("R", "hexagonal_separation.R", package = "jigsawR"))
+    }
+    
+    if (mode == "separated" || (mode == "individual" && offset > 0)) {
+      # Use hexagonal separation function
+      return(generate_separated_hexagonal_svg(
+        rings = puzzle_structure$rings,
+        seed = puzzle_structure$seed,
+        diameter = puzzle_structure$diameter,
+        offset = offset,
+        arrangement = arrangement,
+        tabsize = puzzle_structure$parameters$tabsize,
+        jitter = puzzle_structure$parameters$jitter,
+        do_warp = puzzle_structure$parameters$do_warp,
+        do_trunc = puzzle_structure$parameters$do_trunc,
+        colors = colors
+      ))
+    } else {
+      # Use standard hexagonal generation
+      return(generate_hex_jigsaw_svg(
+        rings = puzzle_structure$rings,
+        diameter = puzzle_structure$diameter,
+        seed = puzzle_structure$seed,
+        tabsize = puzzle_structure$parameters$tabsize,
+        jitter = puzzle_structure$parameters$jitter,
+        do_warp = puzzle_structure$parameters$do_warp,
+        do_trunc = puzzle_structure$parameters$do_trunc
+      ))
+    }
   } else {
-    # Use original function
-    return(generate_puzzle_svg(
-      puzzle_structure = puzzle_structure,
-      mode = mode,
-      colors = colors
-    ))
+    # Rectangular puzzle handling (existing code)
+    if (mode == "separated" || (mode == "individual" && offset > 0)) {
+      # Use separation function
+      return(generate_separated_puzzle_svg(
+        puzzle_structure = puzzle_structure,
+        offset = offset,
+        colors = colors
+      ))
+    } else {
+      # Use original function
+      return(generate_puzzle_svg(
+        puzzle_structure = puzzle_structure,
+        mode = mode,
+        colors = colors
+      ))
+    }
   }
 }
 

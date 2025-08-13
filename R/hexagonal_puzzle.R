@@ -297,10 +297,15 @@ hex_gen_db <- function() {
 #' @param rings Number of rings
 #' @param do_warp Circle warp (creates circular puzzle)
 #' @param do_trunc Truncate edge pieces
+#' @param stroke_color Color for puzzle lines (default: "black")
+#' @param stroke_width Width of puzzle lines (default: 1)
+#' @param background Background color or "none" (default: "none")
 #' @return List containing SVG path data
 generate_hex_jigsaw_svg <- function(seed = NULL, tabsize = 27, jitter = 5,
                                     diameter = 240, rings = 6,
-                                    do_warp = FALSE, do_trunc = FALSE) {
+                                    do_warp = FALSE, do_trunc = FALSE,
+                                    stroke_color = "black", stroke_width = 1,
+                                    background = "none") {
 
   # Initialize environment
   init_hex_jigsaw(seed, tabsize, jitter, diameter, rings, do_warp, do_trunc)
@@ -316,22 +321,43 @@ generate_hex_jigsaw_svg <- function(seed = NULL, tabsize = 27, jitter = 5,
   width <- 2.0 * (radius + offset)
   height <- 2.0 * (radius + offset)
 
-  # Create complete SVG
-  svg_content <- paste0(
-    '<svg xmlns="http://www.w3.org/2000/svg" version="1.0" ',
-    'width="', width, 'mm" height="', height, 'mm" ',
-    'viewBox="0 0 ', width, ' ', height, '">',
-    '<path fill="none" stroke="DarkBlue" stroke-width="0.2" d="',
-    horizontal_paths,
-    '"></path>',
-    '<path fill="none" stroke="DarkRed" stroke-width="0.2" d="',
-    vertical_paths,
-    '"></path>',
-    '<path fill="none" stroke="Black" stroke-width="0.2" d="',
-    border_paths,
-    '"></path>',
-    '</svg>'
+  # Create complete SVG with styling
+  svg_lines <- c(
+    sprintf('<svg xmlns="http://www.w3.org/2000/svg" version="1.0" width="%.1fmm" height="%.1fmm" viewBox="0 0 %.1f %.1f">',
+            width, height, width, height)
   )
+  
+  # Add background if specified
+  if (background != "none" && background != "") {
+    svg_lines <- c(svg_lines,
+      sprintf('<rect width="100%%" height="100%%" fill="%s"/>', background)
+    )
+  }
+  
+  # Add paths with consistent styling
+  if (nchar(horizontal_paths) > 0) {
+    svg_lines <- c(svg_lines,
+      sprintf('<path fill="none" stroke="%s" stroke-width="%.1f" d="%s"/>',
+              stroke_color, stroke_width, horizontal_paths)
+    )
+  }
+  
+  if (nchar(vertical_paths) > 0) {
+    svg_lines <- c(svg_lines,
+      sprintf('<path fill="none" stroke="%s" stroke-width="%.1f" d="%s"/>',
+              stroke_color, stroke_width, vertical_paths)
+    )
+  }
+  
+  if (nchar(border_paths) > 0) {
+    svg_lines <- c(svg_lines,
+      sprintf('<path fill="none" stroke="%s" stroke-width="%.1f" d="%s"/>',
+              stroke_color, stroke_width * 1.5, border_paths)  # Slightly thicker border
+    )
+  }
+  
+  svg_lines <- c(svg_lines, '</svg>')
+  svg_content <- paste(svg_lines, collapse = "")
 
   return(list(
     svg = svg_content,

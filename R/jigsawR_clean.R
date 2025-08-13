@@ -19,6 +19,9 @@
 #' @param save_files TRUE to save SVG/PNG files
 #' @param output_dir Directory for output files
 #' @param filename_prefix Prefix for output files
+#' @param do_warp Apply circular warping (hexagonal only, default: FALSE)
+#' @param do_trunc Truncate edge pieces (hexagonal only, default: FALSE)  
+#' @param stroke_width SVG stroke width (default: 1)
 #' @return List with puzzle data, SVG content, and file paths
 #' @export
 generate_puzzle <- function(type = "rectangular",
@@ -32,7 +35,10 @@ generate_puzzle <- function(type = "rectangular",
                           background = "none",
                           save_files = TRUE,
                           output_dir = "output",
-                          filename_prefix = NULL) {
+                          filename_prefix = NULL,
+                          do_warp = FALSE,
+                          do_trunc = FALSE,
+                          stroke_width = 1) {
   
   # Generate seed if not provided
   if (is.null(seed)) {
@@ -58,8 +64,31 @@ generate_puzzle <- function(type = "rectangular",
       tabsize = tabsize,
       jitter = jitter
     )
+  } else if (type == "hexagonal") {
+    # Source hexagonal functions if not already loaded
+    if (!exists("extract_hexagonal_puzzle_structure")) {
+      if (file.exists("R/hexagonal_individual_pieces.R")) {
+        source("R/hexagonal_individual_pieces.R")
+      } else if (file.exists("hexagonal_individual_pieces.R")) {
+        source("hexagonal_individual_pieces.R")
+      } else {
+        # In package, functions should be loaded automatically
+      }
+    }
+    
+    # For hexagonal puzzles, grid[1] represents rings
+    # size[1] represents diameter
+    puzzle_structure <- extract_hexagonal_puzzle_structure(
+      rings = grid[1],
+      seed = seed,
+      diameter = size[1],
+      tabsize = tabsize,
+      jitter = jitter,
+      do_warp = do_warp,
+      do_trunc = do_trunc
+    )
   } else {
-    stop("Only 'rectangular' puzzles are currently implemented in clean version")
+    stop("Only 'rectangular' and 'hexagonal' puzzles are supported")
   }
   
   # Initialize result
@@ -77,7 +106,24 @@ generate_puzzle <- function(type = "rectangular",
   
   # Generate SVGs based on output mode
   if (output == "complete" || output == "both") {
-    svg_complete <- generate_puzzle_svg(puzzle_structure, mode = "complete", background = background)
+    if (type == "hexagonal") {
+      # Use hexagonal generation
+      hex_result <- generate_hex_jigsaw_svg(
+        rings = puzzle_structure$rings,
+        diameter = puzzle_structure$diameter,
+        seed = puzzle_structure$seed,
+        tabsize = puzzle_structure$parameters$tabsize,
+        jitter = puzzle_structure$parameters$jitter,
+        do_warp = puzzle_structure$parameters$do_warp,
+        do_trunc = puzzle_structure$parameters$do_trunc,
+        stroke_color = ifelse(is.null(colors) || colors[1] == "black", "black", colors[1]),
+        stroke_width = stroke_width,
+        background = background
+      )
+      svg_complete <- hex_result$svg  # Extract SVG string from result list
+    } else {
+      svg_complete <- generate_puzzle_svg(puzzle_structure, mode = "complete", background = background)
+    }
     result$svg_complete <- svg_complete
     
     if (save_files) {
@@ -89,7 +135,30 @@ generate_puzzle <- function(type = "rectangular",
   }
   
   if (output == "individual" || output == "both") {
-    svg_individual <- generate_puzzle_svg(puzzle_structure, mode = "individual", colors = colors, background = background)
+    if (type == "hexagonal") {
+      # Use hexagonal individual pieces generation
+      if (!exists("generate_hexagonal_individual_pieces")) {
+        if (file.exists("R/hexagonal_individual_pieces.R")) {
+          source("R/hexagonal_individual_pieces.R")
+        } else if (file.exists("hexagonal_individual_pieces.R")) {
+          source("hexagonal_individual_pieces.R")
+        }
+      }
+      hex_result <- generate_hexagonal_individual_pieces(
+        rings = puzzle_structure$rings,
+        seed = puzzle_structure$seed,
+        diameter = puzzle_structure$diameter,
+        tabsize = puzzle_structure$parameters$tabsize,
+        jitter = puzzle_structure$parameters$jitter,
+        do_warp = puzzle_structure$parameters$do_warp,
+        do_trunc = puzzle_structure$parameters$do_trunc,
+        colors = colors,
+        save_files = FALSE
+      )
+      svg_individual <- hex_result$svg_content
+    } else {
+      svg_individual <- generate_puzzle_svg(puzzle_structure, mode = "individual", colors = colors, background = background)
+    }
     result$svg_individual <- svg_individual
     
     if (save_files) {
