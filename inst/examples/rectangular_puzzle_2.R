@@ -21,8 +21,11 @@ puzzle_complete <- generate_jigsaw_svg(
   yn = 6
 )
 
+# Create output directory
+dir.create("output", showWarnings = FALSE)
+
 # Save complete puzzle
-save_jigsaw_svg(puzzle_complete, "custom_jigsaw_complete.svg")
+save_jigsaw_svg(puzzle_complete, "output/custom_jigsaw_complete.svg")
 
 # Generate separated pieces with kerf offset for laser cutting
 kerf_offset <- 100
@@ -36,7 +39,7 @@ separated_puzzle <- generate_separated_puzzle_svg(
 )
 
 # Save separated pieces
-writeLines(separated_puzzle, "custom_jigsaw_separated.svg")
+writeLines(separated_puzzle, "output/custom_jigsaw_separated.svg")
 
 # Print puzzle information
 cat("Generated puzzle with", puzzle_structure$grid[1] * puzzle_structure$grid[2], "pieces\n")
@@ -51,8 +54,8 @@ separated_height <- puzzle_structure$size[2] + (puzzle_structure$grid[1] - 1) * 
 separated_area <- separated_width * separated_height
 
 cat("Files generated:\n")
-cat("  • custom_jigsaw_complete.svg    - Complete puzzle outline\n")
-cat("  • custom_jigsaw_separated.svg   - Separated pieces for laser cutting\n\n")
+cat("  • output/custom_jigsaw_complete.svg    - Complete puzzle outline\n")
+cat("  • output/custom_jigsaw_separated.svg   - Separated pieces for laser cutting\n\n")
 
 cat("Layout comparison:\n")
 cat(sprintf("  Original: %.0f x %.0f mm (%.0f mm²)\n",
@@ -118,12 +121,12 @@ save_individual_piece_svgs <- function(puzzle_structure,
 # Generate individual piece files
 cat("\nGenerating individual piece files...\n")
 save_individual_piece_svgs(puzzle_structure,
-                          output_dir = "individual_pieces",
+                          output_dir = "output/individual_pieces",
                           stroke_width = 1.5,
                           stroke_color = "black")
 
 cat("Individual pieces saved as:\n")
-cat("  • piece_00_00.svg through piece_04_05.svg\n")
+cat("  • output/individual_pieces/piece_00_00.svg through piece_04_05.svg\n")
 cat("  • Each file contains one complete puzzle piece\n")
 cat("  • Default: transparent fill and background (fill='none', background='none')\n")
 cat("  • Suitable for individual laser cutting or manufacturing\n")
@@ -131,12 +134,12 @@ cat("  • Suitable for individual laser cutting or manufacturing\n")
 # Example: Generate colored individual pieces
 cat("\nGenerating colored individual pieces example...\n")
 save_individual_piece_svgs(puzzle_structure,
-                          output_dir = "individual_pieces_colored",
+                          output_dir = "output/individual_pieces_colored",
                           stroke_width = 2.0,
                           stroke_color = "darkblue",
                           fill_color = "#E3F2FD",        # Light blue fill
-                          background_color = "none")
+                          background_color = "white")     # White background
 
-cat("Colored pieces saved to individual_pieces_colored/\n")
+cat("Colored pieces saved to output/individual_pieces_colored/\n")
 cat("  • White background with light blue fill\n")
 cat("  • Dark blue stroke for visibility\n")
