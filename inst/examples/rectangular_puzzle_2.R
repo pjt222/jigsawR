@@ -3,8 +3,8 @@ devtools::load_all()
 # Generate puzzle structure using the clean core implementation
 puzzle_structure <- generate_puzzle_core(
   seed = 9999,
-  grid = c(6, 5),     # 6 rows, 5 columns (matching yn=6, xn=5)
-  size = c(1600, 900), # Same size
+  grid = c(6, 4),     # 6 rows, 5 columns (matching yn=6, xn=5)
+  size = c(1200, 600), # Same size
   tabsize = 15,       # Same parameters
   jitter = 2
 )
@@ -14,10 +14,10 @@ puzzle_complete <- generate_jigsaw_svg(
   seed = 9999,
   tabsize = 15,
   jitter = 2,
-  width = 1600,
-  height = 900,
+  width = 1200,
+  height = 600,
   radius = 5.0,
-  xn = 5,
+  xn = 4,
   yn = 6
 )
 
@@ -41,28 +41,20 @@ separated_puzzle <- generate_separated_puzzle_svg(
 # Save separated pieces
 writeLines(separated_puzzle, "output/custom_jigsaw_separated.svg")
 
-# Print puzzle information
-cat("Generated puzzle with", puzzle_structure$grid[1] * puzzle_structure$grid[2], "pieces\n")
-cat("Puzzle dimensions:", puzzle_structure$grid[1], "rows x", puzzle_structure$grid[2], "columns\n")
-cat("Piece size: ~", round(puzzle_structure$piece_width), "x", round(puzzle_structure$piece_height), "mm\n")
-cat("Separation offset:", kerf_offset, "mm\n\n")
-
 # Calculate layout dimensions
 original_area <- puzzle_structure$size[1] * puzzle_structure$size[2]
 separated_width <- puzzle_structure$size[1] + (puzzle_structure$grid[2] - 1) * kerf_offset
 separated_height <- puzzle_structure$size[2] + (puzzle_structure$grid[1] - 1) * kerf_offset
 separated_area <- separated_width * separated_height
 
-cat("Files generated:\n")
-cat("  • output/custom_jigsaw_complete.svg    - Complete puzzle outline\n")
-cat("  • output/custom_jigsaw_separated.svg   - Separated pieces for laser cutting\n\n")
-
-cat("Layout comparison:\n")
-cat(sprintf("  Original: %.0f x %.0f mm (%.0f mm²)\n",
-           puzzle_structure$size[1], puzzle_structure$size[2], original_area))
-cat(sprintf("  Separated: %.0f x %.0f mm (%.0f mm²)\n",
-           separated_width, separated_height, separated_area))
-cat(sprintf("  Area increase: %.1f%%\n",
+# Print summary
+cat(sprintf("Puzzle: %dx%d grid (%d pieces), %.0fx%.0fmm, offset=%dmm\n",
+           puzzle_structure$grid[2], puzzle_structure$grid[1],
+           puzzle_structure$grid[1] * puzzle_structure$grid[2],
+           puzzle_structure$size[1], puzzle_structure$size[2], kerf_offset))
+cat(sprintf("Layout: %.0fx%.0fmm → %.0fx%.0fmm (%.1f%% increase)\n",
+           puzzle_structure$size[1], puzzle_structure$size[2],
+           separated_width, separated_height,
            (separated_area - original_area) / original_area * 100))
 
 # Function to save individual pieces as separate SVG files
@@ -70,8 +62,9 @@ save_individual_piece_svgs <- function(puzzle_structure,
                                       output_dir = "individual_pieces",
                                       stroke_width = 1.5,
                                       stroke_color = "black",
-                                      fill_color = "none",           # Default transparent fill
-                                      background_color = "none") {   # Default transparent background
+                                      fill_color = "transparent",    # Default transparent fill (can be matrix) - PowerPoint compatible
+                                      background_color = "transparent", # Default transparent background (can be matrix) - PowerPoint compatible
+                                      use_viridis = FALSE) {         # Auto-generate viridis colors
 
   # Create output directory
   dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
@@ -79,11 +72,63 @@ save_individual_piece_svgs <- function(puzzle_structure,
   xn <- puzzle_structure$grid[2]
   yn <- puzzle_structure$grid[1]
 
+  # Helper function to convert 8-char hex to 6-char hex (PowerPoint compatible)
+  clean_hex_color <- function(color) {
+    if (is.character(color) && nchar(color) == 9 && substr(color, 1, 1) == "#") {
+      # Remove alpha channel (last 2 characters)
+      return(substr(color, 1, 7))
+    }
+    return(color)
+  }
+
+  # Generate viridis colors if requested
+  if (use_viridis && is.character(fill_color) && length(fill_color) == 1 &&
+      (fill_color == "transparent" || fill_color == "none")) {
+    if (!requireNamespace("viridis", quietly = TRUE)) {
+      stop("viridis package is required for use_viridis = TRUE")
+    }
+    n_pieces <- xn * yn
+    viridis_colors <- viridis::viridis(n_pieces)
+    # Clean hex colors for PowerPoint compatibility
+    viridis_colors <- sapply(viridis_colors, clean_hex_color)
+    fill_color <- matrix(viridis_colors, nrow = yn, ncol = xn, byrow = TRUE)
+  }
+
+  # Validate matrix dimensions if provided
+  if (is.matrix(stroke_color)) {
+    if (!all(dim(stroke_color) == c(yn, xn))) {
+      stop(sprintf("stroke_color matrix dimensions (%dx%d) must match grid (%dx%d)",
+                   nrow(stroke_color), ncol(stroke_color), yn, xn))
+    }
+  }
+  if (is.matrix(fill_color)) {
+    if (!all(dim(fill_color) == c(yn, xn))) {
+      stop(sprintf("fill_color matrix dimensions (%dx%d) must match grid (%dx%d)",
+                   nrow(fill_color), ncol(fill_color), yn, xn))
+    }
+  }
+  if (is.matrix(background_color)) {
+    if (!all(dim(background_color) == c(yn, xn))) {
+      stop(sprintf("background_color matrix dimensions (%dx%d) must match grid (%dx%d)",
+                   nrow(background_color), ncol(background_color), yn, xn))
+    }
+  }
+
   # Generate and save each piece
   for (yi in 0:(yn - 1)) {
     for (xi in 0:(xn - 1)) {
       # Generate piece path
       piece_path <- generate_single_piece(xi, yi, puzzle_structure)
+
+      # Extract colors for this piece (matrix or single value)
+      current_stroke <- if(is.matrix(stroke_color)) stroke_color[yi+1, xi+1] else stroke_color
+      current_fill <- if(is.matrix(fill_color)) fill_color[yi+1, xi+1] else fill_color
+      current_bg <- if(is.matrix(background_color)) background_color[yi+1, xi+1] else background_color
+
+      # Clean hex colors for PowerPoint compatibility
+      current_stroke <- clean_hex_color(current_stroke)
+      current_fill <- clean_hex_color(current_fill)
+      current_bg <- clean_hex_color(current_bg)
 
       # Calculate piece bounding box for proper viewBox
       piece_width <- puzzle_structure$piece_width * 1.5  # Add padding
@@ -93,9 +138,9 @@ save_individual_piece_svgs <- function(puzzle_structure,
 
       # Build background rect if needed
       background_rect <- ""
-      if (background_color != "none" && background_color != "") {
+      if (current_bg != "transparent" && current_bg != "none" && current_bg != "") {
         background_rect <- sprintf('  <rect x="%.2f" y="%.2f" width="%.0f" height="%.0f" fill="%s"/>\n',
-                                  x_offset, y_offset, piece_width, piece_height, background_color)
+                                  x_offset, y_offset, piece_width, piece_height, current_bg)
       }
 
       # Create individual SVG for this piece
@@ -107,7 +152,7 @@ save_individual_piece_svgs <- function(puzzle_structure,
         piece_width, piece_height,
         x_offset, y_offset, piece_width, piece_height,
         background_rect,
-        piece_path, fill_color, stroke_color, stroke_width)
+        piece_path, current_fill, current_stroke, stroke_width)
 
       # Save to file
       filename <- sprintf("%s/piece_%02d_%02d.svg", output_dir, xi, yi)
@@ -118,21 +163,13 @@ save_individual_piece_svgs <- function(puzzle_structure,
   cat(sprintf("\nSaved %d individual piece files to %s/\n", xn * yn, output_dir))
 }
 
-# Generate individual piece files
-cat("\nGenerating individual piece files...\n")
+# Generate individual piece files (transparent - PowerPoint compatible)
 save_individual_piece_svgs(puzzle_structure,
                           output_dir = "output/individual_pieces",
                           stroke_width = 1.5,
                           stroke_color = "black")
 
-cat("Individual pieces saved as:\n")
-cat("  • output/individual_pieces/piece_00_00.svg through piece_04_05.svg\n")
-cat("  • Each file contains one complete puzzle piece\n")
-cat("  • Default: transparent fill and background (fill='none', background='none')\n")
-cat("  • Suitable for individual laser cutting or manufacturing\n")
-
-# Example: Generate colored individual pieces
-cat("\nGenerating colored individual pieces example...\n")
+# Generate individual piece files (colored)
 save_individual_piece_svgs(puzzle_structure,
                           output_dir = "output/individual_pieces_colored",
                           stroke_width = 2.0,
@@ -140,6 +177,35 @@ save_individual_piece_svgs(puzzle_structure,
                           fill_color = "#E3F2FD",        # Light blue fill
                           background_color = "white")     # White background
 
-cat("Colored pieces saved to output/individual_pieces_colored/\n")
-cat("  • White background with light blue fill\n")
-cat("  • Dark blue stroke for visibility\n")
+# Generate individual piece files (viridis colors)
+save_individual_piece_svgs(puzzle_structure,
+                          output_dir = "output/individual_pieces_viridis",
+                          stroke_width = 1.5,
+                          stroke_color = "white",
+                          use_viridis = TRUE)
+
+# Generate individual piece files with custom color matrix
+if (requireNamespace("viridis", quietly = TRUE)) {
+  # Create custom color matrix using viridis palette
+  n_pieces <- puzzle_structure$grid[1] * puzzle_structure$grid[2]
+  custom_colors <- viridis::viridis(n_pieces, option = "plasma")  # plasma palette
+  # Clean hex colors for PowerPoint compatibility
+  custom_colors <- sapply(custom_colors, function(color) {
+    if (is.character(color) && nchar(color) == 9 && substr(color, 1, 1) == "#") {
+      return(substr(color, 1, 7))  # Remove alpha channel
+    }
+    return(color)
+  })
+  color_matrix <- matrix(custom_colors,
+                         nrow = puzzle_structure$grid[1],
+                         ncol = puzzle_structure$grid[2],
+                         byrow = TRUE)
+
+  save_individual_piece_svgs(puzzle_structure,
+                            output_dir = "output/individual_pieces_plasma",
+                            stroke_width = 2.0,
+                            stroke_color = "white",
+                            fill_color = color_matrix)
+}
+
+cat("All files saved to output/ directory\n")
