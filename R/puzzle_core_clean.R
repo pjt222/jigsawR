@@ -285,6 +285,7 @@ generate_single_piece <- function(xi, yi, puzzle_structure) {
 #' @param puzzle_structure Output from generate_puzzle_core()
 #' @param mode "complete" for full puzzle, "individual" for separate pieces
 #' @param colors Optional vector of colors for pieces
+#' @param background Background color for the SVG (default: "white")
 #' @return SVG string
 #' @export
 generate_puzzle_svg <- function(puzzle_structure, mode = "complete", colors = NULL, background = "white") {
