@@ -6,12 +6,6 @@
 #' @import ggfx
 #' @import viridis
 
-# Temporary library calls for development
-library(ggplot2)
-library(ggforce)
-library(ggfx)
-library(viridis)
-
 #' Create circular gradient background
 #' @param size_px Size in pixels for output
 #' @param diameter Puzzle diameter in mm (optional, for size matching)
