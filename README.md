@@ -63,18 +63,43 @@ result <- generate_individual_pieces(
 
 ---
 
+## 🎨 Interactive Shiny App
+
+**Prefer a graphical interface?** Launch the interactive Shiny app for real-time puzzle design:
+
+```r
+# Install Shiny dependencies (first time only)
+install.packages(c("shiny", "shinyjs"))
+
+# Launch the app
+source("R/launch_app.R")
+launch_jigsaw_app()
+```
+
+The app will open in your browser with:
+- 🎛️ **Interactive controls** for all parameters
+- 👁️ **Live preview** of your puzzle
+- 🎨 **5 color schemes** (Black, Rainbow, Blues, Warm, Cool)
+- 📥 **Download button** for instant SVG export
+- 💡 **Built-in help** with usage tips
+
+Perfect for exploration, teaching, and rapid prototyping!
+
+---
+
 ## 📚 Documentation
 
 ### Table of Contents
 
-1. [Basic Usage](#basic-usage)
-2. [Rectangular Puzzles](#rectangular-puzzles)
-3. [Hexagonal Puzzles](#hexagonal-puzzles)
-4. [Individual Pieces](#individual-pieces)
-5. [Parameters Guide](#parameters-guide)
-6. [Example Scripts](#example-scripts)
-7. [Use Cases](#use-cases)
-8. [Troubleshooting](#troubleshooting)
+1. [Interactive Shiny App](#interactive-shiny-app)
+2. [Basic Usage](#basic-usage)
+3. [Rectangular Puzzles](#rectangular-puzzles)
+4. [Hexagonal Puzzles](#hexagonal-puzzles)
+5. [Individual Pieces](#individual-pieces)
+6. [Parameters Guide](#parameters-guide)
+7. [Example Scripts](#example-scripts)
+8. [Use Cases](#use-cases)
+9. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -341,6 +366,137 @@ Rscript inst/examples/clean_usage_example.R
 # Separation for laser cutting
 Rscript inst/examples/separation_example.R
 ```
+
+---
+
+## 🎨 Interactive Shiny App (Detailed)
+
+### Launch the App
+
+The jigsawR package includes a full-featured Shiny application for interactive puzzle design:
+
+```r
+# Method 1: Simple launch
+source("R/launch_app.R")
+launch_jigsaw_app()
+
+# Method 2: Use the alias
+jigsawR_app()
+
+# Method 3: Custom port
+launch_jigsaw_app(port = 3838)
+
+# Method 4: Don't open browser (for remote servers)
+launch_jigsaw_app(launch.browser = FALSE)
+
+# Check if dependencies are installed
+check_app_dependencies()
+```
+
+### App Features
+
+**🎛️ Control Panel**
+- **Puzzle Type Selection**: Rectangular or Hexagonal
+- **Grid Configuration**: Rows/columns or rings
+- **Dimensions**: Width/height or diameter (in mm)
+- **Random Seed**: Reproducible designs with randomize button
+- **Tab Size**: 10-30% adjustment slider
+- **Jitter**: 0-10% variation control
+- **Output Modes**:
+  - Complete puzzle (all connected)
+  - Individual pieces (colored)
+  - Separated pieces (with gaps for laser cutting)
+
+**🎨 Styling Options**
+- **5 Color Schemes**:
+  - Black (classic)
+  - Rainbow (9 vibrant colors)
+  - Blues (cool palette)
+  - Warm (reds, oranges, yellows)
+  - Cool (teals, blues, greens)
+- **Line Width**: 0.5-3mm adjustable
+- **Backgrounds**: None, White, Gradient, or Light Blue
+
+**📊 Live Features**
+- Real-time SVG preview (updates instantly)
+- Puzzle information display (piece count, dimensions, area)
+- Progress indicator during generation
+- Download with smart filename (includes parameters)
+
+**💡 Built-in Help Tab**
+- How to use the app
+- Parameter explanations
+- Laser cutting tips
+- Output mode descriptions
+
+### App Use Cases
+
+**1. Exploratory Design**
+```r
+launch_jigsaw_app()
+# Experiment with parameters visually
+# Try different seeds until you find the perfect pattern
+# Download immediately when satisfied
+```
+
+**2. Teaching & Demonstrations**
+```r
+# Project the app during a workshop
+launch_jigsaw_app()
+# Show how different parameters affect puzzle design
+# Generate examples for students in real-time
+```
+
+**3. Client Consultations**
+```r
+# Meet with clients to design custom puzzles
+launch_jigsaw_app(port = 3838)
+# Adjust parameters based on their feedback
+# Download final design immediately
+```
+
+**4. Rapid Prototyping**
+```r
+# Quickly test multiple designs
+launch_jigsaw_app()
+# Use different seeds to generate variations
+# Compare separated vs. individual modes
+```
+
+### App Tips
+
+**Performance:**
+- Puzzles up to 10×10 generate instantly
+- Larger puzzles (12×12+) may take 2-3 seconds
+- Hexagonal puzzles with 5+ rings are slower
+
+**Workflow:**
+1. Set basic dimensions and piece count
+2. Adjust tab size and jitter for desired difficulty
+3. Try different seeds (use randomize button)
+4. Switch output modes to compare
+5. Download when satisfied
+
+**Troubleshooting:**
+- If preview is blank: Click "Generate Puzzle"
+- If download fails: Regenerate the puzzle first
+- If app won't launch: Run `check_app_dependencies()`
+
+### App vs. Command Line
+
+| Feature | Shiny App | Command Line |
+|---------|-----------|--------------|
+| Learning curve | Immediate | Requires R knowledge |
+| Speed | Point & click | Scriptable/automated |
+| Exploration | Excellent | Manual |
+| Batch generation | No | Yes |
+| Reproducibility | Must record parameters | Built into script |
+| Best for | Exploration, teaching | Production, automation |
+
+**Use Both!**
+- Start with the app to explore and find parameters you like
+- Note the seed and parameters from a design you love
+- Use command line scripts for batch generation or automation
 
 ---
 
