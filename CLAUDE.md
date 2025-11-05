@@ -27,31 +27,40 @@ This repository contains R translations of Draradech's JavaScript jigsaw puzzle 
 jigsawR/
 ├── DESCRIPTION              # Package metadata and dependencies
 ├── R/                      # Package source code
-│   ├── rectangular_puzzle.R     # Original rectangular puzzle generator
-│   ├── hexagonal_puzzle.R       # Original hexagonal/circular puzzle generator
+│   ├── rectangular_puzzle.R     # Core rectangular puzzle generator
+│   ├── hexagonal_puzzle.R       # Core hexagonal/circular puzzle generator
+│   ├── puzzle_core_clean.R      # Clean edge generation implementation
+│   ├── individual_pieces.R      # Unified individual piece generation
+│   ├── individual_pieces_final.R # Additional piece utilities
 │   ├── gradient_background.R    # Circular gradient generation functions
 │   ├── svg_utils.R             # SVG enhancement utilities
 │   ├── image_processing.R      # PNG conversion and layer combination
 │   ├── main_generator.R        # Main orchestration functions
-│   ├── individual_pieces.R     # Individual piece extraction (initial)
-│   ├── individual_pieces_correct.R  # Corrected piece generation
 │   ├── bezier_utils.R          # Bezier curve manipulation utilities
-│   └── generate_individual_pieces_proper.R  # Full implementation
+│   ├── hexagonal_individual_pieces.R  # Hexagonal piece generation
+│   └── scripts_archive/        # Archived/deprecated implementations
+│       └── deprecated/         # Old implementations (for reference)
 ├── man/                    # Documentation (auto-generated)
 ├── inst/examples/          # Example scripts
 │   ├── generate_puzzles.R       # Package usage examples
 │   └── individual_pieces_demo.R # Individual pieces demonstration
+├── tests/                  # Test scripts
+│   └── test_individual_pieces.R # Individual pieces test suite
 ├── output/                 # Generated puzzle files directory
 └── svg_to_png_overlay.R    # Backward-compatible entry point
 ```
 
 **Core Module Functions:**
+- **R/rectangular_puzzle.R**: `init_jigsaw()`, `generate_jigsaw_svg()`, coordinate functions (`l()`, `w()`, etc.)
+- **R/hexagonal_puzzle.R**: `init_hex_jigsaw()`, `generate_hex_jigsaw_svg()`
+- **R/puzzle_core_clean.R**: `generate_puzzle_core()`, `generate_all_edges()`, `generate_edge_segment()`, `generate_single_piece()`
+- **R/individual_pieces.R**: `generate_individual_pieces()`, `extract_tab_data()`, `build_piece_path()`
 - **R/gradient_background.R**: `create_gradient_circle_png()`, `save_gradient_background()`
 - **R/svg_utils.R**: `create_enhanced_puzzle_svg()`, `save_enhanced_svg()`
 - **R/image_processing.R**: `convert_svg_to_png()`, `combine_image_layers()`, `check_conversion_tools()`
 - **R/main_generator.R**: `generate_svg_puzzle_layers()`, `generate_puzzle_variations()`
-- **R/individual_pieces_correct.R**: `generate_2x2_individual_pieces()`, `generate_individual_pieces()`
 - **R/bezier_utils.R**: `parse_svg_path()`, `reverse_path_segments()`, `flip_path_segments()`, `create_complementary_edge()`
+- **R/hexagonal_individual_pieces.R**: `generate_hexagonal_individual_pieces()`
 
 **Output Directory:**
 - All generated files (SVG, PNG) are automatically placed in `output/` directory
@@ -96,8 +105,11 @@ puzzle_variations <- list(
 )
 results <- generate_puzzle_variations(puzzle_variations)
 
-# Generate individual pieces (2x2 puzzle)
-result <- generate_2x2_individual_pieces(seed = 42, width = 200, height = 200)
+# Generate individual pieces (works for any size!)
+result <- generate_individual_pieces(seed = 42, xn = 3, yn = 3, width = 300, height = 300)
+
+# Test with comprehensive test suite
+source("tests/test_individual_pieces.R")
 
 # Update dependencies if needed
 renv::snapshot()              # Save current package state
@@ -161,23 +173,31 @@ Both puzzle generators use R environments to maintain global state:
 - `generate_svg_puzzle_layers()`: Main orchestration function (main_generator.R)
 - `generate_puzzle_variations()`: Batch processing workflow (main_generator.R)
 
-**Individual Piece Generation:**
-- `generate_2x2_individual_pieces()`: Hardcoded correct 2x2 implementation
-- `generate_individual_pieces()`: General interface (currently 2x2 only)
-- `parse_svg_path()`: SVG path parsing utilities
-- `reverse_path_segments()`: Bezier curve reversal
-- `create_complementary_edge()`: Generate complementary edges for adjacent pieces
+**Individual Piece Generation (Clean Implementation):**
+- `generate_individual_pieces()`: **Unified implementation** for any puzzle size (2x2, 3x3, 5x4, etc.)
+  - Uses core generation functions directly (no SVG manipulation)
+  - Generates both forward and reverse edge paths
+  - Ensures perfect complementary edges between adjacent pieces
+- `generate_all_edges()`: Pre-generates all shared edges with forward/reverse paths
+- `build_piece_path()`: Assembles individual piece from 4 edges (top, right, bottom, left)
+- `extract_tab_data()`: Extracts tab parameters for advanced manipulation
+- `parse_svg_path()`, `reverse_path_segments()`: Bezier curve utilities (bezier_utils.R)
 
 ## Important Implementation Details
 
 - **Exact JS Translation**: Both generators are direct ports maintaining mathematical precision
-- **Environment Isolation**: Separate environments prevent conflicts between puzzle types  
+- **Environment Isolation**: Separate environments prevent conflicts between puzzle types
 - **SVG Output Format**: Generates complete SVG with embedded styling and viewBox
 - **Reproducible Results**: Seed-based generation ensures identical output for same parameters
 - **R Package Structure**: Professional package organization with proper DESCRIPTION and exports
 - **renv Integration**: Reproducible development environment with locked dependencies
 - **Dedicated Output Directory**: All generated files automatically organized in `output/`
-- **Individual Pieces**: Support for generating separate SVG files for each puzzle piece with proper complementary edges
+- **Individual Pieces - Clean Approach**:
+  - ✅ Unified implementation in `individual_pieces.R` (replaces 4 duplicate implementations)
+  - ✅ Uses generation functions directly (no hardcoded paths or SVG manipulation)
+  - ✅ Works for any puzzle size, not just 2x2
+  - ✅ Properly generates complementary edges using forward/reverse paths
+  - ❌ Deprecated files archived in `R/scripts_archive/deprecated/`
 
 ## Dependencies
 
@@ -207,9 +227,17 @@ renv::restore()
 ### Code Over Output Files
 **IMPORTANT**: We focus on refining scripts rather than tinkering with output files. Reproducible code ensures data quality. Even if we achieve data quality through manual adjustments, this will not provide reliable code.
 
-### Current Focus  
-✅ **COMPLETED**: Individual puzzle piece generation with proper complementary edges
-✅ **COMPLETED**: Hexagonal puzzle individual pieces with proper coloring 
+### Recent Work
+✅ **COMPLETED**: Code refactoring - consolidated 4 duplicate individual piece implementations into one
+✅ **COMPLETED**: Individual puzzle piece generation with proper complementary edges (any size)
+✅ **COMPLETED**: Hexagonal puzzle individual pieces with proper coloring
+✅ **COMPLETED**: Fixed package structure issues (removed hardcoded library() calls)
+✅ **COMPLETED**: Archived deprecated implementations for cleaner codebase
+
+### Current Status
+- **Individual Pieces (Rectangular)**: Fully functional for any puzzle size (2x2, 3x3, 5x4, etc.)
+- **Code Quality**: Eliminated hardcoded SVG paths; all generation uses core functions
+- **Test Suite**: Created comprehensive test script (`tests/test_individual_pieces.R`)
 
 ### Next Phase
 🔄 **NEXT**: Refine separation (offset) functionality for hexagonal individual pieces to match rectangular puzzle separation capabilities. This will enable proper spacing between hexagonal pieces for laser cutting applications.
