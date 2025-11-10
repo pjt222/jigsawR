@@ -236,6 +236,24 @@ ui <- fluidPage(
             downloadButton("download", "Download SVG",
                           class = "btn-success btn-block")
           )
+        ),
+
+        # Help text for individual pieces download
+        conditionalPanel(
+          condition = "input.output_mode == 'individual' || input.output_mode_hex == 'individual'",
+          div(style = "margin-top: 10px; padding: 8px; background: #d1ecf1; border: 1px solid #bee5eb; border-radius: 4px;",
+            p(style = "font-size: 12px; margin: 0;",
+              icon("info-circle"),
+              strong(" Individual Pieces Mode:"),
+              br(),
+              "Download creates a ZIP file with all pieces as separate SVG files.",
+              conditionalPanel(
+                condition = "input.puzzle_type == 'hexagonal'",
+                br(),
+                em("Note: Hexagonal individual pieces available as combined SVG (separate files coming in Issue #10)")
+              )
+            )
+          )
         )
       ),
 
@@ -552,25 +570,96 @@ server <- function(input, output, session) {
     filename = function() {
       if (!is.null(puzzle_data())) {
         data <- puzzle_data()
-        if (data$type == "hexagonal") {
-          output_mode <- input$output_mode_hex
-          sprintf("hexagonal_%drings_seed%d_%s.svg",
-                 data$rings, data$seed, output_mode)
+
+        # Check if individual pieces mode is selected
+        output_mode <- if (data$type == "hexagonal") input$output_mode_hex else input$output_mode
+
+        if (output_mode == "individual") {
+          # Return ZIP filename for individual pieces
+          if (data$type == "hexagonal") {
+            sprintf("hexagonal_%drings_seed%d_pieces.zip", data$rings, data$seed)
+          } else {
+            sprintf("puzzle_%dx%d_seed%d_pieces.zip", data$rows, data$cols, data$seed)
+          }
         } else {
-          sprintf("puzzle_%dx%d_seed%d_%s.svg",
-                 data$rows, data$cols, data$seed,
-                 input$output_mode)
+          # Return SVG filename for complete/separated puzzles
+          if (data$type == "hexagonal") {
+            sprintf("hexagonal_%drings_seed%d_%s.svg",
+                   data$rings, data$seed, output_mode)
+          } else {
+            sprintf("puzzle_%dx%d_seed%d_%s.svg",
+                   data$rows, data$cols, data$seed, output_mode)
+          }
         }
       } else {
         "puzzle.svg"
       }
     },
     content = function(file) {
-      if (!is.null(svg_content())) {
-        writeLines(svg_content(), file)
+      if (!is.null(puzzle_data())) {
+        data <- puzzle_data()
+        output_mode <- if (data$type == "hexagonal") input$output_mode_hex else input$output_mode
+
+        if (output_mode == "individual" && data$type == "rectangular") {
+          # Generate individual pieces for rectangular puzzles
+          temp_dir <- tempfile()
+          dir.create(temp_dir)
+
+          # Generate individual pieces
+          result <- generate_individual_pieces(
+            seed = data$seed,
+            xn = data$cols,
+            yn = data$rows,
+            width = data$width,
+            height = data$height,
+            tabsize = data$tabsize,
+            jitter = data$jitter,
+            output_dir = temp_dir,
+            save_combined = TRUE
+          )
+
+          # Get list of generated files
+          piece_files <- list.files(temp_dir, pattern = "\\.svg$", full.names = TRUE)
+
+          # Create ZIP file
+          zip_file <- tempfile(fileext = ".zip")
+          zip::zip(zipfile = zip_file,
+                   files = basename(piece_files),
+                   root = temp_dir,
+                   mode = "cherry-pick")
+
+          # Copy ZIP to output file
+          file.copy(zip_file, file, overwrite = TRUE)
+
+          # Cleanup
+          unlink(temp_dir, recursive = TRUE)
+          unlink(zip_file)
+
+        } else if (output_mode == "individual" && data$type == "hexagonal") {
+          # For hexagonal, currently download the combined SVG
+          # TODO: Implement individual hexagonal pieces (Issue #10)
+          if (!is.null(svg_content())) {
+            writeLines(svg_content(), file)
+          }
+
+        } else {
+          # For complete/separated modes, download single SVG
+          if (!is.null(svg_content())) {
+            writeLines(svg_content(), file)
+          }
+        }
       }
     },
-    contentType = "image/svg+xml"
+    contentType = function() {
+      if (!is.null(puzzle_data())) {
+        data <- puzzle_data()
+        output_mode <- if (data$type == "hexagonal") input$output_mode_hex else input$output_mode
+        if (output_mode == "individual" && data$type == "rectangular") {
+          return("application/zip")
+        }
+      }
+      return("image/svg+xml")
+    }
   )
 }
 
