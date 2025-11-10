@@ -1,0 +1,5 @@
+# Ignore generated piece files
+piece_*.svg
+
+# Keep directory in git
+!.gitignore

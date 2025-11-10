@@ -29,9 +29,24 @@ if (file.exists("../../R")) {
 ui <- fluidPage(
   useShinyjs(),
 
-  # Add custom CSS
+  # Add custom CSS and JavaScript for sequential downloads
   tags$head(
     tags$link(rel = "stylesheet", type = "text/css", href = "custom.css"),
+    tags$script(HTML("
+      Shiny.addCustomMessageHandler('downloadFiles', function(files) {
+        // Download files sequentially with 500ms delay between each
+        files.forEach(function(file, index) {
+          setTimeout(function() {
+            var link = document.createElement('a');
+            link.href = file.url;
+            link.download = file.name;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+          }, index * 500);
+        });
+      });
+    ")),
     tags$style(HTML("
       .svg-container {
         width: 100%;
@@ -233,8 +248,18 @@ ui <- fluidPage(
                         class = "btn-default btn-block")
           ),
           column(6,
-            downloadButton("download", "Download SVG",
+            # Conditional download button based on output mode
+            conditionalPanel(
+              condition = "input.output_mode != 'individual' && input.output_mode_hex != 'individual'",
+              downloadButton("download", "Download SVG",
+                            class = "btn-success btn-block")
+            ),
+            conditionalPanel(
+              condition = "input.output_mode == 'individual' || input.output_mode_hex == 'individual'",
+              actionButton("download_pieces", "Download Pieces",
+                          icon = icon("download"),
                           class = "btn-success btn-block")
+            )
           )
         ),
 
@@ -248,9 +273,9 @@ ui <- fluidPage(
               conditionalPanel(
                 condition = "input.puzzle_type == 'rectangular'",
                 br(),
-                "Download creates a ZIP file containing all individual pieces as separate SVG files.",
+                "Click 'Download Pieces' to download all pieces as separate SVG files.",
                 br(),
-                em("Note: Requires 'zip' package. Install with: install.packages('zip')")
+                em("Note: Your browser will download files sequentially (one every 0.5 seconds).")
               ),
               conditionalPanel(
                 condition = "input.puzzle_type == 'hexagonal'",
@@ -572,20 +597,17 @@ server <- function(input, output, session) {
     }
   })
 
-  # Download handler
+  # Download handler for single SVG files (complete/separated modes)
   output$download <- downloadHandler(
     filename = function() {
       if (!is.null(puzzle_data())) {
         data <- puzzle_data()
-        output_mode <- if (data$type == "hexagonal") input$output_mode_hex else input$output_mode
-
-        if (output_mode == "individual" && data$type == "rectangular") {
-          # Return ZIP filename for individual pieces
-          sprintf("puzzle_%dx%d_seed%d_pieces.zip", data$rows, data$cols, data$seed)
-        } else if (data$type == "hexagonal") {
+        if (data$type == "hexagonal") {
+          output_mode <- input$output_mode_hex
           sprintf("hexagonal_%drings_seed%d_%s.svg",
                  data$rings, data$seed, output_mode)
         } else {
+          output_mode <- input$output_mode
           sprintf("puzzle_%dx%d_seed%d_%s.svg",
                  data$rows, data$cols, data$seed, output_mode)
         }
@@ -594,84 +616,68 @@ server <- function(input, output, session) {
       }
     },
     content = function(file) {
-      if (!is.null(puzzle_data())) {
-        data <- puzzle_data()
-        output_mode <- if (data$type == "hexagonal") input$output_mode_hex else input$output_mode
-
-        if (output_mode == "individual" && data$type == "rectangular") {
-          # Generate individual pieces and create ZIP file
-
-          # Check if zip package is available
-          if (!requireNamespace("zip", quietly = TRUE)) {
-            stop("Package 'zip' is required for downloading individual pieces.\n",
-                 "Please install it with: install.packages('zip')")
-          }
-
-          # Create temporary directory for pieces
-          temp_dir <- tempfile()
-          dir.create(temp_dir)
-
-          tryCatch({
-            # Generate individual pieces
-            result <- generate_individual_pieces(
-              seed = data$seed,
-              xn = data$cols,
-              yn = data$rows,
-              width = data$width,
-              height = data$height,
-              output_dir = temp_dir,
-              quiet = TRUE
-            )
-
-            # Get list of generated files
-            piece_files <- list.files(temp_dir, pattern = "piece_.*\\.svg$", full.names = TRUE)
-
-            if (length(piece_files) == 0) {
-              stop("No piece files were generated")
-            }
-
-            # Create ZIP file
-            zip::zip(
-              zipfile = file,
-              files = basename(piece_files),
-              root = temp_dir,
-              mode = "cherry-pick"
-            )
-
-          }, error = function(e) {
-            stop("Error creating ZIP file: ", e$message)
-          }, finally = {
-            # Clean up temp directory
-            unlink(temp_dir, recursive = TRUE)
-          })
-
-        } else if (output_mode == "individual" && data$type == "hexagonal") {
-          # For hexagonal, currently download the combined SVG
-          # TODO: Implement individual hexagonal pieces (Issue #10)
-          if (!is.null(svg_content())) {
-            writeLines(svg_content(), file)
-          }
-
-        } else {
-          # For complete/separated modes, download single SVG
-          if (!is.null(svg_content())) {
-            writeLines(svg_content(), file)
-          }
-        }
+      if (!is.null(svg_content())) {
+        writeLines(svg_content(), file)
       }
     },
-    contentType = function() {
-      if (!is.null(puzzle_data())) {
-        data <- puzzle_data()
-        output_mode <- if (data$type == "hexagonal") input$output_mode_hex else input$output_mode
-
-        if (output_mode == "individual" && data$type == "rectangular") {
-          return("application/zip")
-        }
-      }
-      return("image/svg+xml")
-    }
+    contentType = "image/svg+xml"
   )
+
+  # Handle individual pieces download with sequential browser downloads
+  observeEvent(input$download_pieces, {
+    if (!is.null(puzzle_data())) {
+      data <- puzzle_data()
+
+      if (data$type == "rectangular") {
+        # Create www/pieces directory if it doesn't exist
+        pieces_dir <- file.path("www", "pieces")
+        if (!dir.exists(pieces_dir)) {
+          dir.create(pieces_dir, recursive = TRUE)
+        }
+
+        # Clean up old files
+        old_files <- list.files(pieces_dir, pattern = "piece_.*\\.svg$", full.names = TRUE)
+        if (length(old_files) > 0) {
+          file.remove(old_files)
+        }
+
+        # Generate individual pieces
+        result <- generate_individual_pieces(
+          seed = data$seed,
+          xn = data$cols,
+          yn = data$rows,
+          width = data$width,
+          height = data$height,
+          output_dir = pieces_dir,
+          quiet = TRUE
+        )
+
+        # Get list of generated files
+        piece_files <- list.files(pieces_dir, pattern = "piece_.*\\.svg$", full.names = FALSE)
+
+        if (length(piece_files) > 0) {
+          # Create file list for JavaScript
+          files_list <- lapply(piece_files, function(filename) {
+            list(
+              url = paste0("pieces/", filename),
+              name = filename
+            )
+          })
+
+          # Send to JavaScript for sequential download
+          session$sendCustomMessage("downloadFiles", files_list)
+        }
+
+      } else if (data$type == "hexagonal") {
+        # TODO: Implement hexagonal individual pieces (Issue #10)
+        showNotification(
+          "Individual hexagonal pieces coming soon! See GitHub Issue #10",
+          type = "warning",
+          duration = 5
+        )
+      }
+    }
+  })
 }
 
 # Run the application
