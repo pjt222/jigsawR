@@ -655,9 +655,14 @@ server <- function(input, output, session) {
           return(NULL)
         })
 
-        # Generate individual pieces (suppress console output)
-        capture.output({
-          result <- generate_individual_pieces(
+        # Generate individual pieces (DON'T suppress output during debugging)
+        cat("\n=== Starting piece generation ===\n")
+        cat(sprintf("Seed: %d, Cols: %d, Rows: %d\n", data$seed, data$cols, data$rows))
+        cat(sprintf("Width: %.0f, Height: %.0f\n", data$width, data$height))
+        cat(sprintf("Output dir: %s\n", pieces_dir))
+
+        result <- tryCatch({
+          generate_individual_pieces(
             seed = data$seed,
             xn = data$cols,
             yn = data$rows,
@@ -666,7 +671,19 @@ server <- function(input, output, session) {
             output_dir = pieces_dir,
             save_combined = FALSE
           )
+        }, error = function(e) {
+          showNotification(
+            paste("Error generating pieces:", e$message),
+            type = "error",
+            duration = 10
+          )
+          cat("ERROR in generate_individual_pieces:\n")
+          cat(e$message, "\n")
+          print(e)
+          return(NULL)
         })
+
+        cat("=== Generation complete ===\n\n")
 
         # Verify files were created and have content
         piece_files <- list.files(pieces_dir, pattern = "piece_.*\\.svg$", full.names = TRUE)
