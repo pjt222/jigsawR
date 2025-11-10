@@ -58,6 +58,16 @@ generate_individual_pieces <- function(seed = 42, xn = 2, yn = 2,
   # Generate all shared edges
   edges <- generate_all_edges(xn, yn)
 
+  # DEBUG: Check edges structure
+  cat(sprintf("  DEBUG: Generated edges structure:\n"))
+  cat(sprintf("    Horizontal edges: %d rows\n", length(edges$horizontal)))
+  cat(sprintf("    Vertical edges: %d cols\n", length(edges$vertical)))
+  if (length(edges$horizontal) > 0 && length(edges$horizontal[[1]]) > 0) {
+    sample_h <- edges$horizontal[[1]][[1]]
+    cat(sprintf("    Sample horizontal edge forward: %d chars\n", nchar(sample_h$forward)))
+    cat(sprintf("    Sample horizontal edge reverse: %d chars\n", nchar(sample_h$reverse)))
+  }
+
   # Calculate piece dimensions
   piece_width <- width / xn
   piece_height <- height / yn

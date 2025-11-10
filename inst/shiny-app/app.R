@@ -520,6 +520,8 @@ server <- function(input, output, session) {
           type = "rectangular",
           rows = input$rows,
           cols = input$cols,
+          width = input$width,
+          height = input$height,
           seed = input$seed,
           total_pieces = input$rows * input$cols
         ))
