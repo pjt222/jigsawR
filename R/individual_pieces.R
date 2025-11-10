@@ -74,6 +74,13 @@ generate_individual_pieces <- function(seed = 42, xn = 2, yn = 2,
                                      piece_width, piece_height,
                                      corner_radius)
 
+      # DEBUG: Check path content
+      path_length <- nchar(piece_path)
+      cat(sprintf("  DEBUG: Piece [%d,%d] path length: %d chars\n", xi, yi, path_length))
+      if (path_length < 50) {
+        cat(sprintf("  WARNING: Path too short! Content: '%s'\n", piece_path))
+      }
+
       # Store piece data
       piece_id <- sprintf("%d_%d", xi, yi)
       pieces[[piece_id]] <- list(
@@ -240,7 +247,24 @@ save_individual_piece_svg <- function(xi, yi, piece_path, width, height, output_
 </svg>', width, height, width, height, xi, yi, piece_path)
 
   filename <- file.path(output_dir, sprintf("piece_%d_%d.svg", xi, yi))
+
+  # DEBUG: Check what we're writing
+  svg_length <- nchar(svg_content)
+  cat(sprintf("    DEBUG: Writing %d chars to %s\n", svg_length, filename))
+  if (svg_length < 300) {
+    cat(sprintf("    WARNING: SVG content too short!\n"))
+    cat(sprintf("    Content: %s\n", substr(svg_content, 1, 200)))
+  }
+
   writeLines(svg_content, filename)
+
+  # Verify file was written
+  if (file.exists(filename)) {
+    actual_size <- file.size(filename)
+    cat(sprintf("    DEBUG: File written, size: %d bytes\n", actual_size))
+  } else {
+    cat(sprintf("    ERROR: File not created!\n"))
+  }
 }
 
 #' Save combined view of all pieces
