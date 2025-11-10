@@ -649,7 +649,7 @@ server <- function(input, output, session) {
           width = data$width,
           height = data$height,
           output_dir = pieces_dir,
-          quiet = TRUE
+          save_combined = FALSE
         )
 
         # Get list of generated files
