@@ -657,54 +657,36 @@ server <- function(input, output, session) {
           return(NULL)
         })
 
-        # Generate individual pieces (DON'T suppress output during debugging)
-        cat("\n=== Starting piece generation ===\n")
-        cat(sprintf("Seed: %d, Cols: %d, Rows: %d\n", data$seed, data$cols, data$rows))
-        cat(sprintf("Width: %.0f, Height: %.0f\n", data$width, data$height))
-        cat(sprintf("Output dir: %s\n", pieces_dir))
-
+        # Generate individual pieces (suppress console output)
         result <- tryCatch({
-          generate_individual_pieces(
-            seed = data$seed,
-            xn = data$cols,
-            yn = data$rows,
-            width = data$width,
-            height = data$height,
-            output_dir = pieces_dir,
-            save_combined = FALSE
-          )
+          capture.output({
+            generate_individual_pieces(
+              seed = data$seed,
+              xn = data$cols,
+              yn = data$rows,
+              width = data$width,
+              height = data$height,
+              output_dir = pieces_dir,
+              save_combined = FALSE
+            )
+          }, type = "message")
         }, error = function(e) {
           showNotification(
             paste("Error generating pieces:", e$message),
             type = "error",
             duration = 10
           )
-          cat("ERROR in generate_individual_pieces:\n")
-          cat(e$message, "\n")
-          print(e)
           return(NULL)
         })
 
-        cat("=== Generation complete ===\n\n")
-
-        # Verify files were created and have content
+        # Verify files were created and send to browser
         piece_files <- list.files(pieces_dir, pattern = "piece_.*\\.svg$", full.names = TRUE)
 
         if (length(piece_files) > 0) {
           # Check that files have content
-          file_sizes <- sapply(piece_files, file.size)
-          files_ok <- all(file_sizes > 0)
-
-          # Debug: show file info
-          cat(sprintf("Generated %d files in %s\n", length(piece_files), pieces_dir))
-          cat(sprintf("File sizes: %s\n", paste(file_sizes, collapse = ", ")))
-          cat(sprintf("First file content (first 100 chars):\n%s\n",
-                     substr(paste(readLines(piece_files[1], warn = FALSE), collapse = "\n"), 1, 100)))
+          files_ok <- all(sapply(piece_files, file.size) > 0)
 
           if (files_ok) {
-            # Ensure files are flushed to disk
-            Sys.sleep(0.5)
-
             # Create file list for JavaScript
             files_list <- lapply(basename(piece_files), function(filename) {
               list(
@@ -717,22 +699,20 @@ server <- function(input, output, session) {
             session$sendCustomMessage("downloadFiles", files_list)
 
             showNotification(
-              sprintf("Downloading %d piece files... (sizes: %s bytes)",
-                     length(piece_files),
-                     paste(file_sizes, collapse = ", ")),
+              sprintf("Downloading %d piece files...", length(piece_files)),
               type = "message",
-              duration = 5
+              duration = 3
             )
           } else {
             showNotification(
-              "Error: Generated files are empty",
+              "Error: Generated files are empty. Please try again.",
               type = "error",
               duration = 5
             )
           }
         } else {
           showNotification(
-            "Error: No piece files were generated",
+            "Error: No piece files were generated. Please try again.",
             type = "error",
             duration = 5
           )
