@@ -89,15 +89,27 @@ jigsawR_app <- function(...) {
 #' @export
 check_app_dependencies <- function() {
   required_packages <- c("shiny", "shinyjs")
-  installed <- sapply(required_packages, requireNamespace, quietly = TRUE)
-  
-  if (all(installed)) {
-    message("[OK] All Shiny app dependencies are installed")
+  optional_packages <- c("zip")  # For individual pieces download
+
+  required_installed <- sapply(required_packages, requireNamespace, quietly = TRUE)
+  optional_installed <- sapply(optional_packages, requireNamespace, quietly = TRUE)
+
+  if (all(required_installed)) {
+    message("[OK] All required Shiny app dependencies are installed")
+
+    if (!all(optional_installed)) {
+      missing_optional <- optional_packages[!optional_installed]
+      message("[!] Optional package for enhanced features: ", paste(missing_optional, collapse = ", "))
+      message("    Install with: install.packages(c(",
+             paste0('"', missing_optional, '"', collapse = ", "), "))")
+      message("    Note: Required for downloading individual pieces as ZIP files")
+    }
+
     return(invisible(TRUE))
   } else {
-    missing <- required_packages[!installed]
-    message("[X] Missing packages: ", paste(missing, collapse = ", "))
-    message("Install with: install.packages(c(", 
+    missing <- required_packages[!required_installed]
+    message("[X] Missing required packages: ", paste(missing, collapse = ", "))
+    message("Install with: install.packages(c(",
            paste0('"', missing, '"', collapse = ", "), "))")
     return(invisible(FALSE))
   }

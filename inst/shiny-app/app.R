@@ -603,37 +603,42 @@ server <- function(input, output, session) {
         if (output_mode == "individual" && data$type == "rectangular") {
           # Generate individual pieces for rectangular puzzles
           temp_dir <- tempfile()
-          dir.create(temp_dir)
+          dir.create(temp_dir, showWarnings = FALSE)
 
           # Generate individual pieces
-          result <- generate_individual_pieces(
-            seed = data$seed,
-            xn = data$cols,
-            yn = data$rows,
-            width = data$width,
-            height = data$height,
-            tabsize = data$tabsize,
-            jitter = data$jitter,
-            output_dir = temp_dir,
-            save_combined = TRUE
-          )
+          tryCatch({
+            result <- generate_individual_pieces(
+              seed = data$seed,
+              xn = data$cols,
+              yn = data$rows,
+              width = data$width,
+              height = data$height,
+              tabsize = data$tabsize,
+              jitter = data$jitter,
+              output_dir = temp_dir,
+              save_combined = TRUE
+            )
 
-          # Get list of generated files
-          piece_files <- list.files(temp_dir, pattern = "\\.svg$", full.names = TRUE)
+            # Get list of generated files
+            piece_files <- list.files(temp_dir, pattern = "\\.svg$", full.names = TRUE)
 
-          # Create ZIP file
-          zip_file <- tempfile(fileext = ".zip")
-          zip::zip(zipfile = zip_file,
-                   files = basename(piece_files),
-                   root = temp_dir,
-                   mode = "cherry-pick")
+            if (length(piece_files) == 0) {
+              stop("No piece files were generated")
+            }
 
-          # Copy ZIP to output file
-          file.copy(zip_file, file, overwrite = TRUE)
+            # Create ZIP file using zip package
+            zip::zip(zipfile = file,
+                    files = basename(piece_files),
+                    root = temp_dir)
 
-          # Cleanup
-          unlink(temp_dir, recursive = TRUE)
-          unlink(zip_file)
+            # Cleanup temp directory
+            unlink(temp_dir, recursive = TRUE)
+
+          }, error = function(e) {
+            # Cleanup on error
+            if (dir.exists(temp_dir)) unlink(temp_dir, recursive = TRUE)
+            stop(paste("Error generating individual pieces:", e$message))
+          })
 
         } else if (output_mode == "individual" && data$type == "hexagonal") {
           # For hexagonal, currently download the combined SVG
