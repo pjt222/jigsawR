@@ -11,11 +11,14 @@
 #' @param jitter Jitter percentage (default: 4)
 #' @param width Puzzle width in mm (default: 300)
 #' @param height Puzzle height in mm (default: 200)
+#' @param unit Unit specification: "mm" or "px"
+#' @param dpi DPI for conversion (default: 96)
 #' @param radius Corner radius in mm (default: 2.0)
 #' @param xn Number of columns (default: 15)
 #' @param yn Number of rows (default: 10)
 init_jigsaw <- function(seed = NULL, tabsize = 20, jitter = 4,
-                        width = 300, height = 200, radius = 2.0,
+                        width = 300, height = 200, 
+                        unit = "mm", dpi = 96, radius = 2.0,
                         xn = 15, yn = 10) {
 
   if (is.null(seed)) {
@@ -29,6 +32,8 @@ init_jigsaw <- function(seed = NULL, tabsize = 20, jitter = 4,
   .jigsaw_env$jitter <- jitter
   .jigsaw_env$width <- width
   .jigsaw_env$height <- height
+  .jigsaw_env$unit <- unit
+  .jigsaw_env$dpi <- dpi
   .jigsaw_env$radius <- radius
   .jigsaw_env$xn <- xn
   .jigsaw_env$yn <- yn
@@ -194,22 +199,48 @@ gen_db <- function() {
 #' @param yn Number of rows
 #' @return List containing SVG path data
 generate_jigsaw_svg <- function(seed = NULL, tabsize = 20, jitter = 4,
-                                width = 300, height = 200, radius = 2.0,
+                                width = 300, height = 200, 
+                                unit = "mm", dpi = 96, radius = 2.0,
                                 xn = 15, yn = 10) {
 
+  # Convert to mm for internal calculations if needed
+  if (unit == "px") {
+    width_mm <- width * 25.4 / dpi
+    height_mm <- height * 25.4 / dpi
+    radius_mm <- radius * 25.4 / dpi
+  } else {
+    width_mm <- width
+    height_mm <- height
+    radius_mm <- radius
+  }
+
   # Initialize environment
-  init_jigsaw(seed, tabsize, jitter, width, height, radius, xn, yn)
+  init_jigsaw(seed, tabsize, jitter, width_mm, height_mm, unit, dpi, radius_mm, xn, yn)
 
   # Generate path data
   horizontal_paths <- gen_dh()
   vertical_paths <- gen_dv()
   border_paths <- gen_db()
 
+  # Create SVG dimensions based on unit and DPI
+  if (unit == "px") {
+    svg_width <- sprintf("%.0f", width)
+    svg_height <- sprintf("%.0f", height)
+    # ViewBox uses mm units for consistency in path coordinates
+    viewbox_w <- width_mm
+    viewbox_h <- height_mm
+  } else {
+    svg_width <- sprintf("%.0fmm", width)
+    svg_height <- sprintf("%.0fmm", height)
+    viewbox_w <- width
+    viewbox_h <- height
+  }
+
   # Create complete SVG
   svg_content <- paste0(
     '<svg xmlns="http://www.w3.org/2000/svg" version="1.0" ',
-    'width="', width, 'mm" height="', height, 'mm" ',
-    'viewBox="0 0 ', width, ' ', height, '">',
+    'width="', svg_width, '" height="', svg_height, '" ',
+    'viewBox="0 0 ', viewbox_w, ' ', viewbox_h, '">',
     '<path fill="none" stroke="DarkBlue" stroke-width="0.1" d="',
     horizontal_paths,
     '"></path>',
@@ -233,6 +264,10 @@ generate_jigsaw_svg <- function(seed = NULL, tabsize = 20, jitter = 4,
       jitter = jitter,
       width = width,
       height = height,
+      unit = unit,
+      dpi = dpi,
+      width_mm = width_mm,
+      height_mm = height_mm,
       radius = radius,
       xn = xn,
       yn = yn

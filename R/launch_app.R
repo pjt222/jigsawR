@@ -92,11 +92,11 @@ check_app_dependencies <- function() {
   installed <- sapply(required_packages, requireNamespace, quietly = TRUE)
   
   if (all(installed)) {
-    message("✓ All Shiny app dependencies are installed")
+    message("[OK] All Shiny app dependencies are installed")
     return(invisible(TRUE))
   } else {
     missing <- required_packages[!installed]
-    message("✗ Missing packages: ", paste(missing, collapse = ", "))
+    message("[X] Missing packages: ", paste(missing, collapse = ", "))
     message("Install with: install.packages(c(", 
            paste0('"', missing, '"', collapse = ", "), "))")
     return(invisible(FALSE))

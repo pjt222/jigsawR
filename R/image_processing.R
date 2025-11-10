@@ -137,7 +137,7 @@ combine_image_layers <- function(background_file, overlay_file, combined_file, t
         # Calculate center and radius based on image dimensions
         center_x <- width / 2
         center_y <- height / 2
-        # Puzzle circle diameter / canvas_size ratio ≈ 0.833 (180/216)
+        # Puzzle circle diameter / canvas_size ratio ~= 0.833 (180/216)
         # So radius = (diameter/canvas_size) * (image_size/2) = 0.833 * (width/2)
         radius <- min(width, height) * 0.833 / 2  # More precise puzzle circle size
         
@@ -180,10 +180,10 @@ check_conversion_tools <- function() {
   has_inkscape <- nzchar(Sys.which("inkscape"))
   has_convert <- nzchar(Sys.which("convert"))
   
-  cat("  rsvg package:", if(has_rsvg) "✓ Available" else "✗ Not available", "\n")
-  cat("  magick package:", if(has_magick) "✓ Available" else "✗ Not available", "\n")
-  cat("  Inkscape CLI:", if(has_inkscape) "✓ Available" else "✗ Not available", "\n")
-  cat("  ImageMagick CLI:", if(has_convert) "✓ Available" else "✗ Not available", "\n")
+  cat("  rsvg package:", if(has_rsvg) "[OK] Available" else "[X] Not available", "\n")
+  cat("  magick package:", if(has_magick) "[OK] Available" else "[X] Not available", "\n")
+  cat("  Inkscape CLI:", if(has_inkscape) "[OK] Available" else "[X] Not available", "\n")
+  cat("  ImageMagick CLI:", if(has_convert) "[OK] Available" else "[X] Not available", "\n")
   
   tools_available <- has_rsvg || has_magick || has_inkscape || has_convert
   

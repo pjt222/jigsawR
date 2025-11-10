@@ -28,7 +28,7 @@ if (file.exists("../../R")) {
 # Define UI
 ui <- fluidPage(
   useShinyjs(),
-  
+
   # Add custom CSS
   tags$head(
     tags$link(rel = "stylesheet", type = "text/css", href = "custom.css"),
@@ -59,99 +59,99 @@ ui <- fluidPage(
       }
     "))
   ),
-  
+
   # Application title
   titlePanel(
     div(
       h2("jigsawR Puzzle Generator", style = "color: #2c3e50;"),
-      p("Create customizable jigsaw puzzles for laser cutting and more", 
+      p("Create customizable jigsaw puzzles for laser cutting and more",
         style = "color: #7f8c8d; font-size: 14px;")
     )
   ),
-  
+
   # Sidebar with input controls
   sidebarLayout(
     sidebarPanel(
       width = 4,
-      
+
       # Basic Settings Section
       div(class = "sidebar-section",
         h4("Basic Settings", class = "section-title"),
-        
+
         # Puzzle Type Selection
         radioButtons("puzzle_type", "Puzzle Type:",
                     choices = list("Rectangular" = "rectangular",
                                   "Hexagonal" = "hexagonal"),
                     selected = "rectangular",
                     inline = TRUE),
-        
+
         # Conditional UI for puzzle parameters
         conditionalPanel(
           condition = "input.puzzle_type == 'rectangular'",
           # Grid dimensions for rectangular
           fluidRow(
             column(6,
-              numericInput("rows", "Rows:", 
+              numericInput("rows", "Rows:",
                           value = 2, min = 1, max = 10, step = 1)
             ),
             column(6,
-              numericInput("cols", "Columns:", 
+              numericInput("cols", "Columns:",
                           value = 2, min = 1, max = 10, step = 1)
             )
           ),
-          
+
           # Size for rectangular
           fluidRow(
             column(6,
-              numericInput("width", "Width (mm):", 
+              numericInput("width", "Width (mm):",
                           value = 200, min = 50, max = 500, step = 10)
             ),
             column(6,
-              numericInput("height", "Height (mm):", 
+              numericInput("height", "Height (mm):",
                           value = 200, min = 50, max = 500, step = 10)
             )
           )
         ),
-        
+
         conditionalPanel(
           condition = "input.puzzle_type == 'hexagonal'",
           # Rings for hexagonal
           numericInput("rings", "Rings:", value = 3, min = 2, max = 6),
-          
+
           # Diameter for hexagonal
-          numericInput("diameter", "Diameter (mm):", 
+          numericInput("diameter", "Diameter (mm):",
                       value = 240, min = 100, max = 500, step = 10),
-          
+
           # Hexagonal-specific options
           checkboxInput("do_warp", "Circular Warp", value = FALSE),
           checkboxInput("do_trunc", "Truncate Edges", value = FALSE)
         ),
-        
+
         # Seed
         fluidRow(
           column(8,
-            numericInput("seed", "Random Seed:", 
+            numericInput("seed", "Random Seed:",
                         value = 1234, min = 1, max = 99999, step = 1)
           ),
           column(4,
             br(),
-            actionButton("randomize", "Random", 
+            actionButton("randomize", "Random",
                         icon = icon("dice"),
                         style = "margin-top: 2px;")
           )
         )
       ),
-      
+
       # Advanced Settings Section
       div(class = "sidebar-section",
         h4("Advanced Settings", class = "section-title"),
-        
+
         sliderInput("tabsize", "Tab Size (%):",
                    min = 10, max = 30, value = 20, step = 1),
-        
+
         sliderInput("jitter", "Jitter (%):",
                    min = 0, max = 10, value = 4, step = 1),
-        
+
         conditionalPanel(
           condition = "input.puzzle_type == 'rectangular'",
           radioButtons("output_mode", "Output Mode:",
@@ -162,29 +162,40 @@ ui <- fluidPage(
                       ),
                       selected = "complete")
         ),
-        
+
         conditionalPanel(
           condition = "input.puzzle_type == 'hexagonal'",
           radioButtons("output_mode_hex", "Output Mode:",
                       choices = list(
                         "Complete Puzzle" = "complete",
-                        "Individual Pieces" = "individual"
+                        "Individual Pieces" = "individual",
+                        "Separated Pieces" = "separated"
                       ),
                       selected = "complete")
         ),
-        
+
         # Conditional separation offset
         conditionalPanel(
-          condition = "input.output_mode == 'separated'",
+          condition = "input.output_mode == 'separated' || input.output_mode_hex == 'separated'",
           sliderInput("offset", "Separation (mm):",
-                     min = 0, max = 50, value = 10, step = 1)
+                     min = 0, max = 50, value = 10, step = 1),
+          conditionalPanel(
+            condition = "input.puzzle_type == 'hexagonal'",
+            radioButtons("arrangement", "Arrangement:",
+                        choices = list(
+                          "Hexagonal Grid" = "hexagonal",
+                          "Rectangular Packing" = "rectangular"
+                        ),
+                        selected = "hexagonal",
+                        inline = TRUE)
+          )
         )
       ),
-      
+
       # Styling Options Section
       div(class = "sidebar-section",
         h4("Styling Options", class = "section-title"),
-        
+
         selectInput("color_scheme", "Color Scheme:",
                    choices = list(
                      "Black" = "black",
@@ -194,10 +205,10 @@ ui <- fluidPage(
                      "Cool" = "cool"
                    ),
                    selected = "black"),
-        
+
         sliderInput("stroke_width", "Line Width:",
                    min = 0.5, max = 3, value = 1.5, step = 0.1),
-        
+
         selectInput("background", "Background:",
                    choices = list(
                      "None" = "none",
@@ -207,17 +218,17 @@ ui <- fluidPage(
                    ),
                    selected = "white")
       ),
-      
+
       # Action Buttons
       div(style = "margin-top: 20px;",
-        actionButton("generate", "Generate Puzzle", 
+        actionButton("generate", "Generate Puzzle",
                     icon = icon("puzzle-piece"),
                     class = "btn-primary btn-lg btn-block",
                     style = "margin-bottom: 10px;"),
-        
+
         fluidRow(
           column(6,
-            actionButton("reset", "Reset", 
+            actionButton("reset", "Reset",
                         icon = icon("undo"),
                         class = "btn-default btn-block")
           ),
@@ -227,36 +238,36 @@ ui <- fluidPage(
           )
         )
       ),
-      
+
       # Info text
       div(style = "margin-top: 20px; padding: 10px; background: #fff3cd; border-radius: 4px;",
-        p(strong("Tip:"), "Click 'Generate Puzzle' to create your puzzle. 
+        p(strong("Tip:"), "Click 'Generate Puzzle' to create your puzzle.
           The preview will appear on the right.", style = "font-size: 12px; margin: 0;")
       )
     ),
-    
+
     # Main panel with puzzle display
     mainPanel(
       width = 8,
-      
+
       # Tabs for different views
       tabsetPanel(
         id = "main_tabs",
-        
+
         # Preview Tab
         tabPanel("Preview",
           br(),
           div(class = "svg-container",
             uiOutput("puzzle_display")
           ),
-          
+
           # Parameter summary
           div(class = "parameter-summary",
             h5("Puzzle Information"),
             uiOutput("puzzle_info")
           )
         ),
-        
+
         # Help Tab
         tabPanel("Help",
           br(),
@@ -285,7 +296,12 @@ ui <- fluidPage(
             p("• Use 'Separated Pieces' mode with 3-5mm offset"),
             p("• Black color with 0.5mm line width works best"),
             p("• Consider material thickness when setting tab size"),
-            p("• Test with small puzzles first")
+            p("• Test with small puzzles first"),
+            br(),
+            h4("Hexagonal Separation"),
+            p("• Hexagonal Grid: Maintains natural hex pattern with gaps"),
+            p("• Rectangular Packing: Efficient space usage for cutting"),
+            p("• Higher offsets recommended for hex puzzles (5-10mm)")
           )
         )
       )
@@ -295,17 +311,17 @@ ui <- fluidPage(
 
 # Define server logic
 server <- function(input, output, session) {
-  
+
   # Reactive values to store puzzle data
   puzzle_data <- reactiveVal(NULL)
   svg_content <- reactiveVal(NULL)
-  
+
   # Randomize seed
   observeEvent(input$randomize, {
-    updateNumericInput(session, "seed", 
+    updateNumericInput(session, "seed",
                       value = sample(1:99999, 1))
   })
-  
+
   # Reset to defaults
   observeEvent(input$reset, {
     updateNumericInput(session, "rows", value = 2)
@@ -321,60 +337,78 @@ server <- function(input, output, session) {
     updateSliderInput(session, "stroke_width", value = 1.5)
     updateSelectInput(session, "background", selected = "white")
   })
-  
+
   # Generate puzzle
   observeEvent(input$generate, {
-    
+
     # Show progress
     withProgress(message = 'Generating puzzle...', value = 0, {
-      
+
       incProgress(0.3, detail = "Creating puzzle structure")
-      
+
       # Define colors based on scheme
       colors <- switch(input$color_scheme,
         "black" = "black",
-        "rainbow" = c("#FF6B6B", "#4ECDC4", "#45B7D1", "#FFA07A", "#98D8C8", 
+        "rainbow" = c("#FF6B6B", "#4ECDC4", "#45B7D1", "#FFA07A", "#98D8C8",
                      "#F7DC6F", "#BB8FCE", "#85C1E2", "#F8B739"),
         "blues" = c("#0066CC", "#3399FF", "#66B2FF", "#99CCFF"),
         "warm" = c("#FF6B6B", "#FFA07A", "#F7DC6F", "#F8B739"),
         "cool" = c("#4ECDC4", "#45B7D1", "#98D8C8", "#85C1E2"),
         "black"
       )
-      
+
       incProgress(0.5, detail = "Generating SVG")
-      
+
       # Determine puzzle type and output mode
       puzzle_type <- input$puzzle_type
-      output_mode <- ifelse(puzzle_type == "rectangular", 
-                           input$output_mode, 
+      output_mode <- ifelse(puzzle_type == "rectangular",
+                           input$output_mode,
                            input$output_mode_hex)
-      
+
       # Generate puzzle based on type
       if (puzzle_type == "hexagonal") {
-        # Generate hexagonal puzzle
-        puzzle_result <- generate_puzzle(
-          type = "hexagonal",
-          grid = c(input$rings, input$rings),  # Use rings for grid
-          size = c(input$diameter, input$diameter),  # Use diameter for size
-          seed = input$seed,
-          tabsize = input$tabsize,
-          jitter = input$jitter,
-          output = ifelse(output_mode == "complete", "complete", "individual"),
-          colors = colors,
-          background = input$background,
-          save_files = FALSE,
-          do_warp = input$do_warp,
-          do_trunc = input$do_trunc,
-          stroke_width = input$stroke_width
-        )
-        
-        # Use proper conditional instead of ifelse for character vectors
-        if (output_mode == "complete") {
-          svg <- puzzle_result$svg_complete
+        if (output_mode == "separated") {
+          # Use hexagonal separation function
+          svg <- generate_separated_hexagonal_svg(
+            rings = input$rings,
+            seed = input$seed,
+            diameter = input$diameter,
+            offset = input$offset,
+            arrangement = ifelse(is.null(input$arrangement), "hexagonal", input$arrangement),
+            tabsize = input$tabsize,
+            jitter = input$jitter,
+            do_warp = input$do_warp,
+            do_trunc = input$do_trunc,
+            colors = colors,
+            stroke_width = input$stroke_width,
+            background = input$background
+          )
         } else {
-          svg <- puzzle_result$svg_individual
+          # Generate standard hexagonal puzzle
+          puzzle_result <- generate_puzzle(
+            type = "hexagonal",
+            grid = c(input$rings, input$rings),  # Use rings for grid
+            size = c(input$diameter, input$diameter),  # Use diameter for size
+            seed = input$seed,
+            tabsize = input$tabsize,
+            jitter = input$jitter,
+            output = ifelse(output_mode == "complete", "complete", "individual"),
+            colors = colors,
+            background = input$background,
+            save_files = FALSE,
+            do_warp = input$do_warp,
+            do_trunc = input$do_trunc,
+            stroke_width = input$stroke_width
+          )
+
+          # Use proper conditional instead of ifelse for character vectors
+          if (output_mode == "complete") {
+            svg <- puzzle_result$svg_complete
+          } else {
+            svg <- puzzle_result$svg_individual
+          }
         }
-                     
+
       } else if (output_mode == "separated") {
         # Use separated puzzle generation for rectangular
         puzzle_struct <- generate_puzzle_core(
@@ -384,7 +418,7 @@ server <- function(input, output, session) {
           tabsize = input$tabsize,
           jitter = input$jitter
         )
-        
+
         svg <- generate_separated_puzzle_svg(
           puzzle_structure = puzzle_struct,
           offset = input$offset,
@@ -392,7 +426,7 @@ server <- function(input, output, session) {
           stroke_width = input$stroke_width,
           background = input$background
         )
-        
+
       } else {
         # Use standard generation for rectangular
         puzzle_result <- generate_puzzle(
@@ -407,7 +441,7 @@ server <- function(input, output, session) {
           background = input$background,
           save_files = FALSE
         )
-        
+
         # Use proper conditional instead of ifelse for character vectors
         if (output_mode == "complete") {
           svg <- puzzle_result$svg_complete
@@ -415,12 +449,12 @@ server <- function(input, output, session) {
           svg <- puzzle_result$svg_individual
         }
       }
-      
+
       incProgress(1, detail = "Complete!")
-      
+
       # Store the generated SVG
       svg_content(svg)
-      
+
       # Store puzzle data based on type
       if (puzzle_type == "hexagonal") {
         num_pieces <- 3 * input$rings * (input$rings - 1) + 1
@@ -442,7 +476,7 @@ server <- function(input, output, session) {
       }
     })
   })
-  
+
   # Display puzzle
   output$puzzle_display <- renderUI({
     if (is.null(svg_content())) {
@@ -456,12 +490,12 @@ server <- function(input, output, session) {
       HTML(svg_content())
     }
   })
-  
+
   # Display puzzle information
   output$puzzle_info <- renderUI({
     if (!is.null(puzzle_data())) {
       data <- puzzle_data()
-      
+
       if (data$type == "hexagonal") {
         # Hexagonal puzzle info
         tags$div(
@@ -481,12 +515,12 @@ server <- function(input, output, session) {
         # Rectangular puzzle info
         effective_width <- input$width
         effective_height <- input$height
-        
+
         if (input$output_mode == "separated") {
           effective_width <- input$width + (input$cols - 1) * input$offset
           effective_height <- input$height + (input$rows - 1) * input$offset
         }
-        
+
         tags$div(
           tags$p(
             tags$strong("Grid: "), sprintf("%d × %d", data$rows, data$cols),
@@ -495,15 +529,15 @@ server <- function(input, output, session) {
             tags$br(),
             tags$strong("Seed: "), data$seed,
             tags$br(),
-            tags$strong("Output Size: "), sprintf("%.0f × %.0f mm", 
+            tags$strong("Output Size: "), sprintf("%.0f × %.0f mm",
                                                  effective_width, effective_height),
             if (input$output_mode == "separated") {
               tags$span(
                 tags$br(),
-                tags$strong("Area Increase: "), 
-                sprintf("+%.1f%%", 
-                       ((effective_width * effective_height) - 
-                        (input$width * input$height)) / 
+                tags$strong("Area Increase: "),
+                sprintf("+%.1f%%",
+                       ((effective_width * effective_height) -
+                        (input$width * input$height)) /
                         (input$width * input$height) * 100)
               )
             }
@@ -512,7 +546,7 @@ server <- function(input, output, session) {
       }
     }
   })
-  
+
   # Download handler
   output$download <- downloadHandler(
     filename = function() {
@@ -520,10 +554,10 @@ server <- function(input, output, session) {
         data <- puzzle_data()
         if (data$type == "hexagonal") {
           output_mode <- input$output_mode_hex
-          sprintf("hexagonal_%drings_seed%d_%s.svg", 
+          sprintf("hexagonal_%drings_seed%d_%s.svg",
                  data$rings, data$seed, output_mode)
         } else {
-          sprintf("puzzle_%dx%d_seed%d_%s.svg", 
+          sprintf("puzzle_%dx%d_seed%d_%s.svg",
                  data$rows, data$cols, data$seed,
                  input$output_mode)
         }

@@ -384,7 +384,7 @@ validate_puzzle_fit <- function(puzzle_structure) {
     }
   }
   
-  cat("✓ Puzzle validation passed: All edges properly defined\n")
+  cat("[OK] Puzzle validation passed: All edges properly defined\n")
   cat("  -", length(edges$horizontal), "horizontal edge sets\n")
   cat("  -", length(edges$vertical), "vertical edge sets\n")
   cat("  - Total pieces:", xn * yn, "\n")

@@ -11,7 +11,9 @@
 #' 
 #' @param seed Random seed for reproducibility
 #' @param grid Vector c(rows, columns) for puzzle dimensions
-#' @param size Vector c(width, height) in mm
+#' @param size Vector c(width, height) in specified units
+#' @param unit Unit specification: "mm" (millimeters) or "px" (pixels)
+#' @param dpi DPI for pixel/mm conversion (96=screen, 300=print quality)
 #' @param tabsize Tab size as percentage (10-30)
 #' @param jitter Jitter as percentage (0-10)
 #' @return List with puzzle data and parameters
@@ -19,8 +21,14 @@
 generate_puzzle_core <- function(seed = 1234, 
                                 grid = c(2, 2),
                                 size = c(200, 200),
+                                unit = "mm",
+                                dpi = 96,
                                 tabsize = 20,
                                 jitter = 4) {
+  
+  # Conversion utilities
+  px_to_mm <- function(px_value, dpi) px_value * 25.4 / dpi
+  mm_to_px <- function(mm_value, dpi) mm_value * dpi / 25.4
   
   # Extract dimensions
   yn <- grid[1]  # rows
@@ -28,12 +36,21 @@ generate_puzzle_core <- function(seed = 1234,
   width <- size[1]
   height <- size[2]
   
+  # Convert to mm for internal calculations (algorithms expect mm)
+  if (unit == "px") {
+    width_mm <- px_to_mm(width, dpi)
+    height_mm <- px_to_mm(height, dpi)
+  } else {
+    width_mm <- width
+    height_mm <- height
+  }
+  
   # Initialize the jigsaw environment from rectangular_puzzle.R
   init_jigsaw(seed = seed, 
              tabsize = tabsize, 
              jitter = jitter,
-             width = width, 
-             height = height,
+             width = width_mm, 
+             height = height_mm,
              xn = xn, 
              yn = yn)
   
@@ -44,12 +61,15 @@ generate_puzzle_core <- function(seed = 1234,
   puzzle_structure <- list(
     seed = seed,
     grid = grid,
-    size = size,
+    size = size,              # Original size in user units
+    unit = unit,              # Unit specification
+    dpi = dpi,                # DPI setting
+    size_mm = c(width_mm, height_mm),  # Size in mm (internal calculations)
     tabsize = tabsize,
     jitter = jitter,
     edges = edges,
-    piece_width = width / xn,
-    piece_height = height / yn
+    piece_width = width_mm / xn,      # Piece dimensions in mm
+    piece_height = height_mm / yn
   )
   
   return(puzzle_structure)

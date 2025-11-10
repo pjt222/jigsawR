@@ -191,6 +191,10 @@ generate_individual_piece_path <- function(piece_xi, piece_yi, tab_data, xn, yn)
 #' @param height Puzzle height in mm (default: 200)
 #' @param stroke_width SVG stroke width (default: 1.5)
 #' @param piece_colors Vector of colors for piece strokes (default: single color)
+#' @param type Type of puzzle: "rectangular" or "hexagonal" (default: "rectangular")
+#' @param diameter Diameter for hexagonal puzzles in mm (default: 240)
+#' @param do_warp Apply circular warping for hexagonal puzzles (default: FALSE)
+#' @param do_trunc Truncate edges for hexagonal puzzles (default: FALSE)
 #' @return List containing SVG content and piece metadata
 #' @export
 generate_individual_pieces_svg <- function(seed = 1234, xn = 5, yn = 4, 

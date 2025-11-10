@@ -65,9 +65,9 @@ calculate_hex_grid_separation <- function(rings, offset, radius) {
     translation = c(0, 0)
   )
   
-  # Calculate positions for each ring
+  # Calculate positions for each ring (excluding the outer border ring)
   piece_index <- 1
-  for (ring in 1:rings) {
+  for (ring in 1:(rings - 1)) {
     pieces_in_ring <- 6 * ring
     
     for (i in 0:(pieces_in_ring - 1)) {
@@ -104,7 +104,7 @@ calculate_hex_grid_separation <- function(rings, offset, radius) {
   
   return(list(
     positions = positions,
-    viewBox = c(
+    viewBox = list(
       x = -max_extent,
       y = -max_extent,
       width = viewBox_width,
@@ -159,7 +159,7 @@ calculate_hex_rectangular_packing <- function(rings, offset, radius) {
   
   return(list(
     positions = positions,
-    viewBox = c(
+    viewBox = list(
       x = -viewBox_width / 2,
       y = -viewBox_height / 2,
       width = viewBox_width,
@@ -233,35 +233,117 @@ generate_separated_hexagonal_svg <- function(rings = 3, seed = NULL,
             rings, puzzle_struct$num_pieces, offset)
   )
   
-  # For now, add the complete puzzle paths with transform
-  # In full implementation, we'd trace and separate individual pieces
+  # Generate individual pieces at separated positions
   svg_lines <- c(svg_lines,
-    '  <g id="separated-hexagonal-puzzle">',
-    '    <g id="puzzle-structure" transform="translate(0,0)">',
-    sprintf('      <path d="%s" fill="none" stroke="black" stroke-width="%.1f"/>',
-            puzzle_struct$paths$horizontal, stroke_width),
-    sprintf('      <path d="%s" fill="none" stroke="black" stroke-width="%.1f"/>',
-            puzzle_struct$paths$vertical, stroke_width),
-    sprintf('      <path d="%s" fill="none" stroke="black" stroke-width="%.1f"/>',
-            puzzle_struct$paths$border, stroke_width * 1.5),
+    '  <g id="separated-hexagonal-puzzle">'
+  )
+  
+  # First generate individual pieces using standard function  
+  individual_result <- generate_hexagonal_individual_pieces(
+    rings = rings, seed = seed, diameter = diameter,
+    tabsize = tabsize, jitter = jitter,
+    do_warp = do_warp, do_trunc = do_trunc,
+    colors = colors, stroke_width = stroke_width,
+    save_files = FALSE
+  )
+  
+  # Show complete puzzle at original position (faded) for reference
+  svg_lines <- c(svg_lines,
+    '    <g id="original-puzzle-reference" opacity="0.2">',
+    sprintf('      <path d="%s" fill="none" stroke="gray" stroke-width="%.1f"/>',
+            puzzle_struct$paths$horizontal, stroke_width * 0.5),
+    sprintf('      <path d="%s" fill="none" stroke="gray" stroke-width="%.1f"/>',
+            puzzle_struct$paths$vertical, stroke_width * 0.5),
+    sprintf('      <path d="%s" fill="none" stroke="gray" stroke-width="%.1f"/>',
+            puzzle_struct$paths$border, stroke_width * 0.8),
     '    </g>'
   )
   
-  # Add position indicators for separated pieces (visual guide)
-  if (arrangement == "hexagonal" && offset > 0) {
-    svg_lines <- c(svg_lines, '    <g id="separation-guides" opacity="0.3">')
+  # Add piece representations using cumulative offset grid arrangement
+  svg_lines <- c(svg_lines, '    <g id="separated-pieces">')
+  
+  # Calculate grid dimensions for optimal arrangement
+  num_pieces <- puzzle_struct$num_pieces
+  pieces_per_row <- ceiling(sqrt(num_pieces))
+  
+  piece_num <- 1
+  piece_size <- diameter / (rings * 3)  # Base piece size
+  
+  # Use cumulative offset approach as requested
+  for (piece_index in 1:num_pieces) {
+    # Calculate grid position (0-based)
+    row <- floor((piece_index - 1) / pieces_per_row)
+    col <- (piece_index - 1) %% pieces_per_row
     
-    for (pos in puzzle_struct$separation$positions) {
-      if (pos$index > 0) {  # Skip center piece
-        svg_lines <- c(svg_lines,
-          sprintf('      <circle cx="%.2f" cy="%.2f" r="3" fill="red"/>',
-                  pos$x, pos$y)
-        )
+    # Apply cumulative offsets as requested:
+    # Piece 1: (0, 0), Piece 2: (0 + offset, 0), Piece 3: (0 + offset + offset, 0), etc.
+    cumulative_x <- col * (piece_size + offset)
+    cumulative_y <- row * (piece_size + offset)
+    
+    # Center the grid
+    total_grid_width <- pieces_per_row * (piece_size + offset) - offset
+    total_grid_height <- ceiling(num_pieces / pieces_per_row) * (piece_size + offset) - offset
+    centered_x <- cumulative_x - total_grid_width / 2
+    centered_y <- cumulative_y - total_grid_height / 2
+    
+    # Get color for this piece
+    piece_color <- "black"
+    if (!is.null(colors) && length(colors) > 0) {
+      if (length(colors) == 1 && colors[1] != "black") {
+        piece_color <- colors[1]
+      } else if (length(colors) > 1) {
+        piece_color <- colors[((piece_num - 1) %% length(colors)) + 1]
       }
     }
     
-    svg_lines <- c(svg_lines, '    </g>')
+    # Use actual piece shape instead of placeholder hexagon
+    # Generate individual piece to get its actual path
+    if (!exists("generate_hexagonal_individual_pieces")) {
+      # Load the function if not available
+      if (file.exists("R/hexagonal_individual_pieces.R")) {
+        source("R/hexagonal_individual_pieces.R")
+      }
+    }
+    
+    # Try to get the actual piece shape
+    piece_path <- get_individual_hexagonal_piece_path(piece_index, rings, seed, diameter, 
+                                                     tabsize, jitter, do_warp, do_trunc)
+    
+    # Transform the piece path to the separated position
+    if (!is.null(piece_path) && nchar(piece_path) > 10) {
+      transformed_path <- transform_hexagonal_piece_to_position(
+        piece_path, centered_x, centered_y, piece_index
+      )
+      
+      svg_lines <- c(svg_lines,
+        sprintf('      <path d="%s" fill="none" stroke="%s" stroke-width="%.1f" opacity="0.9"/>',
+                transformed_path, piece_color, stroke_width)
+      )
+    } else {
+      # Fallback to hexagon if actual piece not available
+      hex_radius <- piece_size * 0.4
+      svg_lines <- c(svg_lines,
+        sprintf('      <polygon points="%.2f,%.2f %.2f,%.2f %.2f,%.2f %.2f,%.2f %.2f,%.2f %.2f,%.2f" fill="none" stroke="%s" stroke-width="%.1f" opacity="0.8"/>',
+                centered_x + hex_radius, centered_y,
+                centered_x + hex_radius/2, centered_y - hex_radius*0.866,
+                centered_x - hex_radius/2, centered_y - hex_radius*0.866,
+                centered_x - hex_radius, centered_y,
+                centered_x - hex_radius/2, centered_y + hex_radius*0.866,
+                centered_x + hex_radius/2, centered_y + hex_radius*0.866,
+                piece_color, stroke_width)
+      )
+    }
+    
+    # Piece number label
+    svg_lines <- c(svg_lines,
+      sprintf('      <text x="%.2f" y="%.2f" text-anchor="middle" dominant-baseline="central" font-family="Arial, sans-serif" font-size="8" font-weight="bold" fill="%s">%d</text>',
+              centered_x, centered_y + 1, piece_color, piece_num)
+    )
+    
+    piece_num <- piece_num + 1
   }
+  
+  svg_lines <- c(svg_lines, '    </g>')
   
   svg_lines <- c(svg_lines, '  </g>', '</svg>')
   
@@ -287,4 +369,130 @@ calculate_optimal_hex_separation <- function(material_thickness,
   recommended <- min_separation * 1.2
   
   return(ceiling(recommended))
+}
+
+#' Get individual hexagonal piece path
+#' 
+#' Retrieves the actual path for a specific piece in a hexagonal puzzle
+#' 
+#' @param piece_index Index of the piece (1-based)
+#' @param rings Number of rings
+#' @param seed Random seed
+#' @param diameter Puzzle diameter
+#' @param tabsize Tab size percentage
+#' @param jitter Jitter percentage
+#' @param do_warp Apply circular warping
+#' @param do_trunc Truncate edge pieces
+#' @return SVG path string for the piece, or NULL if not available
+get_individual_hexagonal_piece_path <- function(piece_index, rings, seed, diameter,
+                                               tabsize, jitter, do_warp, do_trunc) {
+  
+  # Try to generate individual pieces efficiently
+  tryCatch({
+    # Generate just the pieces we need
+    individual_result <- generate_hexagonal_individual_pieces(
+      rings = rings, seed = seed, diameter = diameter,
+      tabsize = tabsize, jitter = jitter,
+      do_warp = do_warp, do_trunc = do_trunc,
+      save_files = FALSE
+    )
+    
+    if (piece_index <= length(individual_result$pieces)) {
+      return(individual_result$pieces[[piece_index]]$path)
+    }
+  }, error = function(e) {
+    cat(sprintf("Could not generate individual piece %d: %s\n", piece_index, e$message))
+  })
+  
+  return(NULL)
+}
+
+#' Transform hexagonal piece to new position
+#' 
+#' Applies translation to move a piece from its original position to a new location
+#' 
+#' @param piece_path Original SVG path
+#' @param new_x New X position
+#' @param new_y New Y position  
+#' @param piece_index Piece index for unique transformations
+#' @return Transformed SVG path
+transform_hexagonal_piece_to_position <- function(piece_path, new_x, new_y, piece_index) {
+  
+  # Simple translation approach
+  # Extract coordinates and apply offset
+  coords <- regmatches(piece_path, gregexpr("-?\\d+\\.?\\d*", piece_path))[[1]]
+  coords_num <- as.numeric(coords)
+  coords_num <- coords_num[!is.na(coords_num)]
+  
+  if (length(coords_num) >= 2) {
+    # Calculate offset from first coordinate to new position
+    offset_x <- new_x - coords_num[1]
+    offset_y <- new_y - coords_num[2]
+    
+    # Apply offset to all coordinates
+    for (i in seq(1, length(coords_num), by = 2)) {
+      if (i + 1 <= length(coords_num)) {
+        coords_num[i] <- coords_num[i] + offset_x
+        coords_num[i + 1] <- coords_num[i + 1] + offset_y
+      }
+    }
+    
+    # Replace coordinates in the original path
+    coord_strings <- sprintf("%.2f", coords_num)
+    transformed_path <- piece_path
+    for (i in 1:length(coords)) {
+      if (i <= length(coord_strings)) {
+        transformed_path <- sub("-?\\d+\\.?\\d*", coord_strings[i], transformed_path)
+      }
+    }
+    
+    return(transformed_path)
+  }
+  
+  return(piece_path)
+}
+
+#' Calculate bounds for hexagonal pieces
+#'
+#' @param pieces List of hexagonal pieces
+#' @return List of bounding box data for each piece
+calculate_hexagonal_piece_bounds <- function(pieces) {
+  
+  bounds_list <- list()
+  
+  for (i in seq_along(pieces)) {
+    piece <- pieces[[i]]
+    
+    if (!is.null(piece$path)) {
+      coords <- extract_coordinates_from_path(piece$path)
+      
+      if (length(coords) >= 4) {
+        x_coords <- coords[seq(1, length(coords), by = 2)]
+        y_coords <- coords[seq(2, length(coords), by = 2)]
+        
+        bounds_list[[i]] <- list(
+          x_min = min(x_coords, na.rm = TRUE),
+          x_max = max(x_coords, na.rm = TRUE),
+          y_min = min(y_coords, na.rm = TRUE),
+          y_max = max(y_coords, na.rm = TRUE),
+          width = max(x_coords, na.rm = TRUE) - min(x_coords, na.rm = TRUE),
+          height = max(y_coords, na.rm = TRUE) - min(y_coords, na.rm = TRUE)
+        )
+      } else {
+        # Default bounds if coordinates can't be extracted
+        bounds_list[[i]] <- list(
+          x_min = -10, x_max = 10, y_min = -10, y_max = 10,
+          width = 20, height = 20
+        )
+      }
+    } else {
+      # Default bounds for pieces without paths
+      bounds_list[[i]] <- list(
+        x_min = -10, x_max = 10, y_min = -10, y_max = 10,
+        width = 20, height = 20
+      )
+    }
+  }
+  
+  return(bounds_list)
 }
