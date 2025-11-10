@@ -241,18 +241,23 @@ ui <- fluidPage(
         # Help text for individual pieces download
         conditionalPanel(
           condition = "input.output_mode == 'individual' || input.output_mode_hex == 'individual'",
-          div(style = "margin-top: 10px; padding: 8px; background: #fff3cd; border: 1px solid #ffc107; border-radius: 4px;",
+          div(style = "margin-top: 10px; padding: 8px; background: #d1ecf1; border: 1px solid #17a2b8; border-radius: 4px;",
             p(style = "font-size: 12px; margin: 0;",
               icon("info-circle"),
               strong(" Individual Pieces:"),
-              br(),
-              "Download provides a combined SVG with colored pieces.",
-              br(),
-              strong("For separate files:"), " Open the SVG in a text editor and copy the R code from the comment at the top.",
               conditionalPanel(
                 condition = "input.puzzle_type == 'rectangular'",
                 br(),
-                em("Or run: generate_individual_pieces(...) in R console")
+                "Download creates a ZIP file containing all individual pieces as separate SVG files.",
+                br(),
+                em("Note: Requires 'zip' package. Install with: install.packages('zip')")
+              ),
+              conditionalPanel(
+                condition = "input.puzzle_type == 'hexagonal'",
+                br(),
+                "Individual hexagonal pieces coming soon (see GitHub Issue #10).",
+                br(),
+                "Currently downloads combined SVG with all pieces."
               )
             )
           )
@@ -572,26 +577,17 @@ server <- function(input, output, session) {
     filename = function() {
       if (!is.null(puzzle_data())) {
         data <- puzzle_data()
-
-        # Check if individual pieces mode is selected
         output_mode <- if (data$type == "hexagonal") input$output_mode_hex else input$output_mode
 
-        if (output_mode == "individual") {
-          # Return SVG filename (ZIP temporarily disabled due to browser compatibility)
-          if (data$type == "hexagonal") {
-            sprintf("hexagonal_%drings_seed%d_individual.svg", data$rings, data$seed)
-          } else {
-            sprintf("puzzle_%dx%d_seed%d_individual.svg", data$rows, data$cols, data$seed)
-          }
+        if (output_mode == "individual" && data$type == "rectangular") {
+          # Return ZIP filename for individual pieces
+          sprintf("puzzle_%dx%d_seed%d_pieces.zip", data$rows, data$cols, data$seed)
+        } else if (data$type == "hexagonal") {
+          sprintf("hexagonal_%drings_seed%d_%s.svg",
+                 data$rings, data$seed, output_mode)
         } else {
-          # Return SVG filename for complete/separated puzzles
-          if (data$type == "hexagonal") {
-            sprintf("hexagonal_%drings_seed%d_%s.svg",
-                   data$rings, data$seed, output_mode)
-          } else {
-            sprintf("puzzle_%dx%d_seed%d_%s.svg",
-                   data$rows, data$cols, data$seed, output_mode)
-          }
+          sprintf("puzzle_%dx%d_seed%d_%s.svg",
+                 data$rows, data$cols, data$seed, output_mode)
         }
       } else {
         "puzzle.svg"
@@ -603,30 +599,51 @@ server <- function(input, output, session) {
         output_mode <- if (data$type == "hexagonal") input$output_mode_hex else input$output_mode
 
         if (output_mode == "individual" && data$type == "rectangular") {
-          # TEMPORARY WORKAROUND: Download combined SVG with note
-          # ZIP download has compatibility issues in some Shiny environments
-          # Users can generate individual files using code directly
+          # Generate individual pieces and create ZIP file
 
-          if (!is.null(svg_content())) {
-            # Add a comment to the SVG explaining how to get individual pieces
-            svg_with_note <- paste0(
-              "<!-- \n",
-              "  Individual Pieces Mode: This SVG shows all pieces with colors.\n",
-              "  To get separate SVG files for each piece, use R code:\n",
-              "  \n",
-              "  result <- generate_individual_pieces(\n",
-              "    seed = ", data$seed, ",\n",
-              "    xn = ", data$cols, ",\n",
-              "    yn = ", data$rows, ",\n",
-              "    width = ", data$width, ",\n",
-              "    height = ", data$height, "\n",
-              "  )\n",
-              "  # Files saved to: output/piece_*.svg\n",
-              "-->\n",
-              svg_content()
-            )
-            writeLines(svg_with_note, file)
+          # Check if zip package is available
+          if (!requireNamespace("zip", quietly = TRUE)) {
+            stop("Package 'zip' is required for downloading individual pieces.\n",
+                 "Please install it with: install.packages('zip')")
           }
+
+          # Create temporary directory for pieces
+          temp_dir <- tempfile()
+          dir.create(temp_dir)
+
+          tryCatch({
+            # Generate individual pieces
+            result <- generate_individual_pieces(
+              seed = data$seed,
+              xn = data$cols,
+              yn = data$rows,
+              width = data$width,
+              height = data$height,
+              output_dir = temp_dir,
+              quiet = TRUE
+            )
+
+            # Get list of generated files
+            piece_files <- list.files(temp_dir, pattern = "piece_.*\\.svg$", full.names = TRUE)
+
+            if (length(piece_files) == 0) {
+              stop("No piece files were generated")
+            }
+
+            # Create ZIP file
+            zip::zip(
+              zipfile = file,
+              files = basename(piece_files),
+              root = temp_dir,
+              mode = "cherry-pick"
+            )
+
+          }, error = function(e) {
+            stop("Error creating ZIP file: ", e$message)
+          }, finally = {
+            # Clean up temp directory
+            unlink(temp_dir, recursive = TRUE)
+          })
 
         } else if (output_mode == "individual" && data$type == "hexagonal") {
           # For hexagonal, currently download the combined SVG
@@ -643,7 +660,17 @@ server <- function(input, output, session) {
         }
       }
     },
-    contentType = "image/svg+xml"
+    contentType = function() {
+      if (!is.null(puzzle_data())) {
+        data <- puzzle_data()
+        output_mode <- if (data$type == "hexagonal") input$output_mode_hex else input$output_mode
+
+        if (output_mode == "individual" && data$type == "rectangular") {
+          return("application/zip")
+        }
+      }
+      return("image/svg+xml")
+    }
   )
 }
 
