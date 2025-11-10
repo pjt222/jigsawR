@@ -641,31 +641,82 @@ server <- function(input, output, session) {
           file.remove(old_files)
         }
 
-        # Generate individual pieces
-        result <- generate_individual_pieces(
-          seed = data$seed,
-          xn = data$cols,
-          yn = data$rows,
-          width = data$width,
-          height = data$height,
-          output_dir = pieces_dir,
-          save_combined = FALSE
-        )
+        # Test write permissions
+        test_file <- file.path(pieces_dir, "test.txt")
+        tryCatch({
+          writeLines("test", test_file)
+          if (file.exists(test_file)) file.remove(test_file)
+        }, error = function(e) {
+          showNotification(
+            paste("Cannot write to directory:", e$message),
+            type = "error",
+            duration = 10
+          )
+          return(NULL)
+        })
 
-        # Get list of generated files
-        piece_files <- list.files(pieces_dir, pattern = "piece_.*\\.svg$", full.names = FALSE)
+        # Generate individual pieces (suppress console output)
+        capture.output({
+          result <- generate_individual_pieces(
+            seed = data$seed,
+            xn = data$cols,
+            yn = data$rows,
+            width = data$width,
+            height = data$height,
+            output_dir = pieces_dir,
+            save_combined = FALSE
+          )
+        })
+
+        # Verify files were created and have content
+        piece_files <- list.files(pieces_dir, pattern = "piece_.*\\.svg$", full.names = TRUE)
 
         if (length(piece_files) > 0) {
-          # Create file list for JavaScript
-          files_list <- lapply(piece_files, function(filename) {
-            list(
-              url = paste0("pieces/", filename),
-              name = filename
-            )
-          })
+          # Check that files have content
+          file_sizes <- sapply(piece_files, file.size)
+          files_ok <- all(file_sizes > 0)
 
-          # Send to JavaScript for sequential download
-          session$sendCustomMessage("downloadFiles", files_list)
+          # Debug: show file info
+          cat(sprintf("Generated %d files in %s\n", length(piece_files), pieces_dir))
+          cat(sprintf("File sizes: %s\n", paste(file_sizes, collapse = ", ")))
+          cat(sprintf("First file content (first 100 chars):\n%s\n",
+                     substr(paste(readLines(piece_files[1], warn = FALSE), collapse = "\n"), 1, 100)))
+
+          if (files_ok) {
+            # Ensure files are flushed to disk
+            Sys.sleep(0.5)
+
+            # Create file list for JavaScript
+            files_list <- lapply(basename(piece_files), function(filename) {
+              list(
+                url = paste0("pieces/", filename),
+                name = filename
+              )
+            })
+
+            # Send to JavaScript for sequential download
+            session$sendCustomMessage("downloadFiles", files_list)
+
+            showNotification(
+              sprintf("Downloading %d piece files... (sizes: %s bytes)",
+                     length(piece_files),
+                     paste(file_sizes, collapse = ", ")),
+              type = "message",
+              duration = 5
+            )
+          } else {
+            showNotification(
+              "Error: Generated files are empty",
+              type = "error",
+              duration = 5
+            )
+          }
+        } else {
+          showNotification(
+            "Error: No piece files were generated",
+            type = "error",
+            duration = 5
+          )
         }
 
       } else if (data$type == "hexagonal") {
