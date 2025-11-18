@@ -32,7 +32,9 @@ cat("Files in parent dir:", paste(list.files(".."), collapse=", "), "\n")
 cat("Files in parent/parent dir:", paste(list.files("../.."), collapse=", "), "\n")
 
 # Try to load functions (adjust path based on where app is run from)
-possible_paths <- c("../../R", "../R", "R", "./R")
+# On shinyapps.io, R files will be in ./R (same directory as app.R)
+# During local development, they're in ../../R
+possible_paths <- c("R", "./R", "../../R", "../R")
 loaded <- FALSE
 
 for (path in possible_paths) {
@@ -47,6 +49,7 @@ for (path in possible_paths) {
 
 if (!loaded) {
   cat("ERROR: Could not find R directory in any expected location!\n")
+  cat("Current files:", paste(list.files(), collapse=", "), "\n")
 }
 
 # Define UI

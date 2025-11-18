@@ -32,8 +32,39 @@ app_dir <- file.path("inst", "shiny-app")
 # App name (you can change this if you want a different name on shinyapps.io)
 app_name <- "jigsawR"
 
+# Prepare files to deploy
+# We need to copy R files to the app directory so they get deployed
+r_source_dir <- "R"
+r_dest_dir <- file.path(app_dir, "R")
+
+cat("Copying R source files...\n")
+cat("From:", r_source_dir, "\n")
+cat("To:", r_dest_dir, "\n")
+
+# Remove old R directory if it exists
+if (dir.exists(r_dest_dir)) {
+  unlink(r_dest_dir, recursive = TRUE)
+}
+
+# Copy R directory to app directory
+dir.create(r_dest_dir, recursive = TRUE)
+r_files <- list.files(r_source_dir, pattern = "\\.R$", full.names = TRUE, recursive = TRUE)
+for (r_file in r_files) {
+  # Skip archive files
+  if (!grepl("scripts_archive", r_file)) {
+    rel_path <- sub(paste0("^", r_source_dir, "/"), "", r_file)
+    dest_file <- file.path(r_dest_dir, rel_path)
+    dest_dir_path <- dirname(dest_file)
+    if (!dir.exists(dest_dir_path)) {
+      dir.create(dest_dir_path, recursive = TRUE)
+    }
+    file.copy(r_file, dest_file)
+    cat("  Copied:", rel_path, "\n")
+  }
+}
+
 # Deploy the application
-cat("Deploying app from:", app_dir, "\n")
+cat("\nDeploying app from:", app_dir, "\n")
 cat("App name:", app_name, "\n")
 cat("Account:", account, "\n")
 
@@ -42,8 +73,7 @@ rsconnect::deployApp(
   appName = app_name,
   account = account,
   forceUpdate = TRUE,
-  launch.browser = FALSE,
-  appFiles = c("app.R", "www/", "../../R/")
+  launch.browser = FALSE
 )
 
 cat("\nDeployment successful!\n")
