@@ -42,7 +42,5 @@ jobs:
           SHINYAPPS_ACCOUNT: ${{ secrets.SHINYAPPS_ACCOUNT }}
           SHINYAPPS_TOKEN: ${{ secrets.SHINYAPPS_TOKEN }}
           SHINYAPPS_SECRET: ${{ secrets.SHINYAPPS_SECRET }}
-          RENV_CONFIG_REPOS_OVERRIDE: ""
-          R_LIB_FOR_PAK: ""
         run: |
-          Rscript --vanilla inst/shiny-app/deploy.R
+          Rscript inst/shiny-app/deploy.R
