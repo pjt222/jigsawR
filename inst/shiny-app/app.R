@@ -7,22 +7,46 @@ library(shinyjs)
 # Source the required functions from the package
 # In production, these would be loaded via library(jigsawR)
 source_dir <- function(path) {
+  cat("Attempting to source from:", path, "\n")
   if (file.exists(path)) {
+    cat("Directory exists!\n")
     files <- list.files(path, pattern = "\\.R$", full.names = TRUE)
+    cat("Found", length(files), "R files\n")
     for (file in files) {
       # Skip archive and example files
       if (!grepl("scripts_archive|examples", file)) {
+        cat("Sourcing:", basename(file), "\n")
         source(file)
       }
     }
+  } else {
+    cat("Directory does NOT exist\n")
   }
 }
 
+# Debug: Show current working directory and files
+cat("=== App Initialization ===\n")
+cat("Working directory:", getwd(), "\n")
+cat("Files in current dir:", paste(list.files(), collapse=", "), "\n")
+cat("Files in parent dir:", paste(list.files(".."), collapse=", "), "\n")
+cat("Files in parent/parent dir:", paste(list.files("../.."), collapse=", "), "\n")
+
 # Try to load functions (adjust path based on where app is run from)
-if (file.exists("../../R")) {
-  source_dir("../../R")
-} else if (file.exists("R")) {
-  source_dir("R")
+possible_paths <- c("../../R", "../R", "R", "./R")
+loaded <- FALSE
+
+for (path in possible_paths) {
+  cat("\nTrying path:", path, "\n")
+  if (file.exists(path)) {
+    cat("SUCCESS: Found R directory at", path, "\n")
+    source_dir(path)
+    loaded <- TRUE
+    break
+  }
+}
+
+if (!loaded) {
+  cat("ERROR: Could not find R directory in any expected location!\n")
 }
 
 # Define UI
