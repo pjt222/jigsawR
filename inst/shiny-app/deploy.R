@@ -6,6 +6,9 @@
 Sys.setenv(RENV_CONFIG_AUTOLOADER_ENABLED = "FALSE")
 Sys.setenv(RENV_ACTIVATE_PROJECT = "")
 
+# Set CRAN mirror (needed when using --vanilla flag)
+options(repos = c(CRAN = "https://cloud.r-project.org"))
+
 # Get credentials from environment variables
 account <- Sys.getenv("SHINYAPPS_ACCOUNT")
 token <- Sys.getenv("SHINYAPPS_TOKEN")
