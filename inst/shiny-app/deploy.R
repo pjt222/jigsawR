@@ -42,7 +42,8 @@ rsconnect::deployApp(
   appName = app_name,
   account = account,
   forceUpdate = TRUE,
-  launch.browser = FALSE
+  launch.browser = FALSE,
+  appFiles = c("app.R", "www/")
 )
 
 cat("\nDeployment successful!\n")
