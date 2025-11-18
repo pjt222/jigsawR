@@ -63,18 +63,42 @@ for (r_file in r_files) {
   }
 }
 
+# Temporarily hide renv.lock to prevent rsconnect from detecting it
+renv_lock <- "renv.lock"
+renv_lock_backup <- "renv.lock.backup"
+renv_hidden <- FALSE
+
+if (file.exists(renv_lock)) {
+  cat("Temporarily hiding renv.lock to avoid deployment conflicts\n")
+  file.rename(renv_lock, renv_lock_backup)
+  renv_hidden <- TRUE
+}
+
 # Deploy the application
 cat("\nDeploying app from:", app_dir, "\n")
 cat("App name:", app_name, "\n")
 cat("Account:", account, "\n")
 
-rsconnect::deployApp(
-  appDir = app_dir,
-  appName = app_name,
-  account = account,
-  forceUpdate = TRUE,
-  launch.browser = FALSE
-)
+tryCatch({
+  rsconnect::deployApp(
+    appDir = app_dir,
+    appName = app_name,
+    account = account,
+    forceUpdate = TRUE,
+    launch.browser = FALSE,
+    lint = FALSE,
+    metadata = list(
+      appMode = "shiny",
+      contentCategory = "application"
+    )
+  )
+}, finally = {
+  # Restore renv.lock
+  if (renv_hidden && file.exists(renv_lock_backup)) {
+    cat("Restoring renv.lock\n")
+    file.rename(renv_lock_backup, renv_lock)
+  }
+})
 
 cat("\nDeployment successful!\n")
 cat("App URL: https://", account, ".shinyapps.io/", app_name, "/\n", sep = "")
