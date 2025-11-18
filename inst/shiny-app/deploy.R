@@ -25,8 +25,9 @@ rsconnect::setAccountInfo(
   secret = secret
 )
 
-# Get app directory (this script is in inst/shiny-app/)
-app_dir <- dirname(normalizePath(sys.frame(1)$ofile))
+# Get app directory
+# When called from GitHub Actions, use the inst/shiny-app directory
+app_dir <- file.path("inst", "shiny-app")
 
 # App name (you can change this if you want a different name on shinyapps.io)
 app_name <- "jigsawR"
