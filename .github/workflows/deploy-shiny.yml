@@ -41,7 +41,7 @@ jobs:
       - name: Check package
         uses: r-lib/actions/check-r-package@v2
         with:
-          error-on: 'warning'
+          error-on: warning
 
       - name: Deploy to shinyapps.io
         env:
