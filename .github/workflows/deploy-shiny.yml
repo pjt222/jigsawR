@@ -45,4 +45,4 @@ jobs:
           RENV_CONFIG_REPOS_OVERRIDE: ""
           R_LIB_FOR_PAK: ""
         run: |
-          Rscript inst/shiny-app/deploy.R
+          Rscript --vanilla inst/shiny-app/deploy.R
