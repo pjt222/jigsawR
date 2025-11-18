@@ -23,14 +23,14 @@ Imports:
     ggplot2,
     ggforce,
     ggfx,
-    viridis
-Suggests:
-    rsvg,
-    magick,
-    testthat (>= 3.0.0),
-    knitr,
-    rmarkdown,
+    viridis,
     shiny,
     shinyjs,
+    rsvg,
+    magick,
     zip
+Suggests:
+    testthat (>= 3.0.0),
+    knitr,
+    rmarkdown
 VignetteBuilder: knitr
