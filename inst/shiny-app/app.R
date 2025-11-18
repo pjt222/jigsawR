@@ -391,10 +391,17 @@ server <- function(input, output, session) {
   # Generate puzzle
   observeEvent(input$generate, {
 
-    # Show progress
-    withProgress(message = 'Generating puzzle...', value = 0, {
+    cat("=== Generate button clicked ===\n")
+    cat("Puzzle type:", input$puzzle_type, "\n")
+    cat("Working directory:", getwd(), "\n")
+    cat("Files in current dir:", paste(list.files(), collapse=", "), "\n")
 
-      incProgress(0.3, detail = "Creating puzzle structure")
+    tryCatch({
+      # Show progress
+      withProgress(message = 'Generating puzzle...', value = 0, {
+
+        incProgress(0.3, detail = "Creating puzzle structure")
+        cat("Progress: Creating puzzle structure\n")
 
       # Define colors based on scheme
       colors <- switch(input$color_scheme,
@@ -503,6 +510,7 @@ server <- function(input, output, session) {
       incProgress(1, detail = "Complete!")
 
       # Store the generated SVG
+      cat("Storing SVG content, length:", nchar(svg), "\n")
       svg_content(svg)
 
       # Store puzzle data based on type
@@ -526,6 +534,15 @@ server <- function(input, output, session) {
           total_pieces = input$rows * input$cols
         ))
       }
+      cat("Puzzle generation complete!\n")
+    })
+    }, error = function(e) {
+      cat("ERROR in puzzle generation:\n")
+      cat("Message:", e$message, "\n")
+      cat("Call:", deparse(e$call), "\n")
+      cat("Traceback:\n")
+      print(traceback())
+      showNotification(paste("Error:", e$message), type = "error", duration = 10)
     })
   })
 
