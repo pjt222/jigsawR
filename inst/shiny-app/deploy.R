@@ -2,6 +2,10 @@
 # Deployment script for jigsawR Shiny app to shinyapps.io
 # This script is called by GitHub Actions workflow
 
+# Disable renv entirely for deployment
+Sys.setenv(RENV_CONFIG_AUTOLOADER_ENABLED = "FALSE")
+Sys.setenv(RENV_ACTIVATE_PROJECT = "")
+
 # Get credentials from environment variables
 account <- Sys.getenv("SHINYAPPS_ACCOUNT")
 token <- Sys.getenv("SHINYAPPS_TOKEN")
