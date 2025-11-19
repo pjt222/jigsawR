@@ -99,17 +99,17 @@ generate_hexagonal_individual_pieces <- function(rings = 3, seed = NULL,
     seed <- as.integer(runif(1) * 10000)
   }
   
-  cat("🔥 IMPLEMENTING THE HARD QUESTION: Actual individual piece extraction!\n")
-  
+  log_header("Actual individual piece extraction")
+
   # Extract puzzle structure
   puzzle_struct <- extract_hexagonal_puzzle_structure(
     rings = rings, seed = seed, diameter = diameter,
     tabsize = tabsize, jitter = jitter,
     do_warp = do_warp, do_trunc = do_trunc
   )
-  
+
   num_pieces <- puzzle_struct$num_pieces
-  cat("Extracting", num_pieces, "individual pieces from hexagonal puzzle...\n")
+  log_info("Extracting {num_pieces} individual pieces from hexagonal puzzle...")
   
   # Parse the complete puzzle paths to extract individual piece boundaries
   individual_pieces <- extract_individual_hexagonal_piece_paths(puzzle_struct)
@@ -151,9 +151,9 @@ generate_hexagonal_individual_pieces <- function(rings = 3, seed = NULL,
     method = "actual_piece_extraction"
   )
   
-  cat("✅ Individual piece extraction completed!\n")
-  cat("Generated", length(individual_pieces), "actual piece shapes with tabs and blanks\n")
-  
+  log_success("Individual piece extraction completed!")
+  log_info("Generated {length(individual_pieces)} actual piece shapes with tabs and blanks")
+
   return(result)
 }
 
@@ -212,37 +212,35 @@ calculate_hex_piece_position <- function(piece_index, rings) {
 #' @param puzzle_struct Complete puzzle structure from extract_hexagonal_puzzle_structure
 #' @return List of individual piece data with actual parsed paths
 extract_individual_hexagonal_piece_paths <- function(puzzle_struct) {
-  
-  cat("🔍 Parsing actual SVG paths to extract individual piece boundaries...\n")
-  cat("Using shared edge principle: adjacent pieces use the same path segments\n")
-  
+
+  log_subheader("Parsing SVG paths to extract individual piece boundaries")
+  log_info("Using shared edge principle: adjacent pieces use the same path segments")
+
   rings <- puzzle_struct$rings
   diameter <- puzzle_struct$diameter
   num_pieces <- puzzle_struct$num_pieces
-  
+
   # Parse the complete puzzle paths into individual segments
   path_segments <- parse_hexagonal_puzzle_paths(puzzle_struct)
-  
-  cat("Parsed", length(path_segments$horizontal), "horizontal segments,",
-      length(path_segments$vertical), "vertical segments,",
-      length(path_segments$border), "border segments\n")
-  
+
+  log_info("Parsed {length(path_segments$horizontal)} horizontal segments, {length(path_segments$vertical)} vertical segments, {length(path_segments$border)} border segments")
+
   # Calculate hexagonal piece structure (which piece is where)
   piece_positions <- calculate_hexagonal_piece_positions(rings)
-  
-  cat(sprintf("Expected %d pieces, got %d positions\n", num_pieces, length(piece_positions)))
-  
+
+  log_info("Expected {num_pieces} pieces, got {length(piece_positions)} positions")
+
   # Extract individual piece paths by tracing boundaries
   pieces <- list()
-  
+
   for (i in 1:num_pieces) {
     piece_pos <- piece_positions[[i]]
-    
+
     # Trace the boundary of this piece using shared path segments
     piece_path <- trace_hexagonal_piece_boundary(
       piece_pos, path_segments, rings, diameter
     )
-    
+
     pieces[[i]] <- list(
       index = i,
       type = piece_pos$type,
@@ -254,8 +252,8 @@ extract_individual_hexagonal_piece_paths <- function(puzzle_struct) {
       stroke_width = 1
     )
   }
-  
-  cat("Extracted", length(pieces), "individual pieces using actual puzzle paths\n")
+
+  log_success("Extracted {length(pieces)} individual pieces using actual puzzle paths")
   return(pieces)
 }
 
@@ -364,9 +362,8 @@ calculate_hexagonal_piece_positions <- function(rings) {
     }
   }
   
-  cat(sprintf("Generated %d hexagonal piece positions for %d rings\n", 
-              length(positions), rings))
-  
+  log_info("Generated {length(positions)} hexagonal piece positions for {rings} rings")
+
   return(positions)
 }
 
@@ -384,32 +381,31 @@ calculate_hexagonal_piece_positions <- function(rings) {
 #' @param diameter Puzzle diameter
 #' @return Complete SVG path for the individual piece using actual segments
 trace_hexagonal_piece_boundary <- function(piece_pos, path_segments, rings, diameter) {
-  
-  cat(sprintf("Tracing piece %d (ring %d, pos %d) using actual path segments\n", 
-              piece_pos$index, piece_pos$ring, piece_pos$position_in_ring))
-  
+
+  log_info("Tracing piece {piece_pos$index} (ring {piece_pos$ring}, pos {piece_pos$position_in_ring}) using actual path segments")
+
   # For a proper implementation, we need to:
   # 1. Map hexagonal grid coordinates to path segment indices
   # 2. Find which segments form this piece's boundary
   # 3. Trace them clockwise with proper orientations
-  
+
   ring <- piece_pos$ring
   pos <- piece_pos$position_in_ring
   index <- piece_pos$index
-  
+
   # Identify the boundary segments for this piece
   boundary_segments <- identify_piece_boundary_segments(piece_pos, path_segments, rings)
-  
+
   if (length(boundary_segments) == 0) {
-    cat(sprintf("Warning: No boundary segments found for piece %d, using fallback\n", index))
+    log_warn("No boundary segments found for piece {index}, using fallback")
     return(create_fallback_hexagonal_path(piece_pos, diameter, rings))
   }
-  
+
   # Trace the boundary clockwise using the actual segments
   piece_path <- trace_boundary_from_segments(boundary_segments, piece_pos)
-  
-  cat(sprintf("Piece %d path length: %d characters\n", index, nchar(piece_path)))
-  
+
+  log_info("Piece {index} path length: {nchar(piece_path)} characters")
+
   return(piece_path)
 }
 
@@ -470,9 +466,8 @@ identify_piece_boundary_segments <- function(piece_pos, path_segments, rings) {
     }
   }
   
-  cat(sprintf("Piece (%d,%d) ring %d: found %d boundary segments\n", 
-              q, r, ring, length(boundary_segments)))
-  
+  log_info("Piece ({q},{r}) ring {ring}: found {length(boundary_segments)} boundary segments")
+
   return(boundary_segments)
 }
 
@@ -623,12 +618,11 @@ find_border_segment_for_edge_piece <- function(piece_pos, path_segments, rings) 
 trace_boundary_from_segments <- function(boundary_segments, piece_pos) {
   
   if (length(boundary_segments) == 0) {
-    cat(sprintf("No boundary segments for piece %d, using fallback\n", piece_pos$index))
+    log_warn("No boundary segments for piece {piece_pos$index}, using fallback")
     return(create_fallback_hexagonal_path(piece_pos, 100, 3))
   }
-  
-  cat(sprintf("Tracing boundary for piece %d using %d segments\n", 
-              piece_pos$index, length(boundary_segments)))
+
+  log_info("Tracing boundary for piece {piece_pos$index} using {length(boundary_segments)} segments")
   
   # Assemble segments in clockwise order
   path_parts <- list()
@@ -682,13 +676,12 @@ trace_boundary_from_segments <- function(boundary_segments, piece_pos) {
   
   # Validate path has minimum length
   if (nchar(complete_path) < 20) {
-    cat(sprintf("Generated path too short for piece %d, using enhanced fallback\n", piece_pos$index))
+    log_warn("Generated path too short for piece {piece_pos$index}, using enhanced fallback")
     return(create_enhanced_hexagonal_path(piece_pos, boundary_segments))
   }
-  
-  cat(sprintf("Piece %d: generated path length %d characters\n", 
-              piece_pos$index, nchar(complete_path)))
-  
+
+  log_info("Piece {piece_pos$index}: generated path length {nchar(complete_path)} characters")
+
   return(complete_path)
 }
 
@@ -728,7 +721,7 @@ process_segment_for_piece <- function(raw_segment, segment_info, piece_pos, segm
   if (!is.null(segment_info$direction) && segment_info$direction == "reverse") {
     # For hexagonal puzzles, implement segment reversal
     processed <- reverse_hexagonal_segment(processed)
-    cat(sprintf("Piece %d segment %d: REVERSED\n", piece_pos$index, segment_index))
+    log_info("Piece {piece_pos$index} segment {segment_index}: REVERSED")
   }
   
   # Apply piece-specific variation to make each piece unique
@@ -1157,9 +1150,9 @@ save_hexagonal_individual_pieces <- function(pieces, puzzle_struct, output_dir) 
     saved_files <- c(saved_files, filename)
   }
   
-  cat("Saved", length(pieces), "individual hexagonal pieces to", output_dir, "\n")
-  cat("Combined file:", combined_filename, "\n")
-  
+  log_success("Saved {length(pieces)} individual hexagonal pieces to {.path {output_dir}}")
+  log_info("Combined file: {.file {combined_filename}}")
+
   return(saved_files)
 }
 

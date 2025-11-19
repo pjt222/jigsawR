@@ -21,38 +21,38 @@ generate_svg_puzzle_layers <- function(seed = 1234, diameter = 240, rings = 4,
                                       line_color = "black", line_width = 2.0,
                                       transparent_background = FALSE) {
   
-  cat("Generating SVG puzzle (seed:", seed, ", rings:", rings, ")...\n")
-  
+  log_info("Generating SVG puzzle (seed: {seed}, rings: {rings})...")
+
   # Check conversion tools before starting
   tools_status <- check_conversion_tools()
   if (!tools_status$any_available) {
     return(NULL)
   }
-  
+
   # Create enhanced SVG
   puzzle_svg <- create_enhanced_puzzle_svg(
     seed = seed, diameter = diameter, rings = rings,
     tabsize = tabsize, jitter = jitter,
     line_color = line_color, line_width = line_width
   )
-  
+
   # Save the SVG file
   svg_file <- paste0(base_filename, ".svg")
   save_enhanced_svg(puzzle_svg$svg_content, svg_file)
-  
+
   # Convert SVG to PNG overlay
   overlay_file <- paste0(base_filename, "_overlay.png")
   conversion_success <- convert_svg_to_png(puzzle_svg$svg_content, overlay_file, size_px, size_px)
-  
+
   if (!conversion_success) {
-    cat("  Failed to create PNG overlay\n")
+    log_error("Failed to create PNG overlay")
     return(NULL)
   } else {
-    cat("  Overlay PNG saved:", overlay_file, "\n")
+    log_success("Overlay PNG saved: {.file {overlay_file}}")
   }
-  
+
   # Create gradient background
-  cat("  Creating gradient background...\n")
+  log_info("Creating gradient background...")
   gradient_plot <- create_gradient_circle_png(size_px, diameter)
   
   background_file <- paste0(base_filename, "_background.png")
@@ -80,22 +80,22 @@ generate_svg_puzzle_layers <- function(seed = 1234, diameter = 240, rings = 4,
 #' @return List of results for each variation
 #' @export
 generate_puzzle_variations <- function(variations) {
-  
-  cat("=== SVG to PNG Conversion Approach ===\n")
-  
+
+  log_header("SVG to PNG Conversion Approach")
+
   # Check tools once at the beginning
   tools_status <- check_conversion_tools()
   if (!tools_status$any_available) {
     return(NULL)
   }
-  
-  cat("\nGenerating puzzle variations...\n\n")
-  
+
+  log_subheader("Generating puzzle variations")
+
   results <- list()
-  
+
   for (i in seq_along(variations)) {
     variation <- variations[[i]]
-    
+
     # Set defaults for missing parameters
     params <- list(
       seed = variation$seed %||% 1234,
@@ -109,19 +109,17 @@ generate_puzzle_variations <- function(variations) {
       line_width = variation$line_width %||% 2.0,
       transparent_background = variation$transparent_background %||% FALSE
     )
-    
+
     # Generate puzzle using main function
     result <- do.call(generate_svg_puzzle_layers, params)
     results[[i]] <- result
-    
+
     if (is.null(result)) {
-      cat("  Failed to generate variation", i, "\n")
+      log_error("Failed to generate variation {i}")
     }
-    
-    cat("\n")
   }
-  
-  cat("All SVG-based puzzles generated successfully!\n")
+
+  log_success("All SVG-based puzzles generated successfully!")
   
   return(results)
 }

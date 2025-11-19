@@ -290,20 +290,22 @@ save_jigsaw_svg <- function(puzzle_data, filename = "jigsaw.svg") {
   }
   
   writeLines(puzzle_data$svg, filename)
-  cat("Saved jigsaw puzzle to:", filename, "\n")
+  log_success("Saved jigsaw puzzle to: {.file {filename}}")
 }
 
 #' Print puzzle parameters
 #' @param puzzle_data Output from generate_jigsaw_svg()
 print_puzzle_info <- function(puzzle_data) {
   params <- puzzle_data$parameters
-  cat("Jigsaw Puzzle Parameters:\n")
-  cat("  Seed:", params$seed, "\n")
-  cat("  Size:", params$width, "x", params$height, "mm\n")
-  cat("  Pieces:", params$xn, "x", params$yn, "=", params$xn * params$yn, "total\n")
-  cat("  Tab size:", params$tabsize, "%\n")
-  cat("  Jitter:", params$jitter, "%\n")
-  cat("  Corner radius:", params$radius, "mm\n")
+  log_subheader("Jigsaw Puzzle Parameters")
+  log_params("Puzzle Configuration", list(
+    Seed = params$seed,
+    Size = paste0(params$width, " x ", params$height, " mm"),
+    Pieces = paste0(params$xn, " x ", params$yn, " = ", params$xn * params$yn, " total"),
+    "Tab size" = paste0(params$tabsize, "%"),
+    Jitter = paste0(params$jitter, "%"),
+    "Corner radius" = paste0(params$radius, " mm")
+  ))
 }
 
 # Note: Example usage moved to inst/examples/rectangular_puzzle_example.R

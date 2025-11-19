@@ -82,5 +82,5 @@ save_enhanced_svg <- function(svg_content, svg_file) {
   }
   
   writeLines(svg_content, svg_file)
-  cat("  SVG saved:", svg_file, "\n")
+  log_success("SVG saved: {.file {svg_file}}")
 }

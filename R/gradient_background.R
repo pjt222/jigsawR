@@ -118,5 +118,5 @@ save_gradient_background <- function(gradient_plot, background_file, size_px = 2
     bg = "white"
   )
 
-  cat("  Background PNG saved:", background_file, "\n")
+  log_success("Background PNG saved: {.file {background_file}}")
 }

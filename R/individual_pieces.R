@@ -49,7 +49,7 @@ generate_individual_pieces <- function(seed = 42, xn = 2, yn = 2,
     }
   }
 
-  cat(sprintf("Generating %dx%d puzzle (seed: %d)...\n", xn, yn, seed))
+  log_info("Generating {xn}x{yn} puzzle (seed: {seed})...")
 
   # Initialize puzzle environment
   init_jigsaw(seed = seed, tabsize = tabsize, jitter = jitter,
@@ -85,7 +85,7 @@ generate_individual_pieces <- function(seed = 42, xn = 2, yn = 2,
       # Save individual piece SVG
       save_individual_piece_svg(xi, yi, piece_path, width, height, output_dir)
 
-      cat(sprintf("  Generated piece [%d,%d]\n", xi, yi))
+      log_info("Generated piece [{xi},{yi}]")
     }
   }
 
@@ -94,7 +94,7 @@ generate_individual_pieces <- function(seed = 42, xn = 2, yn = 2,
     save_combined_pieces_svg(pieces, width, height, output_dir)
   }
 
-  cat(sprintf("Successfully generated %d pieces!\n", xn * yn))
+  log_success("Successfully generated {xn * yn} pieces!")
 
   return(list(
     pieces = pieces,
@@ -281,7 +281,7 @@ save_combined_pieces_svg <- function(pieces, width, height, output_dir) {
   filename <- file.path(output_dir, "combined_pieces.svg")
   writeLines(svg_content, filename)
 
-  cat(sprintf("  Combined view saved: %s\n", filename))
+  log_success("Combined view saved: {.file {filename}}")
 }
 
 #' Extract tab/blank data from puzzle generation

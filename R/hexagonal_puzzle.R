@@ -391,7 +391,7 @@ save_hex_jigsaw_svg <- function(puzzle_data, filename = "hex_jigsaw.svg") {
   }
   
   writeLines(puzzle_data$svg, filename)
-  cat("Saved hexagonal jigsaw puzzle to:", filename, "\n")
+  log_success("Saved hexagonal jigsaw puzzle to: {.file {filename}}")
 }
 
 #' Print hexagonal puzzle parameters
@@ -401,21 +401,23 @@ print_hex_puzzle_info <- function(puzzle_data) {
   shape_type <- if (params$do_warp) "Circular" else "Hexagonal"
   edge_type <- if (params$do_trunc) " (truncated edges)" else ""
 
-  cat("Hexagonal Jigsaw Puzzle Parameters:\n")
-  cat("  Seed:", params$seed, "\n")
-  cat("  Shape:", paste0(shape_type, edge_type), "\n")
-  cat("  Diameter:", params$diameter, "mm\n")
-  cat("  Rings:", params$rings, "\n")
-  cat("  Tab size:", params$tabsize, "%\n")
-  cat("  Jitter:", params$jitter, "%\n")
-  cat("  Circle warp:", params$do_warp, "\n")
-  cat("  Truncate edges:", params$do_trunc, "\n")
+  log_subheader("Hexagonal Jigsaw Puzzle Parameters")
+  log_params("Puzzle Configuration", list(
+    Seed = params$seed,
+    Shape = paste0(shape_type, edge_type),
+    Diameter = paste0(params$diameter, " mm"),
+    Rings = params$rings,
+    "Tab size" = paste0(params$tabsize, "%"),
+    Jitter = paste0(params$jitter, "%"),
+    "Circle warp" = params$do_warp,
+    "Truncate edges" = params$do_trunc
+  ))
 }
 
 # Example usage (exact equivalent to JS interface)
-cat("Hexagonal Jigsaw Puzzle Generator (R Translation)\n")
-cat("Original JavaScript by Draradech\n")
-cat("GitHub: https://github.com/Draradech/jigsaw\n\n")
+log_header("Hexagonal Jigsaw Puzzle Generator (R Translation)")
+log_info("Original JavaScript by Draradech")
+log_info("GitHub: {.url https://github.com/Draradech/jigsaw}")
 
 # Generate standard hexagonal puzzle
 hex_puzzle <- generate_hex_jigsaw_svg(
@@ -446,9 +448,9 @@ print_hex_puzzle_info(circular_puzzle)
 save_hex_jigsaw_svg(circular_puzzle, "circular_puzzle.svg")
 
 # Display first few characters of each path type
-cat("\nGenerated SVG paths (hexagonal):\n")
-cat("Horizontal (first 100 chars):", substr(hex_puzzle$horizontal, 1, 100), "...\n")
-cat("Vertical (first 100 chars):", substr(hex_puzzle$vertical, 1, 100), "...\n")
-cat("Border (first 100 chars):", substr(hex_puzzle$border, 1, 100), "...\n")
+log_subheader("Generated SVG paths (hexagonal)")
+log_info("Horizontal (first 100 chars): {substr(hex_puzzle$horizontal, 1, 100)}...")
+log_info("Vertical (first 100 chars): {substr(hex_puzzle$vertical, 1, 100)}...")
+log_info("Border (first 100 chars): {substr(hex_puzzle$border, 1, 100)}...")
 
-cat("\nBoth hexagonal and circular puzzles generated successfully!\n")
+log_success("Both hexagonal and circular puzzles generated successfully!")

@@ -130,7 +130,7 @@ generate_puzzle <- function(type = "rectangular",
       filepath <- file.path(output_dir, paste0(filename_prefix, "_complete.svg"))
       writeLines(svg_complete, filepath)
       result$files$complete_svg <- filepath
-      cat("Saved complete puzzle:", filepath, "\n")
+      log_success("Saved complete puzzle: {.file {filepath}}")
     }
   }
   
@@ -165,7 +165,7 @@ generate_puzzle <- function(type = "rectangular",
       filepath <- file.path(output_dir, paste0(filename_prefix, "_individual.svg"))
       writeLines(svg_individual, filepath)
       result$files$individual_svg <- filepath
-      cat("Saved individual pieces:", filepath, "\n")
+      log_success("Saved individual pieces: {.file {filepath}}")
       
       # Also save individual piece files if requested
       if (output == "individual") {
@@ -237,7 +237,7 @@ save_individual_pieces <- function(puzzle_structure, output_dir, filename_prefix
     }
   }
   
-  cat("Saved", xn * yn, "individual pieces to:", pieces_dir, "\n")
+  log_success("Saved {xn * yn} individual pieces to: {.path {pieces_dir}}")
 }
 
 #' Generate background for puzzle
@@ -280,7 +280,7 @@ generate_background <- function(background, size, output_dir, filename_prefix) {
   }
   
   writeLines(svg_bg, filepath)
-  cat("Saved background:", filepath, "\n")
+  log_success("Saved background: {.file {filepath}}")
   
   return(filepath)
 }
@@ -309,9 +309,9 @@ generate_puzzle_batch <- function(variations, base_dir = "output/batch") {
     if (is.null(var$output)) var$output <- "both"
     if (is.null(var$background)) var$background <- "none"
     
-    cat("\nGenerating puzzle", i, "of", length(variations), "\n")
-    cat("  Seed:", var$seed, "Grid:", paste(var$grid, collapse="x"), "\n")
-    
+    log_subheader("Generating puzzle {i} of {length(variations)}")
+    log_info("Seed: {var$seed}, Grid: {paste(var$grid, collapse='x')}")
+
     # Generate puzzle
     result <- generate_puzzle(
       type = var$type,
@@ -327,11 +327,11 @@ generate_puzzle_batch <- function(variations, base_dir = "output/batch") {
       output_dir = base_dir,
       filename_prefix = var$name
     )
-    
+
     results[[i]] <- result
   }
-  
-  cat("\nBatch generation complete. Generated", length(results), "puzzles.\n")
+
+  log_success("Batch generation complete. Generated {length(results)} puzzles")
   
   return(invisible(results))
 }
@@ -384,10 +384,10 @@ validate_puzzle_fit <- function(puzzle_structure) {
     }
   }
   
-  cat("[OK] Puzzle validation passed: All edges properly defined\n")
-  cat("  -", length(edges$horizontal), "horizontal edge sets\n")
-  cat("  -", length(edges$vertical), "vertical edge sets\n")
-  cat("  - Total pieces:", xn * yn, "\n")
-  
+  log_success("Puzzle validation passed: All edges properly defined")
+  log_info("  - {length(edges$horizontal)} horizontal edge sets")
+  log_info("  - {length(edges$vertical)} vertical edge sets")
+  log_info("  - Total pieces: {xn * yn}")
+
   return(TRUE)
 }

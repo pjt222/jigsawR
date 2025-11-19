@@ -401,7 +401,7 @@ get_individual_hexagonal_piece_path <- function(piece_index, rings, seed, diamet
       return(individual_result$pieces[[piece_index]]$path)
     }
   }, error = function(e) {
-    cat(sprintf("Could not generate individual piece %d: %s\n", piece_index, e$message))
+    log_error("Could not generate individual piece {piece_index}: {e$message}")
   })
   
   return(NULL)
