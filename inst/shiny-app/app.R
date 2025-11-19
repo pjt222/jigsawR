@@ -3,11 +3,7 @@
 
 library(shiny)
 library(shinyjs)
-
-# Load cli for logging
-if (!requireNamespace("cli", quietly = TRUE)) {
-  install.packages("cli")
-}
+library(cli)
 
 # Source logging utilities first
 possible_logging_paths <- c("R/logging.R", "./R/logging.R", "../../R/logging.R", "../R/logging.R")
