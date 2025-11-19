@@ -262,6 +262,26 @@ This shouldn't happen with proper generation. If it does:
 3. Report as bug with seed and parameters
 </details>
 
+<details>
+<summary><strong>Shinyapps.io deployment fails with package errors</strong></summary>
+
+**Problem**: Deployment fails with errors like `unable to satisfy package: digest (0.6.39)`
+
+**Cause**: Packages released today may not be synced to shinyapps.io's CRAN mirror yet
+
+**Solution**: The deployment workflow automatically uses yesterday's CRAN snapshot via Posit Package Manager:
+```yaml
+# In .github/workflows/deploy-shiny.yml
+- name: Set CRAN snapshot date (yesterday)
+  run: |
+    echo "CRAN_SNAPSHOT_DATE=$(date -d 'yesterday' '+%Y-%m-%d')" >> $GITHUB_ENV
+```
+
+This ensures package versions are stable and available on shinyapps.io's mirror.
+
+**Manual override**: Set `CRAN_SNAPSHOT_DATE` to a specific date: `2025-11-18`
+</details>
+
 ---
 
 ## Quick Reference

@@ -23,6 +23,18 @@ if (account == "" || token == "" || secret == "") {
 
 log_success("Environment variables loaded successfully")
 
+# Set CRAN snapshot repository to yesterday to avoid package sync issues
+# This prevents failures when packages released today haven't synced to shinyapps.io mirror
+cran_snapshot_date <- Sys.getenv("CRAN_SNAPSHOT_DATE")
+if (cran_snapshot_date != "") {
+  cran_snapshot_url <- sprintf("https://packagemanager.posit.co/cran/%s", cran_snapshot_date)
+  log_info("Using CRAN snapshot from: {.field {cran_snapshot_date}}")
+  log_info("CRAN URL: {.url {cran_snapshot_url}}")
+  options(repos = c(CRAN = cran_snapshot_url))
+} else {
+  log_warn("CRAN_SNAPSHOT_DATE not set, using default CRAN mirror")
+}
+
 # Load rsconnect package
 if (!requireNamespace("rsconnect", quietly = TRUE)) {
   log_info("Installing rsconnect package...")

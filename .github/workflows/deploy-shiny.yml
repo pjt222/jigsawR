@@ -37,6 +37,13 @@ jobs:
           extra-packages: |
             any::rsconnect
 
+      - name: Set CRAN snapshot date (yesterday)
+        # Use yesterday's CRAN snapshot to avoid package sync issues
+        # Packages released today may not be available on shinyapps.io's CRAN mirror yet
+        # Posit Package Manager provides daily snapshots at https://packagemanager.posit.co/cran/YYYY-MM-DD
+        run: |
+          echo "CRAN_SNAPSHOT_DATE=$(date -d 'yesterday' '+%Y-%m-%d')" >> $GITHUB_ENV
+
       - name: Deploy to shinyapps.io
         env:
           SHINYAPPS_ACCOUNT: ${{ secrets.SHINYAPPS_ACCOUNT }}
