@@ -415,42 +415,46 @@ print_hex_puzzle_info <- function(puzzle_data) {
 }
 
 # Example usage (exact equivalent to JS interface)
-log_header("Hexagonal Jigsaw Puzzle Generator (R Translation)")
-log_info("Original JavaScript by Draradech")
-log_info("GitHub: {.url https://github.com/Draradech/jigsaw}")
+# Commented out to prevent execution when sourced by Shiny app
+# Uncomment and run interactively for testing
+if (FALSE) {
+  log_header("Hexagonal Jigsaw Puzzle Generator (R Translation)")
+  log_info("Original JavaScript by Draradech")
+  log_info("GitHub: {.url https://github.com/Draradech/jigsaw}")
 
-# Generate standard hexagonal puzzle
-hex_puzzle <- generate_hex_jigsaw_svg(
-  seed = 1234,
-  tabsize = 27,   # 27% (JS default)
-  jitter = 5,     # 5% (JS default)
-  diameter = 240, # 240mm (JS default)
-  rings = 6,      # 6 rings (JS default)
-  do_warp = FALSE,
-  do_trunc = FALSE
-)
+  # Generate standard hexagonal puzzle
+  hex_puzzle <- generate_hex_jigsaw_svg(
+    seed = 1234,
+    tabsize = 27,   # 27% (JS default)
+    jitter = 5,     # 5% (JS default)
+    diameter = 240, # 240mm (JS default)
+    rings = 6,      # 6 rings (JS default)
+    do_warp = FALSE,
+    do_trunc = FALSE
+  )
 
-print_hex_puzzle_info(hex_puzzle)
-save_hex_jigsaw_svg(hex_puzzle, "hexagonal_puzzle.svg")
+  print_hex_puzzle_info(hex_puzzle)
+  save_hex_jigsaw_svg(hex_puzzle, "hexagonal_puzzle.svg")
 
-# Generate circular puzzle with warp
-circular_puzzle <- generate_hex_jigsaw_svg(
-  seed = 5678,
-  tabsize = 30,
-  jitter =3,
-  diameter = 200,
-  rings = 3,
-  do_warp = TRUE,    # Enable circular warp
-  do_trunc = TRUE    # Truncate edge pieces for clean circle
-)
+  # Generate circular puzzle with warp
+  circular_puzzle <- generate_hex_jigsaw_svg(
+    seed = 5678,
+    tabsize = 30,
+    jitter =3,
+    diameter = 200,
+    rings = 3,
+    do_warp = TRUE,    # Enable circular warp
+    do_trunc = TRUE    # Truncate edge pieces for clean circle
+  )
 
-print_hex_puzzle_info(circular_puzzle)
-save_hex_jigsaw_svg(circular_puzzle, "circular_puzzle.svg")
+  print_hex_puzzle_info(circular_puzzle)
+  save_hex_jigsaw_svg(circular_puzzle, "circular_puzzle.svg")
 
-# Display first few characters of each path type
-log_subheader("Generated SVG paths (hexagonal)")
-log_info("Horizontal (first 100 chars): {substr(hex_puzzle$horizontal, 1, 100)}...")
-log_info("Vertical (first 100 chars): {substr(hex_puzzle$vertical, 1, 100)}...")
-log_info("Border (first 100 chars): {substr(hex_puzzle$border, 1, 100)}...")
+  # Display first few characters of each path type
+  log_subheader("Generated SVG paths (hexagonal)")
+  log_info("Horizontal (first 100 chars): {substr(hex_puzzle$horizontal, 1, 100)}...")
+  log_info("Vertical (first 100 chars): {substr(hex_puzzle$vertical, 1, 100)}...")
+  log_info("Border (first 100 chars): {substr(hex_puzzle$border, 1, 100)}...")
 
-log_success("Both hexagonal and circular puzzles generated successfully!")
+  log_success("Both hexagonal and circular puzzles generated successfully!")
+}
