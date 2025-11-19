@@ -4,32 +4,46 @@
 library(shiny)
 library(shinyjs)
 
+# Load cli for logging
+if (!requireNamespace("cli", quietly = TRUE)) {
+  install.packages("cli")
+}
+
+# Source logging utilities first
+possible_logging_paths <- c("R/logging.R", "./R/logging.R", "../../R/logging.R", "../R/logging.R")
+for (path in possible_logging_paths) {
+  if (file.exists(path)) {
+    source(path)
+    break
+  }
+}
+
 # Source the required functions from the package
 # In production, these would be loaded via library(jigsawR)
 source_dir <- function(path) {
-  cat("Attempting to source from:", path, "\n")
+  log_info("Attempting to source from: {.path {path}}")
   if (file.exists(path)) {
-    cat("Directory exists!\n")
+    log_success("Directory exists!")
     files <- list.files(path, pattern = "\\.R$", full.names = TRUE)
-    cat("Found", length(files), "R files\n")
+    log_info("Found {length(files)} R files")
     for (file in files) {
       # Skip archive and example files
       if (!grepl("scripts_archive|examples", file)) {
-        cat("Sourcing:", basename(file), "\n")
+        log_info("Sourcing: {.file {basename(file)}}")
         source(file)
       }
     }
   } else {
-    cat("Directory does NOT exist\n")
+    log_warn("Directory does NOT exist")
   }
 }
 
 # Debug: Show current working directory and files
-cat("=== App Initialization ===\n")
-cat("Working directory:", getwd(), "\n")
-cat("Files in current dir:", paste(list.files(), collapse=", "), "\n")
-cat("Files in parent dir:", paste(list.files(".."), collapse=", "), "\n")
-cat("Files in parent/parent dir:", paste(list.files("../.."), collapse=", "), "\n")
+log_header("App Initialization")
+log_info("Working directory: {.path {getwd()}}")
+log_info("Files in current dir: {paste(list.files(), collapse=', ')}")
+log_info("Files in parent dir: {paste(list.files('..'), collapse=', ')}")
+log_info("Files in parent/parent dir: {paste(list.files('../..'), collapse=', ')}")
 
 # Try to load functions (adjust path based on where app is run from)
 # On shinyapps.io, R files will be in ./R (same directory as app.R)
@@ -38,9 +52,9 @@ possible_paths <- c("R", "./R", "../../R", "../R")
 loaded <- FALSE
 
 for (path in possible_paths) {
-  cat("\nTrying path:", path, "\n")
+  log_info("Trying path: {.path {path}}")
   if (file.exists(path)) {
-    cat("SUCCESS: Found R directory at", path, "\n")
+    log_success("Found R directory at {.path {path}}")
     source_dir(path)
     loaded <- TRUE
     break
@@ -48,8 +62,8 @@ for (path in possible_paths) {
 }
 
 if (!loaded) {
-  cat("ERROR: Could not find R directory in any expected location!\n")
-  cat("Current files:", paste(list.files(), collapse=", "), "\n")
+  log_error("Could not find R directory in any expected location!")
+  log_info("Current files: {paste(list.files(), collapse=', ')}")
 }
 
 # Define UI
@@ -418,17 +432,17 @@ server <- function(input, output, session) {
   # Generate puzzle
   observeEvent(input$generate, {
 
-    cat("=== Generate button clicked ===\n")
-    cat("Puzzle type:", input$puzzle_type, "\n")
-    cat("Working directory:", getwd(), "\n")
-    cat("Files in current dir:", paste(list.files(), collapse=", "), "\n")
+    log_header("Generate button clicked")
+    log_info("Puzzle type: {.strong {input$puzzle_type}}")
+    log_info("Working directory: {.path {getwd()}}")
+    log_info("Files in current dir: {paste(list.files(), collapse=', ')}")
 
     tryCatch({
       # Show progress
       withProgress(message = 'Generating puzzle...', value = 0, {
 
         incProgress(0.3, detail = "Creating puzzle structure")
-        cat("Progress: Creating puzzle structure\n")
+        log_info("Progress: Creating puzzle structure")
 
       # Define colors based on scheme
       colors <- switch(input$color_scheme,
@@ -537,7 +551,7 @@ server <- function(input, output, session) {
       incProgress(1, detail = "Complete!")
 
       # Store the generated SVG
-      cat("Storing SVG content, length:", nchar(svg), "\n")
+      log_info("Storing SVG content, length: {nchar(svg)}")
       svg_content(svg)
 
       # Store puzzle data based on type
@@ -561,13 +575,13 @@ server <- function(input, output, session) {
           total_pieces = input$rows * input$cols
         ))
       }
-      cat("Puzzle generation complete!\n")
+      log_success("Puzzle generation complete!")
     })
     }, error = function(e) {
-      cat("ERROR in puzzle generation:\n")
-      cat("Message:", e$message, "\n")
-      cat("Call:", deparse(e$call), "\n")
-      cat("Traceback:\n")
+      log_error("ERROR in puzzle generation")
+      log_error("Message: {e$message}")
+      log_error("Call: {deparse(e$call)}")
+      log_info("Traceback:")
       print(traceback())
       showNotification(paste("Error:", e$message), type = "error", duration = 10)
     })

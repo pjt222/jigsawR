@@ -2,6 +2,14 @@
 # Deployment script for jigsawR Shiny app to shinyapps.io
 # This script is called by GitHub Actions workflow
 
+# Load cli for logging
+if (!requireNamespace("cli", quietly = TRUE)) {
+  install.packages("cli")
+}
+
+# Source logging utilities
+source(file.path("R", "logging.R"))
+
 # Get credentials from environment variables
 account <- Sys.getenv("SHINYAPPS_ACCOUNT")
 token <- Sys.getenv("SHINYAPPS_TOKEN")
@@ -9,14 +17,19 @@ secret <- Sys.getenv("SHINYAPPS_SECRET")
 
 # Validate credentials
 if (account == "" || token == "" || secret == "") {
-  stop("Missing required environment variables: SHINYAPPS_ACCOUNT, SHINYAPPS_TOKEN, or SHINYAPPS_SECRET")
+  log_error("Missing required environment variables: SHINYAPPS_ACCOUNT, SHINYAPPS_TOKEN, or SHINYAPPS_SECRET")
+  stop("Missing required environment variables")
 }
+
+log_success("Environment variables loaded successfully")
 
 # Load rsconnect package
 if (!requireNamespace("rsconnect", quietly = TRUE)) {
+  log_info("Installing rsconnect package...")
   install.packages("rsconnect")
 }
 library(rsconnect)
+log_info("rsconnect package loaded")
 
 # Set account info
 rsconnect::setAccountInfo(
@@ -37,9 +50,9 @@ app_name <- "jigsawR"
 r_source_dir <- "R"
 r_dest_dir <- file.path(app_dir, "R")
 
-cat("Copying R source files...\n")
-cat("From:", r_source_dir, "\n")
-cat("To:", r_dest_dir, "\n")
+log_subheader("Copying R source files")
+log_info("From: {.path {r_source_dir}}")
+log_info("To: {.path {r_dest_dir}}")
 
 # Remove old R directory if it exists
 if (dir.exists(r_dest_dir)) {
@@ -59,7 +72,7 @@ for (r_file in r_files) {
       dir.create(dest_dir_path, recursive = TRUE)
     }
     file.copy(r_file, dest_file)
-    cat("  Copied:", rel_path, "\n")
+    log_info("Copied: {.file {rel_path}}")
   }
 }
 
@@ -69,15 +82,16 @@ renv_lock_backup <- "renv.lock.backup"
 renv_hidden <- FALSE
 
 if (file.exists(renv_lock)) {
-  cat("Temporarily hiding renv.lock to avoid deployment conflicts\n")
+  log_info("Temporarily hiding renv.lock to avoid deployment conflicts")
   file.rename(renv_lock, renv_lock_backup)
   renv_hidden <- TRUE
 }
 
 # Deploy the application
-cat("\nDeploying app from:", app_dir, "\n")
-cat("App name:", app_name, "\n")
-cat("Account:", account, "\n")
+log_subheader("Deploying application")
+log_info("App directory: {.path {app_dir}}")
+log_info("App name: {.strong {app_name}}")
+log_info("Account: {.strong {account}}")
 
 tryCatch({
   rsconnect::deployApp(
@@ -95,10 +109,10 @@ tryCatch({
 }, finally = {
   # Restore renv.lock
   if (renv_hidden && file.exists(renv_lock_backup)) {
-    cat("Restoring renv.lock\n")
+    log_info("Restoring renv.lock")
     file.rename(renv_lock_backup, renv_lock)
   }
 })
 
-cat("\nDeployment successful!\n")
-cat("App URL: https://", account, ".shinyapps.io/", app_name, "/\n", sep = "")
+log_success("Deployment successful!")
+log_info("App URL: {.url https://{account}.shinyapps.io/{app_name}/}")

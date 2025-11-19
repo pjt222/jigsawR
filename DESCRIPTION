@@ -28,7 +28,8 @@ Imports:
     shinyjs,
     rsvg,
     magick,
-    zip
+    zip,
+    cli
 Suggests:
     testthat (>= 3.0.0),
     knitr,
