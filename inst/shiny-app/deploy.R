@@ -94,6 +94,14 @@ log_info("App directory: {.path {app_dir}}")
 log_info("App name: {.strong {app_name}}")
 log_info("Account: {.strong {account}}")
 
+# Ensure rsconnect uses the CRAN snapshot for dependency resolution
+# This is critical for packages that were installed from source in GitHub Actions
+if (cran_snapshot_date != "") {
+  log_info("Configuring rsconnect to use CRAN snapshot: {.field {cran_snapshot_date}}")
+  # Set environment variable that rsconnect will use
+  Sys.setenv(R_REPOS = sprintf("https://packagemanager.posit.co/cran/%s", cran_snapshot_date))
+}
+
 rsconnect::deployApp(
   appDir = app_dir,
   appName = app_name,
