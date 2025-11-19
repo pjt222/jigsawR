@@ -76,43 +76,25 @@ for (r_file in r_files) {
   }
 }
 
-# Temporarily hide renv.lock to prevent rsconnect from detecting it
-renv_lock <- "renv.lock"
-renv_lock_backup <- "renv.lock.backup"
-renv_hidden <- FALSE
-
-if (file.exists(renv_lock)) {
-  log_info("Temporarily hiding renv.lock to avoid deployment conflicts")
-  file.rename(renv_lock, renv_lock_backup)
-  renv_hidden <- TRUE
-}
-
 # Deploy the application
 log_subheader("Deploying application")
 log_info("App directory: {.path {app_dir}}")
 log_info("App name: {.strong {app_name}}")
 log_info("Account: {.strong {account}}")
 
-tryCatch({
-  rsconnect::deployApp(
-    appDir = app_dir,
-    appName = app_name,
-    account = account,
-    forceUpdate = TRUE,
-    launch.browser = FALSE,
-    lint = FALSE,
-    metadata = list(
-      appMode = "shiny",
-      contentCategory = "application"
-    )
+rsconnect::deployApp(
+  appDir = app_dir,
+  appName = app_name,
+  account = account,
+  appFiles = c("app.R", "www/", "R/"),
+  forceUpdate = TRUE,
+  launch.browser = FALSE,
+  lint = FALSE,
+  metadata = list(
+    appMode = "shiny",
+    contentCategory = "application"
   )
-}, finally = {
-  # Restore renv.lock
-  if (renv_hidden && file.exists(renv_lock_backup)) {
-    log_info("Restoring renv.lock")
-    file.rename(renv_lock_backup, renv_lock)
-  }
-})
+)
 
 log_success("Deployment successful!")
 log_info("App URL: {.url https://{account}.shinyapps.io/{app_name}/}")
