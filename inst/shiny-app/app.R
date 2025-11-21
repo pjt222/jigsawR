@@ -71,7 +71,8 @@ if (!loaded) {
 }
 
 # Define UI
-ui <- fluidPage(
+ui <- page_fluid(
+  theme = bs_theme(bootswatch = "darkly"),
   useShinyjs(),
 
   # Add custom CSS and JavaScript for sequential downloads
@@ -93,29 +94,10 @@ ui <- fluidPage(
       });
     ")),
     tags$style(HTML("
-      .svg-container {
-        width: 100%;
-        height: 600px;
-        border: 1px solid #ddd;
-        border-radius: 4px;
-        padding: 10px;
-        background: white;
-        overflow: auto;
-      }
+      /* Minimal custom styles - let bslib handle most styling */
       .svg-display {
-        width: 100%;
-        height: 100%;
-      }
-      .sidebar-section {
-        margin-bottom: 20px;
-        padding: 10px;
-        background: #f8f9fa;
-        border-radius: 4px;
-      }
-      .section-title {
-        font-weight: bold;
-        margin-bottom: 10px;
-        color: #495057;
+        max-width: 100%;
+        height: auto;
       }
     "))
   ),
@@ -367,16 +349,17 @@ ui <- fluidPage(
           br(),
           card(
             full_screen = TRUE,
+            height = "600px",
             card_header(
               "Puzzle Preview",
-              class = "bg-primary text-white"
+              class = "d-flex align-items-center",
+              style = "padding: 1rem 1.5rem;"
             ),
             card_body(
-              min_height = "500px",
-              max_height = "600px",
-              fillable = TRUE,
+              fillable = FALSE,
+              padding = 0,
               div(
-                style = "height: 100%; overflow: auto;",
+                style = "height: 500px; display: flex; align-items: center; justify-content: center; overflow: auto; padding: 1rem;",
                 uiOutput("puzzle_display")
               )
             )
@@ -384,7 +367,10 @@ ui <- fluidPage(
           br(),
           # Parameter summary
           card(
-            card_header("Puzzle Information"),
+            card_header(
+              "Puzzle Information",
+              style = "padding: 1rem 1.5rem;"
+            ),
             card_body(
               uiOutput("puzzle_info")
             )
