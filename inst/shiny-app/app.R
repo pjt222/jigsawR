@@ -206,10 +206,12 @@ ui <- fluidPage(
         h4("Advanced Settings", class = "section-title"),
 
         sliderInput("tabsize", "Tab Size (%):",
-                   min = 10, max = 50, value = 20, step = 1),
+                   min = 0, max = 50, value = 20, step = 1,
+                   ticks = TRUE),
 
         sliderInput("jitter", "Jitter (%):",
-                   min = 0, max = 25, value = 4, step = 1),
+                   min = 0, max = 25, value = 4, step = 1,
+                   ticks = TRUE),
 
         conditionalPanel(
           condition = "input.puzzle_type == 'rectangular'",
@@ -237,7 +239,8 @@ ui <- fluidPage(
         conditionalPanel(
           condition = "input.output_mode == 'separated' || input.output_mode_hex == 'separated'",
           sliderInput("offset", "Separation (mm):",
-                     min = 0, max = 50, value = 10, step = 1),
+                     min = 0, max = 50, value = 10, step = 1,
+                     ticks = TRUE),
           conditionalPanel(
             condition = "input.puzzle_type == 'hexagonal'",
             radioButtons("arrangement", "Arrangement:",
@@ -266,7 +269,8 @@ ui <- fluidPage(
                    selected = "black"),
 
         sliderInput("stroke_width", "Line Width:",
-                   min = 0.5, max = 10, value = 1.5, step = 0.5),
+                   min = 0.5, max = 10, value = 1.5, step = 0.5,
+                   ticks = TRUE),
 
         selectInput("background", "Background:",
                    choices = list(
