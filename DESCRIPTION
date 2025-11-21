@@ -25,6 +25,7 @@ Imports:
     ggfx,
     viridis,
     shiny,
+    bslib,
     shinyjs,
     rsvg,
     magick,

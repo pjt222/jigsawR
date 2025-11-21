@@ -2,6 +2,7 @@
 # Interactive puzzle generator with real-time preview and download
 
 library(shiny)
+library(bslib)
 library(shinyjs)
 library(cli)
 
@@ -364,14 +365,29 @@ ui <- fluidPage(
         # Preview Tab
         tabPanel("Preview",
           br(),
-          div(class = "svg-container",
-            uiOutput("puzzle_display")
+          card(
+            full_screen = TRUE,
+            card_header(
+              "Puzzle Preview",
+              class = "bg-primary text-white"
+            ),
+            card_body(
+              min_height = "500px",
+              max_height = "600px",
+              fillable = TRUE,
+              div(
+                style = "height: 100%; overflow: auto;",
+                uiOutput("puzzle_display")
+              )
+            )
           ),
-
+          br(),
           # Parameter summary
-          div(class = "parameter-summary",
-            h5("Puzzle Information"),
-            uiOutput("puzzle_info")
+          card(
+            card_header("Puzzle Information"),
+            card_body(
+              uiOutput("puzzle_info")
+            )
           )
         ),
 
