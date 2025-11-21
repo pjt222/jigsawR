@@ -105,9 +105,9 @@ ui <- page_fluid(
   # Application title
   titlePanel(
     div(
-      h2("jigsawR Puzzle Generator", style = "color: #2c3e50;"),
+      h2("jigsawR Puzzle Generator"),
       p("Create customizable jigsaw puzzles for laser cutting and more",
-        style = "color: #7f8c8d; font-size: 14px;")
+        class = "text-muted", style = "font-size: 14px;")
     )
   ),
 
@@ -179,7 +179,7 @@ ui <- page_fluid(
             br(),
             actionButton("randomize", "Random",
                         icon = icon("dice"),
-                        style = "margin-top: 2px;")
+                        class = "mt-1")
           )
         )
       ),
@@ -278,17 +278,16 @@ ui <- page_fluid(
       ),
 
       # Action Buttons
-      div(style = "margin-top: 20px;",
+      div(class = "mt-3",
         actionButton("generate", "Generate Puzzle",
                     icon = icon("puzzle-piece"),
-                    class = "btn-primary btn-lg btn-block",
-                    style = "margin-bottom: 10px;"),
+                    class = "btn-primary btn-lg btn-block mb-2"),
 
         fluidRow(
           column(6,
             actionButton("reset", "Reset",
                         icon = icon("undo"),
-                        class = "btn-default btn-block")
+                        class = "btn-secondary btn-block")
           ),
           column(6,
             # Conditional download button based on output mode
@@ -309,8 +308,8 @@ ui <- page_fluid(
         # Help text for individual pieces download
         conditionalPanel(
           condition = "input.output_mode == 'individual' || input.output_mode_hex == 'individual'",
-          div(style = "margin-top: 10px; padding: 8px; background: #d1ecf1; border: 1px solid #17a2b8; border-radius: 4px;",
-            p(style = "font-size: 12px; margin: 0;",
+          div(class = "alert alert-info mt-2", style = "padding: 8px;",
+            p(class = "small mb-0",
               icon("info-circle"),
               strong(" Individual Pieces:"),
               conditionalPanel(
@@ -333,9 +332,10 @@ ui <- page_fluid(
       ),
 
       # Info text
-      div(style = "margin-top: 20px; padding: 10px; background: #fff3cd; border-radius: 4px;",
-        p(strong("Tip:"), "Click 'Generate Puzzle' to create your puzzle.
-          The preview will appear on the right.", style = "font-size: 12px; margin: 0;")
+      div(class = "tip-box mt-3",
+        p(class = "small mb-0",
+          strong("Tip:"), "Click 'Generate Puzzle' to create your puzzle.
+          The preview will appear on the right.")
       )
     ),
 
@@ -355,14 +355,14 @@ ui <- page_fluid(
             height = "600px",
             card_header(
               "Puzzle Preview",
-              class = "d-flex align-items-center",
-              style = "padding: 1rem 1.5rem;"
+              class = "d-flex align-items-center"
             ),
             card_body(
               fillable = FALSE,
               padding = 0,
               div(
-                style = "height: 500px; display: flex; align-items: center; justify-content: center; overflow: auto; padding: 1rem;",
+                class = "d-flex align-items-center justify-content-center p-3",
+                style = "height: 500px; overflow: auto;",
                 uiOutput("puzzle_display")
               )
             )
@@ -371,8 +371,7 @@ ui <- page_fluid(
           # Parameter summary
           card(
             card_header(
-              "Puzzle Information",
-              style = "padding: 1rem 1.5rem;"
+              "Puzzle Information"
             ),
             card_body(
               uiOutput("puzzle_info")
@@ -383,7 +382,7 @@ ui <- page_fluid(
         # Help Tab
         tabPanel("Help",
           br(),
-          div(style = "padding: 20px;",
+          div(class = "p-4",
             h4("How to Use"),
             p("1. Adjust the settings in the left panel to customize your puzzle"),
             p("2. Click 'Generate Puzzle' to create a new puzzle"),
@@ -607,8 +606,8 @@ server <- function(input, output, session) {
   # Display puzzle
   output$puzzle_display <- renderUI({
     if (is.null(svg_content())) {
-      div(style = "text-align: center; padding: 50px; color: #999;",
-        icon("puzzle-piece", style = "font-size: 48px;"),
+      div(class = "text-center p-5 text-muted",
+        icon("puzzle-piece", class = "fa-3x mb-3"),
         h4("No puzzle generated yet"),
         p("Click 'Generate Puzzle' to create your first puzzle")
       )

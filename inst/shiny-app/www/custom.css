@@ -1,88 +1,69 @@
-/* Custom CSS for jigsawR Shiny App */
+/* Custom CSS for jigsawR Shiny App - bslib darkly theme compatible */
 
-/* General styling */
+/* General styling - let theme handle background */
 body {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background-color: #f5f6fa;
+  /* background-color removed - inherited from bslib theme */
 }
 
-/* Header styling */
+/* Header styling - use theme colors */
 .container-fluid > h2 {
   padding-bottom: 10px;
-  border-bottom: 3px solid #3498db;
+  border-bottom: 3px solid var(--bs-primary, #375a7f);
   margin-bottom: 20px;
 }
 
-/* Sidebar panel improvements */
+/* Sidebar panel improvements - remove white background */
 .well {
-  background-color: white;
-  border: 1px solid #e1e8ed;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  /* background-color removed - use theme background */
+  border: 1px solid var(--bs-border-color, rgba(255, 255, 255, 0.1));
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
 }
 
-/* Button styling */
-.btn-primary {
-  background-color: #3498db;
-  border-color: #2980b9;
+/* Button styling - Bootstrap 5 will handle most of this */
+/* Keep minimal overrides for consistency */
+.btn {
   font-weight: 600;
   padding: 10px;
 }
 
-.btn-primary:hover {
-  background-color: #2980b9;
-  border-color: #21618c;
-}
-
-.btn-success {
-  background-color: #27ae60;
-  border-color: #229954;
-}
-
-.btn-success:hover {
-  background-color: #229954;
-  border-color: #1e8449;
-}
-
-.btn-default {
-  background-color: #95a5a6;
-  border-color: #7f8c8d;
-  color: white;
-}
-
-.btn-default:hover {
-  background-color: #7f8c8d;
-  border-color: #707b7c;
-  color: white;
-}
-
-/* Input styling */
+/* Input styling - minimal overrides */
 .form-control {
   border-radius: 4px;
-  border: 1px solid #cbd5e0;
+  /* Let theme handle colors */
 }
 
 .form-control:focus {
-  border-color: #3498db;
-  box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+  /* Use theme primary color for focus */
+  border-color: var(--bs-primary, #375a7f);
+  box-shadow: 0 0 0 0.2rem rgba(55, 90, 127, 0.25);
 }
 
-/* Slider styling */
+/* Slider styling - use theme primary color */
 .irs-bar {
-  background: #3498db;
-  border-top: 1px solid #2980b9;
-  border-bottom: 1px solid #2980b9;
+  background: var(--bs-primary, #375a7f) !important;
+  border-top: 1px solid var(--bs-primary, #375a7f) !important;
+  border-bottom: 1px solid var(--bs-primary, #375a7f) !important;
 }
 
 .irs-bar-edge {
-  background: #3498db;
-  border: 1px solid #2980b9;
+  background: var(--bs-primary, #375a7f) !important;
+  border: 1px solid var(--bs-primary, #375a7f) !important;
 }
 
 .irs-single {
-  background: #3498db;
+  background: var(--bs-primary, #375a7f) !important;
 }
 
-/* Radio button styling */
+.irs-from, .irs-to {
+  background: var(--bs-primary, #375a7f) !important;
+}
+
+.irs-handle {
+  border: 2px solid var(--bs-primary, #375a7f) !important;
+}
+
+/* Radio button styling - use theme colors */
 .radio label {
   font-weight: normal;
   cursor: pointer;
@@ -90,35 +71,19 @@ body {
 
 .radio input[type="radio"]:checked + span {
   font-weight: 600;
-  color: #2c3e50;
+  /* color inherited from theme */
 }
 
-/* Tab panel styling */
-.nav-tabs > li.active > a {
-  background-color: white;
-  border-bottom-color: white;
-  font-weight: 600;
-  color: #2c3e50;
-}
+/* Tab panel styling - let Bootstrap 5 handle */
+/* Removed hardcoded white backgrounds */
 
-.nav-tabs > li > a {
-  color: #7f8c8d;
-  background-color: #ecf0f1;
-  margin-right: 2px;
-}
-
-.nav-tabs > li > a:hover {
-  background-color: #d5dbdb;
-  border-color: #d5dbdb;
-}
-
-/* SVG container improvements */
+/* SVG container improvements - use theme background */
 .svg-container {
-  background: white;
-  border: 2px solid #e1e8ed;
+  /* background removed - card handles this */
+  border: 2px solid var(--bs-border-color, rgba(255, 255, 255, 0.1));
   border-radius: 8px;
   padding: 20px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -133,67 +98,61 @@ body {
   width: auto;
 }
 
-/* Parameter summary box */
+/* Parameter summary box - use theme colors */
 .parameter-summary {
-  background: #f8f9fa;
-  color: #2c3e50;
-  border: 1px solid #dee2e6;
+  background: var(--bs-secondary-bg, rgba(255, 255, 255, 0.05));
+  border: 1px solid var(--bs-border-color, rgba(255, 255, 255, 0.1));
   border-radius: 8px;
   padding: 15px 20px;
   margin-top: 20px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
 }
 
 .parameter-summary h5 {
   margin-top: 0;
   margin-bottom: 15px;
   font-weight: 600;
-  color: #2c3e50;
-  border-bottom: 2px solid #3498db;
+  border-bottom: 2px solid var(--bs-primary, #375a7f);
   padding-bottom: 8px;
 }
 
 .parameter-summary p {
   margin: 0;
   line-height: 1.8;
-  color: #495057;
 }
 
 .parameter-summary strong {
-  color: #2c3e50;
   font-weight: 600;
 }
 
-/* Section styling */
+/* Section styling - use theme background */
 .sidebar-section {
-  background: white;
-  border: 1px solid #e1e8ed;
+  background: var(--bs-secondary-bg, rgba(255, 255, 255, 0.05));
+  border: 1px solid var(--bs-border-color, rgba(255, 255, 255, 0.1));
   border-radius: 8px;
   padding: 15px;
   margin-bottom: 20px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
 }
 
 .section-title {
-  color: #2c3e50;
   font-size: 16px;
   font-weight: 600;
   margin-bottom: 15px;
   padding-bottom: 8px;
-  border-bottom: 2px solid #3498db;
+  border-bottom: 2px solid var(--bs-primary, #375a7f);
 }
 
-/* Help tab styling */
+/* Help tab styling - use theme colors */
 .help-content {
-  background: white;
+  /* background removed - card handles this */
   padding: 30px;
   border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
 }
 
 .help-content h4 {
-  color: #2c3e50;
-  border-bottom: 2px solid #3498db;
+  border-bottom: 2px solid var(--bs-primary, #375a7f);
   padding-bottom: 10px;
   margin-bottom: 20px;
 }
@@ -206,10 +165,10 @@ body {
   margin-bottom: 8px;
 }
 
-/* Tip box styling */
+/* Tip box styling - use warning colors from theme */
 .tip-box {
-  background: linear-gradient(135deg, #fff3cd 0%, #ffeeba 100%);
-  border: 1px solid #ffc107;
+  background: var(--bs-warning-bg-subtle, rgba(255, 193, 7, 0.1));
+  border: 1px solid var(--bs-warning, #ffc107);
   border-radius: 6px;
   padding: 12px;
   margin-top: 20px;
@@ -217,19 +176,18 @@ body {
 
 .tip-box p {
   margin: 0;
-  color: #856404;
+  color: var(--bs-warning-text, #ffc107);
 }
 
 /* Loading animation */
 .progress {
   height: 25px;
-  background-color: #f0f0f0;
   border-radius: 12px;
   overflow: hidden;
 }
 
 .progress-bar {
-  background: linear-gradient(90deg, #3498db, #2980b9);
+  background: linear-gradient(90deg, var(--bs-primary, #375a7f), var(--bs-info, #3498db));
   animation: progress-animation 2s ease-in-out infinite;
 }
 
@@ -245,12 +203,12 @@ body {
     margin-bottom: 15px;
     padding: 10px;
   }
-  
+
   .svg-container {
     min-height: 400px;
     padding: 10px;
   }
-  
+
   .btn-block {
     margin-bottom: 10px;
   }
@@ -269,30 +227,30 @@ body {
 
 /* Hover effects */
 .sidebar-section:hover {
-  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.4);
   transition: box-shadow 0.3s ease;
 }
 
 input[type="number"]:hover,
 select:hover {
-  border-color: #3498db;
+  border-color: var(--bs-primary, #375a7f);
   transition: border-color 0.3s ease;
 }
 
-/* Success/Error states */
+/* Success/Error states - use theme alert colors */
 .success-message {
-  background-color: #d4edda;
-  border: 1px solid #c3e6cb;
-  color: #155724;
+  background-color: var(--bs-success-bg-subtle, rgba(25, 135, 84, 0.1));
+  border: 1px solid var(--bs-success, #198754);
+  color: var(--bs-success-text, #75b798);
   padding: 10px;
   border-radius: 4px;
   margin: 10px 0;
 }
 
 .error-message {
-  background-color: #f8d7da;
-  border: 1px solid #f5c6cb;
-  color: #721c24;
+  background-color: var(--bs-danger-bg-subtle, rgba(220, 53, 69, 0.1));
+  border: 1px solid var(--bs-danger, #dc3545);
+  color: var(--bs-danger-text, #ea868f);
   padding: 10px;
   border-radius: 4px;
   margin: 10px 0;
