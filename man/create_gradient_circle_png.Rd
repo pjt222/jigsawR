@@ -4,12 +4,14 @@
 \alias{create_gradient_circle_png}
 \title{Create circular gradient background}
 \usage{
-create_gradient_circle_png(size_px = 2000, diameter = NULL)
+create_gradient_circle_png(size_px = NULL, diameter = NULL, palette = NULL)
 }
 \arguments{
 \item{size_px}{Size in pixels for output}
 
 \item{diameter}{Puzzle diameter in mm (optional, for size matching)}
+
+\item{palette}{Viridis palette name (NULL = use config default)}
 }
 \value{
 ggplot2 object with gradient background

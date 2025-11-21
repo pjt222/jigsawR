@@ -23,6 +23,7 @@
 #' @param output_dir Directory to save individual piece SVGs
 #' @param corner_radius Corner radius for border pieces (default: 2)
 #' @param save_combined Whether to save a combined view (default: TRUE)
+#' @param palette Viridis palette name for colors (default: from config)
 #' @return List containing piece paths and metadata
 #' @export
 generate_individual_pieces <- function(seed = 42, xn = 2, yn = 2,
@@ -30,7 +31,8 @@ generate_individual_pieces <- function(seed = 42, xn = 2, yn = 2,
                                       tabsize = 20, jitter = 4,
                                       output_dir = "output",
                                       corner_radius = 2,
-                                      save_combined = TRUE) {
+                                      save_combined = TRUE,
+                                      palette = NULL) {
 
   # Ensure output directory exists
   if (!dir.exists(output_dir)) {
@@ -91,7 +93,7 @@ generate_individual_pieces <- function(seed = 42, xn = 2, yn = 2,
 
   # Save combined view if requested
   if (save_combined) {
-    save_combined_pieces_svg(pieces, width, height, output_dir)
+    save_combined_pieces_svg(pieces, width, height, output_dir, palette)
   }
 
   log_success("Successfully generated {xn * yn} pieces!")
@@ -245,13 +247,18 @@ save_individual_piece_svg <- function(xi, yi, piece_path, width, height, output_
 
 #' Save combined view of all pieces
 #' @keywords internal
-save_combined_pieces_svg <- function(pieces, width, height, output_dir) {
+save_combined_pieces_svg <- function(pieces, width, height, output_dir, palette = NULL) {
 
-  # Define colors for visual distinction
-  colors <- c("rgba(255,0,0,0.3)", "rgba(0,255,0,0.3)",
-              "rgba(0,0,255,0.3)", "rgba(255,255,0,0.3)",
-              "rgba(255,0,255,0.3)", "rgba(0,255,255,0.3)")
-  stroke_colors <- c("red", "green", "blue", "orange", "purple", "cyan")
+  # Use viridis palette for colors
+  n_colors <- length(pieces)
+  stroke_colors <- get_puzzle_colors(n_colors, palette)
+
+  # Create semi-transparent fill colors from stroke colors
+  colors <- sapply(stroke_colors, function(color) {
+    # Convert hex to rgba with 30% opacity
+    rgb_vals <- col2rgb(color)
+    sprintf("rgba(%d,%d,%d,0.3)", rgb_vals[1], rgb_vals[2], rgb_vals[3])
+  })
 
   svg_parts <- c(
     sprintf('<?xml version="1.0" encoding="UTF-8"?>

@@ -247,15 +247,18 @@ ui <- page_fluid(
       div(class = "sidebar-section",
         h4("Styling Options", class = "section-title"),
 
-        selectInput("color_scheme", "Color Scheme:",
+        selectInput("color_palette", "Color Palette:",
                    choices = list(
-                     "Black" = "black",
-                     "Rainbow" = "rainbow",
-                     "Blues" = "blues",
-                     "Warm" = "warm",
-                     "Cool" = "cool"
+                     "Magma (Purple-Yellow)" = "magma",
+                     "Viridis (Blue-Green-Yellow)" = "viridis",
+                     "Plasma (Purple-Red-Yellow)" = "plasma",
+                     "Inferno (Black-Purple-Yellow)" = "inferno",
+                     "Cividis (Colorblind Friendly)" = "cividis",
+                     "Mako (Blue-Green)" = "mako",
+                     "Rocket (Black-Red-Yellow)" = "rocket",
+                     "Turbo (Rainbow)" = "turbo"
                    ),
-                   selected = "black"),
+                   selected = "magma"),
 
         sliderInput("stroke_width", "Line Width:",
                    min = 0.5, max = 10, value = 1.5, step = 0.5,
@@ -462,16 +465,9 @@ server <- function(input, output, session) {
         incProgress(0.3, detail = "Creating puzzle structure")
         log_info("Progress: Creating puzzle structure")
 
-      # Define colors based on scheme
-      colors <- switch(input$color_scheme,
-        "black" = "black",
-        "rainbow" = c("#FF6B6B", "#4ECDC4", "#45B7D1", "#FFA07A", "#98D8C8",
-                     "#F7DC6F", "#BB8FCE", "#85C1E2", "#F8B739"),
-        "blues" = c("#0066CC", "#3399FF", "#66B2FF", "#99CCFF"),
-        "warm" = c("#FF6B6B", "#FFA07A", "#F7DC6F", "#F8B739"),
-        "cool" = c("#4ECDC4", "#45B7D1", "#98D8C8", "#85C1E2"),
-        "black"
-      )
+      # Use viridis palette (colors will be NULL, palette name will be passed)
+      colors <- NULL
+      palette <- input$color_palette
 
       incProgress(0.5, detail = "Generating SVG")
 
@@ -515,7 +511,8 @@ server <- function(input, output, session) {
             save_files = FALSE,
             do_warp = input$do_warp,
             do_trunc = input$do_trunc,
-            stroke_width = input$stroke_width
+            stroke_width = input$stroke_width,
+            palette = palette
           )
 
           # Use proper conditional instead of ifelse for character vectors
@@ -556,7 +553,8 @@ server <- function(input, output, session) {
           output = ifelse(output_mode == "complete", "complete", "individual"),
           colors = colors,
           background = input$background,
-          save_files = FALSE
+          save_files = FALSE,
+          palette = palette
         )
 
         # Use proper conditional instead of ifelse for character vectors

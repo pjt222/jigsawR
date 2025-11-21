@@ -1,0 +1,80 @@
+# jigsawR Package Configuration
+# Centralized configuration for puzzle generation parameters
+
+default:
+  # Rectangular puzzle defaults
+  rectangular:
+    tabsize: 20
+    jitter: 4
+    width: 300
+    height: 200
+    corner_radius: 2.0
+    stroke_width: 1.5
+
+  # Hexagonal puzzle defaults
+  hexagonal:
+    tabsize: 27
+    jitter: 5
+    diameter: 240
+    rings: 6
+    stroke_width: 1.5
+
+  # Color palette configuration
+  colors:
+    default_palette: "magma"
+    available_palettes:
+      - "viridis"
+      - "magma"
+      - "plasma"
+      - "inferno"
+      - "cividis"
+      - "mako"
+      - "rocket"
+      - "turbo"
+
+    # Palette descriptions for UI
+    palette_descriptions:
+      viridis: "Blue to Green to Yellow"
+      magma: "Black to Purple to Yellow (Default)"
+      plasma: "Purple to Red to Yellow"
+      inferno: "Black to Purple to Yellow (High Contrast)"
+      cividis: "Blue to Yellow (Colorblind Friendly)"
+      mako: "Dark Blue to Light Green"
+      rocket: "Black to Red to Light Yellow"
+      turbo: "Blue to Red (Rainbow)"
+
+  # Gradient background configuration
+  gradient:
+    dpi: 300
+    coord_limit: 1.3
+    range_expansion: 1.20
+    limit_contraction: 0.90
+    palette_size: 256
+    circle_resolution: 361
+    default_size_px: 2000
+
+  # UI layout configuration
+  ui:
+    preview_height: "600px"
+    container_height: "500px"
+    download_delay_ms: 500
+    icon_size: "48px"
+    info_padding: "10px"
+
+  # Conversion constants
+  constants:
+    dpi_to_mm: 25.4
+    coordinate_precision: 2
+
+# Development environment (for testing)
+development:
+  rectangular:
+    tabsize: 15
+    jitter: 2
+  colors:
+    default_palette: "viridis"
+
+# Production environment (same as default for now)
+production:
+  colors:
+    default_palette: "magma"

@@ -19,7 +19,8 @@ generate_puzzle(
   filename_prefix = NULL,
   do_warp = FALSE,
   do_trunc = FALSE,
-  stroke_width = 1
+  stroke_width = 1,
+  palette = NULL
 )
 }
 \arguments{
@@ -52,6 +53,8 @@ generate_puzzle(
 \item{do_trunc}{Truncate edge pieces (hexagonal only, default: FALSE)}
 
 \item{stroke_width}{SVG stroke width (default: 1)}
+
+\item{palette}{Viridis palette name (NULL = use config default)}
 }
 \value{
 List with puzzle data, SVG content, and file paths

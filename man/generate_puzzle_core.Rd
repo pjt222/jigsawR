@@ -8,6 +8,8 @@ generate_puzzle_core(
   seed = 1234,
   grid = c(2, 2),
   size = c(200, 200),
+  unit = "mm",
+  dpi = 96,
   tabsize = 20,
   jitter = 4
 )
@@ -17,7 +19,11 @@ generate_puzzle_core(
 
 \item{grid}{Vector c(rows, columns) for puzzle dimensions}
 
-\item{size}{Vector c(width, height) in mm}
+\item{size}{Vector c(width, height) in specified units}
+
+\item{unit}{Unit specification: "mm" (millimeters) or "px" (pixels)}
+
+\item{dpi}{DPI for pixel/mm conversion (96=screen, 300=print quality)}
 
 \item{tabsize}{Tab size as percentage (10-30)}
 

@@ -8,7 +8,9 @@ generate_puzzle_svg(
   puzzle_structure,
   mode = "complete",
   colors = NULL,
-  background = "white"
+  background = "white",
+  stroke_width = 1.5,
+  palette = NULL
 )
 }
 \arguments{
@@ -16,9 +18,13 @@ generate_puzzle_svg(
 
 \item{mode}{"complete" for full puzzle, "individual" for separate pieces}
 
-\item{colors}{Optional vector of colors for pieces}
+\item{colors}{Optional vector of colors for pieces (NULL = use viridis palette)}
 
 \item{background}{Background color for the SVG (default: "white")}
+
+\item{stroke_width}{Stroke width for puzzle lines (default: 1.5)}
+
+\item{palette}{Viridis palette name (if colors is NULL)}
 }
 \value{
 SVG string

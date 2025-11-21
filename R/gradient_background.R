@@ -1,19 +1,26 @@
 # Circular Gradient Background Generation Functions
 # Part of the jigsawR package
 
+#' Create circular gradient background
 #' @import ggplot2
 #' @import ggforce
 #' @import ggfx
 #' @import viridis
-
-#' Create circular gradient background
 #' @param size_px Size in pixels for output
 #' @param diameter Puzzle diameter in mm (optional, for size matching)
+#' @param palette Viridis palette name (NULL = use config default)
 #' @return ggplot2 object with gradient background
 #' @export
-create_gradient_circle_png <- function(size_px = 2000, diameter = NULL) {
+create_gradient_circle_png <- function(size_px = NULL, diameter = NULL, palette = NULL) {
 
-  resolution <- 300 # Fixed resolution for consistent quality
+  # Load config defaults
+  cfg <- get_puzzle_config()
+
+  if (is.null(size_px)) {
+    size_px <- cfg$gradient$default_size_px
+  }
+
+  resolution <- cfg$gradient$dpi
 
   # Calculate coordinate limits to match puzzle dimensions if provided
   if (!is.null(diameter)) {
@@ -34,14 +41,14 @@ create_gradient_circle_png <- function(size_px = 2000, diameter = NULL) {
     # So: coord_limit = (canvas_size/2) / puzzle_radius = canvas_size / diameter
     coord_limit <- canvas_size / diameter
   } else {
-    # Default coordinates for backward compatibility
-    coord_limit <- 1.3
+    # Default coordinates from config
+    coord_limit <- cfg$gradient$coord_limit
   }
 
   # Generate coordinate grid
   # Make background slightly larger to ensure complete coverage
-  coord_range <- coord_limit * 1.20  # Larger range for gradient coverage
-  coord_limit <- coord_limit * 0.90   # Slightly expand plot limits for perfect alignment
+  coord_range <- coord_limit * cfg$gradient$range_expansion
+  coord_limit <- coord_limit * cfg$gradient$limit_contraction
   x_coords <- seq(-coord_range, coord_range, length.out = resolution)
   y_coords <- seq(-coord_range, coord_range, length.out = resolution)
 
@@ -51,14 +58,16 @@ create_gradient_circle_png <- function(size_px = 2000, diameter = NULL) {
     (x + y + 2*coord_range) / (4*coord_range)
   })
 
-  # Convert to viridis colors
-  viridis_colors <- viridis::viridis(256)
-  color_indices <- pmax(1, pmin(256, round(gradient_matrix * 255) + 1))
+  # Convert to viridis colors using selected palette
+  palette_size <- cfg$gradient$palette_size
+  viridis_colors <- get_puzzle_colors(palette_size, palette)
+  color_indices <- pmax(1, pmin(palette_size, round(gradient_matrix * (palette_size - 1)) + 1))
   color_matrix <- array(viridis_colors[color_indices], dim = dim(gradient_matrix))
   gradient_raster <- as.raster(color_matrix)
 
   # Create circle mask for gradient - ensure exact radius=1.0
-  angles <- seq(0, 2*pi, length.out = 361)[-361]  # Remove duplicate point
+  circle_resolution <- cfg$gradient$circle_resolution
+  angles <- seq(0, 2*pi, length.out = circle_resolution)[-circle_resolution]
   circle_mask <- data.frame(
     x = cos(angles),
     y = sin(angles)
@@ -94,12 +103,19 @@ create_gradient_circle_png <- function(size_px = 2000, diameter = NULL) {
 #' Save gradient background to file
 #' @param gradient_plot ggplot2 object from create_gradient_circle_png()
 #' @param background_file Output filename for background
-#' @param size_px Size in pixels
+#' @param size_px Size in pixels (NULL = use config default)
 #' @export
-save_gradient_background <- function(gradient_plot, background_file, size_px = 2000) {
+save_gradient_background <- function(gradient_plot, background_file, size_px = NULL) {
+
+  # Load config defaults
+  cfg <- get_puzzle_config()
+
+  if (is.null(size_px)) {
+    size_px <- cfg$gradient$default_size_px
+  }
 
   # Calculate dimensions in inches for high DPI
-  size_inches <- size_px / 300  # 300 DPI
+  size_inches <- size_px / cfg$gradient$dpi
 
   # Ensure output directory exists
   if (!dir.exists("output")) {

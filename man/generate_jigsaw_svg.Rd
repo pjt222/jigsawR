@@ -10,6 +10,8 @@ generate_jigsaw_svg(
   jitter = 4,
   width = 300,
   height = 200,
+  unit = "mm",
+  dpi = 96,
   radius = 2,
   xn = 15,
   yn = 10

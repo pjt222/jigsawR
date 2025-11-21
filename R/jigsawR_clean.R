@@ -20,8 +20,9 @@
 #' @param output_dir Directory for output files
 #' @param filename_prefix Prefix for output files
 #' @param do_warp Apply circular warping (hexagonal only, default: FALSE)
-#' @param do_trunc Truncate edge pieces (hexagonal only, default: FALSE)  
+#' @param do_trunc Truncate edge pieces (hexagonal only, default: FALSE)
 #' @param stroke_width SVG stroke width (default: 1)
+#' @param palette Viridis palette name (NULL = use config default)
 #' @return List with puzzle data, SVG content, and file paths
 #' @export
 generate_puzzle <- function(type = "rectangular",
@@ -38,7 +39,8 @@ generate_puzzle <- function(type = "rectangular",
                           filename_prefix = NULL,
                           do_warp = FALSE,
                           do_trunc = FALSE,
-                          stroke_width = 1) {
+                          stroke_width = 1,
+                          palette = NULL) {
   
   # Generate seed if not provided
   if (is.null(seed)) {
@@ -157,7 +159,7 @@ generate_puzzle <- function(type = "rectangular",
       )
       svg_individual <- hex_result$svg_content
     } else {
-      svg_individual <- generate_puzzle_svg(puzzle_structure, mode = "individual", colors = colors, background = background, stroke_width = stroke_width)
+      svg_individual <- generate_puzzle_svg(puzzle_structure, mode = "individual", colors = colors, background = background, stroke_width = stroke_width, palette = palette)
     }
     result$svg_individual <- svg_individual
     

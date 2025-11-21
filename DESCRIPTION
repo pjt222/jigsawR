@@ -24,6 +24,7 @@ Imports:
     ggforce,
     ggfx,
     viridis,
+    config,
     shiny,
     bslib,
     shinyjs,

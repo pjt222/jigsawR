@@ -4,14 +4,14 @@
 \alias{save_gradient_background}
 \title{Save gradient background to file}
 \usage{
-save_gradient_background(gradient_plot, background_file, size_px = 2000)
+save_gradient_background(gradient_plot, background_file, size_px = NULL)
 }
 \arguments{
 \item{gradient_plot}{ggplot2 object from create_gradient_circle_png()}
 
 \item{background_file}{Output filename for background}
 
-\item{size_px}{Size in pixels}
+\item{size_px}{Size in pixels (NULL = use config default)}
 }
 \description{
 Save gradient background to file

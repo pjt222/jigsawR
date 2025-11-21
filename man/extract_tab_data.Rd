@@ -4,7 +4,15 @@
 \alias{extract_tab_data}
 \title{Extract tab/blank data from puzzle generation}
 \usage{
-extract_tab_data(seed, xn, yn, tabsize = 20, jitter = 4)
+extract_tab_data(
+  seed,
+  xn,
+  yn,
+  tabsize = 20,
+  jitter = 4,
+  width = 300,
+  height = 200
+)
 }
 \arguments{
 \item{seed}{Random seed for puzzle generation}
@@ -16,11 +24,15 @@ extract_tab_data(seed, xn, yn, tabsize = 20, jitter = 4)
 \item{tabsize}{Tab size percentage}
 
 \item{jitter}{Jitter percentage}
+
+\item{width}{Puzzle width in mm (default: 300)}
+
+\item{height}{Puzzle height in mm (default: 200)}
 }
 \value{
 List containing tab/blank data for all dividers
 }
 \description{
 This function pre-generates all tab/blank information needed to create
-individual piece boundaries consistently.
+individual piece boundaries consistently. Useful for advanced manipulation.
 }

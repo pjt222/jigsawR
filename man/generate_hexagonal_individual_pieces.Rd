@@ -42,9 +42,9 @@ generate_hexagonal_individual_pieces(
 \item{save_files}{Whether to save individual piece files}
 }
 \value{
-List with piece data and SVG content
+List with actual individual piece data
 }
 \description{
-Creates separate SVG files for each piece in a hexagonal puzzle.
-Each piece maintains its relative position and complementary edges.
+Creates individual piece shapes by parsing the complete puzzle paths.
+This is the "hard question" implementation that extracts actual piece boundaries.
 }

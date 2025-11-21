@@ -10,6 +10,8 @@ init_jigsaw(
   jitter = 4,
   width = 300,
   height = 200,
+  unit = "mm",
+  dpi = 96,
   radius = 2,
   xn = 15,
   yn = 10
@@ -25,6 +27,10 @@ init_jigsaw(
 \item{width}{Puzzle width in mm (default: 300)}
 
 \item{height}{Puzzle height in mm (default: 200)}
+
+\item{unit}{Unit specification: "mm" or "px"}
+
+\item{dpi}{DPI for conversion (default: 96)}
 
 \item{radius}{Corner radius in mm (default: 2.0)}
 

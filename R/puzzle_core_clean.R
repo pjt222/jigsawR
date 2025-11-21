@@ -304,12 +304,13 @@ generate_single_piece <- function(xi, yi, puzzle_structure) {
 #'
 #' @param puzzle_structure Output from generate_puzzle_core()
 #' @param mode "complete" for full puzzle, "individual" for separate pieces
-#' @param colors Optional vector of colors for pieces
+#' @param colors Optional vector of colors for pieces (NULL = use viridis palette)
 #' @param background Background color for the SVG (default: "white")
 #' @param stroke_width Stroke width for puzzle lines (default: 1.5)
+#' @param palette Viridis palette name (if colors is NULL)
 #' @return SVG string
 #' @export
-generate_puzzle_svg <- function(puzzle_structure, mode = "complete", colors = NULL, background = "white", stroke_width = 1.5) {
+generate_puzzle_svg <- function(puzzle_structure, mode = "complete", colors = NULL, background = "white", stroke_width = 1.5, palette = NULL) {
   
   xn <- puzzle_structure$grid[2]
   yn <- puzzle_structure$grid[1]
@@ -370,15 +371,17 @@ generate_puzzle_svg <- function(puzzle_structure, mode = "complete", colors = NU
   } else if (mode == "individual") {
     # Separate path for each piece
     if (is.null(colors)) {
-      colors <- "black"
+      # Use viridis palette if no colors specified
+      total_pieces <- xn * yn
+      colors <- get_puzzle_colors(total_pieces, palette)
     }
-    
+
     piece_num <- 0
     for (yi in 0:(yn - 1)) {
       for (xi in 0:(xn - 1)) {
         piece_path <- generate_single_piece(xi, yi, puzzle_structure)
         color <- colors[(piece_num %% length(colors)) + 1]
-        
+
         svg <- paste0(svg, sprintf('  <path id="piece-%d-%d" d="%s" fill="none" stroke="%s" stroke-width="%.1f"/>\n',
                                   xi, yi, piece_path, color, stroke_width))
         piece_num <- piece_num + 1
