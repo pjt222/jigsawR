@@ -205,13 +205,17 @@ ui <- fluidPage(
       div(class = "sidebar-section",
         h4("Advanced Settings", class = "section-title"),
 
-        sliderInput("tabsize", "Tab Size (%):",
+        sliderInput("tabsize", "Tab Size:",
                    min = 0, max = 50, value = 20, step = 1,
-                   ticks = TRUE),
+                   ticks = TRUE,
+                   post = "%",
+                   sep = ""),
 
-        sliderInput("jitter", "Jitter (%):",
+        sliderInput("jitter", "Jitter:",
                    min = 0, max = 25, value = 4, step = 1,
-                   ticks = TRUE),
+                   ticks = TRUE,
+                   post = "%",
+                   sep = ""),
 
         conditionalPanel(
           condition = "input.puzzle_type == 'rectangular'",
@@ -238,9 +242,11 @@ ui <- fluidPage(
         # Conditional separation offset
         conditionalPanel(
           condition = "input.output_mode == 'separated' || input.output_mode_hex == 'separated'",
-          sliderInput("offset", "Separation (mm):",
+          sliderInput("offset", "Separation:",
                      min = 0, max = 50, value = 10, step = 1,
-                     ticks = TRUE),
+                     ticks = TRUE,
+                     post = " mm",
+                     sep = ""),
           conditionalPanel(
             condition = "input.puzzle_type == 'hexagonal'",
             radioButtons("arrangement", "Arrangement:",
@@ -270,7 +276,10 @@ ui <- fluidPage(
 
         sliderInput("stroke_width", "Line Width:",
                    min = 0.5, max = 10, value = 1.5, step = 0.5,
-                   ticks = TRUE),
+                   ticks = TRUE,
+                   round = 1,
+                   post = " mm",
+                   sep = ""),
 
         selectInput("background", "Background:",
                    choices = list(
