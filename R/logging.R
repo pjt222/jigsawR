@@ -10,38 +10,55 @@ NULL
 
 #' Log an informational message
 #'
-#' @param msg Message to log
-#' @param ... Additional arguments passed to cli::cli_alert_info
+#' Uses cli for formatted output with proper variable interpolation.
+#' Variables in the message are automatically captured from the calling environment.
+#'
+#' @param msg Message to log (can use cli inline markup like {.path}, {.file}, etc.)
+#' @param .envir Environment for variable lookup (defaults to parent frame)
 #' @keywords internal
-log_info <- function(msg, ...) {
-  cli::cli_alert_info(msg, ...)
+#' @examples
+#' \dontrun{
+#' path <- "/home/user"
+#' log_info("Working directory: {.path {path}}")
+#' }
+log_info <- function(msg, .envir = parent.frame()) {
+  cli::cli_alert_info(msg, .envir = .envir)
 }
 
 #' Log a success message
 #'
-#' @param msg Message to log
-#' @param ... Additional arguments passed to cli::cli_alert_success
+#' Uses cli for formatted output with proper variable interpolation.
+#' Variables in the message are automatically captured from the calling environment.
+#'
+#' @param msg Message to log (can use cli inline markup)
+#' @param .envir Environment for variable lookup (defaults to parent frame)
 #' @keywords internal
-log_success <- function(msg, ...) {
-  cli::cli_alert_success(msg, ...)
+log_success <- function(msg, .envir = parent.frame()) {
+  cli::cli_alert_success(msg, .envir = .envir)
 }
 
 #' Log a warning message
 #'
-#' @param msg Message to log
-#' @param ... Additional arguments passed to cli::cli_alert_warning
+#' Uses cli for formatted output with proper variable interpolation.
+#' Variables in the message are automatically captured from the calling environment.
+#'
+#' @param msg Message to log (can use cli inline markup)
+#' @param .envir Environment for variable lookup (defaults to parent frame)
 #' @keywords internal
-log_warn <- function(msg, ...) {
-  cli::cli_alert_warning(msg, ...)
+log_warn <- function(msg, .envir = parent.frame()) {
+  cli::cli_alert_warning(msg, .envir = .envir)
 }
 
 #' Log an error message
 #'
-#' @param msg Message to log
-#' @param ... Additional arguments passed to cli::cli_alert_danger
+#' Uses cli for formatted output with proper variable interpolation.
+#' Variables in the message are automatically captured from the calling environment.
+#'
+#' @param msg Message to log (can use cli inline markup)
+#' @param .envir Environment for variable lookup (defaults to parent frame)
 #' @keywords internal
-log_error <- function(msg, ...) {
-  cli::cli_alert_danger(msg, ...)
+log_error <- function(msg, .envir = parent.frame()) {
+  cli::cli_alert_danger(msg, .envir = .envir)
 }
 
 #' Start a progress bar

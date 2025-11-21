@@ -21,11 +21,13 @@ source_dir <- function(path) {
   if (file.exists(path)) {
     log_success("Directory exists!")
     files <- list.files(path, pattern = "\\.R$", full.names = TRUE)
-    log_info("Found {length(files)} R files")
+    n_files <- length(files)
+    log_info("Found {n_files} R files")
     for (file in files) {
       # Skip archive and example files
       if (!grepl("scripts_archive|examples", file)) {
-        log_info("Sourcing: {.file {basename(file)}}")
+        file_name <- basename(file)
+        log_info("Sourcing: {.file {file_name}}")
         source(file)
       }
     }
@@ -36,10 +38,14 @@ source_dir <- function(path) {
 
 # Debug: Show current working directory and files
 log_header("App Initialization")
-log_info("Working directory: {.path {getwd()}}")
-log_info("Files in current dir: {paste(list.files(), collapse=', ')}")
-log_info("Files in parent dir: {paste(list.files('..'), collapse=', ')}")
-log_info("Files in parent/parent dir: {paste(list.files('../..'), collapse=', ')}")
+wd <- getwd()
+log_info("Working directory: {.path {wd}}")
+current_files <- paste(list.files(), collapse=', ')
+log_info("Files in current dir: {current_files}")
+parent_files <- paste(list.files('..'), collapse=', ')
+log_info("Files in parent dir: {parent_files}")
+parent_parent_files <- paste(list.files('../..'), collapse=', ')
+log_info("Files in parent/parent dir: {parent_parent_files}")
 
 # Try to load functions (adjust path based on where app is run from)
 # On shinyapps.io, R files will be in ./R (same directory as app.R)
@@ -59,7 +65,8 @@ for (path in possible_paths) {
 
 if (!loaded) {
   log_error("Could not find R directory in any expected location!")
-  log_info("Current files: {paste(list.files(), collapse=', ')}")
+  files_list <- paste(list.files(), collapse=', ')
+  log_info("Current files: {files_list}")
 }
 
 # Define UI

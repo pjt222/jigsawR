@@ -67,6 +67,48 @@ jigsawR/
 - Functions automatically create the directory if it doesn't exist
 - Keeps project root clean and organized
 
+## Code Style Guidelines
+
+### Console Output
+
+**ALWAYS use `cli` package for console output, NOT `cat()` or `print()`**
+
+The project uses the `cli` package for all console output to provide:
+- Consistent, colored, and formatted output
+- Proper handling of paths, files, and code elements
+- Better error and warning messages
+- Progress indicators
+
+**Logging Wrapper Functions** (defined in `R/logging.R`):
+```r
+log_info("Found {n_files} files in {.path {dir_path}}")
+log_success("Operation completed!")
+log_warn("Missing optional parameter: {param_name}")
+log_error("Failed to process {.file {filename}}")
+log_header("Section Title")
+log_subheader("Subsection Title")
+```
+
+**Important Notes:**
+- Use variables directly in log messages - they are automatically captured from the calling environment
+- Extract values from expressions into variables first (e.g., `n_files <- length(files)`)
+- Use cli inline markup: `{.path}`, `{.file}`, `{.field}`, `{.val}`, etc.
+- The `.envir = parent.frame()` parameter ensures proper variable scoping
+
+**Examples:**
+```r
+# GOOD - Extract values first
+path <- "data/output"
+n_files <- length(list.files(path))
+log_info("Found {n_files} files in {.path {path}}")
+
+# BAD - Don't use cat()
+cat("Found", length(files), "files in", path, "\n")
+
+# BAD - Don't nest function calls in cli markup
+log_info("Found {length(files)} files")  # Won't work!
+```
+
 ## Development Commands
 
 ### Running the Scripts
