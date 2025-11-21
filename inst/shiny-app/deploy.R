@@ -23,18 +23,6 @@ if (account == "" || token == "" || secret == "") {
 
 log_success("Environment variables loaded successfully")
 
-# Set CRAN snapshot repository to yesterday to avoid package sync issues
-# This prevents failures when packages released today haven't synced to shinyapps.io mirror
-cran_snapshot_date <- Sys.getenv("CRAN_SNAPSHOT_DATE")
-if (cran_snapshot_date != "") {
-  cran_snapshot_url <- sprintf("https://packagemanager.posit.co/cran/%s", cran_snapshot_date)
-  log_info("Using CRAN snapshot from: {.field {cran_snapshot_date}}")
-  log_info("CRAN URL: {.url {cran_snapshot_url}}")
-  options(repos = c(CRAN = cran_snapshot_url))
-} else {
-  log_warn("CRAN_SNAPSHOT_DATE not set, using default CRAN mirror")
-}
-
 # Load rsconnect package
 if (!requireNamespace("rsconnect", quietly = TRUE)) {
   log_info("Installing rsconnect package...")
@@ -93,14 +81,6 @@ log_subheader("Deploying application")
 log_info("App directory: {.path {app_dir}}")
 log_info("App name: {.strong {app_name}}")
 log_info("Account: {.strong {account}}")
-
-# Ensure rsconnect uses the CRAN snapshot for dependency resolution
-# This is critical for packages that were installed from source in GitHub Actions
-if (cran_snapshot_date != "") {
-  log_info("Configuring rsconnect to use CRAN snapshot: {.field {cran_snapshot_date}}")
-  # Set environment variable that rsconnect will use
-  Sys.setenv(R_REPOS = sprintf("https://packagemanager.posit.co/cran/%s", cran_snapshot_date))
-}
 
 rsconnect::deployApp(
   appDir = app_dir,
