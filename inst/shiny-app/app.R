@@ -226,9 +226,9 @@ ui <- fluidPage(
           condition = "input.puzzle_type == 'hexagonal'",
           radioButtons("output_mode_hex", "Output Mode:",
                       choices = list(
-                        "Complete Puzzle" = "complete",
-                        "Individual Pieces" = "individual",
-                        "Separated Pieces" = "separated"
+                        "Complete Puzzle" = "complete"
+                        # "Individual Pieces" = "individual",  # TODO: Issue #10 - Not yet implemented
+                        # "Separated Pieces" = "separated"     # TODO: Issue #7 - Not yet implemented
                       ),
                       selected = "complete")
         ),
@@ -468,23 +468,24 @@ server <- function(input, output, session) {
 
       # Generate puzzle based on type
       if (puzzle_type == "hexagonal") {
-        if (output_mode == "separated") {
-          # Use hexagonal separation function
-          svg <- generate_separated_hexagonal_svg(
-            rings = input$rings,
-            seed = input$seed,
-            diameter = input$diameter,
-            offset = input$offset,
-            arrangement = ifelse(is.null(input$arrangement), "hexagonal", input$arrangement),
-            tabsize = input$tabsize,
-            jitter = input$jitter,
-            do_warp = input$do_warp,
-            do_trunc = input$do_trunc,
-            colors = colors,
-            stroke_width = input$stroke_width,
-            background = input$background
-          )
-        } else {
+        # if (output_mode == "separated") {
+        #   # TODO: Issue #7 - Hexagonal separation not yet fully implemented
+        #   # Use hexagonal separation function
+        #   svg <- generate_separated_hexagonal_svg(
+        #     rings = input$rings,
+        #     seed = input$seed,
+        #     diameter = input$diameter,
+        #     offset = input$offset,
+        #     arrangement = ifelse(is.null(input$arrangement), "hexagonal", input$arrangement),
+        #     tabsize = input$tabsize,
+        #     jitter = input$jitter,
+        #     do_warp = input$do_warp,
+        #     do_trunc = input$do_trunc,
+        #     colors = colors,
+        #     stroke_width = input$stroke_width,
+        #     background = input$background
+        #   )
+        # } else {
           # Generate standard hexagonal puzzle
           puzzle_result <- generate_puzzle(
             type = "hexagonal",
@@ -508,7 +509,7 @@ server <- function(input, output, session) {
           } else {
             svg <- puzzle_result$svg_individual
           }
-        }
+        # }  # End commented out separated mode check
 
       } else if (output_mode == "separated") {
         # Use separated puzzle generation for rectangular
