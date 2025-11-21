@@ -206,10 +206,10 @@ ui <- fluidPage(
         h4("Advanced Settings", class = "section-title"),
 
         sliderInput("tabsize", "Tab Size (%):",
-                   min = 10, max = 30, value = 20, step = 1),
+                   min = 10, max = 50, value = 20, step = 1),
 
         sliderInput("jitter", "Jitter (%):",
-                   min = 0, max = 10, value = 4, step = 1),
+                   min = 0, max = 25, value = 4, step = 1),
 
         conditionalPanel(
           condition = "input.puzzle_type == 'rectangular'",
@@ -266,7 +266,7 @@ ui <- fluidPage(
                    selected = "black"),
 
         sliderInput("stroke_width", "Line Width:",
-                   min = 0.5, max = 3, value = 1.5, step = 0.1),
+                   min = 0.5, max = 10, value = 1.5, step = 0.5),
 
         selectInput("background", "Background:",
                    choices = list(
