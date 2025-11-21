@@ -122,7 +122,7 @@ generate_puzzle <- function(type = "rectangular",
       )
       svg_complete <- hex_result$svg  # Extract SVG string from result list
     } else {
-      svg_complete <- generate_puzzle_svg(puzzle_structure, mode = "complete", background = background)
+      svg_complete <- generate_puzzle_svg(puzzle_structure, mode = "complete", background = background, stroke_width = stroke_width)
     }
     result$svg_complete <- svg_complete
     
@@ -157,7 +157,7 @@ generate_puzzle <- function(type = "rectangular",
       )
       svg_individual <- hex_result$svg_content
     } else {
-      svg_individual <- generate_puzzle_svg(puzzle_structure, mode = "individual", colors = colors, background = background)
+      svg_individual <- generate_puzzle_svg(puzzle_structure, mode = "individual", colors = colors, background = background, stroke_width = stroke_width)
     }
     result$svg_individual <- svg_individual
     
