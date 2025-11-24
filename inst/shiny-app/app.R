@@ -256,6 +256,7 @@ ui <- page_fluid(
 
         selectInput("color_palette", "Color Palette:",
                    choices = list(
+                     "Black (Solid)" = "black",
                      "Magma (Purple-Yellow)" = "magma",
                      "Viridis (Blue-Green-Yellow)" = "viridis",
                      "Plasma (Purple-Red-Yellow)" = "plasma",
