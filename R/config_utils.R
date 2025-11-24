@@ -45,6 +45,7 @@ get_puzzle_colors <- function(n, palette = NULL) {
   }
 
   # Validate palette name
+  # Note: 'black' is handled as a special case above and is intentionally excluded from this list.
   valid_palettes <- c("viridis", "magma", "plasma", "inferno", "cividis",
                       "mako", "rocket", "turbo")
 
