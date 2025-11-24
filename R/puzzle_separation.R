@@ -136,6 +136,7 @@ generate_separated_puzzle_svg <- function(puzzle_structure,
     -padding, -padding, canvas_width, canvas_height)
   
   # Add background based on type
+  # Important: Position background at viewBox origin to match coordinate system
   if (background == "gradient") {
     svg <- paste0(svg, '  <defs>
     <radialGradient id="bg-gradient" cx="50%" cy="50%" r="50%">
@@ -144,12 +145,14 @@ generate_separated_puzzle_svg <- function(puzzle_structure,
       <stop offset="100%" style="stop-color:#90caf9;stop-opacity:1" />
     </radialGradient>
   </defs>
-  <rect width="100%" height="100%" fill="url(#bg-gradient)"/>\n')
+  ', sprintf('<rect x="%.0f" y="%.0f" width="%.0f" height="%.0f" fill="url(#bg-gradient)"/>\n',
+             -padding, -padding, canvas_width, canvas_height))
   } else if (background == "none" || background == "") {
     # No background rect
   } else {
-    # Solid color background
-    svg <- paste0(svg, sprintf('  <rect width="100%%" height="100%%" fill="%s"/>\n', background))
+    # Solid color background - position at viewBox origin to match separated pieces
+    svg <- paste0(svg, sprintf('  <rect x="%.0f" y="%.0f" width="%.0f" height="%.0f" fill="%s"/>\n',
+                              -padding, -padding, canvas_width, canvas_height, background))
   }
   
   svg <- paste0(svg, '<g id="separated-puzzle">\n')
