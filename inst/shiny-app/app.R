@@ -543,7 +543,8 @@ server <- function(input, output, session) {
           offset = input$offset,
           colors = colors,
           stroke_width = input$stroke_width,
-          background = input$background
+          background = input$background,
+          palette = palette
         )
 
       } else {
