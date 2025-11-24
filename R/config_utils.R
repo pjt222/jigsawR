@@ -30,7 +30,7 @@ get_puzzle_config <- function(config_name = "default") {
 #' Returns colors from specified viridis palette
 #'
 #' @param n Number of colors to generate
-#' @param palette Palette name (viridis, magma, plasma, inferno, cividis, mako, rocket, turbo)
+#' @param palette Palette name (black, viridis, magma, plasma, inferno, cividis, mako, rocket, turbo)
 #' @return Character vector of hex colors
 #' @export
 get_puzzle_colors <- function(n, palette = NULL) {
@@ -39,7 +39,13 @@ get_puzzle_colors <- function(n, palette = NULL) {
     palette <- cfg$colors$default_palette
   }
 
+  # Handle black palette as special case
+  if (palette == "black") {
+    return(rep("#000000", n))
+  }
+
   # Validate palette name
+  # Note: 'black' is handled as a special case above and is intentionally excluded from this list.
   valid_palettes <- c("viridis", "magma", "plasma", "inferno", "cividis",
                       "mako", "rocket", "turbo")
 
@@ -77,7 +83,7 @@ get_fallback_config <- function() {
     ),
     colors = list(
       default_palette = "magma",
-      available_palettes = c("viridis", "magma", "plasma", "inferno",
+      available_palettes = c("black", "viridis", "magma", "plasma", "inferno",
                              "cividis", "mako", "rocket", "turbo")
     ),
     gradient = list(

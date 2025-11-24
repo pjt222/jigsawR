@@ -23,6 +23,7 @@ default:
   colors:
     default_palette: "magma"
     available_palettes:
+      - "black"
       - "viridis"
       - "magma"
       - "plasma"
@@ -34,6 +35,7 @@ default:
 
     # Palette descriptions for UI
     palette_descriptions:
+      black: "Solid Black"
       viridis: "Blue to Green to Yellow"
       magma: "Black to Purple to Yellow (Default)"
       plasma: "Purple to Red to Yellow"
