@@ -272,7 +272,9 @@ generate_puzzle_svg_enhanced <- function(puzzle_structure,
         tabsize = puzzle_structure$parameters$tabsize,
         jitter = puzzle_structure$parameters$jitter,
         do_warp = puzzle_structure$parameters$do_warp,
-        do_trunc = puzzle_structure$parameters$do_trunc
+        do_trunc = puzzle_structure$parameters$do_trunc,
+        stroke_width = stroke_width,
+        background = background
       ))
     }
   } else {
@@ -291,7 +293,9 @@ generate_puzzle_svg_enhanced <- function(puzzle_structure,
       return(generate_puzzle_svg(
         puzzle_structure = puzzle_structure,
         mode = mode,
-        colors = colors
+        colors = colors,
+        stroke_width = stroke_width,
+        background = background
       ))
     }
   }
