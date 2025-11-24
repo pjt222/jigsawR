@@ -70,12 +70,21 @@ if (!loaded) {
   log_info("Current files: {files_list}")
 }
 
-# Define UI
+# Define UI with enhanced bslib theme
 ui <- page_fluid(
-  theme = bs_theme(bootswatch = "darkly"),
+  theme = bs_theme(
+    bootswatch = "darkly",
+    # Enhanced theme customization for better component integration
+    primary = "#375a7f",
+    secondary = "#444",
+    success = "#00bc8c",
+    info = "#3498db",
+    warning = "#f39c12",
+    danger = "#e74c3c"
+  ),
   useShinyjs(),
 
-  # Add custom CSS and JavaScript for sequential downloads
+  # Add minimal custom CSS and JavaScript for sequential downloads
   tags$head(
     tags$link(rel = "stylesheet", type = "text/css", href = "custom.css"),
     tags$script(HTML("
@@ -92,13 +101,6 @@ ui <- page_fluid(
           }, index * 500);
         });
       });
-    ")),
-    tags$style(HTML("
-      /* Minimal custom styles - let bslib handle most styling */
-      .svg-display {
-        max-width: 100%;
-        height: auto;
-      }
     "))
   ),
 
@@ -107,7 +109,7 @@ ui <- page_fluid(
     div(
       h2("jigsawR Puzzle Generator"),
       p("Create customizable jigsaw puzzles for laser cutting and more",
-        class = "text-muted", style = "font-size: 14px;")
+        class = "text-muted fs-6")
     )
   ),
 
@@ -117,8 +119,9 @@ ui <- page_fluid(
       width = 4,
 
       # Basic Settings Section
-      div(class = "sidebar-section",
-        h4("Basic Settings", class = "section-title"),
+      card(
+        card_header("Basic Settings"),
+        card_body(
 
         # Puzzle Type Selection
         radioButtons("puzzle_type", "Puzzle Type:",
@@ -179,14 +182,16 @@ ui <- page_fluid(
             br(),
             actionButton("randomize", "Random",
                         icon = icon("dice"),
-                        class = "mt-1")
+                        class = "mt-4")
           )
+        )
         )
       ),
 
       # Advanced Settings Section
-      div(class = "sidebar-section",
-        h4("Advanced Settings", class = "section-title"),
+      card(
+        card_header("Advanced Settings"),
+        card_body(
 
         sliderInput("tabsize", "Tab Size:",
                    min = 0, max = 50, value = 20, step = 1,
@@ -241,11 +246,13 @@ ui <- page_fluid(
                         inline = TRUE)
           )
         )
+        )
       ),
 
       # Styling Options Section
-      div(class = "sidebar-section",
-        h4("Styling Options", class = "section-title"),
+      card(
+        card_header("Styling Options"),
+        card_body(
 
         selectInput("color_palette", "Color Palette:",
                    choices = list(
@@ -275,6 +282,7 @@ ui <- page_fluid(
                      "Light Blue" = "#e3f2fd"
                    ),
                    selected = "white")
+        )
       ),
 
       # Action Buttons
@@ -308,7 +316,7 @@ ui <- page_fluid(
         # Help text for individual pieces download
         conditionalPanel(
           condition = "input.output_mode == 'individual' || input.output_mode_hex == 'individual'",
-          div(class = "alert alert-info mt-2", style = "padding: 8px;",
+          div(class = "alert alert-info mt-2 p-2",
             p(class = "small mb-0",
               icon("info-circle"),
               strong(" Individual Pieces:"),
@@ -332,9 +340,10 @@ ui <- page_fluid(
       ),
 
       # Info text
-      div(class = "tip-box mt-3",
+      div(class = "alert alert-warning mt-3 mb-0",
         p(class = "small mb-0",
-          strong("Tip:"), "Click 'Generate Puzzle' to create your puzzle.
+          icon("lightbulb"), " ",
+          strong("Tip:"), " Click 'Generate Puzzle' to create your puzzle.
           The preview will appear on the right.")
       )
     ),
@@ -358,13 +367,9 @@ ui <- page_fluid(
               class = "d-flex align-items-center"
             ),
             card_body(
-              fillable = FALSE,
-              padding = 0,
-              div(
-                class = "d-flex align-items-center justify-content-center p-3",
-                style = "height: 500px; overflow: auto;",
-                uiOutput("puzzle_display")
-              )
+              class = "d-flex align-items-center justify-content-center p-3",
+              style = "height: 500px; overflow: auto;",
+              uiOutput("puzzle_display")
             )
           ),
           br(),
