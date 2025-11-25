@@ -293,25 +293,49 @@ ui <- page_fluid(
           "Thickness of puzzle piece outlines. For laser cutting, use 0.5mm. For printing or display, use 1.5-2.5mm."
         ),
 
-        selectInput("background", "Background:",
-                   choices = list(
-                     "None" = "none",
-                     "White" = "white",
-                     "Gradient" = "gradient",
-                     "Light Blue" = "#e3f2fd"
-                   ),
-                   selected = "white")
+        # Background type selector
+        radioButtons("background_type", "Background:",
+                    choices = list(
+                      "None" = "none",
+                      "Solid Color" = "solid",
+                      "Gradient" = "gradient"
+                    ),
+                    selected = "solid",
+                    inline = TRUE),
 
-        # Transparent background feature - waiting for PNG download implementation
-        # Uncomment when Issue #25 (PNG download capability) is implemented:
-        # checkboxInput("transparent_background",
-        #              "Transparent Background (PNG only)",
-        #              value = FALSE),
-        # helpText(
-        #   class = "text-muted small",
-        #   icon("info-circle"), " ",
-        #   "Makes areas outside puzzle circle transparent. Only works with PNG downloads."
-        # )
+        # Solid color picker (shown when background_type == "solid")
+        conditionalPanel(
+          condition = "input.background_type == 'solid'",
+          colourpicker::colourInput(
+            "background_color",
+            "Background Color:",
+            value = "#ffffff",
+            showColour = "background"
+          )
+        ),
+
+        # Gradient color pickers (shown when background_type == "gradient")
+        conditionalPanel(
+          condition = "input.background_type == 'gradient'",
+          colourpicker::colourInput(
+            "gradient_center",
+            "Center Color (0%):",
+            value = "#e3f2fd",
+            showColour = "background"
+          ),
+          colourpicker::colourInput(
+            "gradient_middle",
+            "Middle Color (50%):",
+            value = "#bbdefb",
+            showColour = "background"
+          ),
+          colourpicker::colourInput(
+            "gradient_edge",
+            "Edge Color (100%):",
+            value = "#90caf9",
+            showColour = "background"
+          )
+        )
         )
       ),  # Close accordion
 
@@ -470,7 +494,12 @@ server <- function(input, output, session) {
     updateSliderInput(session, "offset", value = 10)
     updateSelectInput(session, "color_scheme", selected = "black")
     updateSliderInput(session, "stroke_width", value = 1.5)
-    updateSelectInput(session, "background", selected = "white")
+    # Reset background settings
+    updateRadioButtons(session, "background_type", selected = "solid")
+    colourpicker::updateColourInput(session, "background_color", value = "#ffffff")
+    colourpicker::updateColourInput(session, "gradient_center", value = "#e3f2fd")
+    colourpicker::updateColourInput(session, "gradient_middle", value = "#bbdefb")
+    colourpicker::updateColourInput(session, "gradient_edge", value = "#90caf9")
   })
 
   # Generate puzzle
@@ -491,6 +520,18 @@ server <- function(input, output, session) {
       # Use viridis palette (colors will be NULL, palette name will be passed)
       colors <- NULL
       palette <- input$color_palette
+
+      # Determine background value based on type
+      background_value <- switch(input$background_type,
+        "none" = "none",
+        "solid" = input$background_color,
+        "gradient" = list(
+          type = "gradient",
+          center = input$gradient_center,
+          middle = input$gradient_middle,
+          edge = input$gradient_edge
+        )
+      )
 
       incProgress(0.5, detail = "Generating SVG")
 
@@ -530,7 +571,7 @@ server <- function(input, output, session) {
             jitter = input$jitter,
             output = ifelse(output_mode == "complete", "complete", "individual"),
             colors = colors,
-            background = input$background,
+            background = background_value,
             save_files = FALSE,
             do_warp = input$do_warp,
             do_trunc = input$do_trunc,
@@ -561,7 +602,7 @@ server <- function(input, output, session) {
           offset = input$offset,
           colors = colors,
           stroke_width = input$stroke_width,
-          background = input$background,
+          background = background_value,
           palette = palette
         )
 
@@ -576,7 +617,7 @@ server <- function(input, output, session) {
           jitter = input$jitter,
           output = ifelse(output_mode == "complete", "complete", "individual"),
           colors = colors,
-          background = input$background,
+          background = background_value,
           save_files = FALSE,
           palette = palette,
           stroke_width = input$stroke_width

@@ -141,7 +141,24 @@ generate_separated_puzzle_svg <- function(puzzle_structure,
   
   # Add background based on type
   # Important: Position background at viewBox origin to match coordinate system
-  if (background == "gradient") {
+  # Background can be: "none", a color string, or a list with gradient colors
+  if (is.list(background) && !is.null(background$type) && background$type == "gradient") {
+    # Custom gradient with user-specified colors
+    center_color <- background$center
+    middle_color <- background$middle
+    edge_color <- background$edge
+    svg <- paste0(svg, sprintf('  <defs>
+    <radialGradient id="bg-gradient" cx="50%%" cy="50%%" r="50%%">
+      <stop offset="0%%" style="stop-color:%s;stop-opacity:1" />
+      <stop offset="50%%" style="stop-color:%s;stop-opacity:1" />
+      <stop offset="100%%" style="stop-color:%s;stop-opacity:1" />
+    </radialGradient>
+  </defs>
+  ', center_color, middle_color, edge_color),
+    sprintf('<rect x="%.0f" y="%.0f" width="%.0f" height="%.0f" fill="url(#bg-gradient)"/>\n',
+             -padding, -padding, canvas_width, canvas_height))
+  } else if (is.character(background) && background == "gradient") {
+    # Legacy: default gradient colors for backward compatibility
     svg <- paste0(svg, '  <defs>
     <radialGradient id="bg-gradient" cx="50%" cy="50%" r="50%">
       <stop offset="0%" style="stop-color:#e3f2fd;stop-opacity:1" />
@@ -151,9 +168,9 @@ generate_separated_puzzle_svg <- function(puzzle_structure,
   </defs>
   ', sprintf('<rect x="%.0f" y="%.0f" width="%.0f" height="%.0f" fill="url(#bg-gradient)"/>\n',
              -padding, -padding, canvas_width, canvas_height))
-  } else if (background == "none" || background == "") {
+  } else if (is.character(background) && (background == "none" || background == "")) {
     # No background rect
-  } else {
+  } else if (is.character(background)) {
     # Solid color background - position at viewBox origin to match separated pieces
     svg <- paste0(svg, sprintf('  <rect x="%.0f" y="%.0f" width="%.0f" height="%.0f" fill="%s"/>\n',
                               -padding, -padding, canvas_width, canvas_height, background))
