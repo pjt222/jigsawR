@@ -578,7 +578,8 @@ server <- function(input, output, session) {
           colors = colors,
           background = input$background,
           save_files = FALSE,
-          palette = palette
+          palette = palette,
+          stroke_width = input$stroke_width
         )
 
         # Use proper conditional instead of ifelse for character vectors
