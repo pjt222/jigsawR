@@ -93,39 +93,43 @@ translate_svg_path <- function(path_string, x_offset, y_offset) {
 }
 
 #' Generate SVG with separated puzzle pieces
-#' 
+#'
 #' Creates an SVG with individual pieces separated by the specified offset,
 #' maintaining their original grid positions.
-#' 
+#'
 #' @param puzzle_structure Output from generate_puzzle_core()
 #' @param offset Separation distance between pieces in mm
-#' @param colors Optional vector of colors for pieces
+#' @param colors Optional vector of colors for pieces (if NULL, uses palette)
 #' @param stroke_width Line width for piece outlines
+#' @param background Background color ("white", "none", "gradient", or any CSS color)
+#' @param palette Viridis palette name (NULL = use config default, only used if colors is NULL)
 #' @return SVG string with separated pieces
 #' @export
-generate_separated_puzzle_svg <- function(puzzle_structure, 
-                                         offset = 10, 
+generate_separated_puzzle_svg <- function(puzzle_structure,
+                                         offset = 10,
                                          colors = NULL,
                                          stroke_width = 1.5,
-                                         background = "white") {
-  
+                                         background = "white",
+                                         palette = NULL) {
+
   xn <- puzzle_structure$grid[2]
   yn <- puzzle_structure$grid[1]
   piece_width <- puzzle_structure$piece_width
   piece_height <- puzzle_structure$piece_height
-  
+
   # Calculate new canvas size with offsets
   total_width <- puzzle_structure$size[1] + (xn - 1) * offset
   total_height <- puzzle_structure$size[2] + (yn - 1) * offset
-  
+
   # Add padding for visual clarity
   padding <- offset
   canvas_width <- total_width + 2 * padding
   canvas_height <- total_height + 2 * padding
-  
-  # Default colors
+
+  # Generate colors from palette if colors not provided
   if (is.null(colors)) {
-    colors <- "black"
+    total_pieces <- xn * yn
+    colors <- get_puzzle_colors(total_pieces, palette)
   }
   
   # Start SVG with expanded viewBox
@@ -136,6 +140,7 @@ generate_separated_puzzle_svg <- function(puzzle_structure,
     -padding, -padding, canvas_width, canvas_height)
   
   # Add background based on type
+  # Important: Position background at viewBox origin to match coordinate system
   if (background == "gradient") {
     svg <- paste0(svg, '  <defs>
     <radialGradient id="bg-gradient" cx="50%" cy="50%" r="50%">
@@ -144,12 +149,14 @@ generate_separated_puzzle_svg <- function(puzzle_structure,
       <stop offset="100%" style="stop-color:#90caf9;stop-opacity:1" />
     </radialGradient>
   </defs>
-  <rect width="100%" height="100%" fill="url(#bg-gradient)"/>\n')
+  ', sprintf('<rect x="%.0f" y="%.0f" width="%.0f" height="%.0f" fill="url(#bg-gradient)"/>\n',
+             -padding, -padding, canvas_width, canvas_height))
   } else if (background == "none" || background == "") {
     # No background rect
   } else {
-    # Solid color background
-    svg <- paste0(svg, sprintf('  <rect width="100%%" height="100%%" fill="%s"/>\n', background))
+    # Solid color background - position at viewBox origin to match separated pieces
+    svg <- paste0(svg, sprintf('  <rect x="%.0f" y="%.0f" width="%.0f" height="%.0f" fill="%s"/>\n',
+                              -padding, -padding, canvas_width, canvas_height, background))
   }
   
   svg <- paste0(svg, '<g id="separated-puzzle">\n')
@@ -211,28 +218,30 @@ generate_separated_puzzle_svg <- function(puzzle_structure,
 }
 
 #' Enhanced puzzle generation with separation option
-#' 
+#'
 #' Extends generate_puzzle_svg to support piece separation for both
 #' rectangular and hexagonal puzzles.
-#' 
+#'
 #' @param puzzle_structure Output from generate_puzzle_core() or extract_hexagonal_puzzle_structure()
 #' @param mode "complete", "individual", or "separated"
-#' @param colors Optional vector of colors for pieces
+#' @param colors Optional vector of colors for pieces (if NULL, uses palette)
 #' @param offset Separation distance for "separated" mode (in mm)
 #' @param show_guides Show alignment guides in separated mode
 #' @param arrangement For hexagonal: "hexagonal" or "rectangular" packing
 #' @param stroke_width Line width for piece outlines (default 1.5)
 #' @param background Background color for SVG (default "white")
+#' @param palette Viridis palette name (NULL = use config default, only used if colors is NULL)
 #' @return SVG string
 #' @export
-generate_puzzle_svg_enhanced <- function(puzzle_structure, 
-                                        mode = "complete", 
+generate_puzzle_svg_enhanced <- function(puzzle_structure,
+                                        mode = "complete",
                                         colors = NULL,
                                         offset = 0,
                                         show_guides = TRUE,
                                         arrangement = "hexagonal",
                                         stroke_width = 1.5,
-                                        background = "white") {
+                                        background = "white",
+                                        palette = NULL) {
   
   # Check puzzle type
   puzzle_type <- puzzle_structure$type
@@ -286,7 +295,8 @@ generate_puzzle_svg_enhanced <- function(puzzle_structure,
         offset = offset,
         colors = colors,
         stroke_width = stroke_width,
-        background = background
+        background = background,
+        palette = palette
       ))
     } else {
       # Use original function
