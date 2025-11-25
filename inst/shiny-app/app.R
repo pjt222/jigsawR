@@ -282,7 +282,17 @@ ui <- page_fluid(
                      "Gradient" = "gradient",
                      "Light Blue" = "#e3f2fd"
                    ),
-                   selected = "white")
+                   selected = "white"),
+
+        checkboxInput("transparent_background",
+                     "Transparent Background (PNG only)",
+                     value = FALSE),
+
+        helpText(
+          class = "text-muted small",
+          icon("info-circle"), " ",
+          "Makes areas outside puzzle circle transparent. Requires PNG download (coming soon)."
+        )
         )
       ),
 
