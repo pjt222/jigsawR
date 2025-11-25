@@ -300,6 +300,21 @@ generate_single_piece <- function(xi, yi, puzzle_structure) {
   return(path)
 }
 
+#' Blend two hex colors by averaging RGB values
+#'
+#' @param color1 First hex color
+#' @param color2 Second hex color
+#' @return Blended hex color string
+blend_colors <- function(color1, color2) {
+  # Convert hex to RGB
+  rgb1 <- grDevices::col2rgb(color1)
+  rgb2 <- grDevices::col2rgb(color2)
+  # Average the RGB values
+  blended <- (rgb1 + rgb2) / 2
+  # Convert back to hex
+  grDevices::rgb(blended[1], blended[2], blended[3], maxColorValue = 255)
+}
+
 #' Generate complete SVG with all pieces
 #'
 #' @param puzzle_structure Output from generate_puzzle_core()
@@ -417,24 +432,70 @@ generate_puzzle_svg <- function(puzzle_structure, mode = "complete", colors = NU
                               width, height, border_color, stroke_width))
     
   } else if (mode == "individual") {
-    # Separate path for each piece
+    # Draw each edge once with blended colors to prevent overplotting
+    # This prevents the visual thickening that occurs when two adjacent pieces
+    # each draw their shared edge (painter's model: edges drawn twice appear thicker)
+    edges <- puzzle_structure$edges
+
     if (is.null(colors)) {
-      # Use viridis palette if no colors specified
       total_pieces <- xn * yn
       colors <- get_puzzle_colors(total_pieces, palette)
     }
 
-    piece_num <- 0
-    for (yi in 0:(yn - 1)) {
-      for (xi in 0:(xn - 1)) {
-        piece_path <- generate_single_piece(xi, yi, puzzle_structure)
-        color <- colors[(piece_num %% length(colors)) + 1]
+    # Helper to get piece color by grid position
+    get_piece_color <- function(xi, yi) {
+      if (xi < 0 || xi >= xn || yi < 0 || yi >= yn) return(colors[1])
+      piece_idx <- yi * xn + xi
+      colors[(piece_idx %% length(colors)) + 1]
+    }
 
-        svg <- paste0(svg, sprintf('  <path id="piece-%d-%d" d="%s" fill="none" stroke="%s" stroke-width="%.1f"/>\n',
-                                  xi, yi, piece_path, color, stroke_width))
-        piece_num <- piece_num + 1
+    # Draw horizontal edges (between rows) with blended colors
+    for (yi in seq_along(edges$horizontal)) {
+      for (xi in seq_along(edges$horizontal[[yi]])) {
+        edge <- edges$horizontal[[yi]][[xi]]
+        # Blend colors of piece above (yi-1) and piece below (yi)
+        # Note: yi is 1-indexed for edge rows, xi-1 gives 0-indexed column
+        color_above <- get_piece_color(xi - 1, yi - 1)
+        color_below <- get_piece_color(xi - 1, yi)
+        blended <- blend_colors(color_above, color_below)
+        svg <- paste0(svg, sprintf('  <path d="M %.2f %.2f %s" stroke="%s" stroke-width="%.1f" fill="none"/>\n',
+                                  edge$start[1], edge$start[2], edge$forward, blended, stroke_width))
       }
     }
+
+    # Draw vertical edges (between columns) with blended colors
+    for (xi in seq_along(edges$vertical)) {
+      for (yi in seq_along(edges$vertical[[xi]])) {
+        edge <- edges$vertical[[xi]][[yi]]
+        # Blend colors of piece left (xi-1) and piece right (xi)
+        # Note: xi is 1-indexed for edge columns, yi-1 gives 0-indexed row
+        color_left <- get_piece_color(xi - 1, yi - 1)
+        color_right <- get_piece_color(xi, yi - 1)
+        blended <- blend_colors(color_left, color_right)
+        svg <- paste0(svg, sprintf('  <path d="M %.2f %.2f %s" stroke="%s" stroke-width="%.1f" fill="none"/>\n',
+                                  edge$start[1], edge$start[2], edge$forward, blended, stroke_width))
+      }
+    }
+
+    # Draw border - blend corner piece colors for each side
+    # Top border: blend top-left with top-right
+    top_color <- blend_colors(get_piece_color(0, 0), get_piece_color(xn - 1, 0))
+    # Right border: blend top-right with bottom-right
+    right_color <- blend_colors(get_piece_color(xn - 1, 0), get_piece_color(xn - 1, yn - 1))
+    # Bottom border: blend bottom-left with bottom-right
+    bottom_color <- blend_colors(get_piece_color(0, yn - 1), get_piece_color(xn - 1, yn - 1))
+    # Left border: blend top-left with bottom-left
+    left_color <- blend_colors(get_piece_color(0, 0), get_piece_color(0, yn - 1))
+
+    # Draw 4 border lines
+    svg <- paste0(svg, sprintf('  <line x1="0" y1="0" x2="%.0f" y2="0" stroke="%s" stroke-width="%.1f"/>\n',
+                              width, top_color, stroke_width))
+    svg <- paste0(svg, sprintf('  <line x1="%.0f" y1="0" x2="%.0f" y2="%.0f" stroke="%s" stroke-width="%.1f"/>\n',
+                              width, width, height, right_color, stroke_width))
+    svg <- paste0(svg, sprintf('  <line x1="%.0f" y1="%.0f" x2="0" y2="%.0f" stroke="%s" stroke-width="%.1f"/>\n',
+                              width, height, height, bottom_color, stroke_width))
+    svg <- paste0(svg, sprintf('  <line x1="0" y1="%.0f" x2="0" y2="0" stroke="%s" stroke-width="%.1f"/>\n',
+                              height, left_color, stroke_width))
   }
   
   # Close SVG
