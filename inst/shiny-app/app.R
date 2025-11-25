@@ -193,27 +193,36 @@ ui <- page_fluid(
         card_header("Advanced Settings"),
         card_body(
 
-        sliderInput("tabsize", "Tab Size:",
-                   min = 0, max = 50, value = 20, step = 1,
-                   ticks = TRUE,
-                   post = "%",
-                   sep = ""),
+        tooltip(
+          sliderInput("tabsize", "Tab Size:",
+                     min = 0, max = 50, value = 20, step = 1,
+                     ticks = TRUE,
+                     post = "%",
+                     sep = ""),
+          "Controls the size of interlocking tabs. Higher values create larger, more prominent tabs. Recommended: 15-25%"
+        ),
 
-        sliderInput("jitter", "Jitter:",
-                   min = 0, max = 25, value = 4, step = 1,
-                   ticks = TRUE,
-                   post = "%",
-                   sep = ""),
+        tooltip(
+          sliderInput("jitter", "Jitter:",
+                     min = 0, max = 25, value = 4, step = 1,
+                     ticks = TRUE,
+                     post = "%",
+                     sep = ""),
+          "Adds randomness to piece shapes for more organic variation. Higher values create more irregular pieces. Recommended: 2-6%"
+        ),
 
         conditionalPanel(
           condition = "input.puzzle_type == 'rectangular'",
-          radioButtons("output_mode", "Output Mode:",
-                      choices = list(
-                        "Complete Puzzle" = "complete",
-                        "Individual Pieces" = "individual",
-                        "Separated Pieces" = "separated"
-                      ),
-                      selected = "complete")
+          tooltip(
+            radioButtons("output_mode", "Output Mode:",
+                        choices = list(
+                          "Complete Puzzle" = "complete",
+                          "Individual Pieces" = "individual",
+                          "Separated Pieces" = "separated"
+                        ),
+                        selected = "complete"),
+            "Complete: All pieces connected | Individual: Colored pieces | Separated: Pieces with gaps for laser cutting"
+          )
         ),
 
         conditionalPanel(
@@ -230,11 +239,14 @@ ui <- page_fluid(
         # Conditional separation offset
         conditionalPanel(
           condition = "input.output_mode == 'separated' || input.output_mode_hex == 'separated'",
-          sliderInput("offset", "Separation:",
-                     min = 0, max = 50, value = 10, step = 1,
-                     ticks = TRUE,
-                     post = " mm",
-                     sep = ""),
+          tooltip(
+            sliderInput("offset", "Separation:",
+                       min = 0, max = 50, value = 10, step = 1,
+                       ticks = TRUE,
+                       post = " mm",
+                       sep = ""),
+            "Gap between pieces in separated mode. For laser cutting, use 3-5mm for rectangular or 5-10mm for hexagonal puzzles."
+          ),
           conditionalPanel(
             condition = "input.puzzle_type == 'hexagonal'",
             radioButtons("arrangement", "Arrangement:",
@@ -268,12 +280,15 @@ ui <- page_fluid(
                    ),
                    selected = "magma"),
 
-        sliderInput("stroke_width", "Line Width:",
-                   min = 0.5, max = 10, value = 1.5, step = 0.5,
-                   ticks = TRUE,
-                   round = 1,
-                   post = " mm",
-                   sep = ""),
+        tooltip(
+          sliderInput("stroke_width", "Line Width:",
+                     min = 0.5, max = 10, value = 1.5, step = 0.5,
+                     ticks = TRUE,
+                     round = 1,
+                     post = " mm",
+                     sep = ""),
+          "Thickness of puzzle piece outlines. For laser cutting, use 0.5mm. For printing or display, use 1.5-2.5mm."
+        ),
 
         selectInput("background", "Background:",
                    choices = list(
