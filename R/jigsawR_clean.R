@@ -176,8 +176,12 @@ generate_puzzle <- function(type = "rectangular",
     }
   }
   
-  # Handle background
-  if (background != "none" && save_files) {
+  # Handle background (type-safe check for list or non-"none" string)
+  should_save_background <- save_files && (
+    is.list(background) ||
+    (is.character(background) && background != "none" && background != "")
+  )
+  if (should_save_background) {
     result$files$background <- generate_background(
       background = background,
       size = size,
