@@ -343,15 +343,27 @@ generate_puzzle_svg <- function(puzzle_structure, mode = "complete", colors = NU
   
   # Generate pieces
   if (mode == "complete") {
-    # For complete puzzle, we can also just draw all the edges once
+    # For complete puzzle, determine stroke color from palette/colors
+    if (is.null(colors)) {
+      # Use palette to generate a single color (first color from palette)
+      palette_colors <- get_puzzle_colors(1, palette)
+      stroke_color <- palette_colors[1]
+    } else if (length(colors) == 1) {
+      stroke_color <- colors[1]
+    } else {
+      # If multiple colors provided, use first one for complete mode
+      stroke_color <- colors[1]
+    }
+
+    # For complete puzzle, draw all the edges once
     edges <- puzzle_structure$edges
-    
+
     # Draw all horizontal edges
     for (yi in seq_along(edges$horizontal)) {
       for (xi in seq_along(edges$horizontal[[yi]])) {
         edge <- edges$horizontal[[yi]][[xi]]
-        svg <- paste0(svg, sprintf('  <path d="M %.2f %.2f %s" fill="none" stroke="black" stroke-width="%.1f"/>\n',
-                                  edge$start[1], edge$start[2], edge$forward, stroke_width))
+        svg <- paste0(svg, sprintf('  <path d="M %.2f %.2f %s" fill="none" stroke="%s" stroke-width="%.1f"/>\n',
+                                  edge$start[1], edge$start[2], edge$forward, stroke_color, stroke_width))
       }
     }
 
@@ -359,14 +371,14 @@ generate_puzzle_svg <- function(puzzle_structure, mode = "complete", colors = NU
     for (xi in seq_along(edges$vertical)) {
       for (yi in seq_along(edges$vertical[[xi]])) {
         edge <- edges$vertical[[xi]][[yi]]
-        svg <- paste0(svg, sprintf('  <path d="M %.2f %.2f %s" fill="none" stroke="black" stroke-width="%.1f"/>\n',
-                                  edge$start[1], edge$start[2], edge$forward, stroke_width))
+        svg <- paste0(svg, sprintf('  <path d="M %.2f %.2f %s" fill="none" stroke="%s" stroke-width="%.1f"/>\n',
+                                  edge$start[1], edge$start[2], edge$forward, stroke_color, stroke_width))
       }
     }
 
     # Draw border
-    svg <- paste0(svg, sprintf('  <rect x="0" y="0" width="%.0f" height="%.0f" fill="none" stroke="black" stroke-width="%.1f"/>\n',
-                              width, height, stroke_width))
+    svg <- paste0(svg, sprintf('  <rect x="0" y="0" width="%.0f" height="%.0f" fill="none" stroke="%s" stroke-width="%.1f"/>\n',
+                              width, height, stroke_color, stroke_width))
     
   } else if (mode == "individual") {
     # Separate path for each piece
