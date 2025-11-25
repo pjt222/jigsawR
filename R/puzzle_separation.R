@@ -140,7 +140,7 @@ generate_separated_puzzle_svg <- function(puzzle_structure,
     -padding, -padding, canvas_width, canvas_height)
   
   # Add background based on type
-  # Important: Position background at viewBox origin to match coordinate system
+  # Important: Position background at viewBox origin (-padding, -padding) to match coordinate system (see viewBox definition on line 140)
   if (background == "gradient") {
     svg <- paste0(svg, '  <defs>
     <radialGradient id="bg-gradient" cx="50%" cy="50%" r="50%">
