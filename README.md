@@ -9,66 +9,46 @@ R implementation of [Draradech's jigsaw puzzle generators](https://github.com/Dr
 
 ---
 
-## Quick Start
+![Puzzle Banner](https://i.imgur.com/L5g0rR4.png)
 
-**Choose your path:**
+## Why jigsawR?
 
-### 🎨 Interactive App (Easiest)
+*   **Reproducible:** Create the same puzzle every time with the same seed.
+*   **Customizable:** Control the number of pieces, tab size, jitter, and dimensions.
+*   **Manufacturing-Ready:** Generate individual SVG files for each piece, perfect for laser cutting.
+*   **Multiple Formats:** Output puzzles as SVG or PNG, with or without a background.
+*   **Interactive:** Use the built-in Shiny app for a live preview and easy downloads.
+
+## Getting Started
+
+The easiest way to get started with `jigsawR` is to use the interactive Shiny app.
 
 ```r
-# Install and launch
+# Install dependencies
 install.packages(c("shiny", "shinyjs", "ggplot2", "ggforce", "ggfx", "viridis"))
+
+# Clone the repository
+git clone https://github.com/pjt222/jigsawR.git
+cd jigsawR
+
+# Launch the app
 source("R/launch_app.R")
 launch_jigsaw_app()
 ```
 
-Opens a browser interface with live preview, controls, and instant download.
+This will open a browser window with a live preview of your puzzle, controls to customize it, and an instant download button.
 
-### 💻 Code (3 lines)
+## Usage
 
-```r
-# Generate 9-piece puzzle
-devtools::load_all()  # or source the required R files
-result <- generate_individual_pieces(seed = 42, xn = 3, yn = 3, width = 300, height = 300)
-# Files saved to: output/piece_*.svg
-```
-
-### 📦 Package Installation
-
-```bash
-# Clone and set up
-git clone https://github.com/pjt222/jigsawR.git
-cd jigsawR
-Rscript -e "renv::restore()"  # Install dependencies
-```
-
-Then use `devtools::load_all()` or source individual files.
-
----
-
-## What Can You Make?
-
-| Type | Command | Output |
-|------|---------|--------|
-| **Rectangular** | `generate_individual_pieces(xn=5, yn=4, ...)` | 20 pieces (5×4 grid) |
-| **Hexagonal** | `generate_hex_jigsaw_svg(rings=3, ...)` | 19 pieces (3 rings) |
-| **Circular** | `generate_hex_jigsaw_svg(rings=3, do_warp=TRUE, ...)` | Warped hexagonal |
-| **Separated** | `generate_separated_puzzle_svg(...)` | Offset pieces for laser cutting |
-
-**All puzzles are:**
-- ✅ Reproducible (same seed = same puzzle)
-- ✅ Manufacturing-ready (millimeter coordinates)
-- ✅ Customizable (tab size, jitter, dimensions)
-- ✅ Individual pieces exported as separate SVG files
-
----
-
-## Core Functions
+You can also generate puzzles directly from your R code.
 
 ### Rectangular Puzzles
 
 ```r
-# Generate individual pieces (most common use case)
+# Load the package functions
+devtools::load_all()
+
+# Generate individual pieces
 result <- generate_individual_pieces(
   seed = 1234,    # Random seed for reproducibility
   xn = 5,         # 5 columns
@@ -76,34 +56,32 @@ result <- generate_individual_pieces(
   width = 300,    # 300mm width
   height = 240    # 240mm height
 )
-# Output: output/piece_0_0.svg, piece_0_1.svg, ..., combined_seed1234.svg
+
+# The output files will be saved in the "output/" directory.
 ```
 
 ### Hexagonal Puzzles
 
 ```r
-# Generate hexagonal puzzle
+# Generate a hexagonal puzzle
 puzzle <- generate_hex_jigsaw_svg(
   rings = 3,         # 3 rings = 19 pieces
   diameter = 240,    # 240mm diameter
   seed = 1234
 )
+
+# Save the puzzle to a file
 save_hex_jigsaw_svg(puzzle, "output/hex_puzzle.svg")
 ```
 
-### Advanced: Separated Layout (Laser Cutting)
+## Features
 
-```r
-# Generate with spacing between pieces
-separated <- generate_separated_puzzle_svg(
-  puzzle_structure = generate_puzzle_core(grid = c(4,5), size = c(300,240)),
-  offset = 10,           # 10mm gap between pieces
-  colors = "black",      # Black lines for laser
-  stroke_width = 0.5
-)
-```
-
----
+| Type | Command | Output |
+|------|---------|--------|
+| **Rectangular** | `generate_individual_pieces(xn=5, yn=4, ...)` | 20 pieces (5×4 grid) |
+| **Hexagonal** | `generate_hex_jigsaw_svg(rings=3, ...)` | 19 pieces (3 rings) |
+| **Circular** | `generate_hex_jigsaw_svg(rings=3, do_warp=TRUE, ...)` | Warped hexagonal |
+| **Separated** | `generate_separated_puzzle_svg(...)` | Offset pieces for laser cutting |
 
 ## Key Parameters
 
@@ -116,61 +94,6 @@ separated <- generate_separated_puzzle_svg(
 | `diameter` | Diameter in mm (hexagonal) | 240 | 100-500 |
 | `tabsize` | Tab size (%) | 20 | 10-30 |
 | `jitter` | Shape variation (%) | 4 | 0-10 |
-
----
-
-## Use Cases
-
-**🔧 Laser Cutting**
-```r
-# Use separated layout with offset
-generate_separated_puzzle_svg(..., offset = 10)
-```
-
-**🎨 Custom Designs**
-```r
-# Generate pieces, then add colors/text in graphic software
-generate_individual_pieces(..., output_dir = "my_design")
-```
-
-**🖨️ 3D Printing**
-```r
-# Export individual pieces, convert to STL with extrusion
-# (SVG → vector → extrude in CAD software)
-```
-
-**📚 Education**
-```r
-# Demonstrate geometry, tessellation, or algorithms
-# Use Shiny app for interactive exploration
-```
-
----
-
-## Examples
-
-See [`inst/examples/`](inst/examples/) for complete scripts:
-- `rectangular_puzzle_2.R` - Advanced rectangular with text overlay
-- `individual_pieces_demo.R` - Generate and validate individual pieces
-- `generate_puzzles.R` - Batch generation examples
-
----
-
-## Documentation
-
-- **Interactive Shiny App**: Launch `launch_jigsaw_app()` and click "Help"
-- **Function Reference**: See `man/` directory (roxygen2 docs)
-- **Development Guide**: See [`CLAUDE.md`](CLAUDE.md) for architecture and development notes
-- **Issues & Roadmap**: [GitHub Issues](https://github.com/pjt222/jigsawR/issues)
-
----
-
-## Features In Development
-
-- ⏳ **Hexagonal individual pieces** ([#10](https://github.com/pjt222/jigsawR/issues/10)) - Extract individual pieces from hexagonal puzzles
-- ⏳ **Unit system** - Support for both mm and pixels with DPI conversion (partially implemented)
-
----
 
 ## Project Structure
 
@@ -191,8 +114,6 @@ jigsawR/
 └── output/                       # Generated puzzles (auto-created)
 ```
 
----
-
 ## Requirements
 
 **R Packages** (auto-installed with `renv::restore()`):
@@ -201,24 +122,6 @@ jigsawR/
 - **Shiny**: shiny, shinyjs (for interactive app)
 
 **R Version**: 4.0 or higher
-
----
-
-## Contributing
-
-1. Check [open issues](https://github.com/pjt222/jigsawR/issues) for planned features
-2. For hexagonal development, see issues [#6-10](https://github.com/pjt222/jigsawR/issues/10)
-3. Development artifacts archived in `R/scripts_archive/development/`
-
----
-
-## Credits
-
-- **Original Algorithm**: [Draradech's JavaScript implementation](https://github.com/Draradech/jigsaw)
-- **R Translation**: Philipp Thoss ([@pjt222](https://github.com/pjt222))
-- **License**: CC0 (Public Domain)
-
----
 
 ## Troubleshooting
 
@@ -233,15 +136,6 @@ devtools::load_all()
 source("R/rectangular_puzzle.R")
 source("R/puzzle_core_clean.R")
 source("R/individual_pieces.R")
-```
-</details>
-
-<details>
-<summary><strong>Pandoc error when building vignettes</strong></summary>
-
-Set environment variable in `.Renviron`:
-```
-RSTUDIO_PANDOC="C:/Program Files/RStudio/resources/app/bin/quarto/bin/tools"
 ```
 </details>
 
@@ -262,48 +156,19 @@ This shouldn't happen with proper generation. If it does:
 3. Report as bug with seed and parameters
 </details>
 
-<details>
-<summary><strong>Shinyapps.io deployment fails with package errors</strong></summary>
+## Documentation
 
-**Problem**: Deployment fails with errors like `unable to satisfy package: digest (0.6.39)`
+*   **Interactive Shiny App:** Launch `launch_jigsaw_app()` and click "Help" for an interactive guide.
+*   **Function Reference:** The `man/` directory contains detailed documentation for each function.
+*   **Developer's Guide:** See `CLAUDE.md` for a deep dive into the project's architecture and development conventions.
+*   **Project Overview:** For a higher-level overview, see `GEMINI.md`.
 
-**Cause**: Packages released today may not be synced to shinyapps.io's CRAN mirror yet
+## Contributing
 
-**Solution**: The deployment workflow automatically uses yesterday's CRAN snapshot via Posit Package Manager:
-```yaml
-# In .github/workflows/deploy-shiny.yml
-- name: Set CRAN snapshot date (yesterday)
-  run: |
-    echo "CRAN_SNAPSHOT_DATE=$(date -d 'yesterday' '+%Y-%m-%d')" >> $GITHUB_ENV
-```
+We welcome contributions! Please check the [open issues](https://github.com/pjt222/jigsawR/issues) for planned features.
 
-This ensures package versions are stable and available on shinyapps.io's mirror.
+## Credits
 
-**Manual override**: Set `CRAN_SNAPSHOT_DATE` to a specific date: `2025-11-18`
-</details>
-
----
-
-## Quick Reference
-
-```r
-# Most common workflow
-devtools::load_all()
-
-# 1. Generate individual pieces
-result <- generate_individual_pieces(seed = 42, xn = 5, yn = 4,
-                                     width = 300, height = 240)
-
-# 2. Check output
-list.files("output/", pattern = "piece_.*\\.svg")
-
-# 3. For laser cutting, add separation
-separated <- generate_separated_puzzle_svg(
-  puzzle_structure = generate_puzzle_core(grid = c(4,5), size = c(300,240)),
-  offset = 10
-)
-```
-
----
-
-**Ready to create puzzles?** Start with the [Interactive App](#-interactive-app-easiest) or jump to [Core Functions](#core-functions).
+*   **Original Algorithm:** [Draradech's JavaScript implementation](https://github.com/Draradech/jigsaw)
+*   **R Translation:** Philipp Thoss ([@pjt222](https://github.com/pjt222))
+*   **License:** CC0 (Public Domain)
