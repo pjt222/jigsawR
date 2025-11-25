@@ -27,6 +27,7 @@ Imports:
     config,
     shiny,
     bslib,
+    bsicons,
     shinyjs,
     rsvg,
     magick,

@@ -397,15 +397,8 @@ ui <- page_fluid(
             )
           ),
           br(),
-          # Parameter summary
-          card(
-            card_header(
-              "Puzzle Information"
-            ),
-            card_body(
-              uiOutput("puzzle_info")
-            )
-          )
+          # Puzzle Information Value Boxes
+          uiOutput("puzzle_value_boxes")
         ),
 
         # Help Tab
@@ -647,55 +640,83 @@ server <- function(input, output, session) {
   })
 
   # Display puzzle information
-  output$puzzle_info <- renderUI({
+  output$puzzle_value_boxes <- renderUI({
     if (!is.null(puzzle_data())) {
       data <- puzzle_data()
 
       if (data$type == "hexagonal") {
-        # Hexagonal puzzle info
-        tags$div(
-          tags$p(
-            tags$strong("Type: "), "Hexagonal",
-            tags$br(),
-            tags$strong("Rings: "), data$rings,
-            tags$br(),
-            tags$strong("Total Pieces: "), data$total_pieces,
-            tags$br(),
-            tags$strong("Seed: "), data$seed,
-            tags$br(),
-            tags$strong("Diameter: "), sprintf("%.0f mm", data$diameter)
+        # Hexagonal puzzle value boxes
+        layout_column_wrap(
+          width = 1/4,
+          value_box(
+            title = "Type",
+            value = "Hexagonal",
+            showcase = bsicons::bs_icon("hexagon"),
+            theme = "primary"
+          ),
+          value_box(
+            title = "Rings",
+            value = data$rings,
+            showcase = bsicons::bs_icon("layers"),
+            theme = "info"
+          ),
+          value_box(
+            title = "Pieces",
+            value = data$total_pieces,
+            showcase = bsicons::bs_icon("puzzle"),
+            theme = "success"
+          ),
+          value_box(
+            title = "Diameter",
+            value = sprintf("%.0f mm", data$diameter),
+            showcase = bsicons::bs_icon("arrows-expand"),
+            theme = "warning"
           )
         )
       } else {
-        # Rectangular puzzle info
+        # Rectangular puzzle value boxes
         effective_width <- input$width
         effective_height <- input$height
+        area_increase <- 0
 
         if (input$output_mode == "separated") {
           effective_width <- input$width + (input$cols - 1) * input$offset
           effective_height <- input$height + (input$rows - 1) * input$offset
+          area_increase <- ((effective_width * effective_height) -
+                           (input$width * input$height)) /
+                           (input$width * input$height) * 100
         }
 
-        tags$div(
-          tags$p(
-            tags$strong("Grid: "), sprintf("%d × %d", data$rows, data$cols),
-            tags$br(),
-            tags$strong("Total Pieces: "), data$total_pieces,
-            tags$br(),
-            tags$strong("Seed: "), data$seed,
-            tags$br(),
-            tags$strong("Output Size: "), sprintf("%.0f × %.0f mm",
-                                                 effective_width, effective_height),
-            if (input$output_mode == "separated") {
-              tags$span(
-                tags$br(),
-                tags$strong("Area Increase: "),
-                sprintf("+%.1f%%",
-                       ((effective_width * effective_height) -
-                        (input$width * input$height)) /
-                        (input$width * input$height) * 100)
-              )
+        layout_column_wrap(
+          width = 1/4,
+          value_box(
+            title = "Grid",
+            value = sprintf("%d × %d", data$rows, data$cols),
+            showcase = bsicons::bs_icon("grid-3x3"),
+            theme = "primary"
+          ),
+          value_box(
+            title = "Pieces",
+            value = data$total_pieces,
+            showcase = bsicons::bs_icon("puzzle"),
+            theme = "success"
+          ),
+          value_box(
+            title = "Output Size",
+            value = sprintf("%.0f × %.0f mm", effective_width, effective_height),
+            showcase = bsicons::bs_icon("arrows-expand"),
+            theme = "info",
+            p = if (input$output_mode == "separated" && area_increase > 0) {
+              sprintf("Area: +%.1f%%", area_increase)
+            } else {
+              NULL
             }
+          ),
+          value_box(
+            title = "Seed",
+            value = data$seed,
+            showcase = bsicons::bs_icon("dice-3"),
+            theme = "secondary"
           )
         )
       }
