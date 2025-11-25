@@ -343,27 +343,34 @@ generate_puzzle_svg <- function(puzzle_structure, mode = "complete", colors = NU
   
   # Generate pieces
   if (mode == "complete") {
-    # For complete puzzle, determine stroke color from palette/colors
+    # For complete puzzle, use full palette for edges
+    edges <- puzzle_structure$edges
+
+    # Count total edges (horizontal + vertical + 4 border sides)
+    n_h_edges <- sum(sapply(edges$horizontal, length))
+    n_v_edges <- sum(sapply(edges$vertical, length))
+    total_edges <- n_h_edges + n_v_edges + 4  # +4 for border sides
+
+    # Generate colors for all edges
     if (is.null(colors)) {
-      # Use palette to generate a single color (first color from palette)
-      palette_colors <- get_puzzle_colors(1, palette)
-      stroke_color <- palette_colors[1]
-    } else if (length(colors) == 1) {
-      stroke_color <- colors[1]
+      edge_colors <- get_puzzle_colors(total_edges, palette)
+    } else if (length(colors) == 1 && colors[1] == "black") {
+      # Special case: solid black uses single color for all edges
+      edge_colors <- rep(colors[1], total_edges)
     } else {
-      # If multiple colors provided, use first one for complete mode
-      stroke_color <- colors[1]
+      # Cycle through provided colors
+      edge_colors <- rep_len(colors, total_edges)
     }
 
-    # For complete puzzle, draw all the edges once
-    edges <- puzzle_structure$edges
+    edge_idx <- 1
 
     # Draw all horizontal edges
     for (yi in seq_along(edges$horizontal)) {
       for (xi in seq_along(edges$horizontal[[yi]])) {
         edge <- edges$horizontal[[yi]][[xi]]
         svg <- paste0(svg, sprintf('  <path d="M %.2f %.2f %s" fill="none" stroke="%s" stroke-width="%.1f"/>\n',
-                                  edge$start[1], edge$start[2], edge$forward, stroke_color, stroke_width))
+                                  edge$start[1], edge$start[2], edge$forward, edge_colors[edge_idx], stroke_width))
+        edge_idx <- edge_idx + 1
       }
     }
 
@@ -372,13 +379,15 @@ generate_puzzle_svg <- function(puzzle_structure, mode = "complete", colors = NU
       for (yi in seq_along(edges$vertical[[xi]])) {
         edge <- edges$vertical[[xi]][[yi]]
         svg <- paste0(svg, sprintf('  <path d="M %.2f %.2f %s" fill="none" stroke="%s" stroke-width="%.1f"/>\n',
-                                  edge$start[1], edge$start[2], edge$forward, stroke_color, stroke_width))
+                                  edge$start[1], edge$start[2], edge$forward, edge_colors[edge_idx], stroke_width))
+        edge_idx <- edge_idx + 1
       }
     }
 
-    # Draw border
+    # Draw border with remaining colors (4 sides)
+    border_color <- edge_colors[edge_idx]  # Use next color for border
     svg <- paste0(svg, sprintf('  <rect x="0" y="0" width="%.0f" height="%.0f" fill="none" stroke="%s" stroke-width="%.1f"/>\n',
-                              width, height, stroke_color, stroke_width))
+                              width, height, border_color, stroke_width))
     
   } else if (mode == "individual") {
     # Separate path for each piece

@@ -24,6 +24,7 @@
 #' @param corner_radius Corner radius for border pieces (default: 2)
 #' @param save_combined Whether to save a combined view (default: TRUE)
 #' @param palette Viridis palette name for colors (default: from config)
+#' @param stroke_width Line width for SVG strokes (default: 1.5)
 #' @return List containing piece paths and metadata
 #' @export
 generate_individual_pieces <- function(seed = 42, xn = 2, yn = 2,
@@ -32,7 +33,8 @@ generate_individual_pieces <- function(seed = 42, xn = 2, yn = 2,
                                       output_dir = "output",
                                       corner_radius = 2,
                                       save_combined = TRUE,
-                                      palette = NULL) {
+                                      palette = NULL,
+                                      stroke_width = 1.5) {
 
   # Ensure output directory exists
   if (!dir.exists(output_dir)) {
@@ -85,7 +87,7 @@ generate_individual_pieces <- function(seed = 42, xn = 2, yn = 2,
       )
 
       # Save individual piece SVG
-      save_individual_piece_svg(xi, yi, piece_path, width, height, output_dir)
+      save_individual_piece_svg(xi, yi, piece_path, width, height, output_dir, stroke_width)
 
       log_info("Generated piece [{xi},{yi}]")
     }
@@ -93,7 +95,7 @@ generate_individual_pieces <- function(seed = 42, xn = 2, yn = 2,
 
   # Save combined view if requested
   if (save_combined) {
-    save_combined_pieces_svg(pieces, width, height, output_dir, palette)
+    save_combined_pieces_svg(pieces, width, height, output_dir, palette, stroke_width)
   }
 
   log_success("Successfully generated {xn * yn} pieces!")
@@ -229,25 +231,27 @@ build_piece_path <- function(xi, yi, edges, xn, yn,
 }
 
 #' Save individual piece as SVG file
+#' @param stroke_width Line width for SVG strokes
 #' @keywords internal
-save_individual_piece_svg <- function(xi, yi, piece_path, width, height, output_dir) {
+save_individual_piece_svg <- function(xi, yi, piece_path, width, height, output_dir, stroke_width = 1.5) {
 
   svg_content <- sprintf('<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" version="1.1"
      width="%.0f" height="%.0f" viewBox="0 0 %.0f %.0f">
   <rect width="100%%" height="100%%" fill="transparent"/>
   <path id="piece-%d-%d" d="%s"
-        fill="none" stroke="black" stroke-width="1.5"
+        fill="none" stroke="black" stroke-width="%.1f"
         stroke-linecap="round" stroke-linejoin="round"/>
-</svg>', width, height, width, height, xi, yi, piece_path)
+</svg>', width, height, width, height, xi, yi, piece_path, stroke_width)
 
   filename <- file.path(output_dir, sprintf("piece_%d_%d.svg", xi, yi))
   writeLines(svg_content, filename)
 }
 
 #' Save combined view of all pieces
+#' @param stroke_width Line width for SVG strokes
 #' @keywords internal
-save_combined_pieces_svg <- function(pieces, width, height, output_dir, palette = NULL) {
+save_combined_pieces_svg <- function(pieces, width, height, output_dir, palette = NULL, stroke_width = 1.5) {
 
   # Use viridis palette for colors
   n_colors <- length(pieces)
@@ -275,8 +279,8 @@ save_combined_pieces_svg <- function(pieces, width, height, output_dir, palette 
     color_idx <- (piece_num %% length(colors)) + 1
 
     svg_parts <- c(svg_parts, sprintf(
-      '    <path id="piece-%d-%d" d="%s" fill="%s" stroke="%s" stroke-width="1.5"/>',
-      piece$xi, piece$yi, piece$path, colors[color_idx], stroke_colors[color_idx]
+      '    <path id="piece-%d-%d" d="%s" fill="%s" stroke="%s" stroke-width="%.1f"/>',
+      piece$xi, piece$yi, piece$path, colors[color_idx], stroke_colors[color_idx], stroke_width
     ))
 
     piece_num <- piece_num + 1

@@ -794,7 +794,8 @@ server <- function(input, output, session) {
               width = data$width,
               height = data$height,
               output_dir = pieces_dir,
-              save_combined = FALSE
+              save_combined = FALSE,
+              stroke_width = input$stroke_width
             )
           }, type = "message")
         }, error = function(e) {

@@ -193,52 +193,53 @@ generate_puzzle <- function(type = "rectangular",
 }
 
 #' Save individual puzzle pieces as separate SVG files
-#' 
+#'
 #' @param puzzle_structure Output from generate_puzzle_core()
 #' @param output_dir Directory for output files
 #' @param filename_prefix Prefix for output files
 #' @param colors Optional vector of colors
+#' @param stroke_width Line width for SVG strokes (default: 1.5)
 #' @export
-save_individual_pieces <- function(puzzle_structure, output_dir, filename_prefix, colors = NULL) {
-  
+save_individual_pieces <- function(puzzle_structure, output_dir, filename_prefix, colors = NULL, stroke_width = 1.5) {
+
   xn <- puzzle_structure$grid[2]
   yn <- puzzle_structure$grid[1]
   width <- puzzle_structure$size[1]
   height <- puzzle_structure$size[2]
-  
+
   if (is.null(colors)) {
     colors <- "black"
   }
-  
+
   # Create subdirectory for pieces
   pieces_dir <- file.path(output_dir, paste0(filename_prefix, "_pieces"))
   if (!dir.exists(pieces_dir)) {
     dir.create(pieces_dir, recursive = TRUE)
   }
-  
+
   piece_num <- 0
   for (yi in 0:(yn - 1)) {
     for (xi in 0:(xn - 1)) {
       # Generate piece path
       piece_path <- generate_single_piece(xi, yi, puzzle_structure)
       color <- colors[(piece_num %% length(colors)) + 1]
-      
+
       # Create individual SVG for this piece
       piece_svg <- sprintf('<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" version="1.1" 
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1"
      width="%.0f" height="%.0f" viewBox="0 0 %.0f %.0f">
 <rect width="100%%" height="100%%" fill="white"/>
-<path id="piece-%d-%d" d="%s" fill="none" stroke="%s" stroke-width="1.5"/>
-</svg>', width, height, width, height, xi, yi, piece_path, color)
-      
+<path id="piece-%d-%d" d="%s" fill="none" stroke="%s" stroke-width="%.1f"/>
+</svg>', width, height, width, height, xi, yi, piece_path, color, stroke_width)
+
       # Save piece
       piece_file <- file.path(pieces_dir, sprintf("piece_%d_%d.svg", xi, yi))
       writeLines(piece_svg, piece_file)
-      
+
       piece_num <- piece_num + 1
     }
   }
-  
+
   log_success("Saved {xn * yn} individual pieces to: {.path {pieces_dir}}")
 }
 
