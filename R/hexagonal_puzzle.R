@@ -327,8 +327,39 @@ generate_hex_jigsaw_svg <- function(seed = NULL, tabsize = 27, jitter = 5,
             width, height, width, height)
   )
   
-  # Add background if specified
-  if (background != "none" && background != "") {
+  # Add background based on type
+  # Background can be: "none", a color string, or a list with gradient colors
+  if (is.list(background) && !is.null(background$type) && background$type == "gradient") {
+    # Custom gradient with user-specified colors
+    center_color <- background$center
+    middle_color <- background$middle
+    edge_color <- background$edge
+    svg_lines <- c(svg_lines,
+      '  <defs>',
+      '    <radialGradient id="bg-gradient" cx="50%" cy="50%" r="50%">',
+      sprintf('      <stop offset="0%%" style="stop-color:%s;stop-opacity:1" />', center_color),
+      sprintf('      <stop offset="50%%" style="stop-color:%s;stop-opacity:1" />', middle_color),
+      sprintf('      <stop offset="100%%" style="stop-color:%s;stop-opacity:1" />', edge_color),
+      '    </radialGradient>',
+      '  </defs>',
+      '<rect width="100%" height="100%" fill="url(#bg-gradient)"/>'
+    )
+  } else if (is.character(background) && background == "gradient") {
+    # Legacy: default gradient colors for backward compatibility
+    svg_lines <- c(svg_lines,
+      '  <defs>',
+      '    <radialGradient id="bg-gradient" cx="50%" cy="50%" r="50%">',
+      '      <stop offset="0%" style="stop-color:#e3f2fd;stop-opacity:1" />',
+      '      <stop offset="50%" style="stop-color:#bbdefb;stop-opacity:1" />',
+      '      <stop offset="100%" style="stop-color:#90caf9;stop-opacity:1" />',
+      '    </radialGradient>',
+      '  </defs>',
+      '<rect width="100%" height="100%" fill="url(#bg-gradient)"/>'
+    )
+  } else if (is.character(background) && (background == "none" || background == "")) {
+    # No background rect
+  } else if (is.character(background)) {
+    # Solid color background
     svg_lines <- c(svg_lines,
       sprintf('<rect width="100%%" height="100%%" fill="%s"/>', background)
     )

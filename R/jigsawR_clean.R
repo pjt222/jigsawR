@@ -244,24 +244,44 @@ save_individual_pieces <- function(puzzle_structure, output_dir, filename_prefix
 }
 
 #' Generate background for puzzle
-#' 
-#' @param background "gradient", color name, or "none"
+#'
+#' @param background "gradient", color name, "none", or list with gradient colors
 #' @param size Vector c(width, height) in mm
 #' @param output_dir Directory for output
 #' @param filename_prefix Prefix for files
 #' @return Path to background file or NULL
 generate_background <- function(background, size, output_dir, filename_prefix) {
-  
-  if (background == "none") {
+
+  # Check for "none" background (type-safe)
+  if (is.character(background) && (background == "none" || background == "")) {
     return(NULL)
   }
-  
+
   filepath <- file.path(output_dir, paste0(filename_prefix, "_background.svg"))
-  
-  if (background == "gradient") {
-    # Create radial gradient background
+
+  # Background can be: "none", a color string, or a list with gradient colors
+  if (is.list(background) && !is.null(background$type) && background$type == "gradient") {
+    # Custom gradient with user-specified colors
+    center_color <- background$center
+    middle_color <- background$middle
+    edge_color <- background$edge
     svg_bg <- sprintf('<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" version="1.1" 
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1"
+     width="%.0f" height="%.0f" viewBox="0 0 %.0f %.0f">
+  <defs>
+    <radialGradient id="bg-gradient" cx="50%%" cy="50%%" r="50%%">
+      <stop offset="0%%" style="stop-color:%s;stop-opacity:1" />
+      <stop offset="50%%" style="stop-color:%s;stop-opacity:1" />
+      <stop offset="100%%" style="stop-color:%s;stop-opacity:1" />
+    </radialGradient>
+  </defs>
+  <rect width="100%%" height="100%%" fill="url(#bg-gradient)"/>
+</svg>', size[1], size[2], size[1], size[2], center_color, middle_color, edge_color)
+
+  } else if (is.character(background) && background == "gradient") {
+    # Legacy: default gradient colors for backward compatibility
+    svg_bg <- sprintf('<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1"
      width="%.0f" height="%.0f" viewBox="0 0 %.0f %.0f">
   <defs>
     <radialGradient id="bg-gradient" cx="50%%" cy="50%%" r="50%%">
@@ -272,19 +292,22 @@ generate_background <- function(background, size, output_dir, filename_prefix) {
   </defs>
   <rect width="100%%" height="100%%" fill="url(#bg-gradient)"/>
 </svg>', size[1], size[2], size[1], size[2])
-    
-  } else {
+
+  } else if (is.character(background)) {
     # Solid color background
     svg_bg <- sprintf('<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" version="1.1" 
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1"
      width="%.0f" height="%.0f" viewBox="0 0 %.0f %.0f">
   <rect width="100%%" height="100%%" fill="%s"/>
 </svg>', size[1], size[2], size[1], size[2], background)
+  } else {
+    # Fallback: no background for unexpected types
+    return(NULL)
   }
-  
+
   writeLines(svg_bg, filepath)
   log_success("Saved background: {.file {filepath}}")
-  
+
   return(filepath)
 }
 
