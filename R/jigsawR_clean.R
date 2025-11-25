@@ -124,7 +124,7 @@ generate_puzzle <- function(type = "rectangular",
       )
       svg_complete <- hex_result$svg  # Extract SVG string from result list
     } else {
-      svg_complete <- generate_puzzle_svg(puzzle_structure, mode = "complete", background = background, stroke_width = stroke_width)
+      svg_complete <- generate_puzzle_svg(puzzle_structure, mode = "complete", background = background, stroke_width = stroke_width, palette = palette)
     }
     result$svg_complete <- svg_complete
     

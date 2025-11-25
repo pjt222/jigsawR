@@ -118,23 +118,6 @@ ui <- page_fluid(
     sidebar = sidebar(
       width = 300,  # Approximately same as width = 4 in old layout (300px)
 
-      # Theme Switcher
-      selectInput("theme_selector",
-                 label = NULL,
-                 choices = c(
-                   "Dark (Darkly)" = "darkly",
-                   "Light (Flatly)" = "flatly",
-                   "Modern (Cosmo)" = "cosmo",
-                   "Minimal (Simplex)" = "simplex",
-                   "Professional (Yeti)" = "yeti",
-                   "Slate" = "slate",
-                   "Superhero" = "superhero",
-                   "Cyborg" = "cyborg"
-                 ),
-                 selected = "darkly"),
-
-      hr(),
-
       # Parameter Accordion
       accordion(
         id = "params_accordion",
@@ -467,22 +450,6 @@ server <- function(input, output, session) {
   # Reactive values to store puzzle data
   puzzle_data <- reactiveVal(NULL)
   svg_content <- reactiveVal(NULL)
-
-  # Theme switcher
-  observeEvent(input$theme_selector, {
-    bs_themer_update(
-      session,
-      bs_theme(
-        bootswatch = input$theme_selector,
-        primary = "#375a7f",
-        secondary = "#444",
-        success = "#00bc8c",
-        info = "#3498db",
-        warning = "#f39c12",
-        danger = "#e74c3c"
-      )
-    )
-  }, ignoreInit = TRUE)
 
   # Randomize seed
   observeEvent(input$randomize, {
