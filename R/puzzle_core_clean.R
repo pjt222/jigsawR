@@ -450,6 +450,8 @@ generate_puzzle_svg <- function(puzzle_structure, mode = "complete", colors = NU
     }
 
     # Draw horizontal edges (between rows) with blended colors
+    # Use stroke-linecap="square" to extend path endpoints by half stroke width
+    # This ensures edges properly meet the border and adjacent edges
     for (yi in seq_along(edges$horizontal)) {
       for (xi in seq_along(edges$horizontal[[yi]])) {
         edge <- edges$horizontal[[yi]][[xi]]
@@ -458,7 +460,7 @@ generate_puzzle_svg <- function(puzzle_structure, mode = "complete", colors = NU
         color_above <- get_piece_color(xi - 1, yi - 1)
         color_below <- get_piece_color(xi - 1, yi)
         blended <- blend_colors(color_above, color_below)
-        svg <- paste0(svg, sprintf('  <path d="M %.2f %.2f %s" stroke="%s" stroke-width="%.1f" fill="none"/>\n',
+        svg <- paste0(svg, sprintf('  <path d="M %.2f %.2f %s" stroke="%s" stroke-width="%.1f" stroke-linecap="square" fill="none"/>\n',
                                   edge$start[1], edge$start[2], edge$forward, blended, stroke_width))
       }
     }
@@ -472,7 +474,7 @@ generate_puzzle_svg <- function(puzzle_structure, mode = "complete", colors = NU
         color_left <- get_piece_color(xi - 1, yi - 1)
         color_right <- get_piece_color(xi, yi - 1)
         blended <- blend_colors(color_left, color_right)
-        svg <- paste0(svg, sprintf('  <path d="M %.2f %.2f %s" stroke="%s" stroke-width="%.1f" fill="none"/>\n',
+        svg <- paste0(svg, sprintf('  <path d="M %.2f %.2f %s" stroke="%s" stroke-width="%.1f" stroke-linecap="square" fill="none"/>\n',
                                   edge$start[1], edge$start[2], edge$forward, blended, stroke_width))
       }
     }
@@ -487,14 +489,15 @@ generate_puzzle_svg <- function(puzzle_structure, mode = "complete", colors = NU
     # Left border: blend top-left with bottom-left
     left_color <- blend_colors(get_piece_color(0, 0), get_piece_color(0, yn - 1))
 
-    # Draw 4 border lines
-    svg <- paste0(svg, sprintf('  <line x1="0" y1="0" x2="%.0f" y2="0" stroke="%s" stroke-width="%.1f"/>\n',
+    # Draw 4 border lines with stroke-linecap="square" to extend endpoints
+    # This ensures corners properly meet (each line extends by half stroke width at ends)
+    svg <- paste0(svg, sprintf('  <line x1="0" y1="0" x2="%.0f" y2="0" stroke="%s" stroke-width="%.1f" stroke-linecap="square"/>\n',
                               width, top_color, stroke_width))
-    svg <- paste0(svg, sprintf('  <line x1="%.0f" y1="0" x2="%.0f" y2="%.0f" stroke="%s" stroke-width="%.1f"/>\n',
+    svg <- paste0(svg, sprintf('  <line x1="%.0f" y1="0" x2="%.0f" y2="%.0f" stroke="%s" stroke-width="%.1f" stroke-linecap="square"/>\n',
                               width, width, height, right_color, stroke_width))
-    svg <- paste0(svg, sprintf('  <line x1="%.0f" y1="%.0f" x2="0" y2="%.0f" stroke="%s" stroke-width="%.1f"/>\n',
+    svg <- paste0(svg, sprintf('  <line x1="%.0f" y1="%.0f" x2="0" y2="%.0f" stroke="%s" stroke-width="%.1f" stroke-linecap="square"/>\n',
                               width, height, height, bottom_color, stroke_width))
-    svg <- paste0(svg, sprintf('  <line x1="0" y1="%.0f" x2="0" y2="0" stroke="%s" stroke-width="%.1f"/>\n',
+    svg <- paste0(svg, sprintf('  <line x1="0" y1="%.0f" x2="0" y2="0" stroke="%s" stroke-width="%.1f" stroke-linecap="square"/>\n',
                               height, left_color, stroke_width))
   }
   
