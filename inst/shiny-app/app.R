@@ -113,10 +113,10 @@ ui <- page_fluid(
     )
   ),
 
-  # Sidebar with input controls
-  sidebarLayout(
-    sidebarPanel(
-      width = 4,
+  # Modern bslib layout with sidebar
+  layout_sidebar(
+    sidebar = sidebar(
+      width = 300,  # Approximately same as width = 4 in old layout (300px)
 
       # Basic Settings Section
       card(
@@ -347,14 +347,11 @@ ui <- page_fluid(
           strong("Tip:"), " Click 'Generate Puzzle' to create your puzzle.
           The preview will appear on the right.")
       )
-    ),
+    ),  # End of sidebar
 
-    # Main panel with puzzle display
-    mainPanel(
-      width = 8,
-
-      # Tabs for different views
-      tabsetPanel(
+    # Main content area (no wrapper needed with layout_sidebar)
+    # Tabs for different views
+    tabsetPanel(
         id = "main_tabs",
 
         # Preview Tab
@@ -421,9 +418,8 @@ ui <- page_fluid(
             p("• Higher offsets recommended for hex puzzles (5-10mm)")
           )
         )
-      )
-    )
-  )
+      )  # End of tabsetPanel
+  )  # End of layout_sidebar
 )
 
 # Define server logic
