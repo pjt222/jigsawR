@@ -229,6 +229,8 @@ generate_separated_puzzle_svg <- function(puzzle_structure,
 #' @param show_guides Show alignment guides in separated mode
 #' @param arrangement For hexagonal: "hexagonal" or "rectangular" packing
 #' @param palette Viridis palette name (NULL = use config default)
+#' @param stroke_width Line width for piece outlines (passed to generate_separated_puzzle_svg)
+#' @param background Background color (passed to generate_separated_puzzle_svg)
 #' @return SVG string
 #' @export
 generate_puzzle_svg_enhanced <- function(puzzle_structure,
@@ -237,7 +239,9 @@ generate_puzzle_svg_enhanced <- function(puzzle_structure,
                                         offset = 0,
                                         show_guides = TRUE,
                                         arrangement = "hexagonal",
-                                        palette = NULL) {
+                                        palette = NULL,
+                                        stroke_width = 1.5,
+                                        background = "white") {
   
   # Check puzzle type
   puzzle_type <- puzzle_structure$type
@@ -253,7 +257,7 @@ generate_puzzle_svg_enhanced <- function(puzzle_structure,
     }
     
     if (mode == "separated" || (mode == "individual" && offset > 0)) {
-      # Use hexagonal separation function
+      # Use hexagonal separation function with stroke_width and background passed through
       return(generate_separated_hexagonal_svg(
         rings = puzzle_structure$rings,
         seed = puzzle_structure$seed,
@@ -264,7 +268,9 @@ generate_puzzle_svg_enhanced <- function(puzzle_structure,
         jitter = puzzle_structure$parameters$jitter,
         do_warp = puzzle_structure$parameters$do_warp,
         do_trunc = puzzle_structure$parameters$do_trunc,
-        colors = colors
+        colors = colors,
+        stroke_width = stroke_width,
+        background = background
       ))
     } else {
       # Use standard hexagonal generation
@@ -281,11 +287,13 @@ generate_puzzle_svg_enhanced <- function(puzzle_structure,
   } else {
     # Rectangular puzzle handling (existing code)
     if (mode == "separated" || (mode == "individual" && offset > 0)) {
-      # Use separation function
+      # Use separation function with stroke_width and background passed through
       return(generate_separated_puzzle_svg(
         puzzle_structure = puzzle_structure,
         offset = offset,
         colors = colors,
+        stroke_width = stroke_width,
+        background = background,
         palette = palette
       ))
     } else {
