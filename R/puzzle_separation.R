@@ -221,6 +221,8 @@ generate_separated_puzzle_svg <- function(puzzle_structure,
 #' @param offset Separation distance for "separated" mode (in mm)
 #' @param show_guides Show alignment guides in separated mode
 #' @param arrangement For hexagonal: "hexagonal" or "rectangular" packing
+#' @param stroke_width Line width for piece outlines (default 1.5)
+#' @param background Background color for SVG (default "white")
 #' @return SVG string
 #' @export
 generate_puzzle_svg_enhanced <- function(puzzle_structure, 
@@ -228,7 +230,9 @@ generate_puzzle_svg_enhanced <- function(puzzle_structure,
                                         colors = NULL,
                                         offset = 0,
                                         show_guides = TRUE,
-                                        arrangement = "hexagonal") {
+                                        arrangement = "hexagonal",
+                                        stroke_width = 1.5,
+                                        background = "white") {
   
   # Check puzzle type
   puzzle_type <- puzzle_structure$type
@@ -255,7 +259,9 @@ generate_puzzle_svg_enhanced <- function(puzzle_structure,
         jitter = puzzle_structure$parameters$jitter,
         do_warp = puzzle_structure$parameters$do_warp,
         do_trunc = puzzle_structure$parameters$do_trunc,
-        colors = colors
+        colors = colors,
+        stroke_width = stroke_width,
+        background = background
       ))
     } else {
       # Use standard hexagonal generation
@@ -266,7 +272,9 @@ generate_puzzle_svg_enhanced <- function(puzzle_structure,
         tabsize = puzzle_structure$parameters$tabsize,
         jitter = puzzle_structure$parameters$jitter,
         do_warp = puzzle_structure$parameters$do_warp,
-        do_trunc = puzzle_structure$parameters$do_trunc
+        do_trunc = puzzle_structure$parameters$do_trunc,
+        stroke_width = stroke_width,
+        background = background
       ))
     }
   } else {
@@ -276,14 +284,18 @@ generate_puzzle_svg_enhanced <- function(puzzle_structure,
       return(generate_separated_puzzle_svg(
         puzzle_structure = puzzle_structure,
         offset = offset,
-        colors = colors
+        colors = colors,
+        stroke_width = stroke_width,
+        background = background
       ))
     } else {
       # Use original function
       return(generate_puzzle_svg(
         puzzle_structure = puzzle_structure,
         mode = mode,
-        colors = colors
+        colors = colors,
+        stroke_width = stroke_width,
+        background = background
       ))
     }
   }

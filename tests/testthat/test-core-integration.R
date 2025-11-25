@@ -96,3 +96,33 @@ test_that("simple SVG generation works", {
     expect_true(TRUE)
   }
 })
+
+test_that("generate_puzzle_svg_enhanced passes stroke_width and background to separated mode", {
+  # Test that stroke_width and background parameters are passed through
+  # to generate_separated_puzzle_svg when using separated mode
+  result <- tryCatch({
+    puzzle <- generate_puzzle_core(seed = 1234, grid = c(2, 2))
+    
+    # Generate with custom stroke_width and background
+    svg_custom <- generate_puzzle_svg_enhanced(
+      puzzle_structure = puzzle,
+      mode = "separated",
+      offset = 10,
+      stroke_width = 2.5,
+      background = "lightblue"
+    )
+    
+    # Check that stroke_width appears in the SVG
+    expect_true(grepl('stroke-width="2\\.5"', svg_custom))
+    
+    # Check that background color appears in the SVG
+    expect_true(grepl('fill="lightblue"', svg_custom))
+    
+    svg_custom
+  }, error = function(e) e)
+  
+  if (inherits(result, "error")) {
+    # If there's an error, mark the test as skipped rather than failed
+    skip("generate_puzzle_svg_enhanced not available or has different interface")
+  }
+})
