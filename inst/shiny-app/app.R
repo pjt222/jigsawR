@@ -135,10 +135,15 @@ ui <- page_fluid(
 
       hr(),
 
-      # Basic Settings Section
-      card(
-        card_header("Basic Settings"),
-        card_body(
+      # Parameter Accordion
+      accordion(
+        id = "params_accordion",
+        open = c("basic", "advanced"),  # Keep basic and advanced open by default
+
+        # Basic Settings Section
+        accordion_panel(
+          title = "Basic Settings",
+          value = "basic",
 
         # Puzzle Type Selection
         radioButtons("puzzle_type", "Puzzle Type:",
@@ -202,13 +207,12 @@ ui <- page_fluid(
                         class = "mt-4")
           )
         )
-        )
-      ),
+        ),
 
-      # Advanced Settings Section
-      card(
-        card_header("Advanced Settings"),
-        card_body(
+        # Advanced Settings Section
+        accordion_panel(
+          title = "Advanced Settings",
+          value = "advanced",
 
         tooltip(
           sliderInput("tabsize", "Tab Size:",
@@ -275,13 +279,12 @@ ui <- page_fluid(
                         inline = TRUE)
           )
         )
-        )
-      ),
+        ),
 
-      # Styling Options Section
-      card(
-        card_header("Styling Options"),
-        card_body(
+        # Styling Options Section
+        accordion_panel(
+          title = "Styling Options",
+          value = "styling",
 
         selectInput("color_palette", "Color Palette:",
                    choices = list(
@@ -327,7 +330,7 @@ ui <- page_fluid(
         #   "Makes areas outside puzzle circle transparent. Only works with PNG downloads."
         # )
         )
-      ),
+      ),  # Close accordion
 
       # Action Buttons
       div(class = "mt-3",
