@@ -1,6 +1,61 @@
 # Working Hexagonal Puzzle Piece Separation
 # Simplified approach: separate placeholder pieces, not actual puzzle pieces
 
+#' Extract hexagonal puzzle structure (stub for compatibility)
+#'
+#' Generates a complete hexagonal puzzle and returns its structure.
+#' This is a compatibility stub for code that expects the old function.
+#'
+#' @param rings Number of rings
+#' @param seed Random seed
+#' @param diameter Puzzle diameter
+#' @param tabsize Tab size percentage
+#' @param jitter Jitter percentage
+#' @param do_warp Apply circular warping
+#' @param do_trunc Truncate edge pieces
+#' @return List with puzzle structure
+#' @export
+extract_hexagonal_puzzle_structure <- function(rings, seed, diameter = 240,
+                                              tabsize = 27, jitter = 5,
+                                              do_warp = FALSE, do_trunc = FALSE) {
+
+  # Source hexagonal functions if needed
+  if (!exists("init_hex_jigsaw")) {
+    if (file.exists("R/hexagonal_puzzle.R")) {
+      source("R/hexagonal_puzzle.R")
+    } else if (file.exists("hexagonal_puzzle.R")) {
+      source("hexagonal_puzzle.R")
+    }
+  }
+
+  # Generate complete puzzle
+  puzzle_result <- generate_hex_jigsaw_svg(
+    seed = seed,
+    tabsize = tabsize,
+    jitter = jitter,
+    diameter = diameter,
+    rings = rings,
+    do_warp = do_warp,
+    do_trunc = do_trunc
+  )
+
+  # Return structure compatible with old API
+  return(list(
+    type = "hexagonal",
+    rings = rings,
+    diameter = diameter,
+    seed = seed,
+    num_pieces = 3 * rings * (rings - 1) + 1,
+    paths = list(
+      horizontal = puzzle_result$horizontal,
+      vertical = puzzle_result$vertical,
+      border = puzzle_result$border
+    ),
+    parameters = puzzle_result$parameters,
+    svg = puzzle_result$svg
+  ))
+}
+
 #' Generate separated hexagonal puzzle with placeholder pieces
 #'
 #' Creates a layout showing where pieces would be positioned when separated.
