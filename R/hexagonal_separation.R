@@ -115,10 +115,22 @@ generate_separated_hexagonal_svg <- function(rings = 3, seed = NULL,
     vb_x <- 0
     vb_y <- 0
   } else {
-    # Hexagonal arrangement (maintain structure with gaps)
-    expansion_factor <- 1 + (offset / diameter)
-    total_width <- diameter * expansion_factor * 1.5
-    total_height <- diameter * expansion_factor * 1.5
+    # Hexagonal arrangement (topology-based, centered at origin)
+
+    # Calculate actual extent of pieces
+    # For n rings, outermost pieces are at grid coordinates ~(±n, ±n)
+    base_spacing <- piece_radius * 2
+    separation_factor <- 1.0 + (offset / base_spacing)
+
+    # Maximum distance from center (approximation)
+    max_radius <- rings * base_spacing * separation_factor * 1.5
+
+    # Add margin for piece size
+    margin <- piece_radius * 2
+    total_width <- 2 * (max_radius + margin)
+    total_height <- 2 * (max_radius + margin)
+
+    # Center the viewBox at origin
     vb_x <- -total_width / 2
     vb_y <- -total_height / 2
   }
@@ -155,11 +167,34 @@ generate_separated_hexagonal_svg <- function(rings = 3, seed = NULL,
       center_x <- offset + col * (2 * piece_radius + offset) + piece_radius
       center_y <- offset + row * (2 * piece_radius + offset) + piece_radius
     } else {
-      # Hexagonal arrangement (simplified spiral)
-      angle <- (i - 1) * 2.4  # Spiral angle
-      radius_pos <- sqrt(i) * piece_radius * 2
-      center_x <- radius_pos * cos(angle)
-      center_y <- radius_pos * sin(angle)
+      # Hexagonal arrangement (topology-based with center at origin)
+
+      # Source topology utilities if needed
+      if (!exists("calculate_hex_piece_position")) {
+        if (file.exists("R/hexagonal_topology.R")) {
+          source("R/hexagonal_topology.R")
+        }
+      }
+
+      # Calculate spacing parameters
+      base_spacing <- piece_radius * 2
+      separation_factor <- 1.0 + (offset / base_spacing)
+
+      # Get topology-based position
+      position <- calculate_hex_piece_position(
+        piece_id = i,
+        rings = rings,
+        base_spacing = base_spacing,
+        separation_factor = separation_factor
+      )
+
+      center_x <- position$x
+      center_y <- position$y
+
+      # Debug logging for first 3 pieces
+      if (i <= 3) {
+        cat(sprintf("Piece %d: (x=%.1f, y=%.1f)\n", i, center_x, center_y))
+      }
     }
 
     # Select color
