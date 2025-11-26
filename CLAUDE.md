@@ -304,17 +304,25 @@ renv::restore()
 ### Recent Work
 ✅ **COMPLETED**: Code refactoring - consolidated 4 duplicate individual piece implementations into one
 ✅ **COMPLETED**: Individual puzzle piece generation with proper complementary edges (any size)
-✅ **COMPLETED**: Hexagonal puzzle individual pieces with proper coloring
 ✅ **COMPLETED**: Fixed package structure issues (removed hardcoded library() calls)
 ✅ **COMPLETED**: Archived deprecated implementations for cleaner codebase
+✅ **COMPLETED**: Hexagonal separation functionality (Issue #7) with placeholder pieces
+✅ **COMPLETED**: Enabled hexagonal separated mode in Shiny app
 
 ### Current Status
 - **Individual Pieces (Rectangular)**: Fully functional for any puzzle size (2x2, 3x3, 5x4, etc.)
+- **Hexagonal Separation**: Working with hexagon placeholders (Issue #7 - RESOLVED)
+- **Hexagonal Individual Pieces**: Deferred due to complexity (Issue #10 - OPEN)
 - **Code Quality**: Eliminated hardcoded SVG paths; all generation uses core functions
 - **Test Suite**: Created comprehensive test script (`tests/test_individual_pieces.R`)
 
 ### Next Phase
-🔄 **NEXT**: Refine separation (offset) functionality for hexagonal individual pieces to match rectangular puzzle separation capabilities. This will enable proper spacing between hexagonal pieces for laser cutting applications.
+⏸️ **DEFERRED**: Full hexagonal individual piece extraction (Issue #10)
+  - Requires deep understanding of hexagonal coordinate mapping
+  - Current placeholder approach is sufficient for most use cases
+  - Can be enhanced incrementally when time permits
+
+📋 **AVAILABLE**: Hexagonal separation with placeholders ready for laser cutting planning
 
 ### Principles
 1. **Reproducibility First**: All outputs must be reproducible from scripts with the same seed
