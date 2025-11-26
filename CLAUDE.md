@@ -109,22 +109,54 @@ cat("Found", length(files), "files in", path, "\n")
 log_info("Found {length(files)} files")  # Won't work!
 ```
 
+## WSL R Execution
+
+This project is developed in WSL with R installed on Windows. Always use the full Windows R path:
+
+```bash
+# Define R path for convenience (or use directly)
+R_EXE="/mnt/c/Program Files/R/R-4.5.0/bin/Rscript.exe"
+
+# Run inline R code
+"$R_EXE" -e "source('R/logging.R'); cat('test\n')"
+
+# Run script files
+"$R_EXE" inst/examples/generate_puzzles.R
+
+# Test package functions
+"$R_EXE" -e "
+source('R/logging.R')
+source('R/config_utils.R')
+source('R/rectangular_puzzle.R')
+source('R/puzzle_core_clean.R')
+source('R/individual_pieces.R')
+
+result <- generate_individual_pieces(seed = 42, xn = 2, yn = 2)
+cat('Generated', length(result\$pieces), 'pieces\n')
+"
+```
+
+**Important Notes:**
+- The `.Rprofile` automatically activates renv - dependencies are managed
+- Don't use `--vanilla` flag as it skips `.Rprofile` and renv activation
+- Multi-line R code works best in script files or with proper escaping
+
 ## Development Commands
 
 ### Running the Scripts
 ```bash
 # Main entry point (backward compatible)
-Rscript svg_to_png_overlay.R
+"/mnt/c/Program Files/R/R-4.5.0/bin/Rscript.exe" svg_to_png_overlay.R
 
 # Package development example
-Rscript inst/examples/generate_puzzles.R
+"/mnt/c/Program Files/R/R-4.5.0/bin/Rscript.exe" inst/examples/generate_puzzles.R
 
 # Individual puzzle pieces example
-Rscript inst/examples/individual_pieces_demo.R
+"/mnt/c/Program Files/R/R-4.5.0/bin/Rscript.exe" inst/examples/individual_pieces_demo.R
 
 # Individual puzzle generators (located in R/ directory)
-Rscript R/rectangular_puzzle.R    # Rectangular puzzles
-Rscript R/hexagonal_puzzle.R      # Hexagonal puzzles
+"/mnt/c/Program Files/R/R-4.5.0/bin/Rscript.exe" R/rectangular_puzzle.R    # Rectangular puzzles
+"/mnt/c/Program Files/R/R-4.5.0/bin/Rscript.exe" R/hexagonal_puzzle.R      # Hexagonal puzzles
 ```
 
 ### Package Development with renv
