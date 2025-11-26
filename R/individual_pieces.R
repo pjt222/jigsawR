@@ -25,6 +25,10 @@
 #' @param save_combined Whether to save a combined view (default: TRUE)
 #' @param palette Viridis palette name for colors (default: from config)
 #' @param stroke_width Line width for SVG strokes (default: 1.5)
+#' @param stroke_color Color for piece outlines (default: "black"). When NULL,
+#'        uses the first color from palette if provided.
+#' @param background Background color for pieces. Can be "none", a color string,
+#'        or a list with type="gradient" and center/middle/edge colors.
 #' @return List containing piece paths and metadata
 #' @export
 generate_individual_pieces <- function(seed = 42, xn = 2, yn = 2,
@@ -34,7 +38,9 @@ generate_individual_pieces <- function(seed = 42, xn = 2, yn = 2,
                                       corner_radius = 2,
                                       save_combined = TRUE,
                                       palette = NULL,
-                                      stroke_width = 1.5) {
+                                      stroke_width = 1.5,
+                                      stroke_color = NULL,
+                                      background = "none") {
 
   # Ensure output directory exists
   if (!dir.exists(output_dir)) {
@@ -66,6 +72,20 @@ generate_individual_pieces <- function(seed = 42, xn = 2, yn = 2,
   piece_width <- width / xn
   piece_height <- height / yn
 
+  # Determine stroke color: use provided color, or derive from palette, or default to black
+
+  if (is.null(stroke_color)) {
+    if (!is.null(palette) && palette != "black") {
+      # Get first color from palette for consistent stroke
+      stroke_colors <- get_puzzle_colors(1, palette)
+      effective_stroke_color <- stroke_colors[1]
+    } else {
+      effective_stroke_color <- "black"
+    }
+  } else {
+    effective_stroke_color <- stroke_color
+  }
+
   # Storage for piece data
   pieces <- list()
 
@@ -87,7 +107,8 @@ generate_individual_pieces <- function(seed = 42, xn = 2, yn = 2,
       )
 
       # Save individual piece SVG
-      save_individual_piece_svg(xi, yi, piece_path, width, height, output_dir, stroke_width)
+      save_individual_piece_svg(xi, yi, piece_path, width, height, output_dir,
+                                stroke_width, effective_stroke_color, background)
 
       log_info("Generated piece [{xi},{yi}]")
     }
@@ -231,18 +252,38 @@ build_piece_path <- function(xi, yi, edges, xn, yn,
 }
 
 #' Save individual piece as SVG file
+#' @param xi Column index (0-based)
+#' @param yi Row index (0-based)
+#' @param piece_path SVG path data for the piece
+#' @param width Puzzle width
+#' @param height Puzzle height
+#' @param output_dir Output directory
 #' @param stroke_width Line width for SVG strokes
+#' @param stroke_color Color for the stroke (default: "black")
+#' @param background Background color or "none"/"transparent" (default: "none")
 #' @keywords internal
-save_individual_piece_svg <- function(xi, yi, piece_path, width, height, output_dir, stroke_width = 1.5) {
+save_individual_piece_svg <- function(xi, yi, piece_path, width, height, output_dir,
+                                      stroke_width = 1.5, stroke_color = "black",
+                                      background = "none") {
+
+  # Handle background value
+  bg_fill <- if (is.null(background) || background == "none" || background == "transparent") {
+    "none"
+  } else if (is.list(background) && background$type == "gradient") {
+    # For gradients, use center color as fallback for individual pieces
+    background$center
+  } else {
+    background
+  }
 
   svg_content <- sprintf('<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" version="1.1"
      width="%.0f" height="%.0f" viewBox="0 0 %.0f %.0f">
-  <rect width="100%%" height="100%%" fill="transparent"/>
+  <rect width="100%%" height="100%%" fill="%s"/>
   <path id="piece-%d-%d" d="%s"
-        fill="none" stroke="black" stroke-width="%.1f"
+        fill="none" stroke="%s" stroke-width="%.1f"
         stroke-linecap="round" stroke-linejoin="round"/>
-</svg>', width, height, width, height, xi, yi, piece_path, stroke_width)
+</svg>', width, height, width, height, bg_fill, xi, yi, piece_path, stroke_color, stroke_width)
 
   filename <- file.path(output_dir, sprintf("piece_%d_%d.svg", xi, yi))
   writeLines(svg_content, filename)

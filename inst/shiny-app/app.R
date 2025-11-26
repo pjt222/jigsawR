@@ -199,7 +199,7 @@ ui <- page_fluid(
 
         tooltip(
           sliderInput("tabsize", "Tab Size:",
-                     min = 0, max = 50, value = 20, step = 1,
+                     min = 0, max = 100, value = 20, step = 1,
                      ticks = TRUE,
                      post = "%",
                      sep = ""),
@@ -208,7 +208,7 @@ ui <- page_fluid(
 
         tooltip(
           sliderInput("jitter", "Jitter:",
-                     min = 0, max = 25, value = 4, step = 1,
+                     min = 0, max = 100, value = 4, step = 1,
                      ticks = TRUE,
                      post = "%",
                      sep = ""),
@@ -244,11 +244,8 @@ ui <- page_fluid(
         conditionalPanel(
           condition = "input.output_mode == 'separated' || input.output_mode_hex == 'separated'",
           tooltip(
-            sliderInput("offset", "Separation:",
-                       min = 0, max = 50, value = 10, step = 1,
-                       ticks = TRUE,
-                       post = " mm",
-                       sep = ""),
+            numericInput("offset", "Separation (mm):",
+                        value = 10, min = 0, max = 500, step = 1),
             "Gap between pieces in separated mode. For laser cutting, use 3-5mm for rectangular or 5-10mm for hexagonal puzzles."
           ),
           conditionalPanel(
@@ -491,7 +488,7 @@ server <- function(input, output, session) {
     updateSliderInput(session, "tabsize", value = 20)
     updateSliderInput(session, "jitter", value = 4)
     updateRadioButtons(session, "output_mode", selected = "complete")
-    updateSliderInput(session, "offset", value = 10)
+    updateNumericInput(session, "offset", value = 10)
     updateSelectInput(session, "color_scheme", selected = "black")
     updateSliderInput(session, "stroke_width", value = 1.5)
     # Reset background settings
@@ -826,6 +823,18 @@ server <- function(input, output, session) {
           return(NULL)
         })
 
+        # Determine background value based on type
+        background_value <- switch(input$background_type,
+          "none" = "none",
+          "solid" = input$background_color,
+          "gradient" = list(
+            type = "gradient",
+            center = input$gradient_center,
+            middle = input$gradient_middle,
+            edge = input$gradient_edge
+          )
+        )
+
         # Generate individual pieces (suppress console output)
         result <- tryCatch({
           capture.output({
@@ -835,9 +844,13 @@ server <- function(input, output, session) {
               yn = data$rows,
               width = data$width,
               height = data$height,
+              tabsize = input$tabsize,
+              jitter = input$jitter,
               output_dir = pieces_dir,
               save_combined = FALSE,
-              stroke_width = input$stroke_width
+              palette = input$color_palette,
+              stroke_width = input$stroke_width,
+              background = background_value
             )
           }, type = "message")
         }, error = function(e) {
