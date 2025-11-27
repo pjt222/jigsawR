@@ -325,6 +325,69 @@ apply_hex_warp <- function(x, y) {
   ))
 }
 
+#' Apply hexagonal truncation to boundary vertex
+#'
+#' Projects a boundary vertex onto a regular hexagon boundary.
+#' Creates a clean hexagonal outline matching the complete mode do_trunc behavior.
+#'
+#' For a pointy-top hexagon (matching complete mode):
+#' - Corners (vertices) at 0, 60, 120, 180, 240, 300 degrees
+#' - Edge midpoints at 30, 90, 150, 210, 270, 330 degrees
+#'
+#' The hexagon has corner distance = target_radius and
+#' edge midpoint distance = target_radius * sqrt(0.75).
+#'
+#' @param x X coordinate of the vertex
+#' @param y Y coordinate of the vertex
+#' @param target_radius The radius of the truncation hexagon (distance to corners)
+#' @return List with x and y coordinates projected onto hexagon boundary
+#' @export
+apply_hex_trunc <- function(x, y, target_radius) {
+
+  # Handle origin case
+  if (x == 0 && y == 0) {
+    return(list(x = 0, y = 0))
+  }
+
+  # Require target_radius
+  if (is.null(target_radius)) {
+    stop("target_radius is required for apply_hex_trunc")
+  }
+
+  # Current distance from center
+  current_dist <- sqrt(x^2 + y^2)
+
+  # Calculate angle from center (in radians)
+  # NO offset - we want a pointy-top hexagon with corners at 0, 60, 120...
+  angl <- atan2(y, x)
+
+  # Normalize to positive angle [0, 2*pi)
+  if (angl < 0) angl <- angl + 2 * pi
+
+  # Find the 60-degree sector and offset within it
+  # For pointy-top hex: corners at 0, 60, 120... so sector boundaries at 30, 90, 150...
+  angl60 <- angl %% (pi / 3)  # Position within 60-degree sector
+  angl30 <- abs((pi / 6) - angl60)  # Distance from sector midpoint (edge midpoint direction)
+
+  # Calculate hexagon boundary distance at this angle
+  # For a regular hexagon with corners at distance R:
+  # - At corners (angl30 = 30°): hex_dist = R
+  # - At edge midpoints (angl30 = 0°): hex_dist = R * sqrt(0.75)
+  #
+  # Formula: hex_dist = R * sqrt(0.75) / cos(angl30)
+  # At 0° offset from corner: angl30 = pi/6, cos(pi/6) = sqrt(0.75), so hex_dist = R
+  # At 30° offset (edge midpoint): angl30 = 0, cos(0) = 1, so hex_dist = R * sqrt(0.75)
+  hex_boundary_dist <- target_radius * sqrt(0.75) / cos(angl30)
+
+  # Scale the current point to lie on the hexagon boundary
+  scale <- hex_boundary_dist / current_dist
+
+  return(list(
+    x = x * scale,
+    y = y * scale
+  ))
+}
+
 #' Check if a vertex is on the outer boundary of the puzzle
 #'
 #' Determines if a vertex position is on the outermost ring boundary.

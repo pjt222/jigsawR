@@ -12,11 +12,12 @@
 #' @param tabsize Tab size percentage
 #' @param jitter Jitter percentage
 #' @param do_warp Apply circular warp transformation to border edges (default: FALSE)
+#' @param do_trunc Truncate boundary to clean geometric shape (default: FALSE)
 #' @return List with edge_map (unique edges) and piece_edges (piece-to-edge mapping)
 #'
 #' @export
 generate_hex_edge_map <- function(rings, seed, diameter, tabsize = 27, jitter = 5,
-                                  do_warp = FALSE) {
+                                  do_warp = FALSE, do_trunc = FALSE) {
   # Source dependencies
   if (!exists("map_piece_id_to_ring")) {
     source("R/hexagonal_topology.R")
@@ -58,14 +59,13 @@ generate_hex_edge_map <- function(rings, seed, diameter, tabsize = 27, jitter = 
     piece_vertices_original[[piece_id]] <- vertices
   }
 
-  # Step 1b: If warping, identify boundary vertices and create warped vertex list
-  # A vertex is on the boundary if no other piece shares it (or only border edges touch it)
+  # Step 1b: Handle boundary vertex transformations
+  # A vertex is on the boundary if shared by fewer than 3 pieces
   piece_vertices <- piece_vertices_original  # Start with original
 
-  if (do_warp) {
+  if (do_warp || do_trunc) {
     # Build a map of vertex -> pieces that share it
     vertex_sharing <- list()
-    tol <- 0.01
 
     for (piece_id in 1:num_pieces) {
       for (i in 1:6) {
@@ -79,17 +79,40 @@ generate_hex_edge_map <- function(rings, seed, diameter, tabsize = 27, jitter = 
       }
     }
 
-    # A boundary vertex is shared by fewer than 3 pieces (in a hex grid, interior vertices touch 3 hexes)
-    boundary_vertices <- list()
+    # Find boundary vertices and calculate max distance for truncation
+    boundary_vertex_keys <- c()
+    max_boundary_dist <- 0
+
     for (v_key in names(vertex_sharing)) {
       if (length(unique(vertex_sharing[[v_key]]$pieces)) < 3) {
+        boundary_vertex_keys <- c(boundary_vertex_keys, v_key)
         v <- vertex_sharing[[v_key]]$coords
-        warped <- apply_hex_warp(v[1], v[2])
-        boundary_vertices[[v_key]] <- c(warped$x, warped$y)
+        dist <- sqrt(v[1]^2 + v[2]^2)
+        max_boundary_dist <- max(max_boundary_dist, dist)
       }
     }
 
-    # Update piece_vertices with warped boundary vertices
+    # Transform boundary vertices based on do_warp and do_trunc settings
+    boundary_vertices <- list()
+
+    for (v_key in boundary_vertex_keys) {
+      v <- vertex_sharing[[v_key]]$coords
+
+      if (do_warp) {
+        # Circular warp: project to inscribed circle
+        # apply_hex_warp compresses corners inward to match edge midpoints
+        transformed <- apply_hex_warp(v[1], v[2])
+        boundary_vertices[[v_key]] <- c(transformed$x, transformed$y)
+      } else if (do_trunc) {
+        # Hexagonal truncation: project to regular hexagon boundary
+        # The truncation hexagon has corners at max_boundary_dist
+        # (so corners stay in place, edge midpoints move outward)
+        transformed <- apply_hex_trunc(v[1], v[2], max_boundary_dist)
+        boundary_vertices[[v_key]] <- c(transformed$x, transformed$y)
+      }
+    }
+
+    # Update piece_vertices with transformed boundary vertices
     for (piece_id in 1:num_pieces) {
       for (i in 1:6) {
         v <- piece_vertices_original[[piece_id]][[i]]
@@ -99,6 +122,13 @@ generate_hex_edge_map <- function(rings, seed, diameter, tabsize = 27, jitter = 
           piece_vertices[[piece_id]][[i]] <- boundary_vertices[[v_key]]
         }
       }
+    }
+
+    # Log transformation info
+    if (do_warp) {
+      cat("Circular warp enabled - boundary vertices projected to circle\n")
+    } else if (do_trunc) {
+      cat(sprintf("Hexagonal truncation enabled - boundary at radius %.2f\n", max_boundary_dist))
     }
   }
 
@@ -265,6 +295,7 @@ generate_hex_edge_map <- function(rings, seed, diameter, tabsize = 27, jitter = 
 #' @param base_spacing Base spacing for separation
 #' @param separation_factor Separation multiplier
 #' @param do_warp Apply circular warp transformation to border edges (default: FALSE)
+#' @param do_trunc Truncate boundary to clean geometric shape (default: FALSE)
 #' @return List of piece objects
 #'
 #' @export
@@ -273,7 +304,8 @@ generate_hex_pieces_with_edge_map <- function(rings, seed, diameter = 240,
                                                separated = TRUE,
                                                base_spacing = NULL,
                                                separation_factor = 1.0,
-                                               do_warp = FALSE) {
+                                               do_warp = FALSE,
+                                               do_trunc = FALSE) {
   # Source dependencies
   if (!exists("map_piece_id_to_ring")) {
     source("R/hexagonal_topology.R")
@@ -281,11 +313,8 @@ generate_hex_pieces_with_edge_map <- function(rings, seed, diameter = 240,
 
   # Generate edge mapping
   cat("Creating edge mapping...\n")
-  edge_data <- generate_hex_edge_map(rings, seed, diameter, tabsize, jitter, do_warp)
+  edge_data <- generate_hex_edge_map(rings, seed, diameter, tabsize, jitter, do_warp, do_trunc)
   cat(sprintf("Generated %d unique edges\n", edge_data$num_edges))
-  if (do_warp) {
-    cat("Circular warp enabled - border edges will be arcs\n")
-  }
 
   # Calculate spacing
   if (separated && is.null(base_spacing)) {
