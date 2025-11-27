@@ -172,15 +172,11 @@ ui <- page_fluid(
           numericInput("diameter", "Diameter (mm):",
                       value = 240, min = 100, max = 500, step = 10),
 
-          # Hexagonal-specific options
-          checkboxInput("do_warp", "Circular Warp", value = FALSE),
-          checkboxInput("do_trunc", "Truncate Edges", value = FALSE),
-
-          # Bezier curves option (only for separated mode)
+          # Hexagonal-specific options (only for complete mode - not implemented in separated mode)
           conditionalPanel(
-            condition = "input.output_mode_hex == 'separated'",
-            checkboxInput("use_bezier", "Use Bezier Curves (Real Tabs)", value = FALSE),
-            helpText("Enable bezier curves with complementary edges for real puzzle pieces")
+            condition = "input.output_mode_hex != 'separated'",
+            checkboxInput("do_warp", "Circular Warp", value = FALSE),
+            checkboxInput("do_trunc", "Truncate Edges", value = FALSE)
           )
         ),
 
@@ -548,19 +544,19 @@ server <- function(input, output, session) {
       # Generate puzzle based on type
       if (puzzle_type == "hexagonal") {
         if (output_mode == "separated") {
-          # Issue #7 - Hexagonal separation IMPLEMENTED with placeholder pieces
-          # Now supports bezier curves with complementary edges!
+          # Hexagonal separation with bezier curves (real puzzle pieces)
+          # Note: do_warp and do_trunc are not supported in separated mode
           svg <- generate_separated_hexagonal_svg(
             rings = input$rings,
             seed = input$seed,
             diameter = input$diameter,
             offset = input$offset,
-            arrangement = ifelse(is.null(input$arrangement), "rectangular", input$arrangement),
-            use_bezier = ifelse(is.null(input$use_bezier), FALSE, input$use_bezier),
+            arrangement = ifelse(is.null(input$arrangement), "hexagonal", input$arrangement),
+            use_bezier = TRUE,  # Always use bezier curves for real puzzle pieces
             tabsize = input$tabsize,
             jitter = input$jitter,
-            do_warp = input$do_warp,
-            do_trunc = input$do_trunc,
+            do_warp = FALSE,   # Not implemented in separated mode
+            do_trunc = FALSE,  # Not implemented in separated mode
             colors = colors,
             stroke_width = input$stroke_width,
             background = input$background
