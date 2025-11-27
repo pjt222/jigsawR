@@ -32,23 +32,12 @@ generate_hex_edge_map <- function(rings, seed, diameter, tabsize = 27, jitter = 
   piece_radius <- diameter / (rings * 4)
   tab_params <- list(tabsize = tabsize, jitter = jitter)
 
-  # Step 1: Calculate vertices for all pieces
-  # Each piece's vertices are relative to its CENTER position
-  piece_vertices <- list()
+  # Step 1: Calculate vertices for all pieces (original coordinates)
+  piece_vertices_original <- list()
   base_offset <- 0  # Flat-top hexagon: vertices at 0°, 60°, 120°, 180°, 240°, 300°
 
   for (piece_id in 1:num_pieces) {
-    # Get this piece's center position using hexagonal lattice coordinates
-    # This ensures proper hexagonal tiling where adjacent pieces share vertices
     axial_coords <- map_piece_id_to_axial(piece_id, rings)
-
-    # Convert axial coordinates to cartesian for the piece center
-    # For flat-top hexagons with vertices at 0°, 60°, 120°, ...:
-    # - Height (V1 to V5): sqrt(3) * piece_radius
-    # - Vertical center distance for touching hexagons: sqrt(3) * piece_radius
-    # In axial coordinates, vertical distance = sqrt(3) * hex_size
-    # Therefore: sqrt(3) * hex_size = sqrt(3) * piece_radius
-    # hex_size = piece_radius
     hex_size <- piece_radius
 
     cart_coords <- axial_to_cartesian(
@@ -59,7 +48,6 @@ generate_hex_edge_map <- function(rings, seed, diameter, tabsize = 27, jitter = 
     center_x <- cart_coords$x
     center_y <- cart_coords$y
 
-    # Calculate 6 vertices relative to this piece's center
     vertices <- list()
     for (i in 0:5) {
       vertex_angle <- i * pi / 3 + base_offset
@@ -67,7 +55,51 @@ generate_hex_edge_map <- function(rings, seed, diameter, tabsize = 27, jitter = 
       vy <- center_y + piece_radius * sin(vertex_angle)
       vertices[[i + 1]] <- c(vx, vy)
     }
-    piece_vertices[[piece_id]] <- vertices
+    piece_vertices_original[[piece_id]] <- vertices
+  }
+
+  # Step 1b: If warping, identify boundary vertices and create warped vertex list
+  # A vertex is on the boundary if no other piece shares it (or only border edges touch it)
+  piece_vertices <- piece_vertices_original  # Start with original
+
+  if (do_warp) {
+    # Build a map of vertex -> pieces that share it
+    vertex_sharing <- list()
+    tol <- 0.01
+
+    for (piece_id in 1:num_pieces) {
+      for (i in 1:6) {
+        v <- piece_vertices_original[[piece_id]][[i]]
+        v_key <- sprintf("%.1f,%.1f", v[1], v[2])
+
+        if (is.null(vertex_sharing[[v_key]])) {
+          vertex_sharing[[v_key]] <- list(pieces = c(), coords = v)
+        }
+        vertex_sharing[[v_key]]$pieces <- c(vertex_sharing[[v_key]]$pieces, piece_id)
+      }
+    }
+
+    # A boundary vertex is shared by fewer than 3 pieces (in a hex grid, interior vertices touch 3 hexes)
+    boundary_vertices <- list()
+    for (v_key in names(vertex_sharing)) {
+      if (length(unique(vertex_sharing[[v_key]]$pieces)) < 3) {
+        v <- vertex_sharing[[v_key]]$coords
+        warped <- apply_hex_warp(v[1], v[2])
+        boundary_vertices[[v_key]] <- c(warped$x, warped$y)
+      }
+    }
+
+    # Update piece_vertices with warped boundary vertices
+    for (piece_id in 1:num_pieces) {
+      for (i in 1:6) {
+        v <- piece_vertices_original[[piece_id]][[i]]
+        v_key <- sprintf("%.1f,%.1f", v[1], v[2])
+
+        if (!is.null(boundary_vertices[[v_key]])) {
+          piece_vertices[[piece_id]][[i]] <- boundary_vertices[[v_key]]
+        }
+      }
+    }
   }
 
   # Step 2: Create unique edge mapping
@@ -112,40 +144,33 @@ generate_hex_edge_map <- function(rings, seed, diameter, tabsize = 27, jitter = 
       }
 
       if (is.na(neighbor_id)) {
-        # Border edge - straight line or arc (if warped)
+        # Border edge - no neighbor, this is on the puzzle boundary
         edge_key <- sprintf("%d-%d", piece_id, side)
 
         if (do_warp) {
-          # Apply warp transformation to border vertices
-          # This maps hexagonal boundary points to a circle
-          warped_v1 <- apply_hex_warp(v1[1], v1[2])
-          warped_v2 <- apply_hex_warp(v2[1], v2[2])
+          # v1 and v2 are already warped (done in Step 1b)
+          # Use arc command to follow the circular boundary
+          warp_radius <- (sqrt(v1[1]^2 + v1[2]^2) + sqrt(v2[1]^2 + v2[2]^2)) / 2
 
-          # Calculate the warped radius (should be consistent for all boundary points)
-          # Use the average distance as the arc radius
-          warp_radius <- sqrt(warped_v1$x^2 + warped_v1$y^2)
-
-          # Determine sweep direction based on vertex order (clockwise = 1)
-          # For a hexagon traversed counter-clockwise, we want sweep = 0
-          # Cross product of (center->v1) x (v1->v2) determines direction
-          cross <- warped_v1$x * (warped_v2$y - warped_v1$y) -
-                   warped_v1$y * (warped_v2$x - warped_v1$x)
-          sweep <- if (cross < 0) 1 else 0
+          # Determine sweep direction based on vertex order
+          # Cross product determines if we're going clockwise or counter-clockwise
+          cross <- v1[1] * v2[2] - v1[2] * v2[1]
+          sweep <- if (cross > 0) 1 else 0
 
           # Create arc command for border edge
           forward_arc <- sprintf("A %.2f %.2f 0 0 %d %.2f %.2f",
                                  warp_radius, warp_radius, sweep,
-                                 warped_v2$x, warped_v2$y)
+                                 v2[1], v2[2])
           reverse_arc <- sprintf("A %.2f %.2f 0 0 %d %.2f %.2f",
                                  warp_radius, warp_radius, 1 - sweep,
-                                 warped_v1$x, warped_v1$y)
+                                 v1[1], v1[2])
 
           piece_edge_map[[edge_key]] <- list(
             type = "border",
             forward = forward_arc,
             reverse = reverse_arc,
-            start = c(warped_v1$x, warped_v1$y),
-            end = c(warped_v2$x, warped_v2$y),
+            start = v1,
+            end = v2,
             is_forward = TRUE,
             warped = TRUE
           )
@@ -324,25 +349,50 @@ generate_hex_pieces_with_edge_map <- function(rings, seed, diameter = 240,
 
     # Helper function to offset coordinates in a path segment
     offset_path_coords <- function(path_segment, offset_x, offset_y) {
-      # Extract all numbers from the path segment
-      numbers <- as.numeric(unlist(strsplit(path_segment, "[CLM ]+")))
-      numbers <- numbers[!is.na(numbers)]
-
-      # Offset x coordinates (odd indices) and y coordinates (even indices)
-      for (i in seq_along(numbers)) {
-        if (i %% 2 == 1) {
-          numbers[i] <- numbers[i] + offset_x  # x coordinate
-        } else {
-          numbers[i] <- numbers[i] + offset_y  # y coordinate
-        }
-      }
-
-      # Get the command type (L or C)
+      # Get the command type
       cmd <- substr(trimws(path_segment), 1, 1)
 
-      # Rebuild path segment
-      coords <- sprintf("%.2f", numbers)
-      paste(cmd, paste(coords, collapse = " "))
+      if (cmd == "A") {
+        # Arc command: A rx ry x-axis-rotation large-arc-flag sweep-flag x y
+        # Only the last two values (x, y) are coordinates to offset
+        # Extract all numbers
+        numbers <- as.numeric(unlist(strsplit(path_segment, "[A ]+")))
+        numbers <- numbers[!is.na(numbers)]
+
+        if (length(numbers) >= 7) {
+          # rx, ry, rotation, large-arc, sweep, x, y
+          rx <- numbers[1]
+          ry <- numbers[2]
+          rotation <- numbers[3]
+          large_arc <- numbers[4]
+          sweep <- numbers[5]
+          x <- numbers[6] + offset_x
+          y <- numbers[7] + offset_y
+
+          return(sprintf("A %.2f %.2f %.0f %d %d %.2f %.2f",
+                         rx, ry, rotation, large_arc, sweep, x, y))
+        } else {
+          # Malformed arc, return as-is
+          return(path_segment)
+        }
+      } else {
+        # L or C commands - all values are coordinates
+        numbers <- as.numeric(unlist(strsplit(path_segment, "[CLM ]+")))
+        numbers <- numbers[!is.na(numbers)]
+
+        # Offset x coordinates (odd indices) and y coordinates (even indices)
+        for (i in seq_along(numbers)) {
+          if (i %% 2 == 1) {
+            numbers[i] <- numbers[i] + offset_x  # x coordinate
+          } else {
+            numbers[i] <- numbers[i] + offset_y  # y coordinate
+          }
+        }
+
+        # Rebuild path segment
+        coords <- sprintf("%.2f", numbers)
+        return(paste(cmd, paste(coords, collapse = " ")))
+      }
     }
 
     # Add all 6 edges with position offset applied
