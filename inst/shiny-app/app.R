@@ -561,7 +561,7 @@ server <- function(input, output, session) {
             do_trunc = FALSE,         # Not yet implemented in separated mode
             colors = colors,
             stroke_width = input$stroke_width,
-            background = input$background
+            background = background_value  # Fixed: was input$background
           )
         } else {
           # Generate standard hexagonal puzzle
