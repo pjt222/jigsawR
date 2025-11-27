@@ -174,7 +174,14 @@ ui <- page_fluid(
 
           # Hexagonal-specific options
           checkboxInput("do_warp", "Circular Warp", value = FALSE),
-          checkboxInput("do_trunc", "Truncate Edges", value = FALSE)
+          checkboxInput("do_trunc", "Truncate Edges", value = FALSE),
+
+          # Bezier curves option (only for separated mode)
+          conditionalPanel(
+            condition = "input.output_mode_hex == 'separated'",
+            checkboxInput("use_bezier", "Use Bezier Curves (Real Tabs)", value = FALSE),
+            helpText("Enable bezier curves with complementary edges for real puzzle pieces")
+          )
         ),
 
         # Seed
@@ -542,12 +549,14 @@ server <- function(input, output, session) {
       if (puzzle_type == "hexagonal") {
         if (output_mode == "separated") {
           # Issue #7 - Hexagonal separation IMPLEMENTED with placeholder pieces
+          # Now supports bezier curves with complementary edges!
           svg <- generate_separated_hexagonal_svg(
             rings = input$rings,
             seed = input$seed,
             diameter = input$diameter,
             offset = input$offset,
             arrangement = ifelse(is.null(input$arrangement), "rectangular", input$arrangement),
+            use_bezier = ifelse(is.null(input$use_bezier), FALSE, input$use_bezier),
             tabsize = input$tabsize,
             jitter = input$jitter,
             do_warp = input$do_warp,
