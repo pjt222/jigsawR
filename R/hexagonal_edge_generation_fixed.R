@@ -243,10 +243,13 @@ generate_hex_pieces_with_edge_map <- function(rings, seed, diameter = 240,
 
     if (separated) {
       # Get separated position (where we want the piece)
+      # Note: Use piece_radius (not base_spacing) to maintain correct scale
+      # base_spacing is the spacing parameter, but calculate_hex_piece_position
+      # expects piece_radius for coordinate calculations
       separated_pos <- calculate_hex_piece_position(
         piece_id = piece_id,
         rings = rings,
-        base_spacing = base_spacing,
+        piece_radius = piece_radius,
         separation_factor = separation_factor
       )
       # Calculate the offset needed to move from compact to separated
