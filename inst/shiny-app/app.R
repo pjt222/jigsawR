@@ -172,10 +172,12 @@ ui <- page_fluid(
           numericInput("diameter", "Diameter (mm):",
                       value = 240, min = 100, max = 500, step = 10),
 
-          # Hexagonal-specific options (only for complete mode - not implemented in separated mode)
+          # Hexagonal-specific options
+          # Circular Warp: Available in both complete and separated modes
+          checkboxInput("do_warp", "Circular Warp", value = FALSE),
+          # Truncate Edges: Only for complete mode (not yet implemented in separated mode)
           conditionalPanel(
             condition = "input.output_mode_hex != 'separated'",
-            checkboxInput("do_warp", "Circular Warp", value = FALSE),
             checkboxInput("do_trunc", "Truncate Edges", value = FALSE)
           )
         ),
@@ -545,7 +547,7 @@ server <- function(input, output, session) {
       if (puzzle_type == "hexagonal") {
         if (output_mode == "separated") {
           # Hexagonal separation with bezier curves (real puzzle pieces)
-          # Note: do_warp and do_trunc are not supported in separated mode
+          # Note: do_trunc is not yet implemented in separated mode (see Issue #30)
           svg <- generate_separated_hexagonal_svg(
             rings = input$rings,
             seed = input$seed,
@@ -555,8 +557,8 @@ server <- function(input, output, session) {
             use_bezier = TRUE,  # Always use bezier curves for real puzzle pieces
             tabsize = input$tabsize,
             jitter = input$jitter,
-            do_warp = FALSE,   # Not implemented in separated mode
-            do_trunc = FALSE,  # Not implemented in separated mode
+            do_warp = input$do_warp,  # Circular warp for border edges (Issue #29)
+            do_trunc = FALSE,         # Not yet implemented in separated mode
             colors = colors,
             stroke_width = input$stroke_width,
             background = input$background

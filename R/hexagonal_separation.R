@@ -69,8 +69,8 @@ extract_hexagonal_puzzle_structure <- function(rings, seed, diameter = 240,
 #' @param use_bezier Use real bezier curves with tabs (default: FALSE for placeholder hexagons)
 #' @param tabsize Tab size percentage (used when use_bezier = TRUE)
 #' @param jitter Jitter percentage (used when use_bezier = TRUE)
-#' @param do_warp Apply circular warping (legacy parameter, ignored)
-#' @param do_trunc Truncate edge pieces (legacy parameter, ignored)
+#' @param do_warp Apply circular warping to border edges (creates circular puzzle boundary)
+#' @param do_trunc Truncate edge pieces (legacy parameter, not yet implemented)
 #' @param colors Piece colors
 #' @param stroke_width Line width
 #' @param background Background color
@@ -200,7 +200,8 @@ generate_separated_hexagonal_svg <- function(rings = 3, seed = NULL,
       jitter = jitter,
       separated = separated,
       base_spacing = base_spacing,
-      separation_factor = if (separated) separation_factor else 1.0
+      separation_factor = if (separated) separation_factor else 1.0,
+      do_warp = do_warp
     )
 
     # Add pieces to SVG

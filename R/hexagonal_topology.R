@@ -1,5 +1,6 @@
 # Hexagonal Puzzle Topology Utilities
 # Functions for mapping between piece IDs and hexagonal grid coordinates
+# Also includes warp transformation for circular puzzle boundaries
 
 #' Map piece ID to hexagonal axial coordinates
 #'
@@ -260,4 +261,115 @@ calculate_hex_piece_position <- function(piece_id, rings, piece_radius = NULL,
     r = axial_coords$r,
     ring = axial_coords$ring
   ))
+}
+
+#' Apply circular warp transformation to a point
+#'
+#' Transforms a point from hexagonal boundary space to circular boundary space.
+#' Points on the hexagonal boundary are mapped to points on a circle of the same
+#' "radius" (distance from center along the hexagonal boundary direction).
+#'
+#' This is the inverse of what the original hex_warp does - it normalizes
+#' the radial distance so that hexagonal boundary becomes circular.
+#'
+#' @param x X coordinate (relative to puzzle center at origin)
+#' @param y Y coordinate (relative to puzzle center at origin)
+#' @return Named list with warped x, y coordinates
+#' @details
+#' The transformation:
+#' 1. Calculates the angle from center to point
+#' 2. Determines how far the hexagonal boundary is at that angle
+#' 3. Scales the point so the hex boundary maps to a circle
+#'
+#' For a point at angle θ, the hexagonal boundary distance is:
+#'   L = sqrt(0.75) / cos(|30° - (θ mod 60°)|)
+#'
+#' The warped coordinates are: (x/L, y/L)
+#'
+#' @examples
+#' # Point on hex boundary (corner) gets warped inward
+#' corner <- apply_hex_warp(30, 0)  # Right corner
+#'
+#' # Point on hex boundary (edge midpoint) stays same distance
+#' edge_mid <- apply_hex_warp(15, 15 * sqrt(3))
+#' @export
+apply_hex_warp <- function(x, y) {
+
+  # Handle origin case
+  if (x == 0 && y == 0) {
+    return(list(x = 0, y = 0))
+  }
+
+  # Calculate angle from center
+  # For flat-top hexagons, add pi/6 (30 deg) offset to shift the frame of reference
+  # This aligns corners with 0°, 60°, etc. and edge midpoints with 30°, 90°, etc.
+  angl <- atan2(y, x) + pi + (pi / 6)
+
+  # Find the 60-degree sector and offset within it
+  angl60 <- angl %% (pi / 3)
+  angl30 <- abs((pi / 6) - angl60)
+
+  # Calculate scale factor L
+  # Original formula: L = sqrt(0.75) / cos(angl30)
+  # This gives L < 1 at corners, L = 1 at edge midpoints
+  # For hex->circle mapping, we want to COMPRESS corners inward
+  # So we multiply by L (which is < 1 at corners, moving them inward)
+  L <- sqrt(0.75) / cos(angl30)
+
+  # Multiply by L to map hex boundary -> inscribed circle
+  # At corners (0°, 60°): L ≈ 0.866, so points move inward to r*0.866
+  # At edge midpoints (30°, 90°): L = 1.0, so points stay at same distance
+  return(list(
+    x = x * L,
+    y = y * L
+  ))
+}
+
+#' Check if a vertex is on the outer boundary of the puzzle
+#'
+#' Determines if a vertex position is on the outermost ring boundary.
+#' Used to identify which vertices need warp transformation.
+#'
+#' @param x X coordinate
+#' @param y Y coordinate
+#' @param puzzle_radius The outer radius of the puzzle (diameter/2)
+#' @param tolerance Tolerance for floating point comparison (default: 0.01)
+#' @return TRUE if vertex is on outer boundary, FALSE otherwise
+#' @export
+is_boundary_vertex <- function(x, y, puzzle_radius, tolerance = 0.01) {
+  # Calculate distance from center
+
+  dist <- sqrt(x^2 + y^2)
+
+  # For a hexagonal puzzle, boundary vertices are at distance ~ puzzle_radius
+
+  # Account for the hexagonal shape (corners are further than edges)
+  # Maximum distance is at corners: puzzle_radius
+  # Minimum distance is at edge midpoints: puzzle_radius * sqrt(0.75)
+
+  min_boundary_dist <- puzzle_radius * sqrt(0.75) - tolerance
+  max_boundary_dist <- puzzle_radius + tolerance
+
+
+  return(dist >= min_boundary_dist && dist <= max_boundary_dist)
+}
+
+#' Generate SVG arc command for a circular border edge
+#'
+#' Creates an SVG arc path segment between two points on a circle.
+#'
+#' @param x1 Start X coordinate
+#' @param y1 Start Y coordinate
+#' @param x2 End X coordinate
+#' @param y2 End Y coordinate
+#' @param radius Circle radius
+#' @param large_arc Use large arc (1) or small arc (0), default 0
+#' @param sweep Sweep direction: 1 for clockwise, 0 for counter-clockwise
+#' @return SVG arc command string "A rx ry rotation large-arc sweep x y"
+#' @export
+svg_arc_command <- function(x1, y1, x2, y2, radius, large_arc = 0, sweep = 1) {
+  # SVG arc: A rx ry x-axis-rotation large-arc-flag sweep-flag x y
+  # For a circle: rx = ry = radius, rotation = 0
+  sprintf("A %.2f %.2f 0 %d %d %.2f %.2f",
+          radius, radius, large_arc, sweep, x2, y2)
 }

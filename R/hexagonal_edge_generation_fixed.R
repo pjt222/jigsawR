@@ -11,10 +11,12 @@
 #' @param diameter Puzzle diameter
 #' @param tabsize Tab size percentage
 #' @param jitter Jitter percentage
+#' @param do_warp Apply circular warp transformation to border edges (default: FALSE)
 #' @return List with edge_map (unique edges) and piece_edges (piece-to-edge mapping)
 #'
 #' @export
-generate_hex_edge_map <- function(rings, seed, diameter, tabsize = 27, jitter = 5) {
+generate_hex_edge_map <- function(rings, seed, diameter, tabsize = 27, jitter = 5,
+                                  do_warp = FALSE) {
   # Source dependencies
   if (!exists("map_piece_id_to_ring")) {
     source("R/hexagonal_topology.R")
@@ -110,16 +112,55 @@ generate_hex_edge_map <- function(rings, seed, diameter, tabsize = 27, jitter = 
       }
 
       if (is.na(neighbor_id)) {
-        # Border edge - create straight line
+        # Border edge - straight line or arc (if warped)
         edge_key <- sprintf("%d-%d", piece_id, side)
-        piece_edge_map[[edge_key]] <- list(
-          type = "border",
-          forward = sprintf("L %.2f %.2f", v2[1], v2[2]),
-          reverse = sprintf("L %.2f %.2f", v1[1], v1[2]),
-          start = v1,
-          end = v2,
-          is_forward = TRUE
-        )
+
+        if (do_warp) {
+          # Apply warp transformation to border vertices
+          # This maps hexagonal boundary points to a circle
+          warped_v1 <- apply_hex_warp(v1[1], v1[2])
+          warped_v2 <- apply_hex_warp(v2[1], v2[2])
+
+          # Calculate the warped radius (should be consistent for all boundary points)
+          # Use the average distance as the arc radius
+          warp_radius <- sqrt(warped_v1$x^2 + warped_v1$y^2)
+
+          # Determine sweep direction based on vertex order (clockwise = 1)
+          # For a hexagon traversed counter-clockwise, we want sweep = 0
+          # Cross product of (center->v1) x (v1->v2) determines direction
+          cross <- warped_v1$x * (warped_v2$y - warped_v1$y) -
+                   warped_v1$y * (warped_v2$x - warped_v1$x)
+          sweep <- if (cross < 0) 1 else 0
+
+          # Create arc command for border edge
+          forward_arc <- sprintf("A %.2f %.2f 0 0 %d %.2f %.2f",
+                                 warp_radius, warp_radius, sweep,
+                                 warped_v2$x, warped_v2$y)
+          reverse_arc <- sprintf("A %.2f %.2f 0 0 %d %.2f %.2f",
+                                 warp_radius, warp_radius, 1 - sweep,
+                                 warped_v1$x, warped_v1$y)
+
+          piece_edge_map[[edge_key]] <- list(
+            type = "border",
+            forward = forward_arc,
+            reverse = reverse_arc,
+            start = c(warped_v1$x, warped_v1$y),
+            end = c(warped_v2$x, warped_v2$y),
+            is_forward = TRUE,
+            warped = TRUE
+          )
+        } else {
+          # No warp - straight line
+          piece_edge_map[[edge_key]] <- list(
+            type = "border",
+            forward = sprintf("L %.2f %.2f", v2[1], v2[2]),
+            reverse = sprintf("L %.2f %.2f", v1[1], v1[2]),
+            start = v1,
+            end = v2,
+            is_forward = TRUE,
+            warped = FALSE
+          )
+        }
       } else {
         # Internal edge - check if already generated
         pieces <- sort(c(piece_id, neighbor_id))
@@ -198,6 +239,7 @@ generate_hex_edge_map <- function(rings, seed, diameter, tabsize = 27, jitter = 
 #' @param separated Use separated layout
 #' @param base_spacing Base spacing for separation
 #' @param separation_factor Separation multiplier
+#' @param do_warp Apply circular warp transformation to border edges (default: FALSE)
 #' @return List of piece objects
 #'
 #' @export
@@ -205,7 +247,8 @@ generate_hex_pieces_with_edge_map <- function(rings, seed, diameter = 240,
                                                tabsize = 27, jitter = 5,
                                                separated = TRUE,
                                                base_spacing = NULL,
-                                               separation_factor = 1.0) {
+                                               separation_factor = 1.0,
+                                               do_warp = FALSE) {
   # Source dependencies
   if (!exists("map_piece_id_to_ring")) {
     source("R/hexagonal_topology.R")
@@ -213,8 +256,11 @@ generate_hex_pieces_with_edge_map <- function(rings, seed, diameter = 240,
 
   # Generate edge mapping
   cat("Creating edge mapping...\n")
-  edge_data <- generate_hex_edge_map(rings, seed, diameter, tabsize, jitter)
+  edge_data <- generate_hex_edge_map(rings, seed, diameter, tabsize, jitter, do_warp)
   cat(sprintf("Generated %d unique edges\n", edge_data$num_edges))
+  if (do_warp) {
+    cat("Circular warp enabled - border edges will be arcs\n")
+  }
 
   # Calculate spacing
   if (separated && is.null(base_spacing)) {
