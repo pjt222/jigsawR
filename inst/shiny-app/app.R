@@ -292,6 +292,27 @@ ui <- page_fluid(
           "Thickness of puzzle piece outlines. For laser cutting, use 0.5mm. For printing or display, use 1.5-2.5mm."
         ),
 
+        # Fill color option for hexagonal separated mode
+        conditionalPanel(
+          condition = "input.puzzle_type == 'hexagonal' && input.output_mode_hex == 'separated'",
+          radioButtons("fill_type", "Piece Fill:",
+                      choices = list(
+                        "None (Transparent)" = "none",
+                        "Solid Color" = "solid"
+                      ),
+                      selected = "none",
+                      inline = TRUE),
+          conditionalPanel(
+            condition = "input.fill_type == 'solid'",
+            colourpicker::colourInput(
+              "fill_color",
+              "Fill Color:",
+              value = "#ffffff",
+              showColour = "background"
+            )
+          )
+        ),
+
         # Background type selector
         radioButtons("background_type", "Background:",
                     choices = list(
@@ -543,6 +564,13 @@ server <- function(input, output, session) {
       # Generate puzzle based on type
       if (puzzle_type == "hexagonal") {
         if (output_mode == "separated") {
+          # Determine fill color value
+          fill_color_value <- if (is.null(input$fill_type) || input$fill_type == "none") {
+            "none"
+          } else {
+            input$fill_color
+          }
+
           # Hexagonal separation with bezier curves (real puzzle pieces)
           svg <- generate_separated_hexagonal_svg(
             rings = input$rings,
@@ -558,7 +586,8 @@ server <- function(input, output, session) {
             colors = colors,
             stroke_width = input$stroke_width,
             background = background_value,
-            palette = palette
+            palette = palette,
+            fill_color = fill_color_value
           )
         } else {
           # Generate standard hexagonal puzzle
