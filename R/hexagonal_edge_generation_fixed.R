@@ -93,23 +93,31 @@ generate_hex_edge_map <- function(rings, seed, diameter, tabsize = 27, jitter = 
     }
 
     # Transform boundary vertices based on do_warp and do_trunc settings
+    # Match complete mode semantics:
+    # - do_trunc=FALSE: No transformation (zigzag boundary)
+    # - do_trunc=TRUE + do_warp=FALSE: Hexagonal truncation
+    # - do_trunc=TRUE + do_warp=TRUE: Circular warp (arcs)
     boundary_vertices <- list()
 
     for (v_key in boundary_vertex_keys) {
       v <- vertex_sharing[[v_key]]$coords
 
-      if (do_warp) {
-        # Circular warp: project to inscribed circle
-        # apply_hex_warp compresses corners inward to match edge midpoints
-        transformed <- apply_hex_warp(v[1], v[2])
-        boundary_vertices[[v_key]] <- c(transformed$x, transformed$y)
-      } else if (do_trunc) {
-        # Hexagonal truncation: project to regular hexagon boundary
-        # The truncation hexagon has corners at max_boundary_dist
-        # (so corners stay in place, edge midpoints move outward)
-        transformed <- apply_hex_trunc(v[1], v[2], max_boundary_dist)
-        boundary_vertices[[v_key]] <- c(transformed$x, transformed$y)
+      if (do_trunc) {
+        # Truncation is enabled - choose between circular or hexagonal
+        if (do_warp) {
+          # Circular warp: project to inscribed circle
+          # apply_hex_warp compresses corners inward to match edge midpoints
+          transformed <- apply_hex_warp(v[1], v[2])
+          boundary_vertices[[v_key]] <- c(transformed$x, transformed$y)
+        } else {
+          # Hexagonal truncation: project to regular hexagon boundary
+          # The truncation hexagon has corners at max_boundary_dist
+          # (so corners stay in place, edge midpoints move outward)
+          transformed <- apply_hex_trunc(v[1], v[2], max_boundary_dist)
+          boundary_vertices[[v_key]] <- c(transformed$x, transformed$y)
+        }
       }
+      # If do_trunc=FALSE, no transformation (matches complete mode's zigzag behavior)
     }
 
     # Update piece_vertices with transformed boundary vertices
@@ -124,11 +132,13 @@ generate_hex_edge_map <- function(rings, seed, diameter, tabsize = 27, jitter = 
       }
     }
 
-    # Log transformation info
-    if (do_warp) {
+    # Log transformation info (matches complete mode semantics)
+    if (do_trunc && do_warp) {
       cat("Circular warp enabled - boundary vertices projected to circle\n")
     } else if (do_trunc) {
       cat(sprintf("Hexagonal truncation enabled - boundary at radius %.2f\n", max_boundary_dist))
+    } else {
+      cat("No boundary transformation (zigzag boundary)\n")
     }
   }
 
@@ -177,7 +187,8 @@ generate_hex_edge_map <- function(rings, seed, diameter, tabsize = 27, jitter = 
         # Border edge - no neighbor, this is on the puzzle boundary
         edge_key <- sprintf("%d-%d", piece_id, side)
 
-        if (do_warp) {
+        # Match complete mode semantics: arcs only when BOTH do_trunc AND do_warp
+        if (do_trunc && do_warp) {
           # v1 and v2 are already warped (done in Step 1b)
           # Use arc command to follow the circular boundary
           warp_radius <- (sqrt(v1[1]^2 + v1[2]^2) + sqrt(v2[1]^2 + v2[2]^2)) / 2
@@ -205,7 +216,8 @@ generate_hex_edge_map <- function(rings, seed, diameter, tabsize = 27, jitter = 
             warped = TRUE
           )
         } else {
-          # No warp - straight line
+          # No warp (do_trunc only or neither) - straight line
+          # Vertices may still be transformed (truncated hexagon) but edges are straight
           piece_edge_map[[edge_key]] <- list(
             type = "border",
             forward = sprintf("L %.2f %.2f", v2[1], v2[2]),
