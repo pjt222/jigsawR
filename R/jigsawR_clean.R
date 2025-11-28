@@ -109,6 +109,14 @@ generate_puzzle <- function(type = "rectangular",
   # Generate SVGs based on output mode
   if (output == "complete" || output == "both") {
     if (type == "hexagonal") {
+      # Determine stroke color from palette or colors
+      if (!is.null(colors)) {
+        stroke_color <- colors[1]
+      } else {
+        # Use first color from palette
+        stroke_color <- get_puzzle_colors(1, palette)[1]
+      }
+
       # Use hexagonal generation
       hex_result <- generate_hex_jigsaw_svg(
         rings = puzzle_structure$rings,
@@ -118,7 +126,7 @@ generate_puzzle <- function(type = "rectangular",
         jitter = puzzle_structure$parameters$jitter,
         do_warp = puzzle_structure$parameters$do_warp,
         do_trunc = puzzle_structure$parameters$do_trunc,
-        stroke_color = ifelse(is.null(colors) || colors[1] == "black", "black", colors[1]),
+        stroke_color = stroke_color,
         stroke_width = stroke_width,
         background = background
       )
