@@ -29,6 +29,7 @@
 #'        uses the first color from palette if provided.
 #' @param background Background color for pieces. Can be "none", a color string,
 #'        or a list with type="gradient" and center/middle/edge colors.
+#' @param opacity Opacity of puzzle pieces (0.0 to 1.0, default 1.0 = fully opaque)
 #' @return List containing piece paths and metadata
 #' @export
 generate_individual_pieces <- function(seed = 42, xn = 2, yn = 2,
@@ -40,7 +41,8 @@ generate_individual_pieces <- function(seed = 42, xn = 2, yn = 2,
                                       palette = NULL,
                                       stroke_width = 1.5,
                                       stroke_color = NULL,
-                                      background = "none") {
+                                      background = "none",
+                                      opacity = 1.0) {
 
   # Ensure output directory exists
   if (!dir.exists(output_dir)) {
@@ -108,7 +110,7 @@ generate_individual_pieces <- function(seed = 42, xn = 2, yn = 2,
 
       # Save individual piece SVG
       save_individual_piece_svg(xi, yi, piece_path, width, height, output_dir,
-                                stroke_width, effective_stroke_color, background)
+                                stroke_width, effective_stroke_color, background, opacity)
 
       log_info("Generated piece [{xi},{yi}]")
     }
@@ -116,7 +118,7 @@ generate_individual_pieces <- function(seed = 42, xn = 2, yn = 2,
 
   # Save combined view if requested
   if (save_combined) {
-    save_combined_pieces_svg(pieces, width, height, output_dir, palette, stroke_width)
+    save_combined_pieces_svg(pieces, width, height, output_dir, palette, stroke_width, opacity)
   }
 
   log_success("Successfully generated {xn * yn} pieces!")
@@ -264,7 +266,7 @@ build_piece_path <- function(xi, yi, edges, xn, yn,
 #' @keywords internal
 save_individual_piece_svg <- function(xi, yi, piece_path, width, height, output_dir,
                                       stroke_width = 1.5, stroke_color = "black",
-                                      background = "none") {
+                                      background = "none", opacity = 1.0) {
 
   # Handle background value
   bg_fill <- if (is.null(background) || background == "none" || background == "transparent") {
@@ -281,9 +283,9 @@ save_individual_piece_svg <- function(xi, yi, piece_path, width, height, output_
      width="%.0f" height="%.0f" viewBox="0 0 %.0f %.0f">
   <rect width="100%%" height="100%%" fill="%s"/>
   <path id="piece-%d-%d" d="%s"
-        fill="none" stroke="%s" stroke-width="%.1f"
+        fill="none" stroke="%s" stroke-width="%.1f" opacity="%.2f"
         stroke-linecap="round" stroke-linejoin="round"/>
-</svg>', width, height, width, height, bg_fill, xi, yi, piece_path, stroke_color, stroke_width)
+</svg>', width, height, width, height, bg_fill, xi, yi, piece_path, stroke_color, stroke_width, opacity)
 
   filename <- file.path(output_dir, sprintf("piece_%d_%d.svg", xi, yi))
   writeLines(svg_content, filename)
@@ -291,8 +293,9 @@ save_individual_piece_svg <- function(xi, yi, piece_path, width, height, output_
 
 #' Save combined view of all pieces
 #' @param stroke_width Line width for SVG strokes
+#' @param opacity Opacity of puzzle pieces (0.0 to 1.0)
 #' @keywords internal
-save_combined_pieces_svg <- function(pieces, width, height, output_dir, palette = NULL, stroke_width = 1.5) {
+save_combined_pieces_svg <- function(pieces, width, height, output_dir, palette = NULL, stroke_width = 1.5, opacity = 1.0) {
 
   # Use viridis palette for colors
   n_colors <- length(pieces)
@@ -320,8 +323,8 @@ save_combined_pieces_svg <- function(pieces, width, height, output_dir, palette 
     color_idx <- (piece_num %% length(colors)) + 1
 
     svg_parts <- c(svg_parts, sprintf(
-      '    <path id="piece-%d-%d" d="%s" fill="%s" stroke="%s" stroke-width="%.1f"/>',
-      piece$xi, piece$yi, piece$path, colors[color_idx], stroke_colors[color_idx], stroke_width
+      '    <path id="piece-%d-%d" d="%s" fill="%s" stroke="%s" stroke-width="%.1f" opacity="%.2f"/>',
+      piece$xi, piece$yi, piece$path, colors[color_idx], stroke_colors[color_idx], stroke_width, opacity
     ))
 
     piece_num <- piece_num + 1

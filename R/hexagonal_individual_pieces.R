@@ -19,6 +19,7 @@
 #' @param stroke_width Line width for SVG strokes (default: 1.5)
 #' @param stroke_color Color for piece outlines (default: "black")
 #' @param background Background color for pieces (default: "none")
+#' @param opacity Opacity of puzzle pieces (0.0 to 1.0, default 1.0 = fully opaque)
 #' @return List containing piece paths and metadata
 #' @export
 generate_hexagonal_individual_pieces <- function(rings = 3, seed = NULL,
@@ -30,7 +31,8 @@ generate_hexagonal_individual_pieces <- function(rings = 3, seed = NULL,
                                                  colors = NULL,
                                                  stroke_width = 1.5,
                                                  stroke_color = "black",
-                                                 background = "none") {
+                                                 background = "none",
+                                                 opacity = 1.0) {
 
   # Generate seed if not provided
   if (is.null(seed)) {
@@ -105,7 +107,8 @@ generate_hexagonal_individual_pieces <- function(rings = 3, seed = NULL,
         stroke_width = stroke_width,
         stroke_color = stroke_color,
         background = background,
-        piece_radius = piece_radius
+        piece_radius = piece_radius,
+        opacity = opacity
       )
       individual_files <- c(individual_files, filename)
     }
@@ -123,7 +126,8 @@ generate_hexagonal_individual_pieces <- function(rings = 3, seed = NULL,
       colors = colors,
       stroke_width = stroke_width,
       view_bounds = list(min_x = min_x, min_y = min_y,
-                         width = view_width, height = view_height)
+                         width = view_width, height = view_height),
+      opacity = opacity
     )
     cat(sprintf("Combined view saved: %s\n", combined_file))
   }
@@ -159,11 +163,13 @@ generate_hexagonal_individual_pieces <- function(rings = 3, seed = NULL,
 #' @param stroke_color Color for the stroke
 #' @param background Background color or "none"
 #' @param piece_radius Radius of hexagonal piece
+#' @param opacity Opacity of puzzle pieces (0.0 to 1.0, default 1.0 = fully opaque)
 #' @return Filename of saved file
 #' @keywords internal
 save_hexagonal_piece_svg <- function(piece, piece_index, seed, output_dir,
                                      stroke_width = 1.5, stroke_color = "black",
-                                     background = "none", piece_radius = 30) {
+                                     background = "none", piece_radius = 30,
+                                     opacity = 1.0) {
 
   # Calculate bounding box from piece path
   bounds <- calculate_path_bounds(piece$path)
@@ -188,13 +194,13 @@ save_hexagonal_piece_svg <- function(piece, piece_index, seed, output_dir,
   <title>Hexagonal Puzzle Piece %d (seed %d)</title>
   <rect x="%.2f" y="%.2f" width="%.2f" height="%.2f" fill="%s"/>
   <path id="piece-%d" d="%s"
-        fill="none" stroke="%s" stroke-width="%.1f"
+        fill="none" stroke="%s" stroke-width="%.1f" opacity="%.2f"
         stroke-linecap="round" stroke-linejoin="round"/>
 </svg>',
     view_width, view_height, min_x, min_y, view_width, view_height,
     piece_index, seed,
     min_x, min_y, view_width, view_height, bg_fill,
-    piece_index, piece$path, stroke_color, stroke_width)
+    piece_index, piece$path, stroke_color, stroke_width, opacity)
 
   filename <- file.path(output_dir, sprintf("hexagonal_piece_%02d_seed%d.svg",
                                             piece_index, seed))
@@ -211,10 +217,12 @@ save_hexagonal_piece_svg <- function(piece, piece_index, seed, output_dir,
 #' @param colors Color palette for pieces
 #' @param stroke_width Line width for SVG strokes
 #' @param view_bounds ViewBox bounds (min_x, min_y, width, height)
+#' @param opacity Opacity of puzzle pieces (0.0 to 1.0, default 1.0 = fully opaque)
 #' @return Filename of saved file
 #' @keywords internal
 save_hexagonal_combined_svg <- function(pieces, seed, output_dir, colors,
-                                        stroke_width = 1.5, view_bounds) {
+                                        stroke_width = 1.5, view_bounds,
+                                        opacity = 1.0) {
 
   num_pieces <- length(pieces)
 
@@ -244,8 +252,8 @@ save_hexagonal_combined_svg <- function(pieces, seed, output_dir, colors,
     fill_idx <- ((i - 1) %% length(fill_colors)) + 1
 
     svg_parts <- c(svg_parts, sprintf(
-      '    <path id="piece-%d" d="%s" fill="%s" stroke="%s" stroke-width="%.1f"/>',
-      i, piece$path, fill_colors[fill_idx], colors[color_idx], stroke_width
+      '    <path id="piece-%d" d="%s" fill="%s" stroke="%s" stroke-width="%.1f" opacity="%.2f"/>',
+      i, piece$path, fill_colors[fill_idx], colors[color_idx], stroke_width, opacity
     ))
 
     # Add piece label
@@ -312,13 +320,15 @@ calculate_path_bounds <- function(path) {
 #' @param jitter Jitter percentage
 #' @param colors Color palette
 #' @param stroke_width Line width
+#' @param opacity Opacity of puzzle pieces (0.0 to 1.0, default 1.0 = fully opaque)
 #' @return SVG content as string
 #' @export
 create_hexagonal_individual_pieces_svg <- function(rings = 3, seed = NULL,
                                                    diameter = 240,
                                                    tabsize = 27, jitter = 5,
                                                    colors = NULL,
-                                                   stroke_width = 1.5) {
+                                                   stroke_width = 1.5,
+                                                   opacity = 1.0) {
 
   if (is.null(seed)) {
     seed <- as.integer(runif(1) * 10000)
@@ -388,8 +398,8 @@ create_hexagonal_individual_pieces_svg <- function(rings = 3, seed = NULL,
     fill_idx <- ((i - 1) %% length(fill_colors)) + 1
 
     svg_parts <- c(svg_parts, sprintf(
-      '    <path id="piece-%d" d="%s" fill="%s" stroke="%s" stroke-width="%.1f"/>',
-      i, piece$path, fill_colors[fill_idx], colors[color_idx], stroke_width
+      '    <path id="piece-%d" d="%s" fill="%s" stroke="%s" stroke-width="%.1f" opacity="%.2f"/>',
+      i, piece$path, fill_colors[fill_idx], colors[color_idx], stroke_width, opacity
     ))
 
     svg_parts <- c(svg_parts, sprintf(

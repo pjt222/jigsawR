@@ -103,6 +103,7 @@ translate_svg_path <- function(path_string, x_offset, y_offset) {
 #' @param stroke_width Line width for piece outlines
 #' @param background Background color ("white", "none", "gradient", or any CSS color)
 #' @param palette Viridis palette name (NULL = use config default, only used if colors is NULL)
+#' @param opacity Opacity of puzzle pieces (0.0 to 1.0, default 1.0 = fully opaque)
 #' @return SVG string with separated pieces
 #' @export
 generate_separated_puzzle_svg <- function(puzzle_structure,
@@ -110,7 +111,8 @@ generate_separated_puzzle_svg <- function(puzzle_structure,
                                          colors = NULL,
                                          stroke_width = 1.5,
                                          background = "white",
-                                         palette = NULL) {
+                                         palette = NULL,
+                                         opacity = 1.0) {
 
   xn <- puzzle_structure$grid[2]
   yn <- puzzle_structure$grid[1]
@@ -195,8 +197,8 @@ generate_separated_puzzle_svg <- function(puzzle_structure,
       color <- colors[(piece_num %% length(colors)) + 1]
       
       # Add to SVG
-      svg <- paste0(svg, sprintf('  <path id="piece-%d-%d" d="%s" fill="none" stroke="%s" stroke-width="%.1f"/>\n',
-                                xi, yi, translated_path, color, stroke_width))
+      svg <- paste0(svg, sprintf('  <path id="piece-%d-%d" d="%s" fill="none" stroke="%s" stroke-width="%.1f" opacity="%.2f"/>\n',
+                                xi, yi, translated_path, color, stroke_width, opacity))
       
       piece_num <- piece_num + 1
     }

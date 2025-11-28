@@ -23,6 +23,7 @@
 #' @param do_trunc Truncate edge pieces (hexagonal only, default: FALSE)
 #' @param stroke_width SVG stroke width (default: 1)
 #' @param palette Viridis palette name (NULL = use config default)
+#' @param opacity Opacity of puzzle pieces (0.0 to 1.0, default 1.0 = fully opaque)
 #' @return List with puzzle data, SVG content, and file paths
 #' @export
 generate_puzzle <- function(type = "rectangular",
@@ -40,7 +41,8 @@ generate_puzzle <- function(type = "rectangular",
                           do_warp = FALSE,
                           do_trunc = FALSE,
                           stroke_width = 1,
-                          palette = NULL) {
+                          palette = NULL,
+                          opacity = 1.0) {
   
   # Generate seed if not provided
   if (is.null(seed)) {
@@ -128,11 +130,12 @@ generate_puzzle <- function(type = "rectangular",
         do_trunc = puzzle_structure$parameters$do_trunc,
         stroke_color = stroke_color,
         stroke_width = stroke_width,
-        background = background
+        background = background,
+        opacity = opacity
       )
       svg_complete <- hex_result$svg  # Extract SVG string from result list
     } else {
-      svg_complete <- generate_puzzle_svg(puzzle_structure, mode = "complete", background = background, stroke_width = stroke_width, palette = palette)
+      svg_complete <- generate_puzzle_svg(puzzle_structure, mode = "complete", background = background, stroke_width = stroke_width, palette = palette, opacity = opacity)
     }
     result$svg_complete <- svg_complete
     
@@ -163,11 +166,12 @@ generate_puzzle <- function(type = "rectangular",
         do_warp = puzzle_structure$parameters$do_warp,
         do_trunc = puzzle_structure$parameters$do_trunc,
         colors = colors,
-        save_files = FALSE
+        save_files = FALSE,
+        opacity = opacity
       )
       svg_individual <- hex_result$svg_content
     } else {
-      svg_individual <- generate_puzzle_svg(puzzle_structure, mode = "individual", colors = colors, background = background, stroke_width = stroke_width, palette = palette)
+      svg_individual <- generate_puzzle_svg(puzzle_structure, mode = "individual", colors = colors, background = background, stroke_width = stroke_width, palette = palette, opacity = opacity)
     }
     result$svg_individual <- svg_individual
     

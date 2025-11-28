@@ -292,6 +292,15 @@ ui <- page_fluid(
           "Thickness of puzzle piece outlines. For laser cutting, use 0.5mm. For printing or display, use 1.5-2.5mm."
         ),
 
+        tooltip(
+          sliderInput("opacity", "Opacity:",
+                     min = 0, max = 100, value = 100, step = 5,
+                     ticks = TRUE,
+                     post = "%",
+                     sep = ""),
+          "Transparency of puzzle pieces. 100% = fully opaque, 0% = fully transparent. Lower values create a watermark effect."
+        ),
+
         # Fill color option for hexagonal separated mode
         conditionalPanel(
           condition = "input.puzzle_type == 'hexagonal' && input.output_mode_hex == 'separated'",
@@ -587,7 +596,8 @@ server <- function(input, output, session) {
             stroke_width = input$stroke_width,
             background = background_value,
             palette = palette,
-            fill_color = fill_color_value
+            fill_color = fill_color_value,
+            opacity = input$opacity / 100
           )
         } else {
           # Generate standard hexagonal puzzle
@@ -605,7 +615,8 @@ server <- function(input, output, session) {
             do_warp = input$do_warp,
             do_trunc = input$do_trunc,
             stroke_width = input$stroke_width,
-            palette = palette
+            palette = palette,
+            opacity = input$opacity / 100
           )
 
           # Use proper conditional instead of ifelse for character vectors
@@ -632,7 +643,8 @@ server <- function(input, output, session) {
           colors = colors,
           stroke_width = input$stroke_width,
           background = background_value,
-          palette = palette
+          palette = palette,
+          opacity = input$opacity / 100
         )
 
       } else {
@@ -649,7 +661,8 @@ server <- function(input, output, session) {
           background = background_value,
           save_files = FALSE,
           palette = palette,
-          stroke_width = input$stroke_width
+          stroke_width = input$stroke_width,
+          opacity = input$opacity / 100
         )
 
         # Use proper conditional instead of ifelse for character vectors

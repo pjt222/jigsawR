@@ -300,12 +300,13 @@ hex_gen_db <- function() {
 #' @param stroke_color Color for puzzle lines (default: "black")
 #' @param stroke_width Width of puzzle lines (default: 1)
 #' @param background Background color or "none" (default: "none")
+#' @param opacity Opacity of puzzle pieces (0.0 to 1.0, default 1.0 = fully opaque)
 #' @return List containing SVG path data
 generate_hex_jigsaw_svg <- function(seed = NULL, tabsize = 27, jitter = 5,
                                     diameter = 240, rings = 6,
                                     do_warp = FALSE, do_trunc = FALSE,
                                     stroke_color = "black", stroke_width = 1,
-                                    background = "none") {
+                                    background = "none", opacity = 1.0) {
 
   # Initialize environment
   init_hex_jigsaw(seed, tabsize, jitter, diameter, rings, do_warp, do_trunc)
@@ -368,22 +369,22 @@ generate_hex_jigsaw_svg <- function(seed = NULL, tabsize = 27, jitter = 5,
   # Add paths with consistent styling
   if (nchar(horizontal_paths) > 0) {
     svg_lines <- c(svg_lines,
-      sprintf('<path fill="none" stroke="%s" stroke-width="%.1f" d="%s"/>',
-              stroke_color, stroke_width, horizontal_paths)
+      sprintf('<path fill="none" stroke="%s" stroke-width="%.1f" opacity="%.2f" d="%s"/>',
+              stroke_color, stroke_width, opacity, horizontal_paths)
     )
   }
-  
+
   if (nchar(vertical_paths) > 0) {
     svg_lines <- c(svg_lines,
-      sprintf('<path fill="none" stroke="%s" stroke-width="%.1f" d="%s"/>',
-              stroke_color, stroke_width, vertical_paths)
+      sprintf('<path fill="none" stroke="%s" stroke-width="%.1f" opacity="%.2f" d="%s"/>',
+              stroke_color, stroke_width, opacity, vertical_paths)
     )
   }
-  
+
   if (nchar(border_paths) > 0) {
     svg_lines <- c(svg_lines,
-      sprintf('<path fill="none" stroke="%s" stroke-width="%.1f" d="%s"/>',
-              stroke_color, stroke_width * 1.5, border_paths)  # Slightly thicker border
+      sprintf('<path fill="none" stroke="%s" stroke-width="%.1f" opacity="%.2f" d="%s"/>',
+              stroke_color, stroke_width * 1.5, opacity, border_paths)  # Slightly thicker border
     )
   }
   

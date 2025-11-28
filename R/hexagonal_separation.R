@@ -76,6 +76,7 @@ extract_hexagonal_puzzle_structure <- function(rings, seed, diameter = 240,
 #' @param background Background color
 #' @param palette Viridis palette name (NULL = use config default, only used if colors is NULL)
 #' @param fill_color Fill color for pieces ("none" for transparent, or any CSS color)
+#' @param opacity Opacity of puzzle pieces (0.0 to 1.0, default 1.0 = fully opaque)
 #' @return SVG content as string
 #' @export
 generate_separated_hexagonal_svg <- function(rings = 3, seed = NULL,
@@ -87,7 +88,8 @@ generate_separated_hexagonal_svg <- function(rings = 3, seed = NULL,
                                             colors = NULL, stroke_width = 1,
                                             background = "none",
                                             palette = NULL,
-                                            fill_color = "none") {
+                                            fill_color = "none",
+                                            opacity = 1.0) {
 
   if (is.null(seed)) {
     seed <- as.integer(runif(1) * 10000)
@@ -230,8 +232,8 @@ generate_separated_hexagonal_svg <- function(rings = 3, seed = NULL,
       piece_color <- colors[color_index]
 
       svg_lines <- c(svg_lines,
-        sprintf('    <path d="%s" fill="%s" stroke="%s" stroke-width="%.1f" opacity="0.9"/>',
-                piece$path, fill_color, piece_color, stroke_width),
+        sprintf('    <path d="%s" fill="%s" stroke="%s" stroke-width="%.1f" opacity="%.2f"/>',
+                piece$path, fill_color, piece_color, stroke_width, opacity),
         sprintf('    <text x="%.2f" y="%.2f" text-anchor="middle" dominant-baseline="central" font-size="8" fill="%s">%d</text>',
                 piece$center_x, piece$center_y, piece_color, i)
       )
@@ -292,8 +294,8 @@ generate_separated_hexagonal_svg <- function(rings = 3, seed = NULL,
     hex_path <- create_hex_placeholder(center_x, center_y, piece_radius * 0.8, piece_rotation)
 
     svg_lines <- c(svg_lines,
-      sprintf('    <path d="%s" fill="%s" stroke="%s" stroke-width="%.1f" opacity="0.9"/>',
-              hex_path, fill_color, piece_color, stroke_width),
+      sprintf('    <path d="%s" fill="%s" stroke="%s" stroke-width="%.1f" opacity="%.2f"/>',
+              hex_path, fill_color, piece_color, stroke_width, opacity),
       sprintf('    <text x="%.2f" y="%.2f" text-anchor="middle" dominant-baseline="central" font-size="8" fill="%s">%d</text>',
               center_x, center_y, piece_color, i)
     )
