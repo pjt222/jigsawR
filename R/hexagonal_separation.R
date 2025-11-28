@@ -71,9 +71,10 @@ extract_hexagonal_puzzle_structure <- function(rings, seed, diameter = 240,
 #' @param jitter Jitter percentage (used when use_bezier = TRUE)
 #' @param do_warp Apply circular warping to border edges (creates circular puzzle boundary)
 #' @param do_trunc Truncate edge pieces to regular hexagon boundary
-#' @param colors Piece colors
+#' @param colors Piece colors (if NULL, uses palette)
 #' @param stroke_width Line width
 #' @param background Background color
+#' @param palette Viridis palette name (NULL = use config default, only used if colors is NULL)
 #' @return SVG content as string
 #' @export
 generate_separated_hexagonal_svg <- function(rings = 3, seed = NULL,
@@ -83,7 +84,8 @@ generate_separated_hexagonal_svg <- function(rings = 3, seed = NULL,
                                             tabsize = 27, jitter = 5,
                                             do_warp = FALSE, do_trunc = FALSE,
                                             colors = NULL, stroke_width = 1,
-                                            background = "none") {
+                                            background = "none",
+                                            palette = NULL) {
 
   if (is.null(seed)) {
     seed <- as.integer(runif(1) * 10000)
@@ -141,9 +143,9 @@ generate_separated_hexagonal_svg <- function(rings = 3, seed = NULL,
     vb_y <- -total_height / 2
   }
 
-  # Default colors
+  # Generate colors from palette if colors not provided
   if (is.null(colors)) {
-    colors <- c("#FF6B6B", "#4ECDC4", "#45B7D1", "#FFA07A", "#98D8C8")
+    colors <- get_puzzle_colors(num_pieces, palette)
   }
 
   # Start SVG

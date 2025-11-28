@@ -287,7 +287,8 @@ generate_puzzle_svg_enhanced <- function(puzzle_structure,
         do_trunc = puzzle_structure$parameters$do_trunc,
         colors = colors,
         stroke_width = stroke_width,
-        background = background
+        background = background,
+        palette = palette
       ))
     } else {
       # Use standard hexagonal generation

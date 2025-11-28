@@ -557,7 +557,8 @@ server <- function(input, output, session) {
             do_trunc = input$do_trunc, # Truncate to hexagonal boundary
             colors = colors,
             stroke_width = input$stroke_width,
-            background = background_value
+            background = background_value,
+            palette = palette
           )
         } else {
           # Generate standard hexagonal puzzle
