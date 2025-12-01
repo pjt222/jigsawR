@@ -309,6 +309,44 @@ Both puzzle generators use R environments to maintain global state:
 3. **Coordinate Transformations**: Complex transformations for hexagonal grids with rotation/scaling
 4. **SVG Path Construction**: String concatenation to build valid SVG path data
 
+### Hexagonal Warp/Trunc Architecture
+
+The hexagonal puzzle supports four boundary modes controlled by `do_warp` and `do_trunc`:
+
+| Mode | do_warp | do_trunc | Boundary Shape | Border Edges |
+|------|---------|----------|----------------|--------------|
+| neither | FALSE | FALSE | Zigzag hexagon | Straight lines (L) |
+| trunc_only | FALSE | TRUE | Clean hexagon | Straight lines (L) |
+| warp_only | TRUE | FALSE | Warped zigzag | Straight lines (L) |
+| both | TRUE | TRUE | Perfect circle | Arc commands (A) |
+
+**Key Implementation Details:**
+
+1. **Warp Formula** (`R/hexagonal_topology.R:apply_hex_warp`):
+   ```r
+   # CRITICAL: Must use DIVISION, not multiplication
+   angl <- atan2(y, x) + pi
+   angl60 <- angl %% (pi / 3)
+   angl30 <- abs((pi / 6) - angl60)
+   l <- sqrt(0.75) / cos(angl30)
+   return(list(x = x / l, y = y / l))  # DIVIDE by l
+   ```
+   - The original JavaScript uses division to push edge midpoints outward
+   - Multiplication (incorrect) would compress corners inward instead
+
+2. **Warp Application Scope** (`R/hexagonal_edge_generation_fixed.R`):
+   - Warp must be applied to ALL vertices (internal + boundary), not just boundary
+   - This matches the deprecated complete mode behavior
+
+3. **Boundary Projection** (when both warp+trunc):
+   - After warping, boundary vertices are at different distances from origin
+   - Project them onto the target circle: `projected = (v / |v|) * circle_radius`
+   - This ensures all border arcs connect smoothly on a perfect circle
+
+4. **Arc Radius** (when both warp+trunc):
+   - Use consistent `circle_radius = diameter / 2` for ALL border arcs
+   - Don't calculate per-edge radii (causes gaps between arcs)
+
 ### Key Functions by Purpose
 
 **⭐ Unified Pipeline (Recommended - Epic #32):**
@@ -380,6 +418,12 @@ renv::restore()
 **IMPORTANT**: We focus on refining scripts rather than tinkering with output files. Reproducible code ensures data quality. Even if we achieve data quality through manual adjustments, this will not provide reliable code.
 
 ### Recent Work
+✅ **COMPLETED**: Warp/Trunc transformation fix (2025-12-01)
+  - Fixed `apply_hex_warp()` to use DIVISION instead of multiplication (matching original JS)
+  - Warp now applies to ALL vertices, not just boundary vertices
+  - Boundary vertices projected to exact circle radius when both warp+trunc enabled
+  - Arc radius uses consistent `diameter/2` for all border edges
+  - See "Hexagonal Warp/Trunc Architecture" section below for details
 ✅ **COMPLETED**: Epic #32 - Unified Puzzle Generation Pipeline (2025-12-01)
   - Issue #33: Unified piece generation module (`R/unified_piece_generation.R`)
   - Issue #34: Positioning engine (`R/piece_positioning.R`)
