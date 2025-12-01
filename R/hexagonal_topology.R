@@ -276,22 +276,26 @@ calculate_hex_piece_position <- function(piece_id, rings, piece_radius = NULL,
 #' @param y Y coordinate (relative to puzzle center at origin)
 #' @return Named list with warped x, y coordinates
 #' @details
-#' The transformation:
-#' 1. Calculates the angle from center to point
-#' 2. Determines how far the hexagonal boundary is at that angle
-#' 3. Scales the point so the hex boundary maps to a circle
+#' The transformation matches the original hex_warp() from hexagonal_puzzle.R:
+#' 1. Calculates the angle from center to point (with +pi offset)
+#' 2. Determines the scale factor l at that angle
+#' 3. DIVIDES coordinates by l to push edge midpoints outward
 #'
-#' For a point at angle θ, the hexagonal boundary distance is:
-#'   L = sqrt(0.75) / cos(|30° - (θ mod 60°)|)
+#' For a point at angle θ, the scale factor is:
+#'   l = sqrt(0.75) / cos(|30° - ((θ+180°) mod 60°)|)
 #'
-#' The warped coordinates are: (x/L, y/L)
+#' The warped coordinates are: (x/l, y/l)
+#'
+#' This maps a hexagonal grid onto a circle by:
+#' - Keeping corners at same distance (l=1 at corners)
+#' - Pushing edge midpoints outward (l<1 means divide increases distance)
 #'
 #' @examples
-#' # Point on hex boundary (corner) gets warped inward
-#' corner <- apply_hex_warp(30, 0)  # Right corner
+#' # At 0 degrees (hexagon edge midpoint): no change
+#' edge_mid <- apply_hex_warp(50, 0)  # Returns same point
 #'
-#' # Point on hex boundary (edge midpoint) stays same distance
-#' edge_mid <- apply_hex_warp(15, 15 * sqrt(3))
+#' # At 30 degrees (between corner and edge): pushed outward
+#' between <- apply_hex_warp(43.3, 25)
 #' @export
 apply_hex_warp <- function(x, y) {
 
@@ -300,28 +304,23 @@ apply_hex_warp <- function(x, y) {
     return(list(x = 0, y = 0))
   }
 
-  # Calculate angle from center
-  # For flat-top hexagons, add pi/6 (30 deg) offset to shift the frame of reference
-  # This aligns corners with 0°, 60°, etc. and edge midpoints with 30°, 90°, etc.
-  angl <- atan2(y, x) + pi + (pi / 6)
+  # EXACT formula from hexagonal_puzzle.R hex_warp function:
+  # angl <- atan2(vec$y, vec$x) + pi
+  # angl60 <- angl %% (pi / 3)
+  # angl30 <- abs((pi / 6) - angl60)
+  # l <- sqrt(0.75) / cos(angl30)
+  # return(list(x = vec$x / l, y = vec$y / l))
 
-  # Find the 60-degree sector and offset within it
+  angl <- atan2(y, x) + pi
   angl60 <- angl %% (pi / 3)
   angl30 <- abs((pi / 6) - angl60)
+  l <- sqrt(0.75) / cos(angl30)
 
-  # Calculate scale factor L
-  # Original formula: L = sqrt(0.75) / cos(angl30)
-  # This gives L < 1 at corners, L = 1 at edge midpoints
-  # For hex->circle mapping, we want to COMPRESS corners inward
-  # So we multiply by L (which is < 1 at corners, moving them inward)
-  L <- sqrt(0.75) / cos(angl30)
-
-  # Multiply by L to map hex boundary -> inscribed circle
-  # At corners (0°, 60°): L ≈ 0.866, so points move inward to r*0.866
-  # At edge midpoints (30°, 90°): L = 1.0, so points stay at same distance
+  # DIVIDE by l (not multiply!) to match original behavior
+  # This pushes edge midpoints outward to create circular shape
   return(list(
-    x = x * L,
-    y = y * L
+    x = x / l,
+    y = y / l
   ))
 }
 
