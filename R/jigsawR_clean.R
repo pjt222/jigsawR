@@ -1,210 +1,176 @@
 # jigsawR Clean Implementation
 # Complete pipeline for jigsaw puzzle generation
 # Reproducible, clean, no hard-coded adjustments
+#
+# Updated for Epic #32: Unified Puzzle Generation Pipeline
+# Now uses generate_pieces_internal() -> apply_piece_positioning() -> render_puzzle_svg()
 
 #' Main jigsaw puzzle generation function
-#' 
+#'
 #' Single entry point for all puzzle generation with clean, reproducible output.
-#' No hard-coded adjustments or manual tinkering.
-#' 
-#' @param type "rectangular" or "hexagonal" (currently only rectangular implemented)
-#' @param grid Vector c(rows, columns) for puzzle dimensions
-#' @param size Vector c(width, height) in mm
+#' Uses the unified pipeline: piece generation -> positioning -> rendering.
+#'
+#' @param type "rectangular" or "hexagonal"
+#' @param grid For rectangular: c(rows, columns). For hexagonal: c(rings) or just rings
+#' @param size For rectangular: c(width, height) in mm. For hexagonal: c(diameter) or just diameter
 #' @param seed Random seed for reproducibility
-#' @param tabsize Tab size as percentage (10-30)
-#' @param jitter Jitter as percentage (0-10)
-#' @param output "complete", "individual", or "both"
-#' @param colors Vector of colors for individual pieces (optional)
-#' @param background "none", "gradient", or custom color
-#' @param save_files TRUE to save SVG/PNG files
+#' @param tabsize Tab size as percentage (10-40)
+#' @param jitter Jitter as percentage (0-15)
+#' @param offset Separation offset (0 = complete puzzle, >0 = separated pieces)
+#' @param fill_color Fill color for pieces ("none" for unfilled)
+#' @param stroke_width SVG stroke width (default: 1.5)
+#' @param colors Vector of colors for pieces (optional, overrides palette)
+#' @param palette Viridis palette name (NULL = use config default)
+#' @param background "none", "white", color name, or list(type="gradient", ...)
+#' @param opacity Opacity of puzzle pieces (0.0 to 1.0)
+#' @param save_files TRUE to save SVG files
 #' @param output_dir Directory for output files
 #' @param filename_prefix Prefix for output files
-#' @param do_warp Apply circular warping (hexagonal only, default: FALSE)
-#' @param do_trunc Truncate edge pieces (hexagonal only, default: FALSE)
-#' @param stroke_width SVG stroke width (default: 1)
-#' @param palette Viridis palette name (NULL = use config default)
-#' @param opacity Opacity of puzzle pieces (0.0 to 1.0, default 1.0 = fully opaque)
-#' @return List with puzzle data, SVG content, and file paths
+#' @param do_warp Apply circular warping (hexagonal only)
+#' @param do_trunc Truncate edge pieces (hexagonal only)
+#' @param output DEPRECATED: Use offset parameter instead
+#' @return List with svg_content, pieces, canvas_size, and parameters
 #' @export
 generate_puzzle <- function(type = "rectangular",
-                          grid = c(2, 2),
-                          size = c(200, 200),
-                          seed = NULL,
-                          tabsize = 20,
-                          jitter = 4,
-                          output = "both",
-                          colors = NULL,
-                          background = "none",
-                          save_files = TRUE,
-                          output_dir = "output",
-                          filename_prefix = NULL,
-                          do_warp = FALSE,
-                          do_trunc = FALSE,
-                          stroke_width = 1,
-                          palette = NULL,
-                          opacity = 1.0) {
-  
+                            grid = c(2, 2),
+                            size = c(200, 200),
+                            seed = NULL,
+                            tabsize = 20,
+                            jitter = 4,
+                            offset = 0,
+                            fill_color = "none",
+                            stroke_width = 1.5,
+                            colors = NULL,
+                            palette = NULL,
+                            background = "white",
+                            opacity = 1.0,
+                            save_files = FALSE,
+                            output_dir = "output",
+                            filename_prefix = NULL,
+                            do_warp = FALSE,
+                            do_trunc = FALSE,
+                            output = NULL) {
+
+  # Handle deprecated 'output' parameter
+  if (!is.null(output)) {
+    .Deprecated(msg = paste(
+      "'output' parameter is deprecated.",
+      "Use 'offset' parameter instead:",
+      "- offset=0 for complete puzzle",
+      "- offset>0 for separated pieces",
+      "Access result$pieces for individual piece data."
+    ))
+    # Map old output values to offset
+    if (output == "individual" || output == "separated") {
+      offset <- 10  # Default separation
+    } else if (output == "complete") {
+      offset <- 0
+    }
+    # For "both", we generate with offset=0 (complete) and include pieces
+  }
+
   # Generate seed if not provided
   if (is.null(seed)) {
     seed <- as.integer(runif(1) * 10000)
   }
-  
+
   # Generate filename prefix if not provided
   if (is.null(filename_prefix)) {
-    filename_prefix <- sprintf("puzzle_%dx%d_seed%d", grid[1], grid[2], seed)
+    if (type == "hexagonal") {
+      rings <- if (length(grid) == 1) grid else grid[1]
+      filename_prefix <- sprintf("puzzle_hex%d_seed%d", rings, seed)
+    } else {
+      filename_prefix <- sprintf("puzzle_%dx%d_seed%d", grid[1], grid[2], seed)
+    }
   }
-  
+
   # Ensure output directory exists
   if (save_files && !dir.exists(output_dir)) {
     dir.create(output_dir, recursive = TRUE)
   }
-  
-  # Generate puzzle structure based on type
-  if (type == "rectangular") {
-    puzzle_structure <- generate_puzzle_core(
-      seed = seed,
-      grid = grid,
-      size = size,
-      tabsize = tabsize,
-      jitter = jitter
-    )
-  } else if (type == "hexagonal") {
-    # Source hexagonal functions if not already loaded
-    if (!exists("extract_hexagonal_puzzle_structure")) {
-      if (file.exists("R/hexagonal_individual_pieces.R")) {
-        source("R/hexagonal_individual_pieces.R")
-      } else if (file.exists("hexagonal_individual_pieces.R")) {
-        source("hexagonal_individual_pieces.R")
-      } else {
-        # In package, functions should be loaded automatically
-      }
-    }
-    
-    # For hexagonal puzzles, grid[1] represents rings
-    # size[1] represents diameter
-    puzzle_structure <- extract_hexagonal_puzzle_structure(
-      rings = grid[1],
-      seed = seed,
-      diameter = size[1],
-      tabsize = tabsize,
-      jitter = jitter,
-      do_warp = do_warp,
-      do_trunc = do_trunc
-    )
-  } else {
-    stop("Only 'rectangular' and 'hexagonal' puzzles are supported")
-  }
-  
-  # Initialize result
-  result <- list(
+
+  # === UNIFIED PIPELINE ===
+
+  # Step 1: Generate pieces internally
+  pieces_result <- generate_pieces_internal(
     type = type,
     seed = seed,
     grid = grid,
     size = size,
+    tabsize = tabsize,
+    jitter = jitter,
+    do_warp = do_warp,
+    do_trunc = do_trunc
+  )
+
+  # Step 2: Apply positioning
+  positioned <- apply_piece_positioning(pieces_result, offset = offset)
+
+  # Step 3: Render to SVG
+  svg_content <- render_puzzle_svg(
+    positioned,
+    fill = fill_color,
+    stroke_width = stroke_width,
+    colors = colors,
+    palette = palette,
+    background = background,
+    opacity = opacity
+  )
+
+  # Build result
+  result <- list(
+    svg_content = svg_content,
+    pieces = positioned$pieces,
+    canvas_size = positioned$canvas_size,
+    canvas_offset = positioned$canvas_offset,
+    type = type,
     parameters = list(
+      seed = pieces_result$parameters$seed,
+      grid = grid,
+      size = size,
       tabsize = tabsize,
-      jitter = jitter
+      jitter = jitter,
+      offset = offset,
+      do_warp = do_warp,
+      do_trunc = do_trunc,
+      fill_color = fill_color,
+      stroke_width = stroke_width,
+      palette = palette,
+      background = background,
+      opacity = opacity
     ),
     files = list()
   )
-  
-  # Generate SVGs based on output mode
-  if (output == "complete" || output == "both") {
-    if (type == "hexagonal") {
-      # Determine stroke color from palette or colors
-      if (!is.null(colors)) {
-        stroke_color <- colors[1]
-      } else {
-        # Use first color from palette
-        stroke_color <- get_puzzle_colors(1, palette)[1]
-      }
 
-      # Use hexagonal generation
-      hex_result <- generate_hex_jigsaw_svg(
-        rings = puzzle_structure$rings,
-        diameter = puzzle_structure$diameter,
-        seed = puzzle_structure$seed,
-        tabsize = puzzle_structure$parameters$tabsize,
-        jitter = puzzle_structure$parameters$jitter,
-        do_warp = puzzle_structure$parameters$do_warp,
-        do_trunc = puzzle_structure$parameters$do_trunc,
-        stroke_color = stroke_color,
-        stroke_width = stroke_width,
-        background = background,
-        opacity = opacity
-      )
-      svg_complete <- hex_result$svg  # Extract SVG string from result list
-    } else {
-      svg_complete <- generate_puzzle_svg(puzzle_structure, mode = "complete", background = background, stroke_width = stroke_width, palette = palette, opacity = opacity)
-    }
-    result$svg_complete <- svg_complete
-    
-    if (save_files) {
-      filepath <- file.path(output_dir, paste0(filename_prefix, "_complete.svg"))
-      writeLines(svg_complete, filepath)
-      result$files$complete_svg <- filepath
-      log_success("Saved complete puzzle: {.file {filepath}}")
-    }
-  }
-  
-  if (output == "individual" || output == "both") {
-    if (type == "hexagonal") {
-      # Use hexagonal individual pieces generation
-      if (!exists("generate_hexagonal_individual_pieces")) {
-        if (file.exists("R/hexagonal_individual_pieces.R")) {
-          source("R/hexagonal_individual_pieces.R")
-        } else if (file.exists("hexagonal_individual_pieces.R")) {
-          source("hexagonal_individual_pieces.R")
-        }
-      }
-      hex_result <- generate_hexagonal_individual_pieces(
-        rings = puzzle_structure$rings,
-        seed = puzzle_structure$seed,
-        diameter = puzzle_structure$diameter,
-        tabsize = puzzle_structure$parameters$tabsize,
-        jitter = puzzle_structure$parameters$jitter,
-        do_warp = puzzle_structure$parameters$do_warp,
-        do_trunc = puzzle_structure$parameters$do_trunc,
-        colors = colors,
-        save_files = FALSE,
-        opacity = opacity
-      )
-      svg_individual <- hex_result$svg_content
-    } else {
-      svg_individual <- generate_puzzle_svg(puzzle_structure, mode = "individual", colors = colors, background = background, stroke_width = stroke_width, palette = palette, opacity = opacity)
-    }
-    result$svg_individual <- svg_individual
-    
-    if (save_files) {
-      filepath <- file.path(output_dir, paste0(filename_prefix, "_individual.svg"))
-      writeLines(svg_individual, filepath)
-      result$files$individual_svg <- filepath
-      log_success("Saved individual pieces: {.file {filepath}}")
-      
-      # Also save individual piece files if requested
-      if (output == "individual") {
-        save_individual_pieces(puzzle_structure, output_dir, filename_prefix, colors)
-      }
-    }
-  }
-  
-  # Handle background (type-safe check for list or non-"none" string)
-  should_save_background <- save_files && (
-    is.list(background) ||
-    (is.character(background) && background != "none" && background != "")
-  )
-  if (should_save_background) {
-    result$files$background <- generate_background(
-      background = background,
-      size = size,
-      output_dir = output_dir,
-      filename_prefix = filename_prefix
+  # Save files if requested
+  if (save_files) {
+    # Determine suffix based on offset
+    suffix <- if (offset > 0) "_separated" else "_complete"
+    filepath <- file.path(output_dir, paste0(filename_prefix, suffix, ".svg"))
+    writeLines(svg_content, filepath)
+    result$files$svg <- filepath
+    log_success("Saved puzzle: {.file {filepath}}")
+
+    # Save background if specified (and not "none" or "white")
+    should_save_background <- (
+      is.list(background) ||
+      (is.character(background) && !background %in% c("none", "white", ""))
     )
+    if (should_save_background) {
+      result$files$background <- generate_background(
+        background = background,
+        size = if (type == "hexagonal") c(positioned$canvas_size[1], positioned$canvas_size[2]) else size,
+        output_dir = output_dir,
+        filename_prefix = filename_prefix
+      )
+    }
   }
-  
-  # Store puzzle structure for further processing
-  result$puzzle_structure <- puzzle_structure
-  
+
+  # For backward compatibility, also include legacy fields
+  result$svg_complete <- if (offset == 0) svg_content else NULL
+  result$svg_individual <- if (offset > 0) svg_content else NULL
+  result$puzzle_structure <- pieces_result$parameters
+
   return(invisible(result))
 }
 
@@ -328,33 +294,33 @@ generate_background <- function(background, size, output_dir, filename_prefix) {
 }
 
 #' Generate batch of puzzle variations
-#' 
+#'
 #' Generate multiple puzzles with different parameters for testing or production.
-#' 
-#' @param variations List of parameter sets, each containing seed, grid, size, etc.
+#'
+#' @param variations List of parameter sets, each containing seed, grid, size, offset, etc.
 #' @param base_dir Base directory for output
 #' @return List of results from each puzzle generation
 #' @export
 generate_puzzle_batch <- function(variations, base_dir = "output/batch") {
-  
+
   results <- list()
-  
+
   for (i in seq_along(variations)) {
     var <- variations[[i]]
-    
+
     # Set defaults for missing parameters
     if (is.null(var$type)) var$type <- "rectangular"
     if (is.null(var$grid)) var$grid <- c(2, 2)
     if (is.null(var$size)) var$size <- c(200, 200)
     if (is.null(var$tabsize)) var$tabsize <- 20
     if (is.null(var$jitter)) var$jitter <- 4
-    if (is.null(var$output)) var$output <- "both"
-    if (is.null(var$background)) var$background <- "none"
-    
-    log_subheader("Generating puzzle {i} of {length(variations)}")
-    log_info("Seed: {var$seed}, Grid: {paste(var$grid, collapse='x')}")
+    if (is.null(var$offset)) var$offset <- 0
+    if (is.null(var$background)) var$background <- "white"
 
-    # Generate puzzle
+    log_subheader("Generating puzzle {i} of {length(variations)}")
+    log_info("Seed: {var$seed}, Grid: {paste(var$grid, collapse='x')}, Offset: {var$offset}")
+
+    # Generate puzzle using unified pipeline
     result <- generate_puzzle(
       type = var$type,
       grid = var$grid,
@@ -362,19 +328,25 @@ generate_puzzle_batch <- function(variations, base_dir = "output/batch") {
       seed = var$seed,
       tabsize = var$tabsize,
       jitter = var$jitter,
-      output = var$output,
+      offset = var$offset,
+      fill_color = var$fill_color,
+      stroke_width = var$stroke_width,
       colors = var$colors,
+      palette = var$palette,
       background = var$background,
+      opacity = var$opacity,
       save_files = TRUE,
       output_dir = base_dir,
-      filename_prefix = var$name
+      filename_prefix = var$name,
+      do_warp = var$do_warp,
+      do_trunc = var$do_trunc
     )
 
     results[[i]] <- result
   }
 
   log_success("Batch generation complete. Generated {length(results)} puzzles")
-  
+
   return(invisible(results))
 }
 
