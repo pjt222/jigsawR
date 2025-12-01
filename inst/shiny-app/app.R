@@ -217,48 +217,34 @@ ui <- page_fluid(
           "Adds randomness to piece shapes for more organic variation. Higher values create more irregular pieces. Recommended: 2-6%"
         ),
 
-        conditionalPanel(
-          condition = "input.puzzle_type == 'rectangular'",
-          tooltip(
-            radioButtons("output_mode", "Output Mode:",
-                        choices = list(
-                          "Complete Puzzle" = "complete",
-                          "Individual Pieces" = "individual",
-                          "Separated Pieces" = "separated"
-                        ),
-                        selected = "complete"),
-            "Complete: All pieces connected | Individual: Colored pieces | Separated: Pieces with gaps for laser cutting"
-          )
+        # Unified offset slider (replaces output mode dropdowns - Epic #32)
+        tooltip(
+          sliderInput("offset", "Piece Separation:",
+                     min = 0, max = 50, value = 0, step = 1,
+                     ticks = TRUE,
+                     post = " mm",
+                     sep = ""),
+          "Gap between pieces. 0mm = complete puzzle (pieces touching), >0mm = separated pieces for laser cutting"
         ),
 
+        # Fill color for separated mode (visible when offset > 0)
         conditionalPanel(
-          condition = "input.puzzle_type == 'hexagonal'",
-          radioButtons("output_mode_hex", "Output Mode:",
+          condition = "input.offset > 0",
+          radioButtons("fill_type", "Piece Fill:",
                       choices = list(
-                        "Complete Puzzle" = "complete",
-                        # "Individual Pieces" = "individual",  # TODO: Issue #10 - Not yet implemented
-                        "Separated Pieces" = "separated"     # Issue #7 - IMPLEMENTED with placeholders
+                        "None (Outline only)" = "none",
+                        "Solid Color" = "solid"
                       ),
-                      selected = "complete")
-        ),
-
-        # Conditional separation offset
-        conditionalPanel(
-          condition = "input.output_mode == 'separated' || input.output_mode_hex == 'separated'",
-          tooltip(
-            numericInput("offset", "Separation (mm):",
-                        value = 10, min = 0, max = 500, step = 1),
-            "Gap between pieces in separated mode. For laser cutting, use 3-5mm for rectangular or 5-10mm for hexagonal puzzles."
-          ),
+                      selected = "none",
+                      inline = TRUE),
           conditionalPanel(
-            condition = "input.puzzle_type == 'hexagonal'",
-            radioButtons("arrangement", "Arrangement:",
-                        choices = list(
-                          "Hexagonal Grid" = "hexagonal",
-                          "Rectangular Packing" = "rectangular"
-                        ),
-                        selected = "hexagonal",
-                        inline = TRUE)
+            condition = "input.fill_type == 'solid'",
+            colourpicker::colourInput(
+              "fill_color",
+              "Fill Color:",
+              value = "#ffffff",
+              showColour = "background"
+            )
           )
         )
         ),
@@ -299,27 +285,6 @@ ui <- page_fluid(
                      post = "%",
                      sep = ""),
           "Transparency of puzzle pieces. 100% = fully opaque, 0% = fully transparent. Lower values create a watermark effect."
-        ),
-
-        # Fill color option for hexagonal separated mode
-        conditionalPanel(
-          condition = "input.puzzle_type == 'hexagonal' && input.output_mode_hex == 'separated'",
-          radioButtons("fill_type", "Piece Fill:",
-                      choices = list(
-                        "None (Transparent)" = "none",
-                        "Solid Color" = "solid"
-                      ),
-                      selected = "none",
-                      inline = TRUE),
-          conditionalPanel(
-            condition = "input.fill_type == 'solid'",
-            colourpicker::colourInput(
-              "fill_color",
-              "Fill Color:",
-              value = "#ffffff",
-              showColour = "background"
-            )
-          )
         ),
 
         # Background type selector
@@ -374,50 +339,38 @@ ui <- page_fluid(
                     icon = icon("puzzle-piece"),
                     class = "btn-primary btn-lg btn-block mb-2"),
 
-        fluidRow(
-          column(6,
-            actionButton("reset", "Reset",
-                        icon = icon("undo"),
-                        class = "btn-secondary btn-block")
-          ),
-          column(6,
-            # Conditional download button based on output mode
-            conditionalPanel(
-              condition = "input.output_mode != 'individual' && input.output_mode_hex != 'individual'",
-              downloadButton("download", "Download SVG",
-                            class = "btn-success btn-block")
-            ),
-            conditionalPanel(
-              condition = "input.output_mode == 'individual' || input.output_mode_hex == 'individual'",
-              actionButton("download_pieces", "Download Pieces",
-                          icon = icon("download"),
-                          class = "btn-success btn-block")
-            )
-          )
+        # Reset button
+        actionButton("reset", "Reset to Defaults",
+                    icon = icon("undo"),
+                    class = "btn-secondary btn-block mb-3"),
+
+        # Download buttons section (Epic #32)
+        h6("Download Options:", class = "text-muted mb-2"),
+
+        # Complete puzzle (offset=0)
+        tooltip(
+          downloadButton("download_complete", "Complete Puzzle",
+                        icon = icon("puzzle-piece"),
+                        class = "btn-success btn-block mb-2"),
+          "Download puzzle with all pieces in original positions (offset=0)"
         ),
 
-        # Help text for individual pieces download
+        # Current view (WYSIWYG)
+        tooltip(
+          downloadButton("download_wysiwyg", "Current View",
+                        icon = icon("eye"),
+                        class = "btn-info btn-block mb-2"),
+          "Download exactly what you see (WYSIWYG)"
+        ),
+
+        # Individual pieces (rectangular only for now)
         conditionalPanel(
-          condition = "input.output_mode == 'individual' || input.output_mode_hex == 'individual'",
-          div(class = "alert alert-info mt-2 p-2",
-            p(class = "small mb-0",
-              icon("info-circle"),
-              strong(" Individual Pieces:"),
-              conditionalPanel(
-                condition = "input.puzzle_type == 'rectangular'",
-                br(),
-                "Click 'Download Pieces' to download all pieces as separate SVG files.",
-                br(),
-                em("Note: Your browser will download files sequentially (one every 0.5 seconds).")
-              ),
-              conditionalPanel(
-                condition = "input.puzzle_type == 'hexagonal'",
-                br(),
-                "Individual hexagonal pieces coming soon (see GitHub Issue #10).",
-                br(),
-                "Currently downloads combined SVG with all pieces."
-              )
-            )
+          condition = "input.puzzle_type == 'rectangular'",
+          tooltip(
+            actionButton("download_pieces", "Individual Pieces",
+                        icon = icon("download"),
+                        class = "btn-warning btn-block mb-2"),
+            "Download each piece as a separate SVG file"
           )
         )
       ),
@@ -464,33 +417,29 @@ ui <- page_fluid(
             h4("How to Use"),
             p("1. Adjust the settings in the left panel to customize your puzzle"),
             p("2. Click 'Generate Puzzle' to create a new puzzle"),
-            p("3. Use 'Download SVG' to save the puzzle for laser cutting or printing"),
+            p("3. Use the download buttons to save your puzzle"),
             br(),
             h4("Parameter Guide"),
             tags$ul(
               tags$li(strong("Grid:"), " Number of rows and columns determines piece count"),
               tags$li(strong("Size:"), " Physical dimensions in millimeters"),
-              tags$li(strong("Tab Size:"), " Controls the size of interlocking tabs (10-30%)"),
-              tags$li(strong("Jitter:"), " Adds randomness to piece shapes (0-10%)"),
-              tags$li(strong("Output Mode:"), " Choose how pieces are arranged"),
-              tags$ul(
-                tags$li("Complete: All pieces connected"),
-                tags$li("Individual: Separate colored pieces"),
-                tags$li("Separated: Pieces with gaps for laser cutting")
-              ),
-              tags$li(strong("Separation:"), " Gap between pieces in separated mode")
+              tags$li(strong("Tab Size:"), " Controls the size of interlocking tabs (15-25%)"),
+              tags$li(strong("Jitter:"), " Adds randomness to piece shapes (2-6%)"),
+              tags$li(strong("Piece Separation:"), " Gap between pieces (0 = complete puzzle, >0 = separated)")
+            ),
+            br(),
+            h4("Download Options"),
+            tags$ul(
+              tags$li(strong("Complete Puzzle:"), " All pieces at original positions (offset=0)"),
+              tags$li(strong("Current View:"), " Exactly what you see (WYSIWYG)"),
+              tags$li(strong("Individual Pieces:"), " Each piece as a separate SVG file")
             ),
             br(),
             h4("Tips for Laser Cutting"),
-            p("• Use 'Separated Pieces' mode with 3-5mm offset"),
+            p("• Use separation of 3-5mm for rectangular, 5-10mm for hexagonal"),
             p("• Black color with 0.5mm line width works best"),
             p("• Consider material thickness when setting tab size"),
-            p("• Test with small puzzles first"),
-            br(),
-            h4("Hexagonal Separation"),
-            p("• Hexagonal Grid: Maintains natural hex pattern with gaps"),
-            p("• Rectangular Packing: Efficient space usage for cutting"),
-            p("• Higher offsets recommended for hex puzzles (5-10mm)")
+            p("• Test with small puzzles first")
           )
         )
       )  # End of tabsetPanel
@@ -503,6 +452,7 @@ server <- function(input, output, session) {
   # Reactive values to store puzzle data
   puzzle_data <- reactiveVal(NULL)
   svg_content <- reactiveVal(NULL)
+  puzzle_pieces <- reactiveVal(NULL)  # Store pieces for individual download
 
   # Randomize seed
   observeEvent(input$randomize, {
@@ -519,189 +469,125 @@ server <- function(input, output, session) {
     updateNumericInput(session, "seed", value = 1234)
     updateSliderInput(session, "tabsize", value = 20)
     updateSliderInput(session, "jitter", value = 4)
-    updateRadioButtons(session, "output_mode", selected = "complete")
-    updateNumericInput(session, "offset", value = 10)
-    updateSelectInput(session, "color_scheme", selected = "black")
+    updateSliderInput(session, "offset", value = 0)
+    updateSelectInput(session, "color_palette", selected = "magma")
     updateSliderInput(session, "stroke_width", value = 1.5)
+    updateSliderInput(session, "opacity", value = 100)
+    # Reset fill options
+    updateRadioButtons(session, "fill_type", selected = "none")
     # Reset background settings
     updateRadioButtons(session, "background_type", selected = "solid")
     colourpicker::updateColourInput(session, "background_color", value = "#ffffff")
     colourpicker::updateColourInput(session, "gradient_center", value = "#e3f2fd")
     colourpicker::updateColourInput(session, "gradient_middle", value = "#bbdefb")
     colourpicker::updateColourInput(session, "gradient_edge", value = "#90caf9")
+    # Reset hexagonal options
+    updateNumericInput(session, "rings", value = 3)
+    updateNumericInput(session, "diameter", value = 240)
+    updateCheckboxInput(session, "do_warp", value = FALSE)
+    updateCheckboxInput(session, "do_trunc", value = FALSE)
   })
 
-  # Generate puzzle
+  # Generate puzzle using unified pipeline (Epic #32)
   observeEvent(input$generate, {
 
     log_header("Generate button clicked")
     log_info("Puzzle type: {.strong {input$puzzle_type}}")
-    log_info("Working directory: {.path {getwd()}}")
-    log_info("Files in current dir: {paste(list.files(), collapse=', ')}")
+    log_info("Offset: {input$offset}mm")
 
     tryCatch({
       # Show progress
       withProgress(message = 'Generating puzzle...', value = 0, {
 
         incProgress(0.3, detail = "Creating puzzle structure")
-        log_info("Progress: Creating puzzle structure")
 
-      # Use viridis palette (colors will be NULL, palette name will be passed)
-      colors <- NULL
-      palette <- input$color_palette
-
-      # Determine background value based on type
-      background_value <- switch(input$background_type,
-        "none" = "none",
-        "solid" = input$background_color,
-        "gradient" = list(
-          type = "gradient",
-          center = input$gradient_center,
-          middle = input$gradient_middle,
-          edge = input$gradient_edge
-        )
-      )
-
-      incProgress(0.5, detail = "Generating SVG")
-
-      # Determine puzzle type and output mode
-      puzzle_type <- input$puzzle_type
-      output_mode <- ifelse(puzzle_type == "rectangular",
-                           input$output_mode,
-                           input$output_mode_hex)
-
-      # Generate puzzle based on type
-      if (puzzle_type == "hexagonal") {
-        if (output_mode == "separated") {
-          # Determine fill color value
-          fill_color_value <- if (is.null(input$fill_type) || input$fill_type == "none") {
-            "none"
-          } else {
-            input$fill_color
-          }
-
-          # Hexagonal separation with bezier curves (real puzzle pieces)
-          svg <- generate_separated_hexagonal_svg(
-            rings = input$rings,
-            seed = input$seed,
-            diameter = input$diameter,
-            offset = input$offset,
-            arrangement = ifelse(is.null(input$arrangement), "hexagonal", input$arrangement),
-            use_bezier = TRUE,  # Always use bezier curves for real puzzle pieces
-            tabsize = input$tabsize,
-            jitter = input$jitter,
-            do_warp = input$do_warp,   # Circular warp for border edges
-            do_trunc = input$do_trunc, # Truncate to hexagonal boundary
-            colors = colors,
-            stroke_width = input$stroke_width,
-            background = background_value,
-            palette = palette,
-            fill_color = fill_color_value,
-            opacity = input$opacity / 100
-          )
+        # Determine fill color value
+        fill_color_value <- if (is.null(input$fill_type) || input$fill_type == "none") {
+          "none"
         } else {
-          # Generate standard hexagonal puzzle
-          puzzle_result <- generate_puzzle(
-            type = "hexagonal",
-            grid = c(input$rings, input$rings),  # Use rings for grid
-            size = c(input$diameter, input$diameter),  # Use diameter for size
-            seed = input$seed,
-            tabsize = input$tabsize,
-            jitter = input$jitter,
-            output = ifelse(output_mode == "complete", "complete", "individual"),
-            colors = colors,
-            background = background_value,
-            save_files = FALSE,
-            do_warp = input$do_warp,
-            do_trunc = input$do_trunc,
-            stroke_width = input$stroke_width,
-            palette = palette,
-            opacity = input$opacity / 100
+          input$fill_color
+        }
+
+        # Determine background value based on type
+        background_value <- switch(input$background_type,
+          "none" = "none",
+          "solid" = input$background_color,
+          "gradient" = list(
+            type = "gradient",
+            center_color = input$gradient_center,
+            edge_color = input$gradient_edge
           )
-
-          # Use proper conditional instead of ifelse for character vectors
-          if (output_mode == "complete") {
-            svg <- puzzle_result$svg_complete
-          } else {
-            svg <- puzzle_result$svg_individual
-          }
-        }  # End if/else for hexagonal output mode
-
-      } else if (output_mode == "separated") {
-        # Use separated puzzle generation for rectangular
-        puzzle_struct <- generate_puzzle_core(
-          seed = input$seed,
-          grid = c(input$rows, input$cols),
-          size = c(input$width, input$height),
-          tabsize = input$tabsize,
-          jitter = input$jitter
         )
 
-        svg <- generate_separated_puzzle_svg(
-          puzzle_structure = puzzle_struct,
-          offset = input$offset,
-          colors = colors,
-          stroke_width = input$stroke_width,
-          background = background_value,
-          palette = palette,
-          opacity = input$opacity / 100
-        )
+        incProgress(0.5, detail = "Generating SVG")
 
-      } else {
-        # Use standard generation for rectangular
+        # === UNIFIED PIPELINE (Epic #32) ===
+        puzzle_type <- input$puzzle_type
+
+        # Build parameters based on puzzle type
+        if (puzzle_type == "hexagonal") {
+          grid_param <- c(input$rings)
+          size_param <- c(input$diameter)
+        } else {
+          grid_param <- c(input$rows, input$cols)
+          size_param <- c(input$width, input$height)
+        }
+
+        # Generate puzzle using unified pipeline
         puzzle_result <- generate_puzzle(
-          type = "rectangular",
-          grid = c(input$rows, input$cols),
-          size = c(input$width, input$height),
+          type = puzzle_type,
+          grid = grid_param,
+          size = size_param,
           seed = input$seed,
           tabsize = input$tabsize,
           jitter = input$jitter,
-          output = ifelse(output_mode == "complete", "complete", "individual"),
-          colors = colors,
-          background = background_value,
-          save_files = FALSE,
-          palette = palette,
+          offset = input$offset,
+          fill_color = fill_color_value,
           stroke_width = input$stroke_width,
-          opacity = input$opacity / 100
+          palette = input$color_palette,
+          background = background_value,
+          opacity = input$opacity / 100,
+          save_files = FALSE,
+          do_warp = input$do_warp,
+          do_trunc = input$do_trunc
         )
 
-        # Use proper conditional instead of ifelse for character vectors
-        if (output_mode == "complete") {
-          svg <- puzzle_result$svg_complete
+        svg <- puzzle_result$svg_content
+
+        incProgress(1, detail = "Complete!")
+
+        # Store the generated SVG
+        log_info("Storing SVG content, length: {nchar(svg)}")
+        svg_content(svg)
+
+        # Store pieces for individual download
+        puzzle_pieces(puzzle_result$pieces)
+
+        # Store puzzle data based on type
+        if (puzzle_type == "hexagonal") {
+          num_pieces <- 3 * input$rings * (input$rings - 1) + 1
+          puzzle_data(list(
+            type = "hexagonal",
+            rings = input$rings,
+            diameter = input$diameter,
+            seed = input$seed,
+            total_pieces = num_pieces,
+            offset = input$offset
+          ))
         } else {
-          svg <- puzzle_result$svg_individual
+          puzzle_data(list(
+            type = "rectangular",
+            rows = input$rows,
+            cols = input$cols,
+            width = input$width,
+            height = input$height,
+            seed = input$seed,
+            total_pieces = input$rows * input$cols,
+            offset = input$offset
+          ))
         }
-      }
-
-      incProgress(1, detail = "Complete!")
-
-      # Store the generated SVG
-      log_info("Storing SVG content, length: {nchar(svg)}")
-      svg_content(svg)
-
-      # Store puzzle data based on type
-      if (puzzle_type == "hexagonal") {
-        num_pieces <- 3 * input$rings * (input$rings - 1) + 1
-        puzzle_data(list(
-          type = "hexagonal",
-          rings = input$rings,
-          diameter = input$diameter,
-          seed = input$seed,
-          total_pieces = num_pieces
-        ))
-      } else {
-        puzzle_data(list(
-          type = "rectangular",
-          rows = input$rows,
-          cols = input$cols,
-          width = input$width,
-          height = input$height,
-          seed = input$seed,
-          total_pieces = input$rows * input$cols
-        ))
-      }
-      log_success("Puzzle generation complete!")
-    })
+        log_success("Puzzle generation complete!")
+      })
     }, error = function(e) {
       log_error("ERROR in puzzle generation")
       log_error("Message: {e$message}")
@@ -766,7 +652,7 @@ server <- function(input, output, session) {
         effective_height <- input$height
         area_increase <- 0
 
-        if (input$output_mode == "separated") {
+        if (input$offset > 0) {
           effective_width <- input$width + (input$cols - 1) * input$offset
           effective_height <- input$height + (input$rows - 1) * input$offset
           area_increase <- ((effective_width * effective_height) -
@@ -793,7 +679,7 @@ server <- function(input, output, session) {
             value = sprintf("%.0f × %.0f mm", effective_width, effective_height),
             showcase = bsicons::bs_icon("arrows-expand"),
             theme = "info",
-            p = if (input$output_mode == "separated" && area_increase > 0) {
+            p = if (input$offset > 0 && area_increase > 0) {
               sprintf("Area: +%.1f%%", area_increase)
             } else {
               NULL
@@ -810,23 +696,84 @@ server <- function(input, output, session) {
     }
   })
 
-  # Download handler for single SVG files (complete/separated modes)
-  output$download <- downloadHandler(
+  # Helper function to build filename prefix
+  build_filename_prefix <- function() {
+    data <- puzzle_data()
+    if (is.null(data)) return("puzzle")
+    if (data$type == "hexagonal") {
+      sprintf("hexagonal_%drings_seed%d", data$rings, data$seed)
+    } else {
+      sprintf("puzzle_%dx%d_seed%d", data$rows, data$cols, data$seed)
+    }
+  }
+
+  # Download handler for Complete puzzle (offset=0)
+  output$download_complete <- downloadHandler(
     filename = function() {
-      if (!is.null(puzzle_data())) {
-        data <- puzzle_data()
-        if (data$type == "hexagonal") {
-          output_mode <- input$output_mode_hex
-          sprintf("hexagonal_%drings_seed%d_%s.svg",
-                 data$rings, data$seed, output_mode)
-        } else {
-          output_mode <- input$output_mode
-          sprintf("puzzle_%dx%d_seed%d_%s.svg",
-                 data$rows, data$cols, data$seed, output_mode)
-        }
+      paste0(build_filename_prefix(), "_complete.svg")
+    },
+    content = function(file) {
+      data <- puzzle_data()
+      if (is.null(data)) return()
+
+      # Determine fill color value
+      fill_color_value <- if (is.null(input$fill_type) || input$fill_type == "none") {
+        "none"
       } else {
-        "puzzle.svg"
+        input$fill_color
       }
+
+      # Determine background value
+      background_value <- switch(input$background_type,
+        "none" = "none",
+        "solid" = input$background_color,
+        "gradient" = list(
+          type = "gradient",
+          center_color = input$gradient_center,
+          edge_color = input$gradient_edge
+        )
+      )
+
+      # Build parameters based on puzzle type
+      if (data$type == "hexagonal") {
+        grid_param <- c(input$rings)
+        size_param <- c(input$diameter)
+      } else {
+        grid_param <- c(input$rows, input$cols)
+        size_param <- c(input$width, input$height)
+      }
+
+      # Generate complete puzzle (offset=0)
+      result <- generate_puzzle(
+        type = data$type,
+        grid = grid_param,
+        size = size_param,
+        seed = data$seed,
+        tabsize = input$tabsize,
+        jitter = input$jitter,
+        offset = 0,  # Always complete for this download
+        fill_color = fill_color_value,
+        stroke_width = input$stroke_width,
+        palette = input$color_palette,
+        background = background_value,
+        opacity = input$opacity / 100,
+        save_files = FALSE,
+        do_warp = input$do_warp,
+        do_trunc = input$do_trunc
+      )
+
+      writeLines(result$svg_content, file)
+    },
+    contentType = "image/svg+xml"
+  )
+
+  # Download handler for WYSIWYG (current view)
+  output$download_wysiwyg <- downloadHandler(
+    filename = function() {
+      data <- puzzle_data()
+      if (is.null(data)) return("puzzle.svg")
+      sep_suffix <- if (data$offset > 0) "_separated" else "_complete"
+      paste0(build_filename_prefix(), sep_suffix, ".svg")
     },
     content = function(file) {
       if (!is.null(svg_content())) {
