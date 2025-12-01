@@ -389,51 +389,93 @@ generate_hex_pieces_with_edge_map <- function(rings, seed, diameter = 240,
                             position$y + first_edge$start[2]))
 
     # Helper function to offset coordinates in a path segment
+    # Handles multiple commands in sequence (e.g., "C ... C ... C ...")
     offset_path_coords <- function(path_segment, offset_x, offset_y) {
-      # Get the command type
-      cmd <- substr(trimws(path_segment), 1, 1)
+      # Split by command letters, keeping the delimiters
+      # This handles paths like "C 1 2 3 4 5 6 C 7 8 9 10 11 12"
+      tokens <- unlist(strsplit(path_segment, "(?=[CLMA])", perl = TRUE))
+      tokens <- tokens[nchar(trimws(tokens)) > 0]
 
-      if (cmd == "A") {
-        # Arc command: A rx ry x-axis-rotation large-arc-flag sweep-flag x y
-        # Only the last two values (x, y) are coordinates to offset
-        # Extract all numbers
-        numbers <- as.numeric(unlist(strsplit(path_segment, "[A ]+")))
-        numbers <- numbers[!is.na(numbers)]
+      result_parts <- c()
 
-        if (length(numbers) >= 7) {
-          # rx, ry, rotation, large-arc, sweep, x, y
-          rx <- numbers[1]
-          ry <- numbers[2]
-          rotation <- numbers[3]
-          large_arc <- numbers[4]
-          sweep <- numbers[5]
-          x <- numbers[6] + offset_x
-          y <- numbers[7] + offset_y
+      for (token in tokens) {
+        token <- trimws(token)
+        if (nchar(token) == 0) next
 
-          return(sprintf("A %.2f %.2f %.0f %d %d %.2f %.2f",
-                         rx, ry, rotation, large_arc, sweep, x, y))
-        } else {
-          # Malformed arc, return as-is
-          return(path_segment)
-        }
-      } else {
-        # L or C commands - all values are coordinates
-        numbers <- as.numeric(unlist(strsplit(path_segment, "[CLM ]+")))
-        numbers <- numbers[!is.na(numbers)]
+        cmd <- substr(token, 1, 1)
+        rest <- substr(token, 2, nchar(token))
 
-        # Offset x coordinates (odd indices) and y coordinates (even indices)
-        for (i in seq_along(numbers)) {
-          if (i %% 2 == 1) {
-            numbers[i] <- numbers[i] + offset_x  # x coordinate
+        if (cmd == "A") {
+          # Arc command: A rx ry x-axis-rotation large-arc-flag sweep-flag x y
+          # Only the last two values (x, y) are coordinates to offset
+          numbers <- as.numeric(unlist(strsplit(rest, "\\s+")))
+          numbers <- numbers[!is.na(numbers)]
+
+          if (length(numbers) >= 7) {
+            # rx, ry, rotation, large-arc, sweep, x, y
+            rx <- numbers[1]
+            ry <- numbers[2]
+            rotation <- numbers[3]
+            large_arc <- numbers[4]
+            sweep <- numbers[5]
+            x <- numbers[6] + offset_x
+            y <- numbers[7] + offset_y
+
+            result_parts <- c(result_parts,
+              sprintf("A %.2f %.2f %.0f %d %d %.2f %.2f",
+                      rx, ry, rotation, large_arc, sweep, x, y))
           } else {
-            numbers[i] <- numbers[i] + offset_y  # y coordinate
+            # Malformed arc, keep as-is
+            result_parts <- c(result_parts, token)
           }
-        }
+        } else if (cmd == "L") {
+          # Line command: L x y
+          numbers <- as.numeric(unlist(strsplit(rest, "\\s+")))
+          numbers <- numbers[!is.na(numbers)]
 
-        # Rebuild path segment
-        coords <- sprintf("%.2f", numbers)
-        return(paste(cmd, paste(coords, collapse = " ")))
+          if (length(numbers) >= 2) {
+            x <- numbers[1] + offset_x
+            y <- numbers[2] + offset_y
+            result_parts <- c(result_parts, sprintf("L %.2f %.2f", x, y))
+          } else {
+            result_parts <- c(result_parts, token)
+          }
+        } else if (cmd == "C") {
+          # Cubic bezier: C x1 y1 x2 y2 x3 y3
+          numbers <- as.numeric(unlist(strsplit(rest, "\\s+")))
+          numbers <- numbers[!is.na(numbers)]
+
+          if (length(numbers) >= 6) {
+            x1 <- numbers[1] + offset_x
+            y1 <- numbers[2] + offset_y
+            x2 <- numbers[3] + offset_x
+            y2 <- numbers[4] + offset_y
+            x3 <- numbers[5] + offset_x
+            y3 <- numbers[6] + offset_y
+            result_parts <- c(result_parts,
+              sprintf("C %.2f %.2f %.2f %.2f %.2f %.2f", x1, y1, x2, y2, x3, y3))
+          } else {
+            result_parts <- c(result_parts, token)
+          }
+        } else if (cmd == "M") {
+          # Move command: M x y
+          numbers <- as.numeric(unlist(strsplit(rest, "\\s+")))
+          numbers <- numbers[!is.na(numbers)]
+
+          if (length(numbers) >= 2) {
+            x <- numbers[1] + offset_x
+            y <- numbers[2] + offset_y
+            result_parts <- c(result_parts, sprintf("M %.2f %.2f", x, y))
+          } else {
+            result_parts <- c(result_parts, token)
+          }
+        } else {
+          # Unknown command, keep as-is
+          result_parts <- c(result_parts, token)
+        }
       }
+
+      return(paste(result_parts, collapse = " "))
     }
 
     # Add all 6 edges with position offset applied
