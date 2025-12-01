@@ -1,0 +1,281 @@
+# Unified Piece Generation Module
+# Part of Epic #32 - Unified Puzzle Generation Pipeline
+# Always generates closed piece paths regardless of puzzle type
+
+#' Generate all puzzle pieces as closed paths
+#'
+#' Core function that generates piece objects with closed SVG paths.
+#' Works for both rectangular and hexagonal puzzles with consistent output structure.
+#'
+#' @param type Puzzle type: "rectangular" or "hexagonal"
+#' @param seed Random seed for reproducibility
+#' @param grid For rectangular: c(rows, cols). For hexagonal: c(rings) or just rings
+#' @param size For rectangular: c(width, height). For hexagonal: c(diameter) or just diameter
+#' @param tabsize Tab size as percentage (10-40, default: 20)
+#' @param jitter Jitter as percentage (0-15, default: 4)
+#' @param do_warp Apply circular warp (hexagonal only, default: FALSE)
+#' @param do_trunc Truncate boundary (hexagonal only, default: FALSE)
+#' @return List with:
+#'   - pieces: List of piece objects with id, path, center, grid_pos/ring_pos
+#'   - canvas_size: c(width, height) for compact (offset=0) layout
+#'   - type: "rectangular" or "hexagonal"
+#'   - parameters: Generation parameters used
+#' @export
+generate_pieces_internal <- function(type = "rectangular",
+                                     seed = NULL,
+                                     grid = c(2, 2),
+                                     size = c(200, 200),
+                                     tabsize = 20,
+                                     jitter = 4,
+                                     do_warp = FALSE,
+                                     do_trunc = FALSE) {
+
+  # Generate seed if not provided
+  if (is.null(seed)) {
+    seed <- as.integer(runif(1) * 10000)
+  }
+
+  # Dispatch to type-specific implementation
+
+  if (type == "hexagonal") {
+    return(generate_hex_pieces_internal(
+      seed = seed,
+      rings = if (length(grid) == 1) grid else grid[1],
+      diameter = if (length(size) == 1) size else size[1],
+      tabsize = tabsize,
+      jitter = jitter,
+      do_warp = do_warp,
+      do_trunc = do_trunc
+    ))
+  } else {
+    return(generate_rect_pieces_internal(
+      seed = seed,
+      grid = grid,
+      size = size,
+      tabsize = tabsize,
+      jitter = jitter
+    ))
+  }
+}
+
+
+#' Generate rectangular puzzle pieces internally
+#'
+#' @param seed Random seed
+#' @param grid c(rows, cols)
+#' @param size c(width, height) in mm
+#' @param tabsize Tab size percentage
+#' @param jitter Jitter percentage
+#' @return Piece generation result
+#' @keywords internal
+generate_rect_pieces_internal <- function(seed, grid, size, tabsize, jitter) {
+
+  yn <- grid[1]  # rows
+  xn <- grid[2]  # cols
+  width <- size[1]
+  height <- size[2]
+
+  # Generate puzzle structure using existing core function
+  puzzle_structure <- generate_puzzle_core(
+    seed = seed,
+    grid = grid,
+    size = size,
+    tabsize = tabsize,
+    jitter = jitter
+  )
+
+  piece_width <- puzzle_structure$piece_width
+  piece_height <- puzzle_structure$piece_height
+
+  # Generate all pieces
+
+pieces <- list()
+  piece_idx <- 1
+
+  for (yi in 0:(yn - 1)) {
+    for (xi in 0:(xn - 1)) {
+      # Generate closed piece path using existing function
+      piece_path <- generate_single_piece(xi, yi, puzzle_structure)
+
+      # Calculate piece center
+      center_x <- (xi + 0.5) * piece_width
+      center_y <- (yi + 0.5) * piece_height
+
+      # Create standardized piece object
+      pieces[[piece_idx]] <- list(
+        id = sprintf("piece_%d_%d", xi, yi),
+        path = piece_path,
+        center = c(center_x, center_y),
+        grid_pos = c(xi = xi, yi = yi),
+        type = "rectangular"
+      )
+
+      piece_idx <- piece_idx + 1
+    }
+  }
+
+  return(list(
+    pieces = pieces,
+    canvas_size = c(width, height),
+    type = "rectangular",
+    parameters = list(
+      seed = seed,
+      grid = grid,
+      size = size,
+      tabsize = tabsize,
+      jitter = jitter,
+      piece_width = piece_width,
+      piece_height = piece_height
+    ),
+    # Keep puzzle_structure for backward compatibility
+    puzzle_structure = puzzle_structure
+  ))
+}
+
+
+#' Generate hexagonal puzzle pieces internally
+#'
+#' @param seed Random seed
+#' @param rings Number of rings
+#' @param diameter Puzzle diameter in mm
+#' @param tabsize Tab size percentage
+#' @param jitter Jitter percentage
+#' @param do_warp Apply circular warp
+#' @param do_trunc Truncate boundary
+#' @return Piece generation result
+#' @keywords internal
+generate_hex_pieces_internal <- function(seed, rings, diameter, tabsize, jitter,
+                                         do_warp = FALSE, do_trunc = FALSE) {
+
+  # Use existing edge map generation
+  # This generates all pieces with proper complementary edges
+  hex_pieces <- generate_hex_pieces_with_edge_map(
+    rings = rings,
+    seed = seed,
+    diameter = diameter,
+    tabsize = tabsize,
+    jitter = jitter,
+    separated = FALSE,  # Compact positions (offset=0)
+    separation_factor = 1.0,
+    do_warp = do_warp,
+    do_trunc = do_trunc
+  )
+
+  # Convert to standardized piece format
+  pieces <- lapply(seq_along(hex_pieces), function(i) {
+    hp <- hex_pieces[[i]]
+
+    list(
+      id = sprintf("piece_%d", hp$id),
+      path = hp$path,
+      center = c(hp$center_x, hp$center_y),
+      ring_pos = list(ring = hp$ring, position = hp$position_in_ring),
+      type = "hexagonal"
+    )
+  })
+
+  # Calculate canvas size from piece positions
+  all_x <- sapply(pieces, function(p) p$center[1])
+  all_y <- sapply(pieces, function(p) p$center[2])
+  piece_radius <- diameter / (rings * 4)
+
+  # Canvas needs to encompass all pieces with margin
+  margin <- piece_radius * 1.2
+  min_x <- min(all_x) - margin
+  max_x <- max(all_x) + margin
+  min_y <- min(all_y) - margin
+  max_y <- max(all_y) + margin
+
+  canvas_width <- max_x - min_x
+  canvas_height <- max_y - min_y
+
+  # Calculate number of pieces
+  num_pieces <- 3 * rings * (rings - 1) + 1
+
+  return(list(
+    pieces = pieces,
+    canvas_size = c(canvas_width, canvas_height),
+    canvas_offset = c(min_x, min_y),  # ViewBox offset for hexagonal
+    type = "hexagonal",
+    parameters = list(
+      seed = seed,
+      rings = rings,
+      diameter = diameter,
+      tabsize = tabsize,
+      jitter = jitter,
+      do_warp = do_warp,
+      do_trunc = do_trunc,
+      piece_radius = piece_radius,
+      num_pieces = num_pieces
+    )
+  ))
+}
+
+
+#' Get piece count for puzzle configuration
+#'
+#' @param type "rectangular" or "hexagonal"
+#' @param grid For rectangular: c(rows, cols). For hexagonal: c(rings) or rings
+#' @return Number of pieces
+#' @export
+get_piece_count <- function(type, grid) {
+  if (type == "hexagonal") {
+    rings <- if (length(grid) == 1) grid else grid[1]
+    return(3 * rings * (rings - 1) + 1)
+  } else {
+    return(grid[1] * grid[2])
+  }
+}
+
+
+#' Validate piece has closed path
+#'
+#' Checks that a piece path is properly closed (ends with Z command).
+#'
+#' @param piece Piece object with path
+#' @return TRUE if valid, FALSE otherwise
+#' @keywords internal
+validate_piece_path <- function(piece) {
+  if (is.null(piece$path)) return(FALSE)
+
+  # Check starts with M (move) and ends with Z (close)
+  path <- trimws(piece$path)
+  starts_ok <- grepl("^M\\s", path)
+  ends_ok <- grepl("Z\\s*$", path)
+
+  return(starts_ok && ends_ok)
+}
+
+
+#' Validate all pieces in generation result
+#'
+#' @param result Output from generate_pieces_internal()
+#' @return TRUE if all valid, stops with error otherwise
+#' @export
+validate_pieces <- function(result) {
+  if (is.null(result$pieces) || length(result$pieces) == 0) {
+    stop("No pieces generated")
+  }
+
+  for (i in seq_along(result$pieces)) {
+    piece <- result$pieces[[i]]
+
+    if (!validate_piece_path(piece)) {
+      stop(sprintf("Piece %d has invalid path (must start with M and end with Z)", i))
+    }
+
+    if (is.null(piece$center) || length(piece$center) != 2) {
+      stop(sprintf("Piece %d has invalid center coordinates", i))
+    }
+  }
+
+  # Verify piece count
+  expected_count <- get_piece_count(result$type,
+    if (result$type == "hexagonal") result$parameters$rings else result$parameters$grid)
+
+  if (length(result$pieces) != expected_count) {
+    stop(sprintf("Expected %d pieces, got %d", expected_count, length(result$pieces)))
+  }
+
+  return(TRUE)
+}
