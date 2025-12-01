@@ -302,53 +302,43 @@ renv::restore()
 **IMPORTANT**: We focus on refining scripts rather than tinkering with output files. Reproducible code ensures data quality. Even if we achieve data quality through manual adjustments, this will not provide reliable code.
 
 ### Recent Work
-✅ **COMPLETED**: Code refactoring - consolidated 4 duplicate individual piece implementations into one
-✅ **COMPLETED**: Individual puzzle piece generation with proper complementary edges (any size)
-✅ **COMPLETED**: Fixed package structure issues (removed hardcoded library() calls)
-✅ **COMPLETED**: Archived deprecated implementations for cleaner codebase
-✅ **COMPLETED**: Hexagonal separation functionality (Issue #7) with placeholder pieces
-✅ **COMPLETED**: Enabled hexagonal separated mode in Shiny app
-✅ **COMPLETED**: Phase 1, Day 1 analysis - discovered critical complexity issue
-✅ **COMPLETED**: Comprehensive revised implementation plan created
+✅ **COMPLETED**: Hexagonal individual piece extraction (Issue #10, 2025-12-01)
+  - Hybrid Direct Generation approach approved and implemented
+  - 42 unique edges for 3-ring puzzle, all with complementary forward/reverse paths
+  - Test suite: `tests/test_hexagonal_individual.R` - all passing
+✅ **COMPLETED**: Warp/Trunc for separated hexagonal mode (Issues #29, #30, #31)
+  - Circular warp, hexagonal truncation, and combined modes all working
+  - Semantics matched between separated and complete modes
 ✅ **COMPLETED**: Hexagonal topology-based separation (2025-11-26)
-  - Implemented ring-based hexagonal topology utilities
-  - Replaced arbitrary spiral with proper hexagonal grid structure
+  - Ring-based hexagonal topology utilities
   - Center-at-(0,0) direction-based positioning
-  - All tests passing, visual verification complete
+✅ **COMPLETED**: Code refactoring - consolidated duplicate implementations
+✅ **COMPLETED**: Individual puzzle piece generation (rectangular) with complementary edges
 
 ### Current Status
-- **Individual Pieces (Rectangular)**: Fully functional for any puzzle size (2x2, 3x3, 5x4, etc.)
-- **Hexagonal Separation**: ✅ **IMPROVED** - Now using ring-based topology positioning
-  - Replaced arbitrary spiral algorithm with hexagonal grid topology
-  - Center-at-(0,0) direction-based approach for natural separation
-  - Pieces maintain proper hexagonal spatial relationships
-  - New topology utilities in `R/hexagonal_topology.R`:
-    - `map_piece_id_to_ring()` - Maps piece IDs to ring structure
-    - `hex_ring_to_cartesian()` - Polar to cartesian conversion
-    - `calculate_hex_piece_position()` - Complete position calculation
-  - Still uses placeholder hexagons (real piece extraction pending)
-- **Hexagonal Individual Pieces**: ⚠️ **IN PLANNING** - Revised approach recommended
-  - Original parse-and-extract approach found to be more complex than anticipated
-  - Paths INTERSECT rather than connect at endpoints (requires bezier intersection math)
-  - **Recommendation**: Switch to Hybrid Direct Generation approach (following rectangular pattern)
-  - **Timeline**: 5-7 days with revised approach (vs. 7-10 days with original approach)
-  - **Foundation ready**: Topology utilities from separation work will support real piece extraction
+- **Individual Pieces (Rectangular)**: ✅ Fully functional for any puzzle size (2x2, 3x3, 5x4, etc.)
+- **Individual Pieces (Hexagonal)**: ✅ **COMPLETE** (2025-12-01, Issue #10)
+  - Implemented using Hybrid Direct Generation approach (following rectangular pattern)
+  - Key files: `R/hexagonal_individual_pieces.R`, `R/hexagonal_edge_generation_fixed.R`
+  - Functions: `generate_hexagonal_individual_pieces()`, `generate_hex_edge_map()`
+  - Features:
+    - Unique edge mapping with deterministic seed-based tabs
+    - Forward/reverse paths for complementary edges
+    - Individual SVG files + combined view
+    - Works for 2-6 rings (7 to 91 pieces)
+  - Test suite: `tests/test_hexagonal_individual.R`
+- **Hexagonal Separation**: ✅ Ring-based topology positioning with real piece extraction
+- **Warp/Trunc for Separated Mode**: ✅ Complete (Issues #29, #30, #31)
 - **Code Quality**: Clean, maintainable implementations following best practices
 - **Test Suite**: Comprehensive testing framework in place
 
-### Next Phase (Pending Approval)
-🔄 **IN REVIEW**: Hexagonal individual piece extraction - Approach decision needed
-  - **See**: `docs/planning/hexagonal/2025-11-26-status-update.md` for executive summary
-  - **See**: `docs/planning/hexagonal/2025-11-26-phase1-findings.md` for technical analysis
-  - **See**: `docs/planning/hexagonal/2025-11-26-revised-plan.md` for detailed implementation plan
-  - **See**: `docs/planning/hexagonal/README.md` for complete index
-  - **Options**:
-    - **A) Continue Parse-and-Extract**: Complex intersection math, 7-10 days
-    - **B) Hybrid Direct Generation** (RECOMMENDED): Follow rectangular pattern, 5-7 days
-    - **C) Defer**: Keep placeholder solution
-  - **Issues**: GitHub #27 (decision), #6, #7, #8, #9, #10 (epic)
+### Next Phase
+📋 **Epic #32**: Unified Puzzle Generation Pipeline
+  - Prerequisites complete: #10 (hexagonal individual pieces) ✅
+  - Remaining sub-issues: #33-38 (unified pipeline implementation)
+  - See GitHub issues for detailed implementation plan
 
-📋 **TEMPORARY**: Hexagonal separation with placeholders (sufficient for basic use)
+📋 **Enhancement #25**: Add PNG download capability to Shiny app (independent)
 
 ### Principles
 1. **Reproducibility First**: All outputs must be reproducible from scripts with the same seed
