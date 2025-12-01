@@ -106,6 +106,8 @@ translate_svg_path <- function(path_string, x_offset, y_offset) {
 #' @param opacity Opacity of puzzle pieces (0.0 to 1.0, default 1.0 = fully opaque)
 #' @return SVG string with separated pieces
 #' @export
+#' @note DEPRECATED: Use generate_puzzle(..., offset = X) instead.
+#'   This function will be removed in a future version.
 generate_separated_puzzle_svg <- function(puzzle_structure,
                                          offset = 10,
                                          colors = NULL,
@@ -113,6 +115,14 @@ generate_separated_puzzle_svg <- function(puzzle_structure,
                                          background = "white",
                                          palette = NULL,
                                          opacity = 1.0) {
+
+  .Deprecated("generate_puzzle",
+    msg = paste(
+      "generate_separated_puzzle_svg() is deprecated.",
+      "Use generate_puzzle(..., offset = X) instead.",
+      "Example: generate_puzzle(type = 'rectangular', offset = 10)"
+    )
+  )
 
   xn <- puzzle_structure$grid[2]
   yn <- puzzle_structure$grid[1]

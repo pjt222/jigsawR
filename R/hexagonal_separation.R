@@ -79,6 +79,8 @@ extract_hexagonal_puzzle_structure <- function(rings, seed, diameter = 240,
 #' @param opacity Opacity of puzzle pieces (0.0 to 1.0, default 1.0 = fully opaque)
 #' @return SVG content as string
 #' @export
+#' @note DEPRECATED: Use generate_puzzle(type = 'hexagonal', offset = X) instead.
+#'   This function will be removed in a future version.
 generate_separated_hexagonal_svg <- function(rings = 3, seed = NULL,
                                             diameter = 240, offset = 10,
                                             arrangement = "rectangular",
@@ -90,6 +92,14 @@ generate_separated_hexagonal_svg <- function(rings = 3, seed = NULL,
                                             palette = NULL,
                                             fill_color = "none",
                                             opacity = 1.0) {
+
+  .Deprecated("generate_puzzle",
+    msg = paste(
+      "generate_separated_hexagonal_svg() is deprecated.",
+      "Use generate_puzzle(type = 'hexagonal', offset = X) instead.",
+      "Example: generate_puzzle(type = 'hexagonal', grid = c(3), size = c(240), offset = 10)"
+    )
+  )
 
   if (is.null(seed)) {
     seed <- as.integer(runif(1) * 10000)

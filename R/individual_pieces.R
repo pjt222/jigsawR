@@ -32,6 +32,8 @@
 #' @param opacity Opacity of puzzle pieces (0.0 to 1.0, default 1.0 = fully opaque)
 #' @return List containing piece paths and metadata
 #' @export
+#' @note DEPRECATED: Use generate_puzzle() and access result$pieces instead.
+#'   This function will be removed in a future version.
 generate_individual_pieces <- function(seed = 42, xn = 2, yn = 2,
                                       width = 200, height = 200,
                                       tabsize = 20, jitter = 4,
@@ -43,6 +45,15 @@ generate_individual_pieces <- function(seed = 42, xn = 2, yn = 2,
                                       stroke_color = NULL,
                                       background = "none",
                                       opacity = 1.0) {
+
+  .Deprecated("generate_puzzle",
+    msg = paste(
+      "generate_individual_pieces() is deprecated.",
+      "Use generate_puzzle() and access result$pieces instead.",
+      "Example: result <- generate_puzzle(type = 'rectangular', grid = c(2, 3));",
+      "pieces <- result$pieces"
+    )
+  )
 
   # Ensure output directory exists
   if (!dir.exists(output_dir)) {

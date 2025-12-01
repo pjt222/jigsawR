@@ -27,11 +27,16 @@ This repository contains R translations of Draradech's JavaScript jigsaw puzzle 
 jigsawR/
 ├── DESCRIPTION              # Package metadata and dependencies
 ├── R/                      # Package source code
+│   ├── jigsawR_clean.R          # ⭐ Main entry point: generate_puzzle()
+│   ├── unified_piece_generation.R  # Unified piece generation (rectangular + hexagonal)
+│   ├── piece_positioning.R      # Positioning engine with offset support
+│   ├── unified_renderer.R       # SVG rendering with backgrounds/colors
 │   ├── rectangular_puzzle.R     # Core rectangular puzzle generator
 │   ├── hexagonal_puzzle.R       # Core hexagonal/circular puzzle generator
 │   ├── puzzle_core_clean.R      # Clean edge generation implementation
-│   ├── individual_pieces.R      # Unified individual piece generation
-│   ├── individual_pieces_final.R # Additional piece utilities
+│   ├── individual_pieces.R      # (DEPRECATED) Individual piece generation
+│   ├── puzzle_separation.R      # (DEPRECATED) Puzzle separation functions
+│   ├── hexagonal_separation.R   # (DEPRECATED) Hexagonal separation
 │   ├── gradient_background.R    # Circular gradient generation functions
 │   ├── svg_utils.R             # SVG enhancement utilities
 │   ├── image_processing.R      # PNG conversion and layer combination
@@ -41,24 +46,34 @@ jigsawR/
 │   └── scripts_archive/        # Archived/deprecated implementations
 │       └── deprecated/         # Old implementations (for reference)
 ├── man/                    # Documentation (auto-generated)
-├── inst/examples/          # Example scripts
-│   ├── generate_puzzles.R       # Package usage examples
-│   └── individual_pieces_demo.R # Individual pieces demonstration
+├── inst/                   # Installed files
+│   ├── examples/           # Example scripts
+│   └── shiny-app/          # Shiny web application
 ├── tests/                  # Test scripts
-│   └── test_individual_pieces.R # Individual pieces test suite
+│   ├── test_generate_puzzle.R       # Main API tests
+│   ├── test_unified_renderer.R      # Renderer tests
+│   └── test_individual_pieces.R     # Individual pieces test suite
 ├── output/                 # Generated puzzle files directory
 └── svg_to_png_overlay.R    # Backward-compatible entry point
 ```
 
+**Unified Pipeline Architecture (Epic #32):**
+```
+generate_puzzle()  →  generate_pieces_internal()  →  apply_piece_positioning()  →  render_puzzle_svg()
+     ↓                       ↓                              ↓                          ↓
+   Main API            Piece generation              Offset/separation           SVG output
+                    (rectangular/hexagonal)          (offset parameter)       (colors, background)
+```
+
 **Core Module Functions:**
+- **R/jigsawR_clean.R**: `generate_puzzle()` - **THE main entry point** for all puzzle generation
+- **R/unified_piece_generation.R**: `generate_pieces_internal()` - handles both rectangular and hexagonal
+- **R/piece_positioning.R**: `apply_piece_positioning()` - applies offset/separation to pieces
+- **R/unified_renderer.R**: `render_puzzle_svg()`, `render_piece()`, `build_svg_header()`
 - **R/rectangular_puzzle.R**: `init_jigsaw()`, `generate_jigsaw_svg()`, coordinate functions (`l()`, `w()`, etc.)
 - **R/hexagonal_puzzle.R**: `init_hex_jigsaw()`, `generate_hex_jigsaw_svg()`
 - **R/puzzle_core_clean.R**: `generate_puzzle_core()`, `generate_all_edges()`, `generate_edge_segment()`, `generate_single_piece()`
-- **R/individual_pieces.R**: `generate_individual_pieces()`, `extract_tab_data()`, `build_piece_path()`
 - **R/gradient_background.R**: `create_gradient_circle_png()`, `save_gradient_background()`
-- **R/svg_utils.R**: `create_enhanced_puzzle_svg()`, `save_enhanced_svg()`
-- **R/image_processing.R**: `convert_svg_to_png()`, `combine_image_layers()`, `check_conversion_tools()`
-- **R/main_generator.R**: `generate_svg_puzzle_layers()`, `generate_puzzle_variations()`
 - **R/bezier_utils.R**: `parse_svg_path()`, `reverse_path_segments()`, `flip_path_segments()`, `create_complementary_edge()`
 - **R/hexagonal_individual_pieces.R**: `generate_hexagonal_individual_pieces()`
 
@@ -199,21 +214,54 @@ renv::restore()
 
 # Development workflow
 devtools::load_all()          # Load package functions
-devtools::document()          # Update documentation  
+devtools::document()          # Update documentation
 devtools::check()             # Check package
 devtools::test()              # Run tests (when available)
 
-# Generate puzzles using package functions
-puzzle_variations <- list(
-  list(seed = 1234, rings = 4, diameter = 200, base_filename = "my_puzzle")
+# ⭐ RECOMMENDED: Use generate_puzzle() for all puzzle generation
+# Rectangular puzzle (complete)
+result <- generate_puzzle(
+  type = "rectangular",
+  seed = 42,
+  grid = c(3, 4),      # 3 rows, 4 columns
+  size = c(400, 300),  # width x height in mm
+  offset = 0           # 0 = complete, >0 = separated pieces
 )
-results <- generate_puzzle_variations(puzzle_variations)
 
-# Generate individual pieces (works for any size!)
-result <- generate_individual_pieces(seed = 42, xn = 3, yn = 3, width = 300, height = 300)
+# Rectangular puzzle (separated by 15mm)
+result <- generate_puzzle(
+  type = "rectangular",
+  seed = 42,
+  grid = c(3, 4),
+  size = c(400, 300),
+  offset = 15,
+  palette = "viridis",
+  background = "white"
+)
 
-# Test with comprehensive test suite
-source("tests/test_individual_pieces.R")
+# Hexagonal puzzle (complete)
+result <- generate_puzzle(
+  type = "hexagonal",
+  seed = 42,
+  grid = c(3),         # 3 rings = 19 pieces
+  size = c(200),       # diameter in mm
+  offset = 0,
+  do_warp = TRUE,      # circular boundary
+  do_trunc = TRUE      # truncate edge pieces
+)
+
+# Access results
+svg_content <- result$svg_content   # SVG string
+pieces <- result$pieces             # List of piece data with paths
+canvas_size <- result$canvas_size   # c(width, height)
+
+# Save to file
+result <- generate_puzzle(..., save_files = TRUE, output_dir = "output")
+result$files$svg  # Path to saved SVG
+
+# Test with comprehensive test suites
+source("tests/test_generate_puzzle.R")
+source("tests/test_unified_renderer.R")
 
 # Update dependencies if needed
 renv::snapshot()              # Save current package state
@@ -263,28 +311,28 @@ Both puzzle generators use R environments to maintain global state:
 
 ### Key Functions by Purpose
 
+**⭐ Unified Pipeline (Recommended - Epic #32):**
+- `generate_puzzle()`: **THE main entry point** - handles all puzzle types, complete/separated modes
+  - Parameters: type, grid, size, seed, offset, fill_color, colors, palette, background, opacity, etc.
+  - Returns: `$svg_content`, `$pieces`, `$canvas_size`, `$files`
+- `generate_pieces_internal()`: Internal piece generation for both rectangular and hexagonal
+- `apply_piece_positioning()`: Applies offset/separation to pieces
+- `render_puzzle_svg()`: Renders positioned pieces to SVG string
+
 **Core Puzzle Generation (jigsaw.R, jigsaw-hex.R):**
 - `init_*()`: Environment setup and parameter parsing
-- `gen_d*()`: Main path generation (horizontal, vertical, border) 
+- `gen_d*()`: Main path generation (horizontal, vertical, border)
 - `*_process()`: Coordinate transformation pipeline (hex only)
 - `save_*_svg()`: File output utilities
 
-**Modular Pipeline Functions:**
-- `create_enhanced_puzzle_svg()`: Enhanced SVG generation with styling (svg_utils.R)
-- `convert_svg_to_png()`: Multi-method SVG to PNG conversion (image_processing.R)
+**Legacy Functions (DEPRECATED - use generate_puzzle() instead):**
+- `generate_individual_pieces()`: ⚠️ DEPRECATED - use `generate_puzzle()` and access `result$pieces`
+- `generate_separated_puzzle_svg()`: ⚠️ DEPRECATED - use `generate_puzzle(offset = X)`
+- `generate_separated_hexagonal_svg()`: ⚠️ DEPRECATED - use `generate_puzzle(type = "hexagonal", offset = X)`
+
+**Supporting Functions:**
 - `create_gradient_circle_png()`: Circular gradient background generation (gradient_background.R)
 - `combine_image_layers()`: Layer composition using magick (image_processing.R)
-- `generate_svg_puzzle_layers()`: Main orchestration function (main_generator.R)
-- `generate_puzzle_variations()`: Batch processing workflow (main_generator.R)
-
-**Individual Piece Generation (Clean Implementation):**
-- `generate_individual_pieces()`: **Unified implementation** for any puzzle size (2x2, 3x3, 5x4, etc.)
-  - Uses core generation functions directly (no SVG manipulation)
-  - Generates both forward and reverse edge paths
-  - Ensures perfect complementary edges between adjacent pieces
-- `generate_all_edges()`: Pre-generates all shared edges with forward/reverse paths
-- `build_piece_path()`: Assembles individual piece from 4 edges (top, right, bottom, left)
-- `extract_tab_data()`: Extracts tab parameters for advanced manipulation
 - `parse_svg_path()`, `reverse_path_segments()`: Bezier curve utilities (bezier_utils.R)
 
 ## Important Implementation Details
@@ -332,6 +380,14 @@ renv::restore()
 **IMPORTANT**: We focus on refining scripts rather than tinkering with output files. Reproducible code ensures data quality. Even if we achieve data quality through manual adjustments, this will not provide reliable code.
 
 ### Recent Work
+✅ **COMPLETED**: Epic #32 - Unified Puzzle Generation Pipeline (2025-12-01)
+  - Issue #33: Unified piece generation module (`R/unified_piece_generation.R`)
+  - Issue #34: Positioning engine (`R/piece_positioning.R`)
+  - Issue #35: Unified SVG renderer (`R/unified_renderer.R`)
+  - Issue #36: Updated `generate_puzzle()` to use unified pipeline
+  - Issue #37: Updated Shiny app with offset slider (replaces output mode dropdown)
+  - Issue #38: Deprecated legacy functions with `.Deprecated()` warnings
+  - **Key change**: `offset` parameter replaces `output` mode (0=complete, >0=separated)
 ✅ **COMPLETED**: Hexagonal individual piece extraction (Issue #10, 2025-12-01)
   - Hybrid Direct Generation approach approved and implemented
   - 42 unique edges for 3-ring puzzle, all with complementary forward/reverse paths
@@ -342,32 +398,20 @@ renv::restore()
 ✅ **COMPLETED**: Hexagonal topology-based separation (2025-11-26)
   - Ring-based hexagonal topology utilities
   - Center-at-(0,0) direction-based positioning
-✅ **COMPLETED**: Code refactoring - consolidated duplicate implementations
-✅ **COMPLETED**: Individual puzzle piece generation (rectangular) with complementary edges
 
 ### Current Status
-- **Individual Pieces (Rectangular)**: ✅ Fully functional for any puzzle size (2x2, 3x3, 5x4, etc.)
-- **Individual Pieces (Hexagonal)**: ✅ **COMPLETE** (2025-12-01, Issue #10)
-  - Implemented using Hybrid Direct Generation approach (following rectangular pattern)
-  - Key files: `R/hexagonal_individual_pieces.R`, `R/hexagonal_edge_generation_fixed.R`
-  - Functions: `generate_hexagonal_individual_pieces()`, `generate_hex_edge_map()`
-  - Features:
-    - Unique edge mapping with deterministic seed-based tabs
-    - Forward/reverse paths for complementary edges
-    - Individual SVG files + combined view
-    - Works for 2-6 rings (7 to 91 pieces)
-  - Test suite: `tests/test_hexagonal_individual.R`
+- **Main API**: ✅ `generate_puzzle()` is the single entry point for all puzzle generation
+  - Unified pipeline: `generate_pieces_internal()` → `apply_piece_positioning()` → `render_puzzle_svg()`
+  - `offset` parameter controls complete vs separated output
+  - Always returns `result$pieces` for programmatic access
+- **Shiny App**: ✅ Updated with offset slider (0-50mm) and three download buttons
+- **Individual Pieces (Rectangular)**: ✅ Fully functional for any puzzle size
+- **Individual Pieces (Hexagonal)**: ✅ Complete (Issue #10)
 - **Hexagonal Separation**: ✅ Ring-based topology positioning with real piece extraction
 - **Warp/Trunc for Separated Mode**: ✅ Complete (Issues #29, #30, #31)
-- **Code Quality**: Clean, maintainable implementations following best practices
-- **Test Suite**: Comprehensive testing framework in place
+- **Test Suites**: `tests/test_generate_puzzle.R` (10 tests), `tests/test_unified_renderer.R` (10 tests)
 
 ### Next Phase
-📋 **Epic #32**: Unified Puzzle Generation Pipeline
-  - Prerequisites complete: #10 (hexagonal individual pieces) ✅
-  - Remaining sub-issues: #33-38 (unified pipeline implementation)
-  - See GitHub issues for detailed implementation plan
-
 📋 **Enhancement #25**: Add PNG download capability to Shiny app (independent)
 
 ### Principles
