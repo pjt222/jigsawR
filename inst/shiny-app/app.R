@@ -294,7 +294,7 @@ ui <- page_fluid(
                       "Solid Color" = "solid",
                       "Gradient" = "gradient"
                     ),
-                    selected = "solid",
+                    selected = "none",
                     inline = TRUE),
 
         # Solid color picker (shown when background_type == "solid")
@@ -452,7 +452,11 @@ server <- function(input, output, session) {
   # Reactive values to store puzzle data
   puzzle_data <- reactiveVal(NULL)
   svg_content <- reactiveVal(NULL)
-  puzzle_pieces <- reactiveVal(NULL)  # Store pieces for individual download
+
+  # Store positioned result for re-rendering (Epic #32 enhancement)
+  # This allows styling changes without regenerating pieces
+
+  positioned_result <- reactiveVal(NULL)
 
   # Randomize seed
   observeEvent(input$randomize, {
@@ -476,7 +480,7 @@ server <- function(input, output, session) {
     # Reset fill options
     updateRadioButtons(session, "fill_type", selected = "none")
     # Reset background settings
-    updateRadioButtons(session, "background_type", selected = "solid")
+    updateRadioButtons(session, "background_type", selected = "none")
     colourpicker::updateColourInput(session, "background_color", value = "#ffffff")
     colourpicker::updateColourInput(session, "gradient_center", value = "#e3f2fd")
     colourpicker::updateColourInput(session, "gradient_middle", value = "#bbdefb")
@@ -489,6 +493,7 @@ server <- function(input, output, session) {
   })
 
   # Generate puzzle using unified pipeline (Epic #32)
+  # Only basic settings trigger regeneration; styling is reactive
   observeEvent(input$generate, {
 
     log_header("Generate button clicked")
@@ -500,26 +505,6 @@ server <- function(input, output, session) {
       withProgress(message = 'Generating puzzle...', value = 0, {
 
         incProgress(0.3, detail = "Creating puzzle structure")
-
-        # Determine fill color value
-        fill_color_value <- if (is.null(input$fill_type) || input$fill_type == "none") {
-          "none"
-        } else {
-          input$fill_color
-        }
-
-        # Determine background value based on type
-        background_value <- switch(input$background_type,
-          "none" = "none",
-          "solid" = input$background_color,
-          "gradient" = list(
-            type = "gradient",
-            center_color = input$gradient_center,
-            edge_color = input$gradient_edge
-          )
-        )
-
-        incProgress(0.5, detail = "Generating SVG")
 
         # === UNIFIED PIPELINE (Epic #32) ===
         puzzle_type <- input$puzzle_type
@@ -533,35 +518,29 @@ server <- function(input, output, session) {
           size_param <- c(input$width, input$height)
         }
 
-        # Generate puzzle using unified pipeline
-        puzzle_result <- generate_puzzle(
+        incProgress(0.5, detail = "Generating pieces")
+
+        # Step 1: Generate pieces internally (basic settings only)
+        pieces_result <- generate_pieces_internal(
           type = puzzle_type,
+          seed = input$seed,
           grid = grid_param,
           size = size_param,
-          seed = input$seed,
           tabsize = input$tabsize,
           jitter = input$jitter,
-          offset = input$offset,
-          fill_color = fill_color_value,
-          stroke_width = input$stroke_width,
-          palette = input$color_palette,
-          background = background_value,
-          opacity = input$opacity / 100,
-          save_files = FALSE,
           do_warp = input$do_warp,
           do_trunc = input$do_trunc
         )
 
-        svg <- puzzle_result$svg_content
+        incProgress(0.7, detail = "Applying positioning")
+
+        # Step 2: Apply positioning (offset is a basic setting)
+        positioned <- apply_piece_positioning(pieces_result, offset = input$offset)
 
         incProgress(1, detail = "Complete!")
 
-        # Store the generated SVG
-        log_info("Storing SVG content, length: {nchar(svg)}")
-        svg_content(svg)
-
-        # Store pieces for individual download
-        puzzle_pieces(puzzle_result$pieces)
+        # Store positioned result for reactive rendering
+        positioned_result(positioned)
 
         # Store puzzle data based on type
         if (puzzle_type == "hexagonal") {
@@ -598,9 +577,53 @@ server <- function(input, output, session) {
     })
   })
 
-  # Display puzzle
+  # Reactive SVG rendering - updates when styling options change
+
+  # This re-renders without regenerating pieces
+  rendered_svg <- reactive({
+    # Depend on positioned result (from generate button)
+    pos <- positioned_result()
+    if (is.null(pos)) return(NULL)
+
+    # Styling options (these trigger re-render, not regeneration)
+    fill_color_value <- if (is.null(input$fill_type) || input$fill_type == "none") {
+      "none"
+    } else {
+      input$fill_color
+    }
+
+    background_value <- switch(input$background_type,
+      "none" = "none",
+      "solid" = input$background_color,
+      "gradient" = list(
+        type = "gradient",
+        center = input$gradient_center,
+        middle = input$gradient_middle,
+        edge = input$gradient_edge
+      )
+    )
+
+    # Render SVG with current styling
+    svg <- render_puzzle_svg(
+      pos,
+      fill = fill_color_value,
+      stroke_width = input$stroke_width,
+      colors = NULL,
+      palette = input$color_palette,
+      background = background_value,
+      opacity = input$opacity / 100
+    )
+
+    # Also update the svg_content reactive for downloads
+    svg_content(svg)
+
+    return(svg)
+  })
+
+  # Display puzzle - uses rendered_svg() for reactive styling updates
   output$puzzle_display <- renderUI({
-    if (is.null(svg_content())) {
+    svg <- rendered_svg()
+    if (is.null(svg)) {
       div(class = "text-center p-5 text-muted",
         icon("puzzle-piece", class = "fa-3x mb-3"),
         h4("No puzzle generated yet"),
@@ -608,7 +631,7 @@ server <- function(input, output, session) {
       )
     } else {
       # Display SVG directly in HTML
-      HTML(svg_content())
+      HTML(svg)
     }
   })
 
