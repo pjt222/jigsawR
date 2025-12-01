@@ -117,29 +117,59 @@ This project is developed in WSL with R installed on Windows. Always use the ful
 # Define R path for convenience (or use directly)
 R_EXE="/mnt/c/Program Files/R/R-4.5.0/bin/Rscript.exe"
 
-# Run inline R code
-"$R_EXE" -e "source('R/logging.R'); cat('test\n')"
-
-# Run script files
+# Run script files (PREFERRED - always reliable)
 "$R_EXE" inst/examples/generate_puzzles.R
+"$R_EXE" tests/test_hexagonal_individual.R
 
-# Test package functions
-"$R_EXE" -e "
-source('R/logging.R')
-source('R/config_utils.R')
-source('R/rectangular_puzzle.R')
-source('R/puzzle_core_clean.R')
-source('R/individual_pieces.R')
-
-result <- generate_individual_pieces(seed = 42, xn = 2, yn = 2)
-cat('Generated', length(result\$pieces), 'pieces\n')
-"
+# Simple inline R code (OK for trivial commands)
+"$R_EXE" -e "cat('test\n')"
+"$R_EXE" -e "print(1 + 1)"
 ```
 
 **Important Notes:**
 - The `.Rprofile` automatically activates renv - dependencies are managed
 - Don't use `--vanilla` flag as it skips `.Rprofile` and renv activation
-- Multi-line R code works best in script files or with proper escaping
+
+### WSL R Execution Limitations (Exit Code 5)
+
+When running Windows `Rscript.exe` from WSL, **complex inline `-e` commands often fail with Exit code 5**. This is due to shell escaping issues at the WSL→Windows boundary.
+
+**What causes Exit code 5:**
+- `$` in R code (e.g., `e$message`, `list$item`) conflicts with bash variable expansion
+- Quote nesting (single quotes inside double quotes) gets mangled
+- Multi-line R code passed via `-e` can break
+- Character encoding issues crossing the WSL→Windows boundary
+
+**Examples that FAIL:**
+```bash
+# FAILS - $ causes bash variable expansion issues
+"$R_EXE" -e "tryCatch({ x() }, error = function(e) e$message)"
+
+# FAILS - Complex multi-line with special characters
+"$R_EXE" -e "
+source('R/file.R')
+result <- list$item
+"
+```
+
+**Examples that WORK:**
+```bash
+# WORKS - Simple commands without $
+"$R_EXE" -e "cat('hello\n')"
+
+# WORKS - Script files (ALWAYS preferred)
+"$R_EXE" tests/test_hexagonal_individual.R
+
+# WORKS - Use [[ ]] instead of $ for extraction
+"$R_EXE" -e "x <- list(a=1); cat(x[['a']])"
+```
+
+**Best Practices:**
+1. **Always prefer script files** for anything beyond trivial R commands
+2. **Create test files** in `tests/` rather than using inline `-e` commands
+3. **Avoid `$` notation** in inline commands - use `[["key"]]` instead
+4. **Keep inline commands simple** - single statements, no complex escaping
+5. **When Exit code 5 occurs**, move the code to a `.R` file and run that instead
 
 ## Development Commands
 
