@@ -172,16 +172,16 @@ ui <- page_fluid(
           numericInput("diameter", "Diameter (mm):",
                       value = 240, min = 100, max = 500, step = 10),
 
-          # Hexagonal-specific options
-          # Circular Warp: Available in both complete and separated modes
-          checkboxInput("do_warp", "Circular Warp", value = FALSE),
-          # Truncate Edges: Available in both complete and separated modes
-          checkboxInput("do_trunc", "Truncate Edges", value = FALSE),
-          # Circular Border: Perfect circular arc borders (requires Warp)
-          conditionalPanel(
-            condition = "input.do_warp == true",
-            checkboxInput("do_circular_border", "Circular Border", value = FALSE)
-          )
+          # Hexagonal boundary shape options
+          # Four mutually exclusive outcomes
+          radioButtons("hex_boundary", "Boundary Shape:",
+                      choices = list(
+                        "Zigzag (Original)" = "zigzag",
+                        "Clean Hexagon" = "hexagon",
+                        "Warped Zigzag" = "warped",
+                        "Perfect Circle" = "circle"
+                      ),
+                      selected = "zigzag")
         ),
 
         # Seed
@@ -451,6 +451,18 @@ ui <- page_fluid(
   )  # End of layout_sidebar
 )
 
+# Helper function to map boundary shape selection to internal parameters
+get_hex_boundary_params <- function(boundary_choice) {
+  switch(boundary_choice,
+    "zigzag"  = list(do_warp = FALSE, do_trunc = FALSE, do_circular_border = FALSE),
+    "hexagon" = list(do_warp = FALSE, do_trunc = TRUE,  do_circular_border = FALSE),
+    "warped"  = list(do_warp = TRUE,  do_trunc = FALSE, do_circular_border = FALSE),
+    "circle"  = list(do_warp = TRUE,  do_trunc = TRUE,  do_circular_border = TRUE),
+    # Default fallback
+    list(do_warp = FALSE, do_trunc = FALSE, do_circular_border = FALSE)
+  )
+}
+
 # Define server logic
 server <- function(input, output, session) {
 
@@ -493,9 +505,7 @@ server <- function(input, output, session) {
     # Reset hexagonal options
     updateNumericInput(session, "rings", value = 3)
     updateNumericInput(session, "diameter", value = 240)
-    updateCheckboxInput(session, "do_warp", value = FALSE)
-    updateCheckboxInput(session, "do_trunc", value = FALSE)
-    updateCheckboxInput(session, "do_circular_border", value = FALSE)
+    updateRadioButtons(session, "hex_boundary", selected = "zigzag")
   })
 
   # Generate puzzle using unified pipeline (Epic #32)
@@ -527,8 +537,8 @@ server <- function(input, output, session) {
         incProgress(0.5, detail = "Generating pieces")
 
         # Step 1: Generate pieces internally (basic settings only)
-        # Note: do_circular_border requires do_warp to be TRUE
-        circular_border <- if (!is.null(input$do_circular_border)) input$do_circular_border else FALSE
+        # Get boundary parameters from radio button selection
+        boundary_params <- get_hex_boundary_params(input$hex_boundary)
         pieces_result <- generate_pieces_internal(
           type = puzzle_type,
           seed = input$seed,
@@ -536,9 +546,9 @@ server <- function(input, output, session) {
           size = size_param,
           tabsize = input$tabsize,
           jitter = input$jitter,
-          do_warp = input$do_warp,
-          do_trunc = input$do_trunc,
-          do_circular_border = circular_border && input$do_warp  # Only enable if warp is also enabled
+          do_warp = boundary_params$do_warp,
+          do_trunc = boundary_params$do_trunc,
+          do_circular_border = boundary_params$do_circular_border
         )
 
         incProgress(0.7, detail = "Applying positioning")
@@ -776,7 +786,8 @@ server <- function(input, output, session) {
       }
 
       # Generate complete puzzle (offset=0)
-      circular_border <- if (!is.null(input$do_circular_border)) input$do_circular_border else FALSE
+      # Get boundary parameters from radio button selection
+      boundary_params <- get_hex_boundary_params(input$hex_boundary)
       result <- generate_puzzle(
         type = data$type,
         grid = grid_param,
@@ -791,9 +802,9 @@ server <- function(input, output, session) {
         background = background_value,
         opacity = input$opacity / 100,
         save_files = FALSE,
-        do_warp = input$do_warp,
-        do_trunc = input$do_trunc,
-        do_circular_border = circular_border && input$do_warp
+        do_warp = boundary_params$do_warp,
+        do_trunc = boundary_params$do_trunc,
+        do_circular_border = boundary_params$do_circular_border
       )
 
       writeLines(result$svg_content, file)
