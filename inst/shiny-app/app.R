@@ -173,12 +173,13 @@ ui <- page_fluid(
                       value = 240, min = 100, max = 500, step = 10),
 
           # Hexagonal boundary shape options
-          # Four mutually exclusive outcomes
+          # Five mutually exclusive outcomes
           radioButtons("hex_boundary", "Boundary Shape:",
                       choices = list(
                         "Zigzag (Original)" = "zigzag",
                         "Clean Hexagon" = "hexagon",
                         "Warped Zigzag" = "warped",
+                        "Warped Hexagon" = "warped_hex",
                         "Perfect Circle" = "circle"
                       ),
                       selected = "zigzag")
@@ -454,10 +455,11 @@ ui <- page_fluid(
 # Helper function to map boundary shape selection to internal parameters
 get_hex_boundary_params <- function(boundary_choice) {
   switch(boundary_choice,
-    "zigzag"  = list(do_warp = FALSE, do_trunc = FALSE, do_circular_border = FALSE),
-    "hexagon" = list(do_warp = FALSE, do_trunc = TRUE,  do_circular_border = FALSE),
-    "warped"  = list(do_warp = TRUE,  do_trunc = FALSE, do_circular_border = FALSE),
-    "circle"  = list(do_warp = TRUE,  do_trunc = TRUE,  do_circular_border = TRUE),
+    "zigzag"     = list(do_warp = FALSE, do_trunc = FALSE, do_circular_border = FALSE),
+    "hexagon"    = list(do_warp = FALSE, do_trunc = TRUE,  do_circular_border = FALSE),
+    "warped"     = list(do_warp = TRUE,  do_trunc = FALSE, do_circular_border = FALSE),
+    "warped_hex" = list(do_warp = TRUE,  do_trunc = TRUE,  do_circular_border = FALSE),
+    "circle"     = list(do_warp = TRUE,  do_trunc = TRUE,  do_circular_border = TRUE),
     # Default fallback
     list(do_warp = FALSE, do_trunc = FALSE, do_circular_border = FALSE)
   )
