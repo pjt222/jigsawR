@@ -357,6 +357,19 @@ The hexagonal puzzle supports four boundary modes controlled by `do_warp` and `d
    - Use consistent `circle_radius = diameter / 2` for ALL border arcs
    - Don't calculate per-edge radii (causes gaps between arcs)
 
+6. **Transformation Order** (verified 2025-12-03):
+   - Separation/offset is ALWAYS applied AFTER warp/border transformations
+   - Pipeline order in `generate_puzzle()`:
+     1. Vertex calculation (original hexagonal grid)
+     2. Boundary detection (before transformations)
+     3. Warp transformation (if `do_warp=TRUE`) → applies to ALL vertices
+     4. Circular border projection (if `do_circular_border=TRUE`)
+     5. Edge generation (using transformed vertices)
+     6. Piece assembly at compact positions
+     7. Separation/offset applied via `apply_piece_positioning()` (translation only)
+   - Separation is purely translational - edge shapes never change, only positions
+   - This ensures consistent piece shapes across all separation levels
+
 ### Key Functions by Purpose
 
 **⭐ Unified Pipeline (Recommended - Epic #32):**
