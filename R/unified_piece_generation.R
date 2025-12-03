@@ -174,17 +174,50 @@ generate_hex_pieces_internal <- function(seed, rings, diameter, tabsize, jitter,
     )
   })
 
-  # Calculate canvas size from piece positions
-  all_x <- sapply(pieces, function(p) p$center[1])
-  all_y <- sapply(pieces, function(p) p$center[2])
   piece_radius <- diameter / (rings * 4)
 
-  # Canvas needs to encompass all pieces with margin
-  margin <- piece_radius * 1.2
-  min_x <- min(all_x) - margin
-  max_x <- max(all_x) + margin
-  min_y <- min(all_y) - margin
-  max_y <- max(all_y) + margin
+  # Calculate canvas size from actual piece path bounds
+  # This is critical when warp/trunc are enabled, as pieces extend beyond centers
+  all_path_x <- c()
+  all_path_y <- c()
+
+  for (piece in pieces) {
+    # Extract all coordinates from the path
+    path <- piece$path
+    numbers <- as.numeric(unlist(regmatches(path, gregexpr("-?[0-9]+\\.?[0-9]*", path))))
+    numbers <- numbers[!is.na(numbers)]
+
+    if (length(numbers) >= 2) {
+      # Coordinates alternate: x, y, x, y, ...
+      x_coords <- numbers[seq(1, length(numbers), by = 2)]
+      y_coords <- numbers[seq(2, length(numbers), by = 2)]
+      all_path_x <- c(all_path_x, x_coords)
+      all_path_y <- c(all_path_y, y_coords)
+    }
+  }
+
+  # Calculate bounds from actual path coordinates
+  if (length(all_path_x) > 0 && length(all_path_y) > 0) {
+    path_min_x <- min(all_path_x)
+    path_max_x <- max(all_path_x)
+    path_min_y <- min(all_path_y)
+    path_max_y <- max(all_path_y)
+  } else {
+    # Fallback to center-based calculation
+    all_x <- sapply(pieces, function(p) p$center[1])
+    all_y <- sapply(pieces, function(p) p$center[2])
+    path_min_x <- min(all_x) - piece_radius
+    path_max_x <- max(all_x) + piece_radius
+    path_min_y <- min(all_y) - piece_radius
+    path_max_y <- max(all_y) + piece_radius
+  }
+
+  # Add a small margin for stroke width and visual padding
+  stroke_margin <- piece_radius * 0.15
+  min_x <- path_min_x - stroke_margin
+  max_x <- path_max_x + stroke_margin
+  min_y <- path_min_y - stroke_margin
+  max_y <- path_max_y + stroke_margin
 
   canvas_width <- max_x - min_x
   canvas_height <- max_y - min_y

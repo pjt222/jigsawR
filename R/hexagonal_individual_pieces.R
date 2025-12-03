@@ -77,19 +77,16 @@ generate_hexagonal_individual_pieces <- function(rings = 3, seed = NULL,
                 "#DDA0DD", "#F0E68C", "#87CEEB", "#FFB6C1", "#90EE90")
   }
 
-  # Calculate viewBox from all pieces
-  all_x <- sapply(pieces, function(p) p$center_x)
-  all_y <- sapply(pieces, function(p) p$center_y)
+  # Calculate viewBox from all piece paths (not just centers)
+  # This is critical when warp/trunc are enabled, as pieces extend beyond centers
   piece_radius <- diameter / (rings * 4)
-
-  # ViewBox with margin
-  margin <- piece_radius * 1.5
-  min_x <- min(all_x) - margin
-  max_x <- max(all_x) + margin
-  min_y <- min(all_y) - margin
-  max_y <- max(all_y) + margin
-  view_width <- max_x - min_x
-  view_height <- max_y - min_y
+  view_bounds <- calculate_pieces_viewbox(pieces, piece_radius)
+  min_x <- view_bounds$min_x
+  max_x <- view_bounds$max_x
+  min_y <- view_bounds$min_y
+  max_y <- view_bounds$max_y
+  view_width <- view_bounds$width
+  view_height <- view_bounds$height
 
   # Store file paths
   individual_files <- c()
@@ -308,6 +305,72 @@ calculate_path_bounds <- function(path) {
 }
 
 
+#' Calculate viewBox bounds from all piece paths
+#'
+#' Extracts coordinates from all piece paths to find the actual extent
+#' of the puzzle. This is critical for warp/trunc modes where pieces
+#' extend beyond their center positions.
+#'
+#' @param pieces List of piece objects with $path containing SVG path data
+#' @param piece_radius Piece radius for margin calculation
+#' @return List with min_x, min_y, max_x, max_y, width, height
+#' @keywords internal
+calculate_pieces_viewbox <- function(pieces, piece_radius) {
+  all_path_x <- c()
+  all_path_y <- c()
+
+  for (piece in pieces) {
+    # Extract coordinates from path
+    path <- piece$path
+    numbers <- as.numeric(unlist(regmatches(path, gregexpr("-?[0-9]+\\.?[0-9]*", path))))
+    numbers <- numbers[!is.na(numbers)]
+
+    if (length(numbers) >= 2) {
+      # Coordinates alternate: x, y, x, y, ...
+      x_coords <- numbers[seq(1, length(numbers), by = 2)]
+      y_coords <- numbers[seq(2, length(numbers), by = 2)]
+      all_path_x <- c(all_path_x, x_coords)
+      all_path_y <- c(all_path_y, y_coords)
+    }
+  }
+
+  if (length(all_path_x) > 0 && length(all_path_y) > 0) {
+    path_min_x <- min(all_path_x)
+    path_max_x <- max(all_path_x)
+    path_min_y <- min(all_path_y)
+    path_max_y <- max(all_path_y)
+  } else {
+    # Fallback to center-based calculation
+    all_x <- sapply(pieces, function(p) {
+      if (!is.null(p$center_x)) p$center_x else p$center[1]
+    })
+    all_y <- sapply(pieces, function(p) {
+      if (!is.null(p$center_y)) p$center_y else p$center[2]
+    })
+    path_min_x <- min(all_x) - piece_radius
+    path_max_x <- max(all_x) + piece_radius
+    path_min_y <- min(all_y) - piece_radius
+    path_max_y <- max(all_y) + piece_radius
+  }
+
+  # Add small margin for stroke width
+  stroke_margin <- piece_radius * 0.15
+  min_x <- path_min_x - stroke_margin
+  max_x <- path_max_x + stroke_margin
+  min_y <- path_min_y - stroke_margin
+  max_y <- path_max_y + stroke_margin
+
+  list(
+    min_x = min_x,
+    min_y = min_y,
+    max_x = max_x,
+    max_y = max_y,
+    width = max_x - min_x,
+    height = max_y - min_y
+  )
+}
+
+
 #' Create hexagonal individual pieces SVG (combined view only)
 #'
 #' Generates a combined SVG showing all pieces with colors, without saving
@@ -363,18 +426,13 @@ create_hexagonal_individual_pieces_svg <- function(rings = 3, seed = NULL,
                 "#DDA0DD", "#F0E68C", "#87CEEB", "#FFB6C1", "#90EE90")
   }
 
-  # Calculate viewBox
-  all_x <- sapply(pieces, function(p) p$center_x)
-  all_y <- sapply(pieces, function(p) p$center_y)
+  # Calculate viewBox from all piece paths (not just centers)
   piece_radius <- diameter / (rings * 4)
-
-  margin <- piece_radius * 1.5
-  min_x <- min(all_x) - margin
-  max_x <- max(all_x) + margin
-  min_y <- min(all_y) - margin
-  max_y <- max(all_y) + margin
-  view_width <- max_x - min_x
-  view_height <- max_y - min_y
+  view_bounds <- calculate_pieces_viewbox(pieces, piece_radius)
+  min_x <- view_bounds$min_x
+  min_y <- view_bounds$min_y
+  view_width <- view_bounds$width
+  view_height <- view_bounds$height
 
   # Create fill colors
   fill_colors <- sapply(colors, function(color) {

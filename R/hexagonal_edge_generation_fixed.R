@@ -69,34 +69,67 @@ generate_hex_edge_map <- function(rings, seed, diameter, tabsize = 27, jitter = 
   # The truncation only affects boundary vertices.
   piece_vertices <- piece_vertices_original  # Start with original
 
-  if (do_warp || do_trunc) {
-    # Build a map of vertex -> pieces that share it
-    vertex_sharing <- list()
+  # Store the computed circle radius for use in arc creation (for warp+trunc mode)
+  computed_circle_radius <- NULL
 
-    for (piece_id in 1:num_pieces) {
-      for (i in 1:6) {
-        v <- piece_vertices_original[[piece_id]][[i]]
-        v_key <- sprintf("%.1f,%.1f", v[1], v[2])
+  # Pre-identified boundary edges (computed before transformations to avoid matching issues)
+  # We always compute these based on original topology
+  boundary_edge_keys <- c()
 
-        if (is.null(vertex_sharing[[v_key]])) {
-          vertex_sharing[[v_key]] <- list(pieces = c(), coords = v)
+  # Build a map of vertex -> pieces that share it (always needed for boundary detection)
+  vertex_sharing <- list()
+
+  for (piece_id in 1:num_pieces) {
+    for (i in 1:6) {
+      v <- piece_vertices_original[[piece_id]][[i]]
+      v_key <- sprintf("%.1f,%.1f", v[1], v[2])
+
+      if (is.null(vertex_sharing[[v_key]])) {
+        vertex_sharing[[v_key]] <- list(pieces = c(), coords = v)
+      }
+      vertex_sharing[[v_key]]$pieces <- c(vertex_sharing[[v_key]]$pieces, piece_id)
+    }
+  }
+
+  # Find boundary vertices and calculate max distance for truncation
+  boundary_vertex_keys <- c()
+  max_boundary_dist <- 0
+
+  for (v_key in names(vertex_sharing)) {
+    if (length(unique(vertex_sharing[[v_key]]$pieces)) < 3) {
+      boundary_vertex_keys <- c(boundary_vertex_keys, v_key)
+      v <- vertex_sharing[[v_key]]$coords
+      dist <- sqrt(v[1]^2 + v[2]^2)
+      max_boundary_dist <- max(max_boundary_dist, dist)
+    }
+  }
+
+  # Pre-identify boundary edges BEFORE any vertex transformations
+  # A boundary edge has BOTH vertices as boundary vertices AND is only used by one piece
+  for (piece_id in 1:num_pieces) {
+    for (side in 0:5) {
+      v1 <- piece_vertices_original[[piece_id]][[side + 1]]
+      v2 <- piece_vertices_original[[piece_id]][[(side + 1) %% 6 + 1]]
+      v1_key <- sprintf("%.1f,%.1f", v1[1], v1[2])
+      v2_key <- sprintf("%.1f,%.1f", v2[1], v2[2])
+
+      # An edge is a boundary edge if BOTH its vertices are boundary vertices
+      if (v1_key %in% boundary_vertex_keys && v2_key %in% boundary_vertex_keys) {
+        # Also check that no other piece shares this exact edge
+        v1_pieces <- unique(vertex_sharing[[v1_key]]$pieces)
+        v2_pieces <- unique(vertex_sharing[[v2_key]]$pieces)
+        shared_pieces <- intersect(v1_pieces, v2_pieces)
+
+        # If only this piece uses both vertices, it's a boundary edge
+        if (length(shared_pieces) == 1) {
+          boundary_edge_keys <- c(boundary_edge_keys, sprintf("%d-%d", piece_id, side))
         }
-        vertex_sharing[[v_key]]$pieces <- c(vertex_sharing[[v_key]]$pieces, piece_id)
       }
     }
+  }
 
-    # Find boundary vertices and calculate max distance for truncation
-    boundary_vertex_keys <- c()
-    max_boundary_dist <- 0
-
-    for (v_key in names(vertex_sharing)) {
-      if (length(unique(vertex_sharing[[v_key]]$pieces)) < 3) {
-        boundary_vertex_keys <- c(boundary_vertex_keys, v_key)
-        v <- vertex_sharing[[v_key]]$coords
-        dist <- sqrt(v[1]^2 + v[2]^2)
-        max_boundary_dist <- max(max_boundary_dist, dist)
-      }
-    }
+  # Apply vertex transformations if needed
+  if (do_warp || do_trunc) {
 
     # Step 1: If do_warp, apply warp to ALL vertices (not just boundary)
     # This matches complete mode where hex_process_r applies warp to every coordinate
@@ -124,22 +157,34 @@ generate_hex_edge_map <- function(rings, seed, diameter, tabsize = 27, jitter = 
 
       cat("Circular warp enabled - ALL vertices transformed\n")
 
-      # Step 1b: If also do_trunc, project boundary vertices onto the target circle
-      # This ensures boundary arcs connect smoothly on the circle
+      # When do_trunc is also enabled, project boundary vertices to a consistent circle
+      # BUT use the ACTUAL warped boundary radius (average of warped distances),
+      # not diameter/2 which would stretch the outer pieces.
       if (do_trunc) {
-        circle_radius <- diameter / 2
+        # Calculate the average distance of warped boundary vertices
+        warped_boundary_dists <- c()
+        for (v_key in boundary_vertex_keys) {
+          warped_v <- all_transformed[[v_key]]
+          if (!is.null(warped_v)) {
+            dist <- sqrt(warped_v[1]^2 + warped_v[2]^2)
+            warped_boundary_dists <- c(warped_boundary_dists, dist)
+          }
+        }
+
+        # Use the average warped boundary distance as our target circle radius
+        # This creates a smooth circle without stretching pieces
+        computed_circle_radius <- mean(warped_boundary_dists)
 
         for (v_key in boundary_vertex_keys) {
-          # Get the already-warped vertex position
           warped_v <- all_transformed[[v_key]]
           if (is.null(warped_v)) next
 
-          # Project onto circle: normalize to unit vector, then scale to circle_radius
+          # Project onto circle at the target radius
           dist <- sqrt(warped_v[1]^2 + warped_v[2]^2)
           if (dist > 0) {
             projected <- c(
-              warped_v[1] / dist * circle_radius,
-              warped_v[2] / dist * circle_radius
+              warped_v[1] / dist * computed_circle_radius,
+              warped_v[2] / dist * computed_circle_radius
             )
 
             # Update the vertex in all pieces that share it
@@ -156,7 +201,8 @@ generate_hex_edge_map <- function(rings, seed, diameter, tabsize = 27, jitter = 
           }
         }
 
-        cat(sprintf("Boundary vertices projected to circle radius %.2f\n", circle_radius))
+        cat(sprintf("Boundary vertices projected to circle radius %.2f (avg warped dist)\n",
+                    computed_circle_radius))
       }
     }
 
@@ -205,42 +251,55 @@ generate_hex_edge_map <- function(rings, seed, diameter, tabsize = 27, jitter = 
       v1 <- vertices[[side + 1]]
       v2 <- vertices[[(side + 1) %% 6 + 1]]
 
-      # Find neighbor by checking which other piece shares these two vertices
+      # Check if this is a pre-identified boundary edge
+      # This is crucial when vertices have been transformed (warp+trunc can make
+      # non-adjacent vertices appear to match due to circle projection)
+      edge_key_check <- sprintf("%d-%d", piece_id, side)
+      is_boundary_edge <- edge_key_check %in% boundary_edge_keys
+
+      # Find neighbor (only if not a boundary edge)
       neighbor_id <- NA
       neighbor_side <- NA
 
-      for (test_id in 1:num_pieces) {
-        if (test_id == piece_id) next  # Skip self
+      if (!is_boundary_edge) {
+        for (test_id in 1:num_pieces) {
+          if (test_id == piece_id) next  # Skip self
 
-        test_vertices <- piece_vertices[[test_id]]
+          test_vertices <- piece_vertices[[test_id]]
 
-        # Check if this piece shares both v1 and v2 (in either order)
-        for (test_side in 0:5) {
-          test_v1 <- test_vertices[[test_side + 1]]
-          test_v2 <- test_vertices[[(test_side + 1) %% 6 + 1]]
+          # Check if this piece shares both v1 and v2 (in either order)
+          for (test_side in 0:5) {
+            test_v1 <- test_vertices[[test_side + 1]]
+            test_v2 <- test_vertices[[(test_side + 1) %% 6 + 1]]
 
-          # Check if vertices match (within tolerance for floating point)
-          tol <- 0.01
-          if ((all(abs(v1 - test_v2) < tol) && all(abs(v2 - test_v1) < tol)) ||
-              (all(abs(v1 - test_v1) < tol) && all(abs(v2 - test_v2) < tol))) {
-            neighbor_id <- test_id
-            neighbor_side <- test_side
-            break
+            # Check if vertices match (within tolerance for floating point)
+            tol <- 0.01
+            if ((all(abs(v1 - test_v2) < tol) && all(abs(v2 - test_v1) < tol)) ||
+                (all(abs(v1 - test_v1) < tol) && all(abs(v2 - test_v2) < tol))) {
+              neighbor_id <- test_id
+              neighbor_side <- test_side
+              break
+            }
           }
+          if (!is.na(neighbor_id)) break
         }
-        if (!is.na(neighbor_id)) break
       }
 
-      if (is.na(neighbor_id)) {
+      if (is_boundary_edge || is.na(neighbor_id)) {
         # Border edge - no neighbor, this is on the puzzle boundary
         edge_key <- sprintf("%d-%d", piece_id, side)
 
         # Match complete mode semantics: arcs only when BOTH do_trunc AND do_warp
         if (do_trunc && do_warp) {
-          # For circular puzzle with do_warp+do_trunc, the boundary is a circle
-          # with radius = diameter/2 (matching complete mode)
-          # Note: vertices are warped, so we use the target circular radius
-          circle_radius <- diameter / 2
+          # For circular puzzle with do_warp+do_trunc, use the computed circle radius
+          # which was calculated as the average of warped boundary distances.
+          # All boundary vertices have been projected to this radius, so use it for arcs.
+          arc_radius <- if (!is.null(computed_circle_radius)) {
+            computed_circle_radius
+          } else {
+            # Fallback: average of vertex distances (shouldn't happen)
+            (sqrt(v1[1]^2 + v1[2]^2) + sqrt(v2[1]^2 + v2[2]^2)) / 2
+          }
 
           # Determine sweep direction based on vertex order
           # Cross product determines if we're going clockwise or counter-clockwise
@@ -248,12 +307,12 @@ generate_hex_edge_map <- function(rings, seed, diameter, tabsize = 27, jitter = 
           sweep <- if (cross > 0) 1 else 0
 
           # Create arc command for border edge
-          # Using the consistent circle_radius for all border arcs
+          # Using the consistent arc_radius for all border edges
           forward_arc <- sprintf("A %.2f %.2f 0 0 %d %.2f %.2f",
-                                 circle_radius, circle_radius, sweep,
+                                 arc_radius, arc_radius, sweep,
                                  v2[1], v2[2])
           reverse_arc <- sprintf("A %.2f %.2f 0 0 %d %.2f %.2f",
-                                 circle_radius, circle_radius, 1 - sweep,
+                                 arc_radius, arc_radius, 1 - sweep,
                                  v1[1], v1[2])
 
           piece_edge_map[[edge_key]] <- list(
