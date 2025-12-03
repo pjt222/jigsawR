@@ -28,6 +28,7 @@
 #' @param filename_prefix Prefix for output files
 #' @param do_warp Apply circular warping (hexagonal only)
 #' @param do_trunc Truncate edge pieces (hexagonal only)
+#' @param do_circular_border Use perfect circular arc borders (hexagonal only, requires do_warp=TRUE)
 #' @param output DEPRECATED: Use offset parameter instead
 #' @return List with svg_content, pieces, canvas_size, and parameters
 #' @export
@@ -49,6 +50,7 @@ generate_puzzle <- function(type = "rectangular",
                             filename_prefix = NULL,
                             do_warp = FALSE,
                             do_trunc = FALSE,
+                            do_circular_border = FALSE,
                             output = NULL) {
 
   # Handle deprecated 'output' parameter
@@ -100,7 +102,8 @@ generate_puzzle <- function(type = "rectangular",
     tabsize = tabsize,
     jitter = jitter,
     do_warp = do_warp,
-    do_trunc = do_trunc
+    do_trunc = do_trunc,
+    do_circular_border = do_circular_border
   )
 
   # Step 2: Apply positioning
@@ -133,6 +136,7 @@ generate_puzzle <- function(type = "rectangular",
       offset = offset,
       do_warp = do_warp,
       do_trunc = do_trunc,
+      do_circular_border = do_circular_border,
       fill_color = fill_color,
       stroke_width = stroke_width,
       palette = palette,

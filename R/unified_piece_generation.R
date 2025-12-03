@@ -15,6 +15,7 @@
 #' @param jitter Jitter as percentage (0-15, default: 4)
 #' @param do_warp Apply circular warp (hexagonal only, default: FALSE)
 #' @param do_trunc Truncate boundary (hexagonal only, default: FALSE)
+#' @param do_circular_border Use perfect circular arc borders (hexagonal only, requires do_warp=TRUE)
 #' @return List with:
 #'   - pieces: List of piece objects with id, path, center, grid_pos/ring_pos
 #'   - canvas_size: c(width, height) for compact (offset=0) layout
@@ -28,7 +29,8 @@ generate_pieces_internal <- function(type = "rectangular",
                                      tabsize = 20,
                                      jitter = 4,
                                      do_warp = FALSE,
-                                     do_trunc = FALSE) {
+                                     do_trunc = FALSE,
+                                     do_circular_border = FALSE) {
 
   # Generate seed if not provided
   if (is.null(seed)) {
@@ -45,7 +47,8 @@ generate_pieces_internal <- function(type = "rectangular",
       tabsize = tabsize,
       jitter = jitter,
       do_warp = do_warp,
-      do_trunc = do_trunc
+      do_trunc = do_trunc,
+      do_circular_border = do_circular_border
     ))
   } else {
     return(generate_rect_pieces_internal(
@@ -142,10 +145,12 @@ pieces <- list()
 #' @param jitter Jitter percentage
 #' @param do_warp Apply circular warp
 #' @param do_trunc Truncate boundary
+#' @param do_circular_border Use perfect circular arc borders (requires do_warp=TRUE)
 #' @return Piece generation result
 #' @keywords internal
 generate_hex_pieces_internal <- function(seed, rings, diameter, tabsize, jitter,
-                                         do_warp = FALSE, do_trunc = FALSE) {
+                                         do_warp = FALSE, do_trunc = FALSE,
+                                         do_circular_border = FALSE) {
 
   # Use existing edge map generation
   # This generates all pieces with proper complementary edges
@@ -158,7 +163,8 @@ generate_hex_pieces_internal <- function(seed, rings, diameter, tabsize, jitter,
     separated = FALSE,  # Compact positions (offset=0)
     separation_factor = 1.0,
     do_warp = do_warp,
-    do_trunc = do_trunc
+    do_trunc = do_trunc,
+    do_circular_border = do_circular_border
   )
 
   # Convert to standardized piece format
@@ -238,6 +244,7 @@ generate_hex_pieces_internal <- function(seed, rings, diameter, tabsize, jitter,
       jitter = jitter,
       do_warp = do_warp,
       do_trunc = do_trunc,
+      do_circular_border = do_circular_border,
       piece_radius = piece_radius,
       num_pieces = num_pieces
     )

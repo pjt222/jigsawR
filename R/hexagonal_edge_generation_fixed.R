@@ -13,11 +13,13 @@
 #' @param jitter Jitter percentage
 #' @param do_warp Apply circular warp transformation to border edges (default: FALSE)
 #' @param do_trunc Truncate boundary to clean geometric shape (default: FALSE)
+#' @param do_circular_border Use perfect circular arc borders (requires do_warp=TRUE)
 #' @return List with edge_map (unique edges) and piece_edges (piece-to-edge mapping)
 #'
 #' @export
 generate_hex_edge_map <- function(rings, seed, diameter, tabsize = 27, jitter = 5,
-                                  do_warp = FALSE, do_trunc = FALSE) {
+                                  do_warp = FALSE, do_trunc = FALSE,
+                                  do_circular_border = FALSE) {
   # Source dependencies
   if (!exists("map_piece_id_to_ring")) {
     source("R/hexagonal_topology.R")
@@ -125,6 +127,9 @@ generate_hex_edge_map <- function(rings, seed, diameter, tabsize = 27, jitter = 
     }
   }
 
+  # Circle radius for circular border (computed if needed)
+  circle_radius <- NULL
+
   # Apply vertex transformations if needed
   if (do_warp || do_trunc) {
 
@@ -154,11 +159,50 @@ generate_hex_edge_map <- function(rings, seed, diameter, tabsize = 27, jitter = 
 
       cat("Circular warp enabled - ALL vertices transformed\n")
 
-      # Note: We do NOT project boundary vertices to a circle radius.
-      # Projecting causes outer pieces to stretch (vertices get moved).
-      # Instead, we keep vertices at their natural warped positions.
-      # Border edges will use straight lines (L) connecting these positions,
-      # which preserves consistent piece sizes across all rings.
+      # If circular border is enabled, project boundary vertices to circle radius
+      # This gives a perfect circular outline but causes slight shape variation
+      # on outer pieces (which is acceptable per user preference)
+      if (do_circular_border) {
+        # Calculate circle radius from average boundary vertex distances after warp
+        warped_boundary_dists <- c()
+        for (v_key in boundary_vertex_keys) {
+          v <- vertex_sharing[[v_key]]$coords
+          warped <- apply_hex_warp(v[1], v[2])
+          dist <- sqrt(warped$x^2 + warped$y^2)
+          warped_boundary_dists <- c(warped_boundary_dists, dist)
+        }
+        circle_radius <- mean(warped_boundary_dists)
+        cat(sprintf("Circular border enabled - projecting boundary to radius %.2f\n", circle_radius))
+
+        # Project only boundary vertices to circle radius
+        for (piece_id in 1:num_pieces) {
+          for (i in 1:6) {
+            orig_v <- piece_vertices_original[[piece_id]][[i]]
+            orig_key <- sprintf("%.1f,%.1f", orig_v[1], orig_v[2])
+
+            if (orig_key %in% boundary_vertex_keys) {
+              # Get current warped position
+              current_v <- piece_vertices[[piece_id]][[i]]
+              current_dist <- sqrt(current_v[1]^2 + current_v[2]^2)
+
+              if (current_dist > 0) {
+                # Project to circle radius
+                scale <- circle_radius / current_dist
+                piece_vertices[[piece_id]][[i]] <- c(
+                  current_v[1] * scale,
+                  current_v[2] * scale
+                )
+              }
+            }
+          }
+        }
+      } else {
+        # Note: We do NOT project boundary vertices to a circle radius.
+        # Projecting causes outer pieces to stretch (vertices get moved).
+        # Instead, we keep vertices at their natural warped positions.
+        # Border edges will use straight lines (L) connecting these positions,
+        # which preserves consistent piece sizes across all rings.
+      }
     }
 
     # Step 2: If do_trunc (but not do_warp), apply hexagonal truncation to boundary only
@@ -244,23 +288,44 @@ generate_hex_edge_map <- function(rings, seed, diameter, tabsize = 27, jitter = 
         # Border edge - no neighbor, this is on the puzzle boundary
         edge_key <- sprintf("%d-%d", piece_id, side)
 
-        # For ALL border edges (regardless of warp/trunc), use straight lines.
-        # This preserves consistent piece sizes by keeping vertices at their
-        # natural positions (warped or original) without any projection.
-        #
-        # When do_warp is enabled, the warp transformation already creates
-        # a circular shape - we don't need arcs to smooth it further.
-        # Using arcs would require projecting vertices to a common radius,
-        # which causes piece size distortion (outer pieces stretch).
-        piece_edge_map[[edge_key]] <- list(
-          type = "border",
-          forward = sprintf("L %.2f %.2f", v2[1], v2[2]),
-          reverse = sprintf("L %.2f %.2f", v1[1], v1[2]),
-          start = v1,
-          end = v2,
-          is_forward = TRUE,
-          warped = do_warp  # Track if warp was applied for reference
-        )
+        if (do_circular_border && do_warp && !is.null(circle_radius)) {
+          # Use arc commands for perfect circular border
+          # SVG arc: A rx ry x-axis-rotation large-arc-flag sweep-flag x y
+          # For a circular arc: rx = ry = circle_radius
+          # x-axis-rotation = 0
+          # large-arc-flag = 0 (small arc, < 180°)
+          # sweep-flag = 1 (clockwise)
+          piece_edge_map[[edge_key]] <- list(
+            type = "border",
+            forward = sprintf("A %.2f %.2f 0 0 1 %.2f %.2f",
+                              circle_radius, circle_radius, v2[1], v2[2]),
+            reverse = sprintf("A %.2f %.2f 0 0 0 %.2f %.2f",
+                              circle_radius, circle_radius, v1[1], v1[2]),
+            start = v1,
+            end = v2,
+            is_forward = TRUE,
+            warped = TRUE,
+            circular_border = TRUE
+          )
+        } else {
+          # Use straight lines for borders
+          # This preserves consistent piece sizes by keeping vertices at their
+          # natural positions (warped or original) without any projection.
+          #
+          # When do_warp is enabled, the warp transformation already creates
+          # a circular shape - we don't need arcs to smooth it further.
+          # Using arcs would require projecting vertices to a common radius,
+          # which causes piece size distortion (outer pieces stretch).
+          piece_edge_map[[edge_key]] <- list(
+            type = "border",
+            forward = sprintf("L %.2f %.2f", v2[1], v2[2]),
+            reverse = sprintf("L %.2f %.2f", v1[1], v1[2]),
+            start = v1,
+            end = v2,
+            is_forward = TRUE,
+            warped = do_warp  # Track if warp was applied for reference
+          )
+        }
       } else {
         # Internal edge - check if already generated
         pieces <- sort(c(piece_id, neighbor_id))
@@ -341,6 +406,7 @@ generate_hex_edge_map <- function(rings, seed, diameter, tabsize = 27, jitter = 
 #' @param separation_factor Separation multiplier
 #' @param do_warp Apply circular warp transformation to border edges (default: FALSE)
 #' @param do_trunc Truncate boundary to clean geometric shape (default: FALSE)
+#' @param do_circular_border Use perfect circular arc borders (requires do_warp=TRUE)
 #' @return List of piece objects
 #'
 #' @export
@@ -350,7 +416,8 @@ generate_hex_pieces_with_edge_map <- function(rings, seed, diameter = 240,
                                                base_spacing = NULL,
                                                separation_factor = 1.0,
                                                do_warp = FALSE,
-                                               do_trunc = FALSE) {
+                                               do_trunc = FALSE,
+                                               do_circular_border = FALSE) {
   # Source dependencies
   if (!exists("map_piece_id_to_ring")) {
     source("R/hexagonal_topology.R")
@@ -358,7 +425,8 @@ generate_hex_pieces_with_edge_map <- function(rings, seed, diameter = 240,
 
   # Generate edge mapping
   cat("Creating edge mapping...\n")
-  edge_data <- generate_hex_edge_map(rings, seed, diameter, tabsize, jitter, do_warp, do_trunc)
+  edge_data <- generate_hex_edge_map(rings, seed, diameter, tabsize, jitter,
+                                      do_warp, do_trunc, do_circular_border)
   cat(sprintf("Generated %d unique edges\n", edge_data$num_edges))
 
   # Calculate spacing

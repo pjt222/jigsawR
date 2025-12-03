@@ -330,6 +330,38 @@ result10 <- tryCatch({
   "FAIL"
 })
 
+# Test 11: Hexagonal with circular border
+cat("\n--- Test 11: Hexagonal with circular border ---\n")
+result11 <- tryCatch({
+  result <- generate_puzzle(
+    type = "hexagonal",
+    seed = 42,
+    grid = c(3),
+    size = c(200),
+    do_warp = TRUE,
+    do_circular_border = TRUE
+  )
+
+  # Circular border should produce arc commands (A) in the SVG
+  has_arcs <- grepl(" A [0-9]+\\.[0-9]+ [0-9]+\\.[0-9]+", result$svg_content)
+  has_paths <- grepl("<path", result$svg_content)
+
+  cat(sprintf("  Has arc commands: %s\n", has_arcs))
+  cat(sprintf("  Has paths: %s\n", has_paths))
+  cat(sprintf("  Piece count: %d\n", length(result$pieces)))
+
+  if (has_arcs && has_paths && length(result$pieces) == 19) {
+    cat("  PASS: Circular border with arcs\n")
+    "PASS"
+  } else {
+    cat("  FAIL: Circular border not working\n")
+    "FAIL"
+  }
+}, error = function(e) {
+  cat(sprintf("  ERROR: %s\n", conditionMessage(e)))
+  "FAIL"
+})
+
 # Summary
 cat("\n=== Test Summary ===\n")
 cat(sprintf("Test 1 (Rect offset=0): %s\n", result1))
@@ -342,5 +374,6 @@ cat(sprintf("Test 7 (Save files): %s\n", result7))
 cat(sprintf("Test 8 (Color palette): %s\n", result8))
 cat(sprintf("Test 9 (Fill/opacity): %s\n", result9))
 cat(sprintf("Test 10 (Warp/trunc): %s\n", result10))
+cat(sprintf("Test 11 (Circular border): %s\n", result11))
 
 cat("\n=== Tests Complete ===\n")

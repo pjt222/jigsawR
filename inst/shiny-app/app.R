@@ -176,7 +176,12 @@ ui <- page_fluid(
           # Circular Warp: Available in both complete and separated modes
           checkboxInput("do_warp", "Circular Warp", value = FALSE),
           # Truncate Edges: Available in both complete and separated modes
-          checkboxInput("do_trunc", "Truncate Edges", value = FALSE)
+          checkboxInput("do_trunc", "Truncate Edges", value = FALSE),
+          # Circular Border: Perfect circular arc borders (requires Warp)
+          conditionalPanel(
+            condition = "input.do_warp == true",
+            checkboxInput("do_circular_border", "Circular Border", value = FALSE)
+          )
         ),
 
         # Seed
@@ -490,6 +495,7 @@ server <- function(input, output, session) {
     updateNumericInput(session, "diameter", value = 240)
     updateCheckboxInput(session, "do_warp", value = FALSE)
     updateCheckboxInput(session, "do_trunc", value = FALSE)
+    updateCheckboxInput(session, "do_circular_border", value = FALSE)
   })
 
   # Generate puzzle using unified pipeline (Epic #32)
@@ -521,6 +527,8 @@ server <- function(input, output, session) {
         incProgress(0.5, detail = "Generating pieces")
 
         # Step 1: Generate pieces internally (basic settings only)
+        # Note: do_circular_border requires do_warp to be TRUE
+        circular_border <- if (!is.null(input$do_circular_border)) input$do_circular_border else FALSE
         pieces_result <- generate_pieces_internal(
           type = puzzle_type,
           seed = input$seed,
@@ -529,7 +537,8 @@ server <- function(input, output, session) {
           tabsize = input$tabsize,
           jitter = input$jitter,
           do_warp = input$do_warp,
-          do_trunc = input$do_trunc
+          do_trunc = input$do_trunc,
+          do_circular_border = circular_border && input$do_warp  # Only enable if warp is also enabled
         )
 
         incProgress(0.7, detail = "Applying positioning")
@@ -767,6 +776,7 @@ server <- function(input, output, session) {
       }
 
       # Generate complete puzzle (offset=0)
+      circular_border <- if (!is.null(input$do_circular_border)) input$do_circular_border else FALSE
       result <- generate_puzzle(
         type = data$type,
         grid = grid_param,
@@ -782,7 +792,8 @@ server <- function(input, output, session) {
         opacity = input$opacity / 100,
         save_files = FALSE,
         do_warp = input$do_warp,
-        do_trunc = input$do_trunc
+        do_trunc = input$do_trunc,
+        do_circular_border = circular_border && input$do_warp
       )
 
       writeLines(result$svg_content, file)
