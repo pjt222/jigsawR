@@ -69,9 +69,6 @@ generate_hex_edge_map <- function(rings, seed, diameter, tabsize = 27, jitter = 
   # The truncation only affects boundary vertices.
   piece_vertices <- piece_vertices_original  # Start with original
 
-  # Store the computed circle radius for use in arc creation (for warp+trunc mode)
-  computed_circle_radius <- NULL
-
   # Pre-identified boundary edges (computed before transformations to avoid matching issues)
   # We always compute these based on original topology
   boundary_edge_keys <- c()
@@ -157,53 +154,11 @@ generate_hex_edge_map <- function(rings, seed, diameter, tabsize = 27, jitter = 
 
       cat("Circular warp enabled - ALL vertices transformed\n")
 
-      # When do_trunc is also enabled, project boundary vertices to a consistent circle
-      # BUT use the ACTUAL warped boundary radius (average of warped distances),
-      # not diameter/2 which would stretch the outer pieces.
-      if (do_trunc) {
-        # Calculate the average distance of warped boundary vertices
-        warped_boundary_dists <- c()
-        for (v_key in boundary_vertex_keys) {
-          warped_v <- all_transformed[[v_key]]
-          if (!is.null(warped_v)) {
-            dist <- sqrt(warped_v[1]^2 + warped_v[2]^2)
-            warped_boundary_dists <- c(warped_boundary_dists, dist)
-          }
-        }
-
-        # Use the average warped boundary distance as our target circle radius
-        # This creates a smooth circle without stretching pieces
-        computed_circle_radius <- mean(warped_boundary_dists)
-
-        for (v_key in boundary_vertex_keys) {
-          warped_v <- all_transformed[[v_key]]
-          if (is.null(warped_v)) next
-
-          # Project onto circle at the target radius
-          dist <- sqrt(warped_v[1]^2 + warped_v[2]^2)
-          if (dist > 0) {
-            projected <- c(
-              warped_v[1] / dist * computed_circle_radius,
-              warped_v[2] / dist * computed_circle_radius
-            )
-
-            # Update the vertex in all pieces that share it
-            for (piece_id in 1:num_pieces) {
-              for (i in 1:6) {
-                orig_v <- piece_vertices_original[[piece_id]][[i]]
-                orig_key <- sprintf("%.1f,%.1f", orig_v[1], orig_v[2])
-
-                if (orig_key == v_key) {
-                  piece_vertices[[piece_id]][[i]] <- projected
-                }
-              }
-            }
-          }
-        }
-
-        cat(sprintf("Boundary vertices projected to circle radius %.2f (avg warped dist)\n",
-                    computed_circle_radius))
-      }
+      # Note: We do NOT project boundary vertices to a circle radius.
+      # Projecting causes outer pieces to stretch (vertices get moved).
+      # Instead, we keep vertices at their natural warped positions.
+      # Border edges will use straight lines (L) connecting these positions,
+      # which preserves consistent piece sizes across all rings.
     }
 
     # Step 2: If do_trunc (but not do_warp), apply hexagonal truncation to boundary only
@@ -289,54 +244,23 @@ generate_hex_edge_map <- function(rings, seed, diameter, tabsize = 27, jitter = 
         # Border edge - no neighbor, this is on the puzzle boundary
         edge_key <- sprintf("%d-%d", piece_id, side)
 
-        # Match complete mode semantics: arcs only when BOTH do_trunc AND do_warp
-        if (do_trunc && do_warp) {
-          # For circular puzzle with do_warp+do_trunc, use the computed circle radius
-          # which was calculated as the average of warped boundary distances.
-          # All boundary vertices have been projected to this radius, so use it for arcs.
-          arc_radius <- if (!is.null(computed_circle_radius)) {
-            computed_circle_radius
-          } else {
-            # Fallback: average of vertex distances (shouldn't happen)
-            (sqrt(v1[1]^2 + v1[2]^2) + sqrt(v2[1]^2 + v2[2]^2)) / 2
-          }
-
-          # Determine sweep direction based on vertex order
-          # Cross product determines if we're going clockwise or counter-clockwise
-          cross <- v1[1] * v2[2] - v1[2] * v2[1]
-          sweep <- if (cross > 0) 1 else 0
-
-          # Create arc command for border edge
-          # Using the consistent arc_radius for all border edges
-          forward_arc <- sprintf("A %.2f %.2f 0 0 %d %.2f %.2f",
-                                 arc_radius, arc_radius, sweep,
-                                 v2[1], v2[2])
-          reverse_arc <- sprintf("A %.2f %.2f 0 0 %d %.2f %.2f",
-                                 arc_radius, arc_radius, 1 - sweep,
-                                 v1[1], v1[2])
-
-          piece_edge_map[[edge_key]] <- list(
-            type = "border",
-            forward = forward_arc,
-            reverse = reverse_arc,
-            start = v1,
-            end = v2,
-            is_forward = TRUE,
-            warped = TRUE
-          )
-        } else {
-          # No warp (do_trunc only or neither) - straight line
-          # Vertices may still be transformed (truncated hexagon) but edges are straight
-          piece_edge_map[[edge_key]] <- list(
-            type = "border",
-            forward = sprintf("L %.2f %.2f", v2[1], v2[2]),
-            reverse = sprintf("L %.2f %.2f", v1[1], v1[2]),
-            start = v1,
-            end = v2,
-            is_forward = TRUE,
-            warped = FALSE
-          )
-        }
+        # For ALL border edges (regardless of warp/trunc), use straight lines.
+        # This preserves consistent piece sizes by keeping vertices at their
+        # natural positions (warped or original) without any projection.
+        #
+        # When do_warp is enabled, the warp transformation already creates
+        # a circular shape - we don't need arcs to smooth it further.
+        # Using arcs would require projecting vertices to a common radius,
+        # which causes piece size distortion (outer pieces stretch).
+        piece_edge_map[[edge_key]] <- list(
+          type = "border",
+          forward = sprintf("L %.2f %.2f", v2[1], v2[2]),
+          reverse = sprintf("L %.2f %.2f", v1[1], v1[2]),
+          start = v1,
+          end = v2,
+          is_forward = TRUE,
+          warped = do_warp  # Track if warp was applied for reference
+        )
       } else {
         # Internal edge - check if already generated
         pieces <- sort(c(piece_id, neighbor_id))
