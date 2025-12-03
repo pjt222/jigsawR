@@ -162,16 +162,17 @@ generate_hex_edge_map <- function(rings, seed, diameter, tabsize = 27, jitter = 
 
       cat("Circular warp enabled - ALL vertices transformed\n")
 
-      # If circular border is enabled, project boundary vertices to circle radius
-      # This gives a perfect circular outline but causes slight shape variation
-      # on outer pieces (which is acceptable per user preference)
-      if (do_circular_border) {
+      # If do_trunc is enabled, project boundary vertices to circle radius
+      # This gives a clean circular outline. The difference is:
+      # - do_trunc only: Projects to circle, uses straight lines (L) for border edges
+      # - do_trunc + do_circular_border: Projects to circle, uses arc commands (A) for border edges
+      if (do_trunc) {
         # Use the target diameter/2 as the circle radius
         # With the corrected piece_radius formula (diameter / (4*rings - 2)),
         # the warped boundary vertices are already at approximately this distance,
         # so projection causes minimal distortion.
         circle_radius <- diameter / 2
-        cat(sprintf("Circular border enabled - projecting boundary to radius %.2f\n", circle_radius))
+        cat(sprintf("Truncation enabled - projecting boundary to radius %.2f\n", circle_radius))
 
         # Project only boundary vertices to circle radius
         for (piece_id in 1:num_pieces) {
