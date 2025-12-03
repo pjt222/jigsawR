@@ -160,7 +160,8 @@ generate_hex_piece_bezier <- function(piece_id, rings, seed, diameter = 240,
   }
 
   # Calculate hexagon radius (approximate piece size)
-  piece_radius <- diameter / (rings * 4)
+  # Correct formula: diameter / (4 * rings - 2)
+  piece_radius <- diameter / (4 * rings - 2)
 
   # Tab parameters
   tab_params <- list(tabsize = tabsize, jitter = jitter)

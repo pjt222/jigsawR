@@ -32,7 +32,10 @@ generate_hex_edge_map <- function(rings, seed, diameter, tabsize = 27, jitter = 
   }
 
   num_pieces <- 3 * rings * (rings - 1) + 1
-  piece_radius <- diameter / (rings * 4)
+  # Correct formula: diameter / (4 * rings - 2)
+  # This ensures that after warp transformation, boundary vertices reach diameter/2
+  # The old formula diameter / (rings * 4) produced coordinates that were too small
+  piece_radius <- diameter / (4 * rings - 2)
   tab_params <- list(tabsize = tabsize, jitter = jitter)
 
   # Step 1: Calculate vertices for all pieces (original coordinates)
@@ -163,15 +166,11 @@ generate_hex_edge_map <- function(rings, seed, diameter, tabsize = 27, jitter = 
       # This gives a perfect circular outline but causes slight shape variation
       # on outer pieces (which is acceptable per user preference)
       if (do_circular_border) {
-        # Calculate circle radius from average boundary vertex distances after warp
-        warped_boundary_dists <- c()
-        for (v_key in boundary_vertex_keys) {
-          v <- vertex_sharing[[v_key]]$coords
-          warped <- apply_hex_warp(v[1], v[2])
-          dist <- sqrt(warped$x^2 + warped$y^2)
-          warped_boundary_dists <- c(warped_boundary_dists, dist)
-        }
-        circle_radius <- mean(warped_boundary_dists)
+        # Use the target diameter/2 as the circle radius
+        # With the corrected piece_radius formula (diameter / (4*rings - 2)),
+        # the warped boundary vertices are already at approximately this distance,
+        # so projection causes minimal distortion.
+        circle_radius <- diameter / 2
         cat(sprintf("Circular border enabled - projecting boundary to radius %.2f\n", circle_radius))
 
         # Project only boundary vertices to circle radius
@@ -446,7 +445,8 @@ generate_hex_pieces_with_edge_map <- function(rings, seed, diameter = 240,
     # We need to calculate the OFFSET from compact to desired position
 
     # Get compact position (where edges actually are)
-    piece_radius <- diameter / (rings * 4)
+    # Correct formula: diameter / (4 * rings - 2)
+    piece_radius <- diameter / (4 * rings - 2)
     compact_pos <- calculate_hex_piece_position(
       piece_id = piece_id,
       rings = rings,

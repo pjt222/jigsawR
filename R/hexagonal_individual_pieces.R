@@ -79,7 +79,8 @@ generate_hexagonal_individual_pieces <- function(rings = 3, seed = NULL,
 
   # Calculate viewBox from all piece paths (not just centers)
   # This is critical when warp/trunc are enabled, as pieces extend beyond centers
-  piece_radius <- diameter / (rings * 4)
+  # Correct formula: diameter / (4 * rings - 2)
+  piece_radius <- diameter / (4 * rings - 2)
   view_bounds <- calculate_pieces_viewbox(pieces, piece_radius)
   min_x <- view_bounds$min_x
   max_x <- view_bounds$max_x
@@ -427,7 +428,8 @@ create_hexagonal_individual_pieces_svg <- function(rings = 3, seed = NULL,
   }
 
   # Calculate viewBox from all piece paths (not just centers)
-  piece_radius <- diameter / (rings * 4)
+  # Correct formula: diameter / (4 * rings - 2)
+  piece_radius <- diameter / (4 * rings - 2)
   view_bounds <- calculate_pieces_viewbox(pieces, piece_radius)
   min_x <- view_bounds$min_x
   min_y <- view_bounds$min_y

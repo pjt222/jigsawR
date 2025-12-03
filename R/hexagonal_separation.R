@@ -121,7 +121,8 @@ generate_separated_hexagonal_svg <- function(rings = 3, seed = NULL,
   cat(sprintf("Generating separated layout for %d pieces\n", num_pieces))
 
   # Calculate piece size (approximate)
-  piece_radius <- diameter / (rings * 4)
+  # Correct formula: diameter / (4 * rings - 2)
+  piece_radius <- diameter / (4 * rings - 2)
 
   # Calculate grid layout
   if (arrangement == "rectangular") {

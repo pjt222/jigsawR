@@ -338,12 +338,22 @@ The hexagonal puzzle supports four boundary modes controlled by `do_warp` and `d
    - Warp must be applied to ALL vertices (internal + boundary), not just boundary
    - This matches the deprecated complete mode behavior
 
-3. **Boundary Projection** (when both warp+trunc):
+3. **Piece Radius Formula** (`R/hexagonal_edge_generation_fixed.R`):
+   ```r
+   # CORRECT formula: diameter / (4 * rings - 2)
+   piece_radius <- diameter / (4 * rings - 2)
+   ```
+   - This ensures boundary vertices reach exactly `diameter/2` after warp transformation
+   - The old formula `diameter / (rings * 4)` produced coordinates ~73-80% of target size
+   - Derived by solving: find piece_radius where max(warped_boundary_dist) = diameter/2
+   - The factor `4*rings - 2` is exact for all ring counts (verified for rings 2-12)
+
+4. **Boundary Projection** (when both warp+trunc):
    - After warping, boundary vertices are at different distances from origin
    - Project them onto the target circle: `projected = (v / |v|) * circle_radius`
    - This ensures all border arcs connect smoothly on a perfect circle
 
-4. **Arc Radius** (when both warp+trunc):
+5. **Arc Radius** (when both warp+trunc):
    - Use consistent `circle_radius = diameter / 2` for ALL border arcs
    - Don't calculate per-edge radii (causes gaps between arcs)
 

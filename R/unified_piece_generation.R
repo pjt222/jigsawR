@@ -180,7 +180,8 @@ generate_hex_pieces_internal <- function(seed, rings, diameter, tabsize, jitter,
     )
   })
 
-  piece_radius <- diameter / (rings * 4)
+  # Correct formula: diameter / (4 * rings - 2)
+  piece_radius <- diameter / (4 * rings - 2)
 
   # Calculate canvas size from actual piece path bounds
   # This is critical when warp/trunc are enabled, as pieces extend beyond centers
