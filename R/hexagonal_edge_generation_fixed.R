@@ -163,15 +163,16 @@ generate_hex_edge_map <- function(rings, seed, diameter, tabsize = 27, jitter = 
       # This gives a perfect circular outline but causes slight shape variation
       # on outer pieces (which is acceptable per user preference)
       if (do_circular_border) {
-        # Use diameter/2 as the target circle radius (matching original complete mode)
-        # The original hex_gen_db() in hexagonal_puzzle.R uses radius = diameter/2
-        # for the border circle when do_warp && do_trunc are both TRUE.
-        #
-        # Previously we used mean of warped boundary distances, which gave
-        # incorrect results for puzzles with different ring counts because
-        # the warp formula doesn't scale linearly with the number of rings.
-        circle_radius <- diameter / 2
-        cat(sprintf("Circular border enabled - projecting boundary to radius %.2f (diameter/2)\n", circle_radius))
+        # Calculate circle radius from average boundary vertex distances after warp
+        warped_boundary_dists <- c()
+        for (v_key in boundary_vertex_keys) {
+          v <- vertex_sharing[[v_key]]$coords
+          warped <- apply_hex_warp(v[1], v[2])
+          dist <- sqrt(warped$x^2 + warped$y^2)
+          warped_boundary_dists <- c(warped_boundary_dists, dist)
+        }
+        circle_radius <- mean(warped_boundary_dists)
+        cat(sprintf("Circular border enabled - projecting boundary to radius %.2f\n", circle_radius))
 
         # Project only boundary vertices to circle radius
         for (piece_id in 1:num_pieces) {

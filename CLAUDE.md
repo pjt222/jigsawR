@@ -346,49 +346,6 @@ The hexagonal puzzle supports four boundary modes controlled by `do_warp` and `d
 4. **Arc Radius** (when both warp+trunc):
    - Use consistent `circle_radius = diameter / 2` for ALL border arcs
    - Don't calculate per-edge radii (causes gaps between arcs)
-   - **CRITICAL**: Never calculate circle_radius from warped vertex distances!
-     The warp formula doesn't scale linearly with ring count.
-
-### Common Pitfalls and Solutions
-
-#### Pitfall 1: Circle Radius from Warped Distances
-**Wrong approach:**
-```r
-# DON'T DO THIS - gives incorrect results for different ring counts
-warped_boundary_dists <- sapply(boundary_vertices, function(v) {
-  warped <- apply_hex_warp(v[1], v[2])
-  sqrt(warped$x^2 + warped$y^2)
-})
-circle_radius <- mean(warped_boundary_dists)  # WRONG!
-```
-
-**Problem**: For a 7-ring puzzle with diameter=400, this gives ~155 instead of 200.
-
-**Correct approach:**
-```r
-# Always use diameter/2 - this matches the original JS implementation
-circle_radius <- diameter / 2  # CORRECT!
-```
-
-**Why this matters**: The warp transformation `l = sqrt(0.75) / cos(angl30)` is
-angle-dependent but not distance-aware. The resulting warped coordinates don't
-preserve the original diameter relationship.
-
-#### Pitfall 2: Testing Only with 3-Ring Puzzles
-Always test with multiple ring sizes (3, 5, 7, 10) to catch scaling issues.
-The formula `3 * rings * (rings - 1) + 1` means piece counts grow quickly:
-- 3 rings: 19 pieces
-- 5 rings: 61 pieces
-- 7 rings: 127 pieces
-- 10 rings: 271 pieces
-
-#### Pitfall 3: Boundary Detection After Warp
-When `do_warp=TRUE`, vertices move to different positions. Detect boundary edges
-BEFORE applying warp transformation, using original vertex positions.
-
-#### Pitfall 4: Arc vs Line Border Commands
-- `do_circular_border=FALSE`: Use `L` (line) commands - preserves piece shapes exactly
-- `do_circular_border=TRUE`: Use `A` (arc) commands - perfect circle but pieces stretch slightly
 
 ### Key Functions by Purpose
 
