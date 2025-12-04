@@ -34,7 +34,9 @@ apply_piece_positioning <- function(piece_result, offset = 0) {
   }
 
   # Apply type-specific positioning
-  if (piece_result$type == "hexagonal") {
+  if (piece_result$type == "concentric") {
+    return(apply_concentric_positioning(piece_result, offset))
+  } else if (piece_result$type == "hexagonal") {
     return(apply_hex_positioning(piece_result, offset))
   } else {
     return(apply_rect_positioning(piece_result, offset))
@@ -100,6 +102,94 @@ apply_rect_positioning <- function(piece_result, offset) {
     canvas_offset = c(-padding, -padding),
     offset = offset,
     type = "rectangular",
+    parameters = params
+  ))
+}
+
+
+#' Apply concentric piece positioning with offset
+#'
+#' Uses radial separation for concentric ring pieces.
+#'
+#' @param piece_result Output from generate_pieces_internal() for concentric
+#' @param offset Separation distance (multiplier for base spacing)
+#' @return Positioned result
+#' @keywords internal
+apply_concentric_positioning <- function(piece_result, offset) {
+
+  params <- piece_result$parameters
+  rings <- params$rings
+  piece_size <- params$piece_height
+
+  # For concentric, offset acts as a separation factor
+  separation_factor <- 1.0 + (offset / piece_size)
+
+  # Transform each piece
+  transformed_pieces <- lapply(piece_result$pieces, function(piece) {
+    current_center <- piece$center
+    new_center <- current_center * separation_factor
+
+    dx <- new_center[1] - current_center[1]
+    dy <- new_center[2] - current_center[2]
+
+    new_path <- translate_svg_path(piece$path, dx, dy)
+
+    list(
+      id = piece$id,
+      path = new_path,
+      center = new_center,
+      ring_pos = piece$ring_pos,
+      type = piece$type
+    )
+  })
+
+  # Calculate canvas size from actual transformed piece paths
+  all_path_x <- c()
+  all_path_y <- c()
+
+  for (piece in transformed_pieces) {
+    path <- piece$path
+    numbers <- as.numeric(unlist(regmatches(path, gregexpr("-?[0-9]+\\.?[0-9]*", path))))
+    numbers <- numbers[!is.na(numbers)]
+
+    if (length(numbers) >= 2) {
+      x_coords <- numbers[seq(1, length(numbers), by = 2)]
+      y_coords <- numbers[seq(2, length(numbers), by = 2)]
+      all_path_x <- c(all_path_x, x_coords)
+      all_path_y <- c(all_path_y, y_coords)
+    }
+  }
+
+  if (length(all_path_x) > 0 && length(all_path_y) > 0) {
+    path_min_x <- min(all_path_x)
+    path_max_x <- max(all_path_x)
+    path_min_y <- min(all_path_y)
+    path_max_y <- max(all_path_y)
+  } else {
+    all_x <- sapply(transformed_pieces, function(p) p$center[1])
+    all_y <- sapply(transformed_pieces, function(p) p$center[2])
+    path_min_x <- min(all_x) - piece_size
+    path_max_x <- max(all_x) + piece_size
+    path_min_y <- min(all_y) - piece_size
+    path_max_y <- max(all_y) + piece_size
+  }
+
+  stroke_margin <- piece_size * 0.15 + offset
+  min_x <- path_min_x - stroke_margin
+  max_x <- path_max_x + stroke_margin
+  min_y <- path_min_y - stroke_margin
+  max_y <- path_max_y + stroke_margin
+
+  canvas_width <- max_x - min_x
+  canvas_height <- max_y - min_y
+
+  return(list(
+    pieces = transformed_pieces,
+    canvas_size = c(canvas_width, canvas_height),
+    canvas_offset = c(min_x, min_y),
+    offset = offset,
+    separation_factor = separation_factor,
+    type = "concentric",
     parameters = params
   ))
 }

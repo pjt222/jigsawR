@@ -131,7 +131,8 @@ ui <- page_fluid(
         # Puzzle Type Selection
         radioButtons("puzzle_type", "Puzzle Type:",
                     choices = list("Rectangular" = "rectangular",
-                                  "Hexagonal" = "hexagonal"),
+                                  "Hexagonal" = "hexagonal",
+                                  "Concentric" = "concentric"),
                     selected = "rectangular",
                     inline = TRUE),
 
@@ -182,30 +183,27 @@ ui <- page_fluid(
                         "Warped Hexagon" = "warped_hex",
                         "Perfect Circle" = "circle"
                       ),
-                      selected = "zigzag"),
+                      selected = "zigzag")
+        ),
 
-          # Concentric ring mode options
-          hr(),
-          tooltip(
-            input_switch(
-              id = "concentric_mode",
-              label = "Concentric Rings",
-              value = FALSE
-            ),
-            "Use concentric ring layout with constant radial height. Pieces get wider toward the outside."
-          ),
+        # Concentric puzzle type panel
+        conditionalPanel(
+          condition = "input.puzzle_type == 'concentric'",
+          # Rings for concentric
+          numericInput("rings_conc", "Rings:", value = 3, min = 2, max = 6),
 
-          # Concentric options (shown when concentric mode enabled)
-          conditionalPanel(
-            condition = "input.concentric_mode == true",
-            radioButtons("center_shape", "Center Piece:",
-                        choices = list(
-                          "Hexagon" = "hexagon",
-                          "Circle" = "circle"
-                        ),
-                        selected = "hexagon",
-                        inline = TRUE)
-          )
+          # Diameter for concentric
+          numericInput("diameter_conc", "Diameter (mm):",
+                      value = 240, min = 100, max = 500, step = 10),
+
+          # Center piece shape
+          radioButtons("center_shape", "Center Piece:",
+                      choices = list(
+                        "Hexagon" = "hexagon",
+                        "Circle" = "circle"
+                      ),
+                      selected = "hexagon",
+                      inline = TRUE)
         ),
 
         # Seed
@@ -564,8 +562,9 @@ server <- function(input, output, session) {
     updateNumericInput(session, "rings", value = 3)
     updateNumericInput(session, "diameter", value = 240)
     updateRadioButtons(session, "hex_boundary", selected = "zigzag")
-    # Reset concentric mode options
-    update_switch(id = "concentric_mode", value = FALSE, session = session)
+    # Reset concentric options
+    updateNumericInput(session, "rings_conc", value = 3)
+    updateNumericInput(session, "diameter_conc", value = 240)
     updateRadioButtons(session, "center_shape", selected = "hexagon")
   })
 
@@ -590,6 +589,9 @@ server <- function(input, output, session) {
         if (puzzle_type == "hexagonal") {
           grid_param <- c(input$rings)
           size_param <- c(input$diameter)
+        } else if (puzzle_type == "concentric") {
+          grid_param <- c(input$rings_conc)
+          size_param <- c(input$diameter_conc)
         } else {
           grid_param <- c(input$rows, input$cols)
           size_param <- c(input$width, input$height)
@@ -598,11 +600,10 @@ server <- function(input, output, session) {
         incProgress(0.5, detail = "Generating pieces")
 
         # Step 1: Generate pieces internally (basic settings only)
-        # Get boundary parameters from radio button selection
+        # Get boundary parameters from radio button selection (hexagonal only)
         boundary_params <- get_hex_boundary_params(input$hex_boundary)
 
-        # Get concentric mode settings
-        concentric_mode_value <- if (is.null(input$concentric_mode)) FALSE else input$concentric_mode
+        # Get center shape for concentric type
         center_shape_value <- if (is.null(input$center_shape)) "hexagon" else input$center_shape
 
         pieces_result <- generate_pieces_internal(
@@ -612,10 +613,9 @@ server <- function(input, output, session) {
           size = size_param,
           tabsize = input$tabsize,
           jitter = input$jitter,
-          do_warp = boundary_params$do_warp,
-          do_trunc = boundary_params$do_trunc,
-          do_circular_border = boundary_params$do_circular_border,
-          concentric_mode = concentric_mode_value,
+          do_warp = if (puzzle_type == "hexagonal") boundary_params$do_warp else FALSE,
+          do_trunc = if (puzzle_type == "hexagonal") boundary_params$do_trunc else FALSE,
+          do_circular_border = if (puzzle_type == "hexagonal") boundary_params$do_circular_border else FALSE,
           center_shape = center_shape_value
         )
 
@@ -636,6 +636,17 @@ server <- function(input, output, session) {
             type = "hexagonal",
             rings = input$rings,
             diameter = input$diameter,
+            seed = input$seed,
+            total_pieces = num_pieces,
+            offset = input$offset
+          ))
+        } else if (puzzle_type == "concentric") {
+          num_pieces <- 3 * input$rings_conc * (input$rings_conc - 1) + 1
+          puzzle_data(list(
+            type = "concentric",
+            rings = input$rings_conc,
+            diameter = input$diameter_conc,
+            center_shape = center_shape_value,
             seed = input$seed,
             total_pieces = num_pieces,
             offset = input$offset
@@ -765,6 +776,35 @@ server <- function(input, output, session) {
             theme = "warning"
           )
         )
+      } else if (data$type == "concentric") {
+        # Concentric puzzle value boxes
+        layout_column_wrap(
+          width = 1/4,
+          value_box(
+            title = "Type",
+            value = "Concentric",
+            showcase = bsicons::bs_icon("bullseye"),
+            theme = "primary"
+          ),
+          value_box(
+            title = "Rings",
+            value = data$rings,
+            showcase = bsicons::bs_icon("layers"),
+            theme = "info"
+          ),
+          value_box(
+            title = "Pieces",
+            value = data$total_pieces,
+            showcase = bsicons::bs_icon("puzzle"),
+            theme = "success"
+          ),
+          value_box(
+            title = "Center",
+            value = tools::toTitleCase(data$center_shape),
+            showcase = bsicons::bs_icon(if (data$center_shape == "circle") "circle" else "hexagon"),
+            theme = "warning"
+          )
+        )
       } else {
         # Rectangular puzzle value boxes
         effective_width <- input$width
@@ -821,6 +861,8 @@ server <- function(input, output, session) {
     if (is.null(data)) return("puzzle")
     if (data$type == "hexagonal") {
       sprintf("hexagonal_%drings_seed%d", data$rings, data$seed)
+    } else if (data$type == "concentric") {
+      sprintf("concentric_%drings_seed%d", data$rings, data$seed)
     } else {
       sprintf("puzzle_%dx%d_seed%d", data$rows, data$cols, data$seed)
     }
@@ -857,17 +899,19 @@ server <- function(input, output, session) {
       if (data$type == "hexagonal") {
         grid_param <- c(input$rings)
         size_param <- c(input$diameter)
+      } else if (data$type == "concentric") {
+        grid_param <- c(input$rings_conc)
+        size_param <- c(input$diameter_conc)
       } else {
         grid_param <- c(input$rows, input$cols)
         size_param <- c(input$width, input$height)
       }
 
       # Generate complete puzzle (offset=0)
-      # Get boundary parameters from radio button selection
+      # Get boundary parameters from radio button selection (hexagonal only)
       boundary_params <- get_hex_boundary_params(input$hex_boundary)
 
-      # Get concentric mode settings
-      concentric_mode_value <- if (is.null(input$concentric_mode)) FALSE else input$concentric_mode
+      # Get center shape for concentric type
       center_shape_value <- if (is.null(input$center_shape)) "hexagon" else input$center_shape
 
       result <- generate_puzzle(
@@ -884,10 +928,9 @@ server <- function(input, output, session) {
         background = background_value,
         opacity = input$opacity / 100,
         save_files = FALSE,
-        do_warp = boundary_params$do_warp,
-        do_trunc = boundary_params$do_trunc,
-        do_circular_border = boundary_params$do_circular_border,
-        concentric_mode = concentric_mode_value,
+        do_warp = if (data$type == "hexagonal") boundary_params$do_warp else FALSE,
+        do_trunc = if (data$type == "hexagonal") boundary_params$do_trunc else FALSE,
+        do_circular_border = if (data$type == "hexagonal") boundary_params$do_circular_border else FALSE,
         center_shape = center_shape_value
       )
 

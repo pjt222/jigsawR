@@ -28,7 +28,7 @@ jigsawR/
 ├── DESCRIPTION              # Package metadata and dependencies
 ├── R/                      # Package source code
 │   ├── jigsawR_clean.R          # ⭐ Main entry point: generate_puzzle()
-│   ├── unified_piece_generation.R  # Unified piece generation (rectangular + hexagonal)
+│   ├── unified_piece_generation.R  # Unified piece generation (rectangular, hexagonal, concentric)
 │   ├── piece_positioning.R      # Positioning engine with offset support
 │   ├── unified_renderer.R       # SVG rendering with backgrounds/colors
 │   ├── rectangular_puzzle.R     # Core rectangular puzzle generator
@@ -62,12 +62,12 @@ jigsawR/
 generate_puzzle()  →  generate_pieces_internal()  →  apply_piece_positioning()  →  render_puzzle_svg()
      ↓                       ↓                              ↓                          ↓
    Main API            Piece generation              Offset/separation           SVG output
-                    (rectangular/hexagonal)          (offset parameter)       (colors, background)
+              (rectangular/hexagonal/concentric)     (offset parameter)       (colors, background)
 ```
 
 **Core Module Functions:**
 - **R/jigsawR_clean.R**: `generate_puzzle()` - **THE main entry point** for all puzzle generation
-- **R/unified_piece_generation.R**: `generate_pieces_internal()` - handles both rectangular and hexagonal
+- **R/unified_piece_generation.R**: `generate_pieces_internal()` - handles rectangular, hexagonal, and concentric
 - **R/piece_positioning.R**: `apply_piece_positioning()` - applies offset/separation to pieces
 - **R/unified_renderer.R**: `render_puzzle_svg()`, `render_piece()`, `build_svg_header()`
 - **R/rectangular_puzzle.R**: `init_jigsaw()`, `generate_jigsaw_svg()`, coordinate functions (`l()`, `w()`, etc.)
@@ -438,10 +438,9 @@ V4: (outer_radius * cos(start_angle), outer_radius * sin(start_angle))  # outer-
 **Usage:**
 ```r
 generate_puzzle(
-  type = "hexagonal",
-  grid = c(3),         # 3 rings = 19 pieces
-  size = c(240),       # 240mm diameter
-  concentric_mode = TRUE,
+  type = "concentric",    # Top-level puzzle type
+  grid = c(3),            # 3 rings = 19 pieces
+  size = c(240),          # 240mm diameter
   center_shape = "hexagon"  # or "circle"
 )
 ```
@@ -450,10 +449,10 @@ generate_puzzle(
 
 **⭐ Unified Pipeline (Recommended - Epic #32):**
 - `generate_puzzle()`: **THE main entry point** - handles all puzzle types, complete/separated modes
-  - Parameters: type, grid, size, seed, offset, fill_color, colors, palette, background, opacity, etc.
+  - Parameters: type ("rectangular", "hexagonal", or "concentric"), grid, size, seed, offset, center_shape, etc.
   - Returns: `$svg_content`, `$pieces`, `$canvas_size`, `$files`
-- `generate_pieces_internal()`: Internal piece generation for both rectangular and hexagonal
-- `apply_piece_positioning()`: Applies offset/separation to pieces
+- `generate_pieces_internal()`: Internal piece generation for rectangular, hexagonal, and concentric
+- `apply_piece_positioning()`: Applies offset/separation to pieces (type-specific positioning)
 - `render_puzzle_svg()`: Renders positioned pieces to SVG string
 
 **Core Puzzle Generation (jigsaw.R, jigsaw-hex.R):**
@@ -517,10 +516,16 @@ renv::restore()
 **IMPORTANT**: We focus on refining scripts rather than tinkering with output files. Reproducible code ensures data quality. Even if we achieve data quality through manual adjustments, this will not provide reliable code.
 
 ### Recent Work
-✅ **COMPLETED**: Concentric Ring Mode (2025-12-04)
-  - New hexagonal puzzle variant with constant radial height for all pieces
+✅ **COMPLETED**: Concentric as Top-Level Type (2025-12-04)
+  - Elevated "concentric" from a sub-mode of hexagonal to a proper top-level puzzle type
+  - API changed from `generate_puzzle(type="hexagonal", concentric_mode=TRUE)` to `generate_puzzle(type="concentric")`
+  - Shiny app now has three puzzle types: Rectangular, Hexagonal, Concentric
+  - `concentric_mode` parameter removed entirely (hard break, not deprecated)
+  - `center_shape` parameter only applies when `type="concentric"`
+✅ **COMPLETED**: Concentric Ring Puzzles (2025-12-04)
+  - New puzzle type with constant radial height for all pieces
   - Trapezoidal pieces that get wider toward the outside (dartboard pattern)
-  - Center piece can be hexagon or circle (configurable)
+  - Center piece can be hexagon or circle (configurable via `center_shape`)
   - All inner edges have bezier tabs; boundary OUTER edges are straight lines
   - Files: `R/concentric_geometry.R`, `R/concentric_edge_generation.R`
   - Test suite: `tests/test_concentric_mode.R` - all passing
@@ -551,15 +556,16 @@ renv::restore()
 
 ### Current Status
 - **Main API**: ✅ `generate_puzzle()` is the single entry point for all puzzle generation
+  - Three puzzle types: `"rectangular"`, `"hexagonal"`, `"concentric"`
   - Unified pipeline: `generate_pieces_internal()` → `apply_piece_positioning()` → `render_puzzle_svg()`
   - `offset` parameter controls complete vs separated output
   - Always returns `result$pieces` for programmatic access
-- **Shiny App**: ✅ Updated with offset slider (0-50mm), three download buttons, and concentric mode toggle
+- **Shiny App**: ✅ Updated with three puzzle types, offset slider (0-50mm), and three download buttons
 - **Individual Pieces (Rectangular)**: ✅ Fully functional for any puzzle size
 - **Individual Pieces (Hexagonal)**: ✅ Complete (Issue #10)
 - **Hexagonal Separation**: ✅ Ring-based topology positioning with real piece extraction
 - **Warp/Trunc for Separated Mode**: ✅ Complete (Issues #29, #30, #31)
-- **Concentric Ring Mode**: ✅ Complete (2025-12-04) - trapezoidal pieces with constant radial height
+- **Concentric Puzzle Type**: ✅ Complete (2025-12-04) - top-level type with trapezoidal pieces
 - **Test Suites**: `tests/test_generate_puzzle.R` (10 tests), `tests/test_unified_renderer.R` (10 tests), `tests/test_concentric_mode.R`
 
 ### Next Phase

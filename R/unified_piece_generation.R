@@ -5,23 +5,22 @@
 #' Generate all puzzle pieces as closed paths
 #'
 #' Core function that generates piece objects with closed SVG paths.
-#' Works for both rectangular and hexagonal puzzles with consistent output structure.
+#' Works for rectangular, hexagonal, and concentric puzzles with consistent output structure.
 #'
-#' @param type Puzzle type: "rectangular" or "hexagonal"
+#' @param type Puzzle type: "rectangular", "hexagonal", or "concentric"
 #' @param seed Random seed for reproducibility
-#' @param grid For rectangular: c(rows, cols). For hexagonal: c(rings) or just rings
-#' @param size For rectangular: c(width, height). For hexagonal: c(diameter) or just diameter
+#' @param grid For rectangular: c(rows, cols). For hexagonal/concentric: c(rings) or just rings
+#' @param size For rectangular: c(width, height). For hexagonal/concentric: c(diameter) or just diameter
 #' @param tabsize Tab size as percentage (10-40, default: 20)
 #' @param jitter Jitter as percentage (0-15, default: 4)
 #' @param do_warp Apply circular warp (hexagonal only, default: FALSE)
 #' @param do_trunc Truncate boundary (hexagonal only, default: FALSE)
 #' @param do_circular_border Use perfect circular arc borders (hexagonal only, requires do_warp=TRUE)
-#' @param concentric_mode Use concentric ring layout (hexagonal only, default: FALSE)
-#' @param center_shape Center piece shape for concentric mode: "hexagon" or "circle"
+#' @param center_shape Center piece shape for concentric type: "hexagon" or "circle"
 #' @return List with:
 #'   - pieces: List of piece objects with id, path, center, grid_pos/ring_pos
 #'   - canvas_size: c(width, height) for compact (offset=0) layout
-#'   - type: "rectangular" or "hexagonal"
+#'   - type: "rectangular", "hexagonal", or "concentric"
 #'   - parameters: Generation parameters used
 #' @export
 generate_pieces_internal <- function(type = "rectangular",
@@ -33,7 +32,6 @@ generate_pieces_internal <- function(type = "rectangular",
                                      do_warp = FALSE,
                                      do_trunc = FALSE,
                                      do_circular_border = FALSE,
-                                     concentric_mode = FALSE,
                                      center_shape = "hexagon") {
 
   # Generate seed if not provided
@@ -42,20 +40,16 @@ generate_pieces_internal <- function(type = "rectangular",
   }
 
   # Dispatch to type-specific implementation
-
-  if (type == "hexagonal") {
-    # Check for concentric mode
-    if (concentric_mode) {
-      return(generate_concentric_pieces_internal(
-        seed = seed,
-        rings = if (length(grid) == 1) grid else grid[1],
-        diameter = if (length(size) == 1) size else size[1],
-        tabsize = tabsize,
-        jitter = jitter,
-        center_shape = center_shape
-      ))
-    }
-
+  if (type == "concentric") {
+    return(generate_concentric_pieces_internal(
+      seed = seed,
+      rings = if (length(grid) == 1) grid else grid[1],
+      diameter = if (length(size) == 1) size else size[1],
+      tabsize = tabsize,
+      jitter = jitter,
+      center_shape = center_shape
+    ))
+  } else if (type == "hexagonal") {
     return(generate_hex_pieces_internal(
       seed = seed,
       rings = if (length(grid) == 1) grid else grid[1],
@@ -366,14 +360,13 @@ generate_concentric_pieces_internal <- function(seed, rings, diameter, tabsize, 
     pieces = pieces,
     canvas_size = c(canvas_width, canvas_height),
     canvas_offset = c(min_x, min_y),
-    type = "hexagonal",  # Keep as hexagonal for compatibility
+    type = "concentric",
     parameters = list(
       seed = seed,
       rings = rings,
       diameter = diameter,
       tabsize = tabsize,
       jitter = jitter,
-      concentric_mode = TRUE,
       center_shape = center_shape,
       piece_height = piece_height,
       num_pieces = num_pieces
@@ -384,12 +377,12 @@ generate_concentric_pieces_internal <- function(seed, rings, diameter, tabsize, 
 
 #' Get piece count for puzzle configuration
 #'
-#' @param type "rectangular" or "hexagonal"
-#' @param grid For rectangular: c(rows, cols). For hexagonal: c(rings) or rings
+#' @param type "rectangular", "hexagonal", or "concentric"
+#' @param grid For rectangular: c(rows, cols). For hexagonal/concentric: c(rings) or rings
 #' @return Number of pieces
 #' @export
 get_piece_count <- function(type, grid) {
-  if (type == "hexagonal") {
+  if (type == "hexagonal" || type == "concentric") {
     rings <- if (length(grid) == 1) grid else grid[1]
     return(3 * rings * (rings - 1) + 1)
   } else {

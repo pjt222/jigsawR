@@ -10,9 +10,9 @@
 #' Single entry point for all puzzle generation with clean, reproducible output.
 #' Uses the unified pipeline: piece generation -> positioning -> rendering.
 #'
-#' @param type "rectangular" or "hexagonal"
-#' @param grid For rectangular: c(rows, columns). For hexagonal: c(rings) or just rings
-#' @param size For rectangular: c(width, height) in mm. For hexagonal: c(diameter) or just diameter
+#' @param type Puzzle type: "rectangular", "hexagonal", or "concentric"
+#' @param grid For rectangular: c(rows, columns). For hexagonal/concentric: c(rings) or just rings
+#' @param size For rectangular: c(width, height) in mm. For hexagonal/concentric: c(diameter) or just diameter
 #' @param seed Random seed for reproducibility
 #' @param tabsize Tab size as percentage (10-40)
 #' @param jitter Jitter as percentage (0-15)
@@ -29,8 +29,7 @@
 #' @param do_warp Apply circular warping (hexagonal only)
 #' @param do_trunc Truncate edge pieces (hexagonal only)
 #' @param do_circular_border Use perfect circular arc borders (hexagonal only, requires do_warp=TRUE)
-#' @param concentric_mode Use concentric ring layout (hexagonal only)
-#' @param center_shape Center piece shape for concentric mode: "hexagon" or "circle"
+#' @param center_shape Center piece shape for concentric type: "hexagon" or "circle"
 #' @param output DEPRECATED: Use offset parameter instead
 #' @return List with svg_content, pieces, canvas_size, and parameters
 #' @export
@@ -53,7 +52,6 @@ generate_puzzle <- function(type = "rectangular",
                             do_warp = FALSE,
                             do_trunc = FALSE,
                             do_circular_border = FALSE,
-                            concentric_mode = FALSE,
                             center_shape = "hexagon",
                             output = NULL) {
 
@@ -80,11 +78,20 @@ generate_puzzle <- function(type = "rectangular",
     seed <- as.integer(runif(1) * 10000)
   }
 
+  # Validate type parameter
+  valid_types <- c("rectangular", "hexagonal", "concentric")
+  if (!type %in% valid_types) {
+    stop(sprintf("Invalid type '%s'. Must be one of: %s", type, paste(valid_types, collapse = ", ")))
+  }
+
   # Generate filename prefix if not provided
   if (is.null(filename_prefix)) {
     if (type == "hexagonal") {
       rings <- if (length(grid) == 1) grid else grid[1]
       filename_prefix <- sprintf("puzzle_hex%d_seed%d", rings, seed)
+    } else if (type == "concentric") {
+      rings <- if (length(grid) == 1) grid else grid[1]
+      filename_prefix <- sprintf("puzzle_conc%d_seed%d", rings, seed)
     } else {
       filename_prefix <- sprintf("puzzle_%dx%d_seed%d", grid[1], grid[2], seed)
     }
@@ -108,7 +115,6 @@ generate_puzzle <- function(type = "rectangular",
     do_warp = do_warp,
     do_trunc = do_trunc,
     do_circular_border = do_circular_border,
-    concentric_mode = concentric_mode,
     center_shape = center_shape
   )
 
@@ -143,8 +149,7 @@ generate_puzzle <- function(type = "rectangular",
       do_warp = do_warp,
       do_trunc = do_trunc,
       do_circular_border = do_circular_border,
-      concentric_mode = concentric_mode,
-      center_shape = center_shape,
+      center_shape = if (type == "concentric") center_shape else NULL,
       fill_color = fill_color,
       stroke_width = stroke_width,
       palette = palette,
@@ -171,7 +176,7 @@ generate_puzzle <- function(type = "rectangular",
     if (should_save_background) {
       result$files$background <- generate_background(
         background = background,
-        size = if (type == "hexagonal") c(positioned$canvas_size[1], positioned$canvas_size[2]) else size,
+        size = if (type %in% c("hexagonal", "concentric")) c(positioned$canvas_size[1], positioned$canvas_size[2]) else size,
         output_dir = output_dir,
         filename_prefix = filename_prefix
       )
