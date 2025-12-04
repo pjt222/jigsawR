@@ -311,14 +311,27 @@ Both puzzle generators use R environments to maintain global state:
 
 ### Hexagonal Warp/Trunc Architecture
 
-The hexagonal puzzle supports four boundary modes controlled by `do_warp` and `do_trunc`:
+The hexagonal puzzle supports five boundary modes controlled by `do_warp`, `do_trunc`, and `do_circular_border`:
 
-| Mode | do_warp | do_trunc | Boundary Shape | Border Edges |
-|------|---------|----------|----------------|--------------|
-| neither | FALSE | FALSE | Zigzag hexagon | Straight lines (L) |
-| trunc_only | FALSE | TRUE | Clean hexagon | Straight lines (L) |
-| warp_only | TRUE | FALSE | Warped zigzag | Straight lines (L) |
-| both | TRUE | TRUE | Perfect circle | Arc commands (A) |
+| UI Option | do_warp | do_trunc | do_circular_border | Boundary Shape | Border Edges |
+|-----------|---------|----------|-------------------|----------------|--------------|
+| Zigzag (Original) | FALSE | FALSE | FALSE | Zigzag hexagon | Straight (L) |
+| Clean Hexagon | FALSE | TRUE | FALSE | Clean hexagon | Straight (L) |
+| Warped Zigzag | TRUE | FALSE | FALSE | Warped zigzag | Straight (L) |
+| Warped Hexagon | TRUE | TRUE | FALSE | Circular vertices | Straight (L) |
+| Perfect Circle | TRUE | TRUE | TRUE | Perfect circle | Arcs (A) |
+
+**Warped Hexagon vs Perfect Circle** (verified 2025-12-04):
+- Both modes project boundary vertices to the same circle radius (`diameter/2`)
+- The difference is in how border edges connect these vertices:
+  - **Warped Hexagon**: `L -80.30 59.60` (straight line to endpoint)
+  - **Perfect Circle**: `A 100.00 100.00 0 0 1 -80.30 59.60` (arc following circle)
+- Visual difference is **subtle for high ring counts** (5-7 rings) because arc segments are short (~8-10°)
+- Visual difference is **noticeable for low ring counts** (2-3 rings) because arc segments are longer (~30-60°)
+- Arc "sag" (bulge at midpoint) formula: `sag = radius * (1 - cos(arc_angle/2))`
+  - 7-ring, 200mm diameter: ~0.5mm sag per segment (nearly invisible)
+  - 3-ring, 200mm diameter: ~3mm sag per segment (visible on close inspection)
+  - 2-ring, 300mm diameter: ~20mm sag per segment (clearly visible)
 
 **Key Implementation Details:**
 
