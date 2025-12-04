@@ -16,6 +16,8 @@
 #' @param do_warp Apply circular warp (hexagonal only, default: FALSE)
 #' @param do_trunc Truncate boundary (hexagonal only, default: FALSE)
 #' @param do_circular_border Use perfect circular arc borders (hexagonal only, requires do_warp=TRUE)
+#' @param concentric_mode Use concentric ring layout (hexagonal only, default: FALSE)
+#' @param center_shape Center piece shape for concentric mode: "hexagon" or "circle"
 #' @return List with:
 #'   - pieces: List of piece objects with id, path, center, grid_pos/ring_pos
 #'   - canvas_size: c(width, height) for compact (offset=0) layout
@@ -30,7 +32,9 @@ generate_pieces_internal <- function(type = "rectangular",
                                      jitter = 4,
                                      do_warp = FALSE,
                                      do_trunc = FALSE,
-                                     do_circular_border = FALSE) {
+                                     do_circular_border = FALSE,
+                                     concentric_mode = FALSE,
+                                     center_shape = "hexagon") {
 
   # Generate seed if not provided
   if (is.null(seed)) {
@@ -40,6 +44,18 @@ generate_pieces_internal <- function(type = "rectangular",
   # Dispatch to type-specific implementation
 
   if (type == "hexagonal") {
+    # Check for concentric mode
+    if (concentric_mode) {
+      return(generate_concentric_pieces_internal(
+        seed = seed,
+        rings = if (length(grid) == 1) grid else grid[1],
+        diameter = if (length(size) == 1) size else size[1],
+        tabsize = tabsize,
+        jitter = jitter,
+        center_shape = center_shape
+      ))
+    }
+
     return(generate_hex_pieces_internal(
       seed = seed,
       rings = if (length(grid) == 1) grid else grid[1],
@@ -247,6 +263,119 @@ generate_hex_pieces_internal <- function(seed, rings, diameter, tabsize, jitter,
       do_trunc = do_trunc,
       do_circular_border = do_circular_border,
       piece_radius = piece_radius,
+      num_pieces = num_pieces
+    )
+  ))
+}
+
+
+#' Generate concentric ring puzzle pieces internally
+#'
+#' Creates pieces with constant radial height and trapezoidal shapes.
+#'
+#' @param seed Random seed
+#' @param rings Number of rings
+#' @param diameter Puzzle diameter in mm
+#' @param tabsize Tab size percentage
+#' @param jitter Jitter percentage
+#' @param center_shape "hexagon" or "circle" for center piece
+#' @return Piece generation result
+#' @keywords internal
+generate_concentric_pieces_internal <- function(seed, rings, diameter, tabsize, jitter,
+                                                 center_shape = "hexagon") {
+  # Source concentric modules if needed
+  if (!exists("generate_concentric_pieces")) {
+    source("R/concentric_geometry.R")
+    source("R/concentric_edge_generation.R")
+  }
+
+  # Generate pieces using concentric edge generation
+  concentric_result <- generate_concentric_pieces(
+    rings = rings,
+    seed = seed,
+    diameter = diameter,
+    tabsize = tabsize,
+    jitter = jitter,
+    center_shape = center_shape
+  )
+
+  # Extract pieces from result
+  concentric_pieces <- concentric_result$pieces
+
+  # Convert to standardized piece format
+  pieces <- lapply(seq_along(concentric_pieces), function(i) {
+    cp <- concentric_pieces[[i]]
+
+    list(
+      id = sprintf("piece_%d", cp$id),
+      path = cp$path,
+      center = c(cp$center_x, cp$center_y),
+      ring_pos = list(ring = cp$ring, position = cp$position),
+      type = "concentric"
+    )
+  })
+
+  # Calculate piece height for this configuration
+  piece_height <- get_concentric_piece_height(diameter, rings)
+
+  # Calculate canvas size from actual piece path bounds
+  all_path_x <- c()
+  all_path_y <- c()
+
+  for (piece in pieces) {
+    path <- piece$path
+    numbers <- as.numeric(unlist(regmatches(path, gregexpr("-?[0-9]+\\.?[0-9]*", path))))
+    numbers <- numbers[!is.na(numbers)]
+
+    if (length(numbers) >= 2) {
+      x_coords <- numbers[seq(1, length(numbers), by = 2)]
+      y_coords <- numbers[seq(2, length(numbers), by = 2)]
+      all_path_x <- c(all_path_x, x_coords)
+      all_path_y <- c(all_path_y, y_coords)
+    }
+  }
+
+  # Calculate bounds from actual path coordinates
+  if (length(all_path_x) > 0 && length(all_path_y) > 0) {
+    path_min_x <- min(all_path_x)
+    path_max_x <- max(all_path_x)
+    path_min_y <- min(all_path_y)
+    path_max_y <- max(all_path_y)
+  } else {
+    # Fallback to diameter-based calculation
+    path_min_x <- -diameter / 2
+    path_max_x <- diameter / 2
+    path_min_y <- -diameter / 2
+    path_max_y <- diameter / 2
+  }
+
+  # Add a small margin for stroke width
+  stroke_margin <- piece_height * 0.15
+  min_x <- path_min_x - stroke_margin
+  max_x <- path_max_x + stroke_margin
+  min_y <- path_min_y - stroke_margin
+  max_y <- path_max_y + stroke_margin
+
+  canvas_width <- max_x - min_x
+  canvas_height <- max_y - min_y
+
+  # Calculate number of pieces
+  num_pieces <- get_concentric_piece_count(rings)
+
+  return(list(
+    pieces = pieces,
+    canvas_size = c(canvas_width, canvas_height),
+    canvas_offset = c(min_x, min_y),
+    type = "hexagonal",  # Keep as hexagonal for compatibility
+    parameters = list(
+      seed = seed,
+      rings = rings,
+      diameter = diameter,
+      tabsize = tabsize,
+      jitter = jitter,
+      concentric_mode = TRUE,
+      center_shape = center_shape,
+      piece_height = piece_height,
       num_pieces = num_pieces
     )
   ))

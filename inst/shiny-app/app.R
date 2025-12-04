@@ -182,7 +182,30 @@ ui <- page_fluid(
                         "Warped Hexagon" = "warped_hex",
                         "Perfect Circle" = "circle"
                       ),
-                      selected = "zigzag")
+                      selected = "zigzag"),
+
+          # Concentric ring mode options
+          hr(),
+          tooltip(
+            input_switch(
+              id = "concentric_mode",
+              label = "Concentric Rings",
+              value = FALSE
+            ),
+            "Use concentric ring layout with constant radial height. Pieces get wider toward the outside."
+          ),
+
+          # Concentric options (shown when concentric mode enabled)
+          conditionalPanel(
+            condition = "input.concentric_mode == true",
+            radioButtons("center_shape", "Center Piece:",
+                        choices = list(
+                          "Hexagon" = "hexagon",
+                          "Circle" = "circle"
+                        ),
+                        selected = "hexagon",
+                        inline = TRUE)
+          )
         ),
 
         # Seed
@@ -541,6 +564,9 @@ server <- function(input, output, session) {
     updateNumericInput(session, "rings", value = 3)
     updateNumericInput(session, "diameter", value = 240)
     updateRadioButtons(session, "hex_boundary", selected = "zigzag")
+    # Reset concentric mode options
+    update_switch(id = "concentric_mode", value = FALSE, session = session)
+    updateRadioButtons(session, "center_shape", selected = "hexagon")
   })
 
   # Generate puzzle using unified pipeline (Epic #32)
@@ -574,6 +600,11 @@ server <- function(input, output, session) {
         # Step 1: Generate pieces internally (basic settings only)
         # Get boundary parameters from radio button selection
         boundary_params <- get_hex_boundary_params(input$hex_boundary)
+
+        # Get concentric mode settings
+        concentric_mode_value <- if (is.null(input$concentric_mode)) FALSE else input$concentric_mode
+        center_shape_value <- if (is.null(input$center_shape)) "hexagon" else input$center_shape
+
         pieces_result <- generate_pieces_internal(
           type = puzzle_type,
           seed = input$seed,
@@ -583,7 +614,9 @@ server <- function(input, output, session) {
           jitter = input$jitter,
           do_warp = boundary_params$do_warp,
           do_trunc = boundary_params$do_trunc,
-          do_circular_border = boundary_params$do_circular_border
+          do_circular_border = boundary_params$do_circular_border,
+          concentric_mode = concentric_mode_value,
+          center_shape = center_shape_value
         )
 
         incProgress(0.7, detail = "Applying positioning")
@@ -832,6 +865,11 @@ server <- function(input, output, session) {
       # Generate complete puzzle (offset=0)
       # Get boundary parameters from radio button selection
       boundary_params <- get_hex_boundary_params(input$hex_boundary)
+
+      # Get concentric mode settings
+      concentric_mode_value <- if (is.null(input$concentric_mode)) FALSE else input$concentric_mode
+      center_shape_value <- if (is.null(input$center_shape)) "hexagon" else input$center_shape
+
       result <- generate_puzzle(
         type = data$type,
         grid = grid_param,
@@ -848,7 +886,9 @@ server <- function(input, output, session) {
         save_files = FALSE,
         do_warp = boundary_params$do_warp,
         do_trunc = boundary_params$do_trunc,
-        do_circular_border = boundary_params$do_circular_border
+        do_circular_border = boundary_params$do_circular_border,
+        concentric_mode = concentric_mode_value,
+        center_shape = center_shape_value
       )
 
       writeLines(result$svg_content, file)

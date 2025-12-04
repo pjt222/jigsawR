@@ -29,6 +29,8 @@
 #' @param do_warp Apply circular warping (hexagonal only)
 #' @param do_trunc Truncate edge pieces (hexagonal only)
 #' @param do_circular_border Use perfect circular arc borders (hexagonal only, requires do_warp=TRUE)
+#' @param concentric_mode Use concentric ring layout (hexagonal only)
+#' @param center_shape Center piece shape for concentric mode: "hexagon" or "circle"
 #' @param output DEPRECATED: Use offset parameter instead
 #' @return List with svg_content, pieces, canvas_size, and parameters
 #' @export
@@ -51,6 +53,8 @@ generate_puzzle <- function(type = "rectangular",
                             do_warp = FALSE,
                             do_trunc = FALSE,
                             do_circular_border = FALSE,
+                            concentric_mode = FALSE,
+                            center_shape = "hexagon",
                             output = NULL) {
 
   # Handle deprecated 'output' parameter
@@ -103,7 +107,9 @@ generate_puzzle <- function(type = "rectangular",
     jitter = jitter,
     do_warp = do_warp,
     do_trunc = do_trunc,
-    do_circular_border = do_circular_border
+    do_circular_border = do_circular_border,
+    concentric_mode = concentric_mode,
+    center_shape = center_shape
   )
 
   # Step 2: Apply positioning
@@ -137,6 +143,8 @@ generate_puzzle <- function(type = "rectangular",
       do_warp = do_warp,
       do_trunc = do_trunc,
       do_circular_border = do_circular_border,
+      concentric_mode = concentric_mode,
+      center_shape = center_shape,
       fill_color = fill_color,
       stroke_width = stroke_width,
       palette = palette,

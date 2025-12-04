@@ -399,6 +399,53 @@ The hexagonal puzzle supports five boundary modes controlled by `do_warp`, `do_t
      ```
    - This ensures vertices that should match (e.g., shared by 3 pieces) always produce identical keys
 
+### Concentric Ring Mode Architecture (added 2025-12-04)
+
+The concentric ring mode creates puzzles where all pieces have **constant radial height** (distance toward center). This creates trapezoidal pieces that get **wider toward the outside**, resembling a dartboard or target pattern.
+
+**Key Characteristics:**
+- **Center piece**: Hexagon or circle (configurable via `center_shape`)
+- **Outer pieces**: Trapezoids with 4 vertices (INNER, RIGHT, OUTER, LEFT edges)
+- **Piece count**: Same formula as hexagonal: `3 * rings * (rings - 1) + 1`
+- **Piece height**: `diameter / (2 * rings)` - constant for all pieces
+
+**Edge Types:**
+| Edge | Description | Has Tab? |
+|------|-------------|----------|
+| INNER | Connects to inner ring or center | Yes (always) |
+| RIGHT | Connects to next piece in same ring (circumferential) | Yes |
+| OUTER | Connects to outer ring or boundary | Yes (unless boundary) |
+| LEFT | Connects to previous piece in same ring (circumferential) | Yes |
+
+**Geometry Calculations** (`R/concentric_geometry.R`):
+```r
+# Trapezoid vertices for piece in ring r, position p:
+inner_radius <- r * piece_height
+outer_radius <- (r + 1) * piece_height
+arc_angle <- 2 * pi / (6 * r)  # Each ring r has 6*r pieces
+
+# 4 vertices in clockwise order:
+V1: (inner_radius * cos(start_angle), inner_radius * sin(start_angle))  # inner-start
+V2: (inner_radius * cos(end_angle), inner_radius * sin(end_angle))      # inner-end
+V3: (outer_radius * cos(end_angle), outer_radius * sin(end_angle))      # outer-end
+V4: (outer_radius * cos(start_angle), outer_radius * sin(start_angle))  # outer-start
+```
+
+**Files:**
+- `R/concentric_geometry.R`: Vertex calculations, neighbor detection
+- `R/concentric_edge_generation.R`: Edge map with bezier tabs, path building
+
+**Usage:**
+```r
+generate_puzzle(
+  type = "hexagonal",
+  grid = c(3),         # 3 rings = 19 pieces
+  size = c(240),       # 240mm diameter
+  concentric_mode = TRUE,
+  center_shape = "hexagon"  # or "circle"
+)
+```
+
 ### Key Functions by Purpose
 
 **⭐ Unified Pipeline (Recommended - Epic #32):**
@@ -470,6 +517,13 @@ renv::restore()
 **IMPORTANT**: We focus on refining scripts rather than tinkering with output files. Reproducible code ensures data quality. Even if we achieve data quality through manual adjustments, this will not provide reliable code.
 
 ### Recent Work
+✅ **COMPLETED**: Concentric Ring Mode (2025-12-04)
+  - New hexagonal puzzle variant with constant radial height for all pieces
+  - Trapezoidal pieces that get wider toward the outside (dartboard pattern)
+  - Center piece can be hexagon or circle (configurable)
+  - All inner edges have bezier tabs; boundary OUTER edges are straight lines
+  - Files: `R/concentric_geometry.R`, `R/concentric_edge_generation.R`
+  - Test suite: `tests/test_concentric_mode.R` - all passing
 ✅ **COMPLETED**: Warp/Trunc transformation fix (2025-12-01)
   - Fixed `apply_hex_warp()` to use DIVISION instead of multiplication (matching original JS)
   - Warp now applies to ALL vertices, not just boundary vertices
@@ -500,12 +554,13 @@ renv::restore()
   - Unified pipeline: `generate_pieces_internal()` → `apply_piece_positioning()` → `render_puzzle_svg()`
   - `offset` parameter controls complete vs separated output
   - Always returns `result$pieces` for programmatic access
-- **Shiny App**: ✅ Updated with offset slider (0-50mm) and three download buttons
+- **Shiny App**: ✅ Updated with offset slider (0-50mm), three download buttons, and concentric mode toggle
 - **Individual Pieces (Rectangular)**: ✅ Fully functional for any puzzle size
 - **Individual Pieces (Hexagonal)**: ✅ Complete (Issue #10)
 - **Hexagonal Separation**: ✅ Ring-based topology positioning with real piece extraction
 - **Warp/Trunc for Separated Mode**: ✅ Complete (Issues #29, #30, #31)
-- **Test Suites**: `tests/test_generate_puzzle.R` (10 tests), `tests/test_unified_renderer.R` (10 tests)
+- **Concentric Ring Mode**: ✅ Complete (2025-12-04) - trapezoidal pieces with constant radial height
+- **Test Suites**: `tests/test_generate_puzzle.R` (10 tests), `tests/test_unified_renderer.R` (10 tests), `tests/test_concentric_mode.R`
 
 ### Next Phase
 📋 **Enhancement #25**: Add PNG download capability to Shiny app (independent)

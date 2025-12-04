@@ -117,12 +117,22 @@ apply_hex_positioning <- function(piece_result, offset) {
 
   params <- piece_result$parameters
   rings <- params$rings
-  piece_radius <- params$piece_radius
+
+  # Handle both regular hexagonal (piece_radius) and concentric (piece_height) modes
+  if (!is.null(params$piece_radius)) {
+    piece_size <- params$piece_radius
+  } else if (!is.null(params$piece_height)) {
+    piece_size <- params$piece_height
+  } else {
+    # Fallback: calculate from diameter and rings
+    diameter <- params$diameter
+    piece_size <- diameter / (4 * rings - 2)
+  }
 
   # For hexagonal, offset acts as a separation factor
-  # Base separation is determined by piece_radius
-  # separation_factor = 1.0 + offset/piece_radius gives proportional separation
-  separation_factor <- 1.0 + (offset / piece_radius)
+  # Base separation is determined by piece_size
+  # separation_factor = 1.0 + offset/piece_size gives proportional separation
+  separation_factor <- 1.0 + (offset / piece_size)
 
   # Transform each piece
   transformed_pieces <- lapply(piece_result$pieces, function(piece) {
@@ -178,14 +188,14 @@ apply_hex_positioning <- function(piece_result, offset) {
     # Fallback to center-based calculation
     all_x <- sapply(transformed_pieces, function(p) p$center[1])
     all_y <- sapply(transformed_pieces, function(p) p$center[2])
-    path_min_x <- min(all_x) - piece_radius
-    path_max_x <- max(all_x) + piece_radius
-    path_min_y <- min(all_y) - piece_radius
-    path_max_y <- max(all_y) + piece_radius
+    path_min_x <- min(all_x) - piece_size
+    path_max_x <- max(all_x) + piece_size
+    path_min_y <- min(all_y) - piece_size
+    path_max_y <- max(all_y) + piece_size
   }
 
   # Add margin for stroke width and offset
-  stroke_margin <- piece_radius * 0.15 + offset
+  stroke_margin <- piece_size * 0.15 + offset
   min_x <- path_min_x - stroke_margin
   max_x <- path_max_x + stroke_margin
   min_y <- path_min_y - stroke_margin
