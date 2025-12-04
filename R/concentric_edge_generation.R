@@ -13,6 +13,11 @@
 # - Each ring r piece's OUTER edge connects to multiple ring r+1 pieces
 # - Each ring r piece's INNER edge connects to one or more ring r-1 pieces
 # - The edge must be SUBDIVIDED at the junction points to create proper interlocking tabs
+#
+# LIMITATION: Currently works correctly for 2-3 rings only.
+# For 4+ rings, the ring boundaries don't align (e.g., ring 2 has 30° pieces,
+# ring 3 has 20° pieces - their corners only align every 60°).
+# This causes some edge mismatches in ring 2+ transitions.
 
 #' Get all outer ring piece IDs that share an edge with an inner ring piece
 #'
@@ -246,9 +251,11 @@ generate_concentric_edge_map <- function(rings, seed, diameter,
           vertex_order = c(edge_idx, (edge_idx %% 6) + 1)
         )))
 
+        # Ring 1 piece's INNER edge V1->V2 is in SAME direction as center's outer edge
+        # So we use is_forward = TRUE (not FALSE!)
         piece_edges[[neighbor_id]] <- c(piece_edges[[neighbor_id]], list(list(
           edge_ref = unique_key,
-          is_forward = FALSE,  # Reverse for the inner piece
+          is_forward = TRUE,  # Same direction as center's edge
           type = "inner"
         )))
       }
@@ -331,13 +338,15 @@ generate_concentric_edge_map <- function(rings, seed, diameter,
         # Connect to outer ring pieces
         # We need to subdivide this edge at the junction points
 
-        # Sort outer neighbors by angle
+        # Sort outer neighbors by DECREASING angle for V3->V4 direction
+        # V3 (outer-end) has higher angle than V4 (outer-start)
+        # So we traverse from high angle to low angle
         outer_with_angles <- lapply(outer_neighbors, function(nid) {
           ninfo <- all_vertices[[nid]]
           mid_angle <- (ninfo$start_angle + ninfo$end_angle) / 2
           list(id = nid, angle = mid_angle, start = ninfo$start_angle, end = ninfo$end_angle)
         })
-        outer_sorted <- outer_with_angles[order(sapply(outer_with_angles, function(x) x$angle))]
+        outer_sorted <- outer_with_angles[order(sapply(outer_with_angles, function(x) x$angle), decreasing = TRUE)]
 
         # Generate edges for each outer neighbor
         for (outer_data in outer_sorted) {
