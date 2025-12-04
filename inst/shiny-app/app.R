@@ -293,6 +293,35 @@ ui <- page_fluid(
           "Transparency of puzzle pieces. 100% = fully opaque, 0% = fully transparent. Lower values create a watermark effect."
         ),
 
+        # Piece labels switch
+        tooltip(
+          input_switch(
+            id = "show_labels",
+            label = "Show Piece Labels",
+            value = FALSE
+          ),
+          "Display piece ID numbers at the center of each piece. Useful for assembly instructions."
+        ),
+
+        # Conditional label options (shown when labels are enabled)
+        conditionalPanel(
+          condition = "input.show_labels == true",
+          colourpicker::colourInput(
+            "label_color",
+            "Label Color:",
+            value = "#000000",
+            showColour = "background"
+          ),
+          tooltip(
+            sliderInput("label_size", "Label Font Size:",
+                       min = 4, max = 30, value = 0, step = 1,
+                       ticks = TRUE,
+                       post = " mm",
+                       sep = ""),
+            "Font size for piece labels. Set to 0 for automatic sizing based on piece dimensions."
+          )
+        ),
+
         # Background type selector
         radioButtons("background_type", "Background:",
                     choices = list(
@@ -496,6 +525,10 @@ server <- function(input, output, session) {
     updateSelectInput(session, "color_palette", selected = "magma")
     updateSliderInput(session, "stroke_width", value = 1.5)
     updateSliderInput(session, "opacity", value = 100)
+    # Reset label settings
+    update_switch(id = "show_labels", value = FALSE, session = session)
+    colourpicker::updateColourInput(session, "label_color", value = "#000000")
+    updateSliderInput(session, "label_size", value = 0)
     # Reset fill options
     updateRadioButtons(session, "fill_type", selected = "none")
     # Reset background settings
@@ -624,6 +657,12 @@ server <- function(input, output, session) {
       )
     )
 
+    # Get label settings
+    show_labels_value <- if (is.null(input$show_labels)) FALSE else input$show_labels
+    label_color_value <- if (is.null(input$label_color)) "#000000" else input$label_color
+    # 0 means auto-size, convert to NULL for render function
+    label_size_value <- if (is.null(input$label_size) || input$label_size == 0) NULL else input$label_size
+
     # Render SVG with current styling
     svg <- render_puzzle_svg(
       pos,
@@ -632,7 +671,10 @@ server <- function(input, output, session) {
       colors = NULL,
       palette = input$color_palette,
       background = background_value,
-      opacity = input$opacity / 100
+      opacity = input$opacity / 100,
+      show_labels = show_labels_value,
+      label_color = label_color_value,
+      label_size = label_size_value
     )
 
     # Also update the svg_content reactive for downloads

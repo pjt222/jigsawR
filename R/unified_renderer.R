@@ -17,11 +17,16 @@
 #'   - "white", "#FFFFFF", etc.: Solid color background
 #'   - list(type="gradient", ...): Gradient background
 #' @param opacity Piece opacity (0.0 to 1.0)
+#' @param show_labels Logical; if TRUE, display piece ID labels at piece centers
+#' @param label_color Color for piece labels (default: "black")
+#' @param label_size Font size for labels in mm (default: auto-calculated based on piece size)
 #' @return Complete SVG string
 #' @export
 render_puzzle_svg <- function(positioned, fill = "none", stroke_width = 1.5,
                                colors = NULL, palette = NULL,
-                               background = "white", opacity = 1.0) {
+                               background = "white", opacity = 1.0,
+                               show_labels = FALSE, label_color = "black",
+                               label_size = NULL) {
 
   # Get number of pieces for color generation
   n_pieces <- length(positioned$pieces)
@@ -52,8 +57,34 @@ render_puzzle_svg <- function(positioned, fill = "none", stroke_width = 1.5,
     render_piece(piece, fill, color, stroke_width, opacity)
   })
 
+  # Render labels if requested
+  label_elements <- character(0)
+  if (show_labels) {
+    # Calculate auto label size if not provided
+    if (is.null(label_size)) {
+      # Estimate piece size from canvas and piece count
+      # For rectangular: avg piece dimension
+      # For hexagonal: estimate from diameter
+      if (!is.null(positioned$parameters$piece_width)) {
+        piece_dim <- min(positioned$parameters$piece_width, positioned$parameters$piece_height)
+      } else {
+        # Fallback: estimate from canvas size and piece count
+        canvas_area <- positioned$canvas_size[1] * positioned$canvas_size[2]
+        piece_area <- canvas_area / n_pieces
+        piece_dim <- sqrt(piece_area)
+      }
+      # Label size is ~20% of piece dimension, with min/max bounds
+      label_size <- max(4, min(20, piece_dim * 0.2))
+    }
+
+    label_elements <- sapply(seq_along(positioned$pieces), function(i) {
+      piece <- positioned$pieces[[i]]
+      render_piece_label(piece, i, label_color, label_size)
+    })
+  }
+
   # Combine and close SVG
-  svg_parts <- c(svg_header, bg_element, piece_elements, "</svg>")
+  svg_parts <- c(svg_header, bg_element, piece_elements, label_elements, "</svg>")
   svg_parts <- svg_parts[svg_parts != ""]  # Remove empty strings
 
   paste(svg_parts, collapse = "\n")
@@ -210,6 +241,30 @@ render_piece <- function(piece, fill, stroke_color, stroke_width, opacity) {
     stroke_color,
     stroke_width,
     opacity_attr
+  )
+}
+
+
+#' Render a piece label
+#'
+#' Creates an SVG text element positioned at the piece center.
+#'
+#' @param piece Piece object with center coordinates
+#' @param index Piece index (1-based) to display as label
+#' @param color Label text color
+#' @param font_size Font size in mm
+#' @return SVG text element string
+#' @keywords internal
+render_piece_label <- function(piece, index, color, font_size) {
+  # Get center coordinates
+  cx <- piece$center[1]
+  cy <- piece$center[2]
+
+  # Build SVG text element centered on piece
+  # Use dominant-baseline and text-anchor for proper centering
+  sprintf(
+    '<text x="%.2f" y="%.2f" font-family="sans-serif" font-size="%.1f" font-weight="bold" fill="%s" text-anchor="middle" dominant-baseline="central">%d</text>',
+    cx, cy, font_size, color, index
   )
 }
 
