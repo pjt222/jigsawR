@@ -1,6 +1,26 @@
 # Fixed Hexagonal Edge Generation
 # Proper edge mapping with unique edge IDs
 
+#' Create a vertex key string from coordinates
+#'
+#' Normalizes coordinates to avoid floating point comparison issues.
+#' - Rounds to 1 decimal place to handle tiny floating point errors
+#' - Converts -0.0 to 0.0 for consistent string keys
+#'
+#' @param x X coordinate
+#' @param y Y coordinate
+#' @return String key in format "x.x,y.y"
+#' @keywords internal
+make_vertex_key <- function(x, y) {
+  # Round to 1 decimal place to handle floating point precision issues
+  # (e.g., -1.776357e-15 should become 0.0, not -0.0)
+  x_rounded <- round(x, 1)
+  y_rounded <- round(y, 1)
+
+  # Add 0.0 to normalize -0.0 to 0.0
+  sprintf("%.1f,%.1f", x_rounded + 0.0, y_rounded + 0.0)
+}
+
 #' Generate all edges with proper unique identifiers
 #'
 #' Creates a proper edge mapping where each shared edge has exactly one ID,
@@ -84,7 +104,7 @@ generate_hex_edge_map <- function(rings, seed, diameter, tabsize = 27, jitter = 
   for (piece_id in 1:num_pieces) {
     for (i in 1:6) {
       v <- piece_vertices_original[[piece_id]][[i]]
-      v_key <- sprintf("%.1f,%.1f", v[1], v[2])
+      v_key <- make_vertex_key(v[1], v[2])
 
       if (is.null(vertex_sharing[[v_key]])) {
         vertex_sharing[[v_key]] <- list(pieces = c(), coords = v)
@@ -112,8 +132,8 @@ generate_hex_edge_map <- function(rings, seed, diameter, tabsize = 27, jitter = 
     for (side in 0:5) {
       v1 <- piece_vertices_original[[piece_id]][[side + 1]]
       v2 <- piece_vertices_original[[piece_id]][[(side + 1) %% 6 + 1]]
-      v1_key <- sprintf("%.1f,%.1f", v1[1], v1[2])
-      v2_key <- sprintf("%.1f,%.1f", v2[1], v2[2])
+      v1_key <- make_vertex_key(v1[1], v1[2])
+      v2_key <- make_vertex_key(v2[1], v2[2])
 
       # An edge is a boundary edge if BOTH its vertices are boundary vertices
       if (v1_key %in% boundary_vertex_keys && v2_key %in% boundary_vertex_keys) {
@@ -152,7 +172,7 @@ generate_hex_edge_map <- function(rings, seed, diameter, tabsize = 27, jitter = 
       for (piece_id in 1:num_pieces) {
         for (i in 1:6) {
           v <- piece_vertices_original[[piece_id]][[i]]
-          v_key <- sprintf("%.1f,%.1f", v[1], v[2])
+          v_key <- make_vertex_key(v[1], v[2])
 
           if (!is.null(all_transformed[[v_key]])) {
             piece_vertices[[piece_id]][[i]] <- all_transformed[[v_key]]
@@ -178,7 +198,7 @@ generate_hex_edge_map <- function(rings, seed, diameter, tabsize = 27, jitter = 
         for (piece_id in 1:num_pieces) {
           for (i in 1:6) {
             orig_v <- piece_vertices_original[[piece_id]][[i]]
-            orig_key <- sprintf("%.1f,%.1f", orig_v[1], orig_v[2])
+            orig_key <- make_vertex_key(orig_v[1], orig_v[2])
 
             if (orig_key %in% boundary_vertex_keys) {
               # Get current warped position
@@ -217,7 +237,7 @@ generate_hex_edge_map <- function(rings, seed, diameter, tabsize = 27, jitter = 
         for (piece_id in 1:num_pieces) {
           for (i in 1:6) {
             orig_v <- piece_vertices_original[[piece_id]][[i]]
-            orig_key <- sprintf("%.1f,%.1f", orig_v[1], orig_v[2])
+            orig_key <- make_vertex_key(orig_v[1], orig_v[2])
 
             if (orig_key == v_key) {
               piece_vertices[[piece_id]][[i]] <- c(transformed$x, transformed$y)

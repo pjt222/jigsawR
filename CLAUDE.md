@@ -370,6 +370,22 @@ The hexagonal puzzle supports four boundary modes controlled by `do_warp` and `d
    - Separation is purely translational - edge shapes never change, only positions
    - This ensures consistent piece shapes across all separation levels
 
+7. **Floating Point Precision in Vertex Keys** (fixed 2025-12-04):
+   - Vertex sharing uses string keys like `"x,y"` to match shared vertices between pieces
+   - **Problem**: Floating point errors caused key mismatches:
+     - Values like `-1.776357e-15` (epsilon near zero) formatted as `"-0.0"` instead of `"0.0"`
+     - Interior vertices incorrectly identified as boundary vertices
+     - `apply_hex_trunc` then projected interior vertices to the puzzle boundary
+   - **Solution**: `make_vertex_key()` function in `R/hexagonal_edge_generation_fixed.R`:
+     ```r
+     make_vertex_key <- function(x, y) {
+       x_rounded <- round(x, 1)  # Round BEFORE formatting
+       y_rounded <- round(y, 1)
+       sprintf("%.1f,%.1f", x_rounded + 0.0, y_rounded + 0.0)  # +0.0 normalizes -0.0
+     }
+     ```
+   - This ensures vertices that should match (e.g., shared by 3 pieces) always produce identical keys
+
 ### Key Functions by Purpose
 
 **⭐ Unified Pipeline (Recommended - Epic #32):**
