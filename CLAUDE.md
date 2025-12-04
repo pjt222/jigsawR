@@ -578,6 +578,49 @@ renv::restore()
 4. **Incremental Development**: Start with 2x2 puzzles, then expand to larger sizes
 5. **Test-Driven**: Verify outputs programmatically, not just visually
 
+### Key Development Insights (2025-12-04)
+
+These insights emerged during the development of concentric ring mode and the refactoring to make it a top-level type:
+
+1. **Type Architecture Matters**
+   - Initially implemented concentric as `concentric_mode=TRUE` within hexagonal type
+   - This led to confusion: Is concentric a modifier or a fundamentally different puzzle?
+   - **Insight**: If a feature requires its own piece geometry, edge generation, and positioning logic, it should be a top-level type, not a boolean flag
+   - Clean API: `type="concentric"` is clearer than `type="hexagonal", concentric_mode=TRUE`
+
+2. **Hard Breaks vs Deprecation**
+   - Chose "hard break" (remove parameter entirely) over deprecation warnings
+   - **Rationale**: The codebase is pre-1.0 and the old API had very limited use
+   - Deprecation warnings add complexity for minimal benefit in early development
+   - Clear error messages ("Invalid type 'X'. Must be one of: ...") guide users
+
+3. **Type Dispatch Patterns**
+   - Three-way dispatch in R is cleanest with explicit `if/else if/else`:
+     ```r
+     if (type == "concentric") { ... }
+     else if (type == "hexagonal") { ... }
+     else { ... }  # rectangular
+     ```
+   - `switch()` works but obscures the default case
+   - Store type-specific parameters conditionally: `center_shape = if (type == "concentric") value else NULL`
+
+4. **Shiny UI for Multiple Types**
+   - Radio buttons for mutually exclusive types work better than nested conditionals
+   - Each type gets its own `conditionalPanel` with type-specific options
+   - Separate input IDs per type (e.g., `rings` vs `rings_conc`) avoid value conflicts
+
+5. **Testing Strategy for Type Refactoring**
+   - Test each type individually first
+   - Test that type-specific parameters are only set for their type
+   - Test that invalid types produce clear errors
+   - Generate visual output files for human verification
+
+6. **Edge Direction Debugging**
+   - Circle center edges were drawn clockwise instead of counter-clockwise
+   - **Root cause**: `is_forward = FALSE` in edge generation
+   - **Lesson**: Edge direction bugs manifest as visual artifacts (overlapping, gaps)
+   - Debug by examining raw path coordinates, not just rendered output
+
 # important-instruction-reminders
 Do what has been asked; nothing more, nothing less.
 NEVER create files unless they're absolutely necessary for achieving your goal.
