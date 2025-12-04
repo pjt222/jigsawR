@@ -70,13 +70,16 @@ get_outer_neighbors <- function(piece_id, rings) {
   return(neighbors)
 }
 
-#' Get inner ring piece ID(s) that share the INNER edge
+#' Get ALL inner ring piece IDs that share the INNER edge
+#'
+#' An outer piece's inner edge can span multiple inner pieces when ring
+#' boundaries don't align (e.g., ring 3 at 20° pieces, ring 2 at 30° pieces).
 #'
 #' @param piece_id The outer piece ID
 #' @param rings Total number of rings
-#' @return Vector of inner piece IDs (usually 1)
+#' @return Vector of inner piece IDs that overlap with this piece's inner edge
 #' @keywords internal
-get_inner_neighbor <- function(piece_id, rings) {
+get_inner_neighbors <- function(piece_id, rings) {
   info <- map_concentric_piece_id(piece_id, rings)
   ring <- info$ring
   position <- info$position
@@ -86,26 +89,44 @@ get_inner_neighbor <- function(piece_id, rings) {
     return(integer(0))
   }
 
-  # Ring 1 connects to center
+  # Ring 1 connects to center (center has 6 edges, one per ring 1 piece)
   if (ring == 1) {
     return(1)  # Center piece
   }
 
-  # For rings > 1, find which inner piece this overlaps with
+  # For rings > 1, find ALL inner pieces that overlap with this piece's angular range
   pieces_in_ring <- 6 * ring
   pieces_in_inner_ring <- 6 * (ring - 1)
 
   arc_angle <- 2 * pi / pieces_in_ring
   start_angle <- position * arc_angle
   end_angle <- (position + 1) * arc_angle
-  mid_angle <- (start_angle + end_angle) / 2
 
-  # Find inner piece that contains this angle
   inner_arc_angle <- 2 * pi / pieces_in_inner_ring
-  inner_pos <- floor(mid_angle / inner_arc_angle)
   inner_ring_start <- 3 * (ring - 1) * (ring - 2) + 2
 
-  return(inner_ring_start + inner_pos)
+  # Find all inner pieces that overlap with [start_angle, end_angle]
+  neighbors <- c()
+  for (inner_pos in 0:(pieces_in_inner_ring - 1)) {
+    inner_start <- inner_pos * inner_arc_angle
+    inner_end <- (inner_pos + 1) * inner_arc_angle
+
+    # Check for overlap
+    if (inner_start < end_angle && inner_end > start_angle) {
+      neighbors <- c(neighbors, inner_ring_start + inner_pos)
+    }
+  }
+
+  return(neighbors)
+}
+
+#' Get inner ring piece ID that contains the midpoint (legacy function)
+#' @keywords internal
+get_inner_neighbor <- function(piece_id, rings) {
+  # For backwards compatibility, return the first neighbor
+  neighbors <- get_inner_neighbors(piece_id, rings)
+  if (length(neighbors) == 0) return(integer(0))
+  return(neighbors[1])
 }
 
 #' Generate edge map for concentric ring puzzle
@@ -337,6 +358,13 @@ generate_concentric_edge_map <- function(rings, seed, diameter,
       } else {
         # Connect to outer ring pieces
         # We need to subdivide this edge at the junction points
+        # IMPORTANT: Calculate the OVERLAP between this piece's OUTER edge
+        # and each outer neighbor's INNER edge
+
+        # This piece's OUTER edge spans [start_angle, end_angle] at outer_radius
+        piece_outer_start <- piece_info$start_angle  # V4 angle
+        piece_outer_end <- piece_info$end_angle      # V3 angle
+        shared_radius <- piece_info$outer_radius     # Same as neighbor's inner_radius
 
         # Sort outer neighbors by DECREASING angle for V3->V4 direction
         # V3 (outer-end) has higher angle than V4 (outer-start)
@@ -353,9 +381,16 @@ generate_concentric_edge_map <- function(rings, seed, diameter,
           neighbor_id <- outer_data$id
           neighbor_info <- all_vertices[[neighbor_id]]
 
-          # The outer neighbor's INNER edge connects here
-          nv1 <- neighbor_info$vertices[[1]]  # inner-start
-          nv2 <- neighbor_info$vertices[[2]]  # inner-end
+          # Calculate the OVERLAP between this piece's OUTER and neighbor's INNER
+          # This piece's OUTER: [piece_outer_start, piece_outer_end] at shared_radius
+          # Neighbor's INNER: [neighbor_info$start_angle, neighbor_info$end_angle] at shared_radius
+          overlap_start <- max(piece_outer_start, neighbor_info$start_angle)
+          overlap_end <- min(piece_outer_end, neighbor_info$end_angle)
+
+          # Calculate actual vertices at the OVERLAP points (not the neighbor's full edge)
+          # nv1 = overlap_start point, nv2 = overlap_end point
+          nv1 <- c(shared_radius * cos(overlap_start), shared_radius * sin(overlap_start))
+          nv2 <- c(shared_radius * cos(overlap_end), shared_radius * sin(overlap_end))
 
           unique_key <- sprintf("E%d-%d-radial", min(piece_id, neighbor_id), max(piece_id, neighbor_id))
 
@@ -363,7 +398,7 @@ generate_concentric_edge_map <- function(rings, seed, diameter,
             edge_counter <- edge_counter + 1
             edge_seed <- seed + piece_id * 1000 + neighbor_id + 3
 
-            # Generate edge from the outer piece's inner edge perspective
+            # Generate edge from the overlap segment perspective
             bezier <- generate_hex_bezier_edge(
               v1 = nv1,
               v2 = nv2,
@@ -376,26 +411,29 @@ generate_concentric_edge_map <- function(rings, seed, diameter,
               id = edge_counter,
               piece1 = piece_id,
               piece2 = neighbor_id,
-              forward = bezier$forward,   # nv1 -> nv2 (along inner edge of outer piece)
-              reverse = bezier$reverse,   # nv2 -> nv1 (along outer edge of inner piece)
+              forward = bezier$forward,   # nv1 -> nv2 (overlap_start to overlap_end)
+              reverse = bezier$reverse,   # nv2 -> nv1 (overlap_end to overlap_start)
               start = nv1,
-              end = nv2
+              end = nv2,
+              overlap_start_angle = overlap_start,
+              overlap_end_angle = overlap_end
             )
           }
 
           # Add edge segment to this piece's OUTER
           piece_edges[[piece_id]] <- c(piece_edges[[piece_id]], list(list(
             edge_ref = unique_key,
-            is_forward = FALSE,  # Outer piece perspective is reversed for inner piece
+            is_forward = FALSE,  # Outer piece perspective: going from high angle to low
             type = "outer_segment",
             neighbor = neighbor_id
           )))
 
-          # Add to neighbor's INNER
+          # Add to neighbor's INNER (as inner_segment since it may be partial)
           piece_edges[[neighbor_id]] <- c(piece_edges[[neighbor_id]], list(list(
             edge_ref = unique_key,
-            is_forward = TRUE,
-            type = "inner"
+            is_forward = TRUE,  # Inner piece perspective: going from low angle to high
+            type = "inner_segment",
+            neighbor = piece_id
           )))
         }
       }
@@ -524,31 +562,49 @@ build_concentric_piece_path <- function(piece_id, edge_data) {
     return(paste(path_parts, collapse = " "))
   }
 
-  # Trapezoid - 4 edges (but OUTER may be multiple segments)
+  # Trapezoid - 4 edges (but INNER and OUTER may be multiple segments)
   vertices <- piece_info$vertices
   v1 <- vertices[[1]]
+  v2 <- vertices[[2]]
 
   path_parts <- c(sprintf("M %.2f %.2f", v1[1], v1[2]))
 
-  # INNER edge (v1 -> v2)
-  inner_edges <- piece_edge_list[sapply(piece_edge_list, function(e) e$type == "inner")]
+  # INNER edge (v1 -> v2) - may be single or multiple segments
+  # "inner" type = single connection (ring 1 to center)
+  # "inner_segment" type = partial connection when edge spans multiple inner pieces
+  inner_edges <- piece_edge_list[sapply(piece_edge_list, function(e) e$type %in% c("inner", "inner_segment"))]
+
   if (length(inner_edges) > 0) {
-    edge_info <- inner_edges[[1]]
-    edge <- edge_data$edge_map[[edge_info$edge_ref]]
-    if (!is.null(edge)) {
-      if (edge_info$is_forward) {
-        path_parts <- c(path_parts, edge$forward)
-      } else {
-        path_parts <- c(path_parts, edge$reverse)
+    # Sort inner segments by angle (increasing) for V1->V2 direction
+    # V1 (inner-start) has lower angle than V2 (inner-end)
+    if (length(inner_edges) > 1) {
+      inner_with_angles <- lapply(inner_edges, function(e) {
+        edge <- edge_data$edge_map[[e$edge_ref]]
+        # Use the start angle of the edge
+        start_angle <- if (!is.null(edge$overlap_start_angle)) {
+          edge$overlap_start_angle
+        } else {
+          atan2(edge$start[2], edge$start[1])
+        }
+        list(edge_info = e, angle = start_angle)
+      })
+      inner_edges <- lapply(inner_with_angles[order(sapply(inner_with_angles, function(x) x$angle))],
+                            function(x) x$edge_info)
+    }
+
+    # Add each inner edge segment
+    for (edge_info in inner_edges) {
+      edge <- edge_data$edge_map[[edge_info$edge_ref]]
+      if (!is.null(edge)) {
+        if (edge_info$is_forward) {
+          path_parts <- c(path_parts, edge$forward)
+        } else {
+          path_parts <- c(path_parts, edge$reverse)
+        }
       }
-    } else {
-      # Fallback to straight line
-      v2 <- vertices[[2]]
-      path_parts <- c(path_parts, sprintf("L %.2f %.2f", v2[1], v2[2]))
     }
   } else {
     # No inner edge - go straight to v2
-    v2 <- vertices[[2]]
     path_parts <- c(path_parts, sprintf("L %.2f %.2f", v2[1], v2[2]))
   }
 
