@@ -215,9 +215,13 @@ generate_concentric_edge_map <- function(rings, seed, diameter,
         }
 
         # Add to both pieces' edge lists
+        # Both circle and neighbor traverse the edge in the SAME direction (v1->v2)
+        # This is counter-clockwise for both pieces:
+        # - Circle: going around its boundary counter-clockwise
+        # - Neighbor: going along its inner edge from V1 to V2
         piece_edges[[piece_id]] <- c(piece_edges[[piece_id]], list(list(
           edge_ref = unique_key,
-          is_forward = FALSE,  # Circle uses reverse (from v2 to v1)
+          is_forward = TRUE,  # Circle uses forward (v1 to v2, counter-clockwise)
           type = "radial"
         )))
 
