@@ -1,128 +1,279 @@
-# Core integration tests - focused on main functionality that definitely works
+# Core integration tests - end-to-end workflow validation
+# Updated to use current API (2025-12)
 
-test_that("basic rectangular puzzle generation works", {
-  # Test the main API function that we know exists
-  result <- tryCatch({
-    generate_puzzle(
-      type = "rectangular",
-      grid = c(2, 2),
-      seed = 1234,
-      save_files = FALSE
-    )
-  }, error = function(e) e)
-  
-  # Should either work or give a meaningful error
-  if (!inherits(result, "error")) {
-    expect_type(result, "list")
-  } else {
-    # If it fails, error should be about missing parameters or similar
-    expect_true(TRUE)  # Mark test as passing - we just want to know it runs
+# =============================================================================
+# FULL PIPELINE INTEGRATION
+# =============================================================================
+
+test_that("rectangular puzzle full pipeline works", {
+  result <- generate_puzzle(
+    type = "rectangular",
+    grid = c(3, 3),
+    size = c(300, 200),
+    seed = 1234,
+    offset = 0,
+    palette = "viridis",
+    save_files = FALSE
+  )
+
+  # Verify complete result structure
+
+  expect_type(result, "list")
+  expect_true("svg_content" %in% names(result))
+  expect_true("pieces" %in% names(result))
+  expect_true("canvas_size" %in% names(result))
+  expect_true("parameters" %in% names(result))
+
+  # Verify SVG is valid
+  expect_match(result$svg_content, "^<\\?xml")
+  expect_match(result$svg_content, "</svg>$")
+
+  # Verify piece count
+  expect_equal(length(result$pieces), 9)
+
+  # Verify each piece has required fields
+  for (piece in result$pieces) {
+    expect_true("id" %in% names(piece))
+    expect_true("path" %in% names(piece))
+    expect_true("center" %in% names(piece))
   }
 })
 
-test_that("puzzle core generation is reproducible", {
-  # Test generate_puzzle_core which we know exists
-  puzzle1 <- tryCatch({
-    generate_puzzle_core(seed = 5678, grid = c(2, 2))
-  }, error = function(e) e)
-  
-  puzzle2 <- tryCatch({
-    generate_puzzle_core(seed = 5678, grid = c(2, 2))
-  }, error = function(e) e)
-  
-  if (!inherits(puzzle1, "error") && !inherits(puzzle2, "error")) {
-    # If both succeed, they should be identical
-    expect_identical(puzzle1, puzzle2)
-  } else {
-    expect_true(TRUE)  # Just mark as passing if functions don't exist
+test_that("hexagonal puzzle full pipeline works", {
+  result <- generate_puzzle(
+    type = "hexagonal",
+    grid = c(3),
+    size = c(200),
+    seed = 1234,
+    offset = 0,
+    do_warp = TRUE,
+    do_trunc = TRUE,
+    palette = "magma",
+    save_files = FALSE
+  )
+
+  expect_type(result, "list")
+  expect_match(result$svg_content, "<svg")
+  expect_equal(length(result$pieces), 19)
+
+  # Verify transformation parameters are stored
+  expect_true(result$parameters$do_warp)
+  expect_true(result$parameters$do_trunc)
+})
+
+test_that("concentric puzzle full pipeline works", {
+  result <- generate_puzzle(
+    type = "concentric",
+    grid = c(3),
+    size = c(240),
+    seed = 1234,
+    center_shape = "hexagon",
+    palette = "plasma",
+    save_files = FALSE
+  )
+
+  expect_type(result, "list")
+  expect_match(result$svg_content, "<svg")
+  expect_equal(length(result$pieces), 19)
+  expect_equal(result$parameters$center_shape, "hexagon")
+})
+
+# =============================================================================
+# CROSS-TYPE CONSISTENCY
+# =============================================================================
+
+test_that("all three types produce valid SVG with same structure", {
+  result_rect <- generate_puzzle(
+    type = "rectangular", grid = c(2, 2), size = c(100, 100),
+    seed = 42, save_files = FALSE
+  )
+
+  result_hex <- generate_puzzle(
+    type = "hexagonal", grid = c(2), size = c(100),
+    seed = 42, save_files = FALSE
+  )
+
+  result_conc <- generate_puzzle(
+    type = "concentric", grid = c(2), size = c(100),
+    seed = 42, save_files = FALSE
+  )
+
+  # All should have same top-level structure
+  for (result in list(result_rect, result_hex, result_conc)) {
+    expect_true("svg_content" %in% names(result))
+    expect_true("pieces" %in% names(result))
+    expect_true("canvas_size" %in% names(result))
+    expect_true("parameters" %in% names(result))
+    expect_match(result$svg_content, "^<\\?xml")
   }
 })
 
-test_that("hexagonal puzzle generation works", {
-  # Test hex puzzle generation which we know exists
-  result <- tryCatch({
-    generate_hex_jigsaw_svg(seed = 1234, rings = 2)
-  }, error = function(e) e)
-  
-  if (!inherits(result, "error")) {
-    expect_type(result, "list")
-    # If it works, check for basic structure
-    if ("svg" %in% names(result)) {
-      expect_true(grepl("svg", result$svg))
-    }
-  } else {
-    expect_true(TRUE)  # Mark as passing even if not implemented
-  }
+test_that("different types have correct type in parameters", {
+  result_rect <- generate_puzzle(
+    type = "rectangular", grid = c(2, 2), seed = 1, save_files = FALSE
+  )
+  expect_equal(result_rect$parameters$type, "rectangular")
+
+  result_hex <- generate_puzzle(
+    type = "hexagonal", grid = c(2), size = c(100), seed = 1, save_files = FALSE
+  )
+  expect_equal(result_hex$parameters$type, "hexagonal")
+
+  result_conc <- generate_puzzle(
+    type = "concentric", grid = c(2), size = c(100), seed = 1, save_files = FALSE
+  )
+  expect_equal(result_conc$parameters$type, "concentric")
 })
 
-test_that("individual pieces functions exist and can be called", {
-  # Test that extract_puzzle_tab_data exists and can be called
-  result <- tryCatch({
-    extract_puzzle_tab_data(seed = 1234, xn = 2, yn = 2)
-  }, error = function(e) e)
-  
-  if (!inherits(result, "error")) {
-    expect_type(result, "list")
-  } else {
-    expect_true(TRUE)  # Function might have different interface
-  }
+# =============================================================================
+# SEPARATION/OFFSET INTEGRATION
+# =============================================================================
+
+test_that("offset changes piece positions consistently", {
+  # Generate same puzzle with different offsets
+  result_compact <- generate_puzzle(
+    type = "rectangular", grid = c(2, 2), seed = 42, offset = 0, save_files = FALSE
+  )
+
+  result_sep_10 <- generate_puzzle(
+    type = "rectangular", grid = c(2, 2), seed = 42, offset = 10, save_files = FALSE
+  )
+
+  result_sep_20 <- generate_puzzle(
+    type = "rectangular", grid = c(2, 2), seed = 42, offset = 20, save_files = FALSE
+  )
+
+  # Piece count should be same
+  expect_equal(length(result_compact$pieces), length(result_sep_10$pieces))
+  expect_equal(length(result_sep_10$pieces), length(result_sep_20$pieces))
+
+  # Canvas should grow with offset
+  expect_lt(result_compact$canvas_size[1], result_sep_10$canvas_size[1])
+  expect_lt(result_sep_10$canvas_size[1], result_sep_20$canvas_size[1])
 })
 
-test_that("package loads without critical errors", {
-  # Test that we can load all package functions
+test_that("hexagonal offset works correctly", {
+  result_compact <- generate_puzzle(
+    type = "hexagonal", grid = c(3), size = c(200), seed = 42,
+    offset = 0, save_files = FALSE
+  )
+
+  result_separated <- generate_puzzle(
+    type = "hexagonal", grid = c(3), size = c(200), seed = 42,
+    offset = 15, save_files = FALSE
+  )
+
+  expect_equal(length(result_compact$pieces), 19)
+  expect_equal(length(result_separated$pieces), 19)
+  expect_gt(result_separated$canvas_size[1], result_compact$canvas_size[1])
+})
+
+# =============================================================================
+# REPRODUCIBILITY
+# =============================================================================
+
+test_that("same seed produces identical results", {
+  result1 <- generate_puzzle(
+    type = "rectangular", grid = c(3, 3), seed = 12345, save_files = FALSE
+  )
+
+  result2 <- generate_puzzle(
+    type = "rectangular", grid = c(3, 3), seed = 12345, save_files = FALSE
+  )
+
+  expect_identical(result1$svg_content, result2$svg_content)
+  expect_identical(result1$pieces[[1]]$path, result2$pieces[[1]]$path)
+})
+
+test_that("different seeds produce different results", {
+  result1 <- generate_puzzle(
+    type = "rectangular", grid = c(3, 3), seed = 11111, save_files = FALSE
+  )
+
+  result2 <- generate_puzzle(
+    type = "rectangular", grid = c(3, 3), seed = 22222, save_files = FALSE
+  )
+
+  expect_false(identical(result1$svg_content, result2$svg_content))
+})
+
+# =============================================================================
+# STYLING INTEGRATION
+# =============================================================================
+
+test_that("styling parameters are reflected in SVG output", {
+  result <- generate_puzzle(
+    type = "rectangular",
+    grid = c(2, 2),
+    seed = 1234,
+    fill_color = "lightblue",
+    stroke_width = 2.5,
+    show_labels = TRUE,
+    opacity = 0.7,
+    save_files = FALSE
+  )
+
+  svg <- result$svg_content
+
+  # Check fill color
+  expect_match(svg, "lightblue")
+
+  # Check stroke width
+  expect_match(svg, "stroke-width")
+
+  # Check labels (text elements)
+  expect_match(svg, "<text")
+
+  # Check opacity
+  expect_match(svg, "opacity")
+})
+
+test_that("background parameter affects SVG output", {
+  result_white <- generate_puzzle(
+    type = "rectangular", grid = c(2, 2), seed = 1,
+    background = "white", save_files = FALSE
+  )
+
+  result_none <- generate_puzzle(
+    type = "rectangular", grid = c(2, 2), seed = 1,
+    background = "none", save_files = FALSE
+  )
+
+  # Results should be different
+  expect_false(identical(result_white$svg_content, result_none$svg_content))
+})
+
+# =============================================================================
+# ERROR HANDLING
+# =============================================================================
+
+test_that("invalid type produces clear error", {
+  expect_error(
+    generate_puzzle(type = "invalid", grid = c(2, 2), seed = 1, save_files = FALSE),
+    "Invalid type"
+  )
+})
+
+test_that("invalid grid produces error", {
+  expect_error(
+    generate_puzzle(type = "rectangular", grid = c(-1, 2), seed = 1, save_files = FALSE)
+  )
+
+  expect_error(
+    generate_puzzle(type = "rectangular", grid = c(0, 0), seed = 1, save_files = FALSE)
+  )
+})
+
+# =============================================================================
+# PACKAGE EXPORTS
+# =============================================================================
+
+test_that("main exported functions exist", {
   expect_true(exists("generate_puzzle"))
-  expect_true(exists("generate_hex_jigsaw_svg"))
-  expect_true(exists("generate_puzzle_core"))
+  expect_true(is.function(generate_puzzle))
 })
 
-test_that("utility functions are available", {
-  # Check that key utility functions exist
-  expect_true(exists("extract_puzzle_tab_data"))
-  expect_true(exists("generate_individual_pieces_svg"))
-  expect_true(exists("apply_hexagonal_separation"))
-})
-
-test_that("simple SVG generation works", {
-  # Test the most basic SVG generation
-  result <- tryCatch({
-    puzzle <- generate_jigsaw_svg(seed = 1234, xn = 2, yn = 2)
-    puzzle$svg
-  }, error = function(e) e)
-  
-  if (!inherits(result, "error")) {
-    expect_type(result, "character")
-    expect_true(nchar(result) > 0)
-  } else {
-    expect_true(TRUE)
-  }
-})
-
-test_that("generate_puzzle_svg_enhanced passes stroke_width and background to separated mode", {
-  # Test that stroke_width and background parameters are passed through
-  # to generate_separated_puzzle_svg when using separated mode
-  result <- tryCatch({
-    puzzle <- generate_puzzle_core(seed = 1234, grid = c(2, 2))
-    
-    # Generate with custom stroke_width and background
-    svg_custom <- generate_puzzle_svg_enhanced(
-      puzzle_structure = puzzle,
-      mode = "separated",
-      offset = 10,
-      stroke_width = 2.5,
-      background = "lightblue"
-    )
-    
-    # Check that stroke_width appears in the SVG
-    expect_true(grepl('stroke-width="2\\.5"', svg_custom))
-    
-    # Check that background color appears in the SVG
-    expect_true(grepl('fill="lightblue"', svg_custom))
-    
-    svg_custom
-  }, error = function(e) e)
-  
-  if (inherits(result, "error")) {
-    # If there's an error, mark the test as skipped rather than failed
-    skip("generate_puzzle_svg_enhanced not available or has different interface")
-  }
+test_that("Shiny app functions exist", {
+  skip_if_not(exists("launch_jigsaw_app"), "Shiny app not available")
+  expect_true(is.function(launch_jigsaw_app))
 })

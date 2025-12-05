@@ -152,6 +152,7 @@ generate_puzzle <- function(type = "rectangular",
     canvas_offset = positioned$canvas_offset,
     type = type,
     parameters = list(
+      type = type,
       seed = pieces_result$parameters$seed,
       grid = grid,
       size = size,
@@ -349,6 +350,11 @@ generate_puzzle_batch <- function(variations, base_dir = "output/batch") {
     if (is.null(var$jitter)) var$jitter <- 4
     if (is.null(var$offset)) var$offset <- 0
     if (is.null(var$background)) var$background <- "white"
+    if (is.null(var$opacity)) var$opacity <- 1.0
+    if (is.null(var$stroke_width)) var$stroke_width <- 1.5
+    if (is.null(var$fill_color)) var$fill_color <- "none"
+    if (is.null(var$do_warp)) var$do_warp <- FALSE
+    if (is.null(var$do_trunc)) var$do_trunc <- FALSE
 
     log_subheader("Generating puzzle {i} of {length(variations)}")
     log_info("Seed: {var$seed}, Grid: {paste(var$grid, collapse='x')}, Offset: {var$offset}")

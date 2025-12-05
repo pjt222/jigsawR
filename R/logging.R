@@ -107,15 +107,17 @@ log_params <- function(title, items) {
 #' Log a section header
 #'
 #' @param text Header text
+#' @param .envir Environment for variable lookup (defaults to parent frame)
 #' @keywords internal
-log_header <- function(text) {
-  cli::cli_h1(text)
+log_header <- function(text, .envir = parent.frame()) {
+  cli::cli_h1(text, .envir = .envir)
 }
 
 #' Log a subsection header
 #'
 #' @param text Subheader text
+#' @param .envir Environment for variable lookup (defaults to parent frame)
 #' @keywords internal
-log_subheader <- function(text) {
-  cli::cli_h2(text)
+log_subheader <- function(text, .envir = parent.frame()) {
+  cli::cli_h2(text, .envir = .envir)
 }

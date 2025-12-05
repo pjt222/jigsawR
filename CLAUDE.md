@@ -739,6 +739,53 @@ These insights emerged during the development of concentric ring mode and the re
     - **Backward compatibility**: Make middle color optional; fall back to 2-stop if not provided
     - **Implementation**: Check for middle color existence before building gradient def
 
+12. **Test Suite Migration Strategy (2025-12-05)**
+    - **Context**: Migrated 40+ standalone test files to testthat framework
+    - **Categorization approach**: Spawn parallel subagents to categorize files into DELETE/ARCHIVE/KEEP
+    - **DELETE criteria**: Functionality now covered by testthat suite (17 files deleted)
+    - **ARCHIVE criteria**: Debugging scripts with historical value (69 files moved to `tests/debug_archive/`)
+    - **KEEP criteria**: Unique functionality not covered by unified API tests (7 files retained)
+    - **Key insight**: Most standalone tests were development artifacts; testthat provides better structure
+    - **Result**: 796 passing tests with comprehensive coverage
+
+13. **testthat Best Practices for R Packages (2025-12-05)**
+    - **Use `skip_if_not()` for optional functions**: Legacy or deprecated functions may not exist
+      ```r
+      skip_if_not(exists("legacy_function"), "legacy_function not available")
+      ```
+    - **Avoid `expect_gte`/`expect_lte` with `info` parameter**: Not supported in all testthat versions
+      ```r
+      # BAD: expect_gte(x, 0, info = "reason")
+      # GOOD: expect_true(x >= 0, label = "x >= 0")
+      ```
+    - **Test result structure, not implementation details**: Focus on `result$pieces`, `result$svg_content`
+    - **Use `save_files = FALSE`** in tests to avoid filesystem side effects
+    - **Piece count formulas**: Document expected counts in test names
+      - Rectangular: `rows * cols`
+      - Hexagonal/Concentric: `3 * rings * (rings - 1) + 1`
+
+14. **Batch Function Default Handling (2025-12-05)**
+    - **Problem**: `generate_puzzle_batch()` passed NULL for missing variation parameters
+    - **Symptom**: `if (opacity < 1)` failed with "argument has length 0"
+    - **Root cause**: R function defaults don't apply when explicitly passing NULL
+    - **Solution**: Add explicit NULL checks with defaults in batch function:
+      ```r
+      if (is.null(var$opacity)) var$opacity <- 1.0
+      if (is.null(var$do_warp)) var$do_warp <- FALSE
+      ```
+    - **Lesson**: Batch/wrapper functions must handle NULL for all optional parameters
+
+15. **CLI Logging Environment Scoping (2025-12-05)**
+    - **Problem**: `log_subheader("Generating puzzle {i}")` failed with "object 'i' not found"
+    - **Root cause**: `cli::cli_h2()` needs `.envir` parameter to find variables in caller's scope
+    - **Fix**: Pass `.envir = parent.frame()` to all cli wrapper functions
+      ```r
+      log_subheader <- function(text, .envir = parent.frame()) {
+        cli::cli_h2(text, .envir = .envir)
+      }
+      ```
+    - **Pattern**: Any wrapper around cli functions with `{variable}` interpolation needs `.envir`
+
 # important-instruction-reminders
 Do what has been asked; nothing more, nothing less.
 NEVER create files unless they're absolutely necessary for achieving your goal.
