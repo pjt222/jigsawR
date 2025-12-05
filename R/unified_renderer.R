@@ -322,20 +322,79 @@ render_piece <- function(piece, fill, stroke_color, stroke_width, opacity) {
 }
 
 
+#' Calculate bounding box center from SVG path
+#'
+#' Parses an SVG path and calculates the center of its bounding box.
+#' This matches how SVG objectBoundingBox gradients center themselves.
+#'
+#' @param path SVG path d attribute string
+#' @return Named vector with x and y center coordinates
+#' @keywords internal
+calculate_path_bounding_box_center <- function(path) {
+  # Extract all coordinate points from the path
+  # Pattern matches: M x y, L x y, C x1 y1 x2 y2 x y, A rx ry rot large sweep x y
+
+  # Extract all numbers from the path (handles both comma and space separators)
+  # First, remove command letters and split on separators
+  coords_str <- gsub("[MLCAZ]", " ", path)
+  coords <- as.numeric(unlist(strsplit(trimws(coords_str), "[, ]+")))
+  coords <- coords[!is.na(coords)]
+
+  if (length(coords) < 2) {
+    return(c(x = 0, y = 0))
+  }
+
+  # Extract x,y pairs - we need to parse more carefully for different commands
+  # Use parse_svg_path for accurate parsing
+  segments <- parse_svg_path(path)
+
+  xs <- c()
+  ys <- c()
+
+  for (seg in segments) {
+    if (seg$type %in% c("M", "L")) {
+      xs <- c(xs, seg$x)
+      ys <- c(ys, seg$y)
+    } else if (seg$type == "C") {
+      # For cubic bezier, include control points for accurate bounds
+      xs <- c(xs, seg$cp1x, seg$cp2x, seg$x)
+      ys <- c(ys, seg$cp1y, seg$cp2y, seg$y)
+    } else if (seg$type == "A") {
+      xs <- c(xs, seg$x)
+      ys <- c(ys, seg$y)
+    }
+  }
+
+  if (length(xs) == 0 || length(ys) == 0) {
+    return(c(x = 0, y = 0))
+  }
+
+  # Calculate bounding box center
+  cx <- (min(xs) + max(xs)) / 2
+  cy <- (min(ys) + max(ys)) / 2
+
+  return(c(x = cx, y = cy))
+}
+
+
 #' Render a piece label
 #'
-#' Creates an SVG text element positioned at the piece center.
+#' Creates an SVG text element positioned at the piece's geometric center.
+#' Uses the bounding box center calculated from the actual path geometry
+#' to match where gradient fills appear centered.
 #'
-#' @param piece Piece object with center coordinates
+#' @param piece Piece object with path and center coordinates
 #' @param index Piece index (1-based) to display as label
 #' @param color Label text color
 #' @param font_size Font size in mm
 #' @return SVG text element string
 #' @keywords internal
 render_piece_label <- function(piece, index, color, font_size) {
-  # Get center coordinates
-  cx <- piece$center[1]
-  cy <- piece$center[2]
+  # Calculate geometric center from actual path
+  # This matches SVG objectBoundingBox gradient centering
+  bbox_center <- calculate_path_bounding_box_center(piece$path)
+  cx <- bbox_center["x"]
+  cy <- bbox_center["y"]
 
   # Build SVG text element centered on piece
   # Use dominant-baseline and text-anchor for proper centering

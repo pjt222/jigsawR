@@ -31,6 +31,9 @@
 #' @param do_circular_border Use perfect circular arc borders (hexagonal: requires do_warp=TRUE; concentric: always available)
 #' @param center_shape Center piece shape for concentric type: "hexagon" or "circle"
 #' @param boundary_facing Direction the circular arc faces (concentric only): "outward" (convex) or "inward" (concave)
+#' @param show_labels Logical; if TRUE, display piece ID labels at piece centers
+#' @param label_color Color for piece labels (default: "black")
+#' @param label_size Font size for labels in mm (default: auto-calculated based on piece size)
 #' @param output DEPRECATED: Use offset parameter instead
 #' @return List with svg_content, pieces, canvas_size, and parameters
 #' @export
@@ -55,6 +58,9 @@ generate_puzzle <- function(type = "rectangular",
                             do_circular_border = FALSE,
                             center_shape = "hexagon",
                             boundary_facing = "outward",
+                            show_labels = FALSE,
+                            label_color = "black",
+                            label_size = NULL,
                             output = NULL) {
 
   # Handle deprecated 'output' parameter
@@ -132,7 +138,10 @@ generate_puzzle <- function(type = "rectangular",
     colors = colors,
     palette = palette,
     background = background,
-    opacity = opacity
+    opacity = opacity,
+    show_labels = show_labels,
+    label_color = label_color,
+    label_size = label_size
   )
 
   # Build result
@@ -158,7 +167,10 @@ generate_puzzle <- function(type = "rectangular",
       stroke_width = stroke_width,
       palette = palette,
       background = background,
-      opacity = opacity
+      opacity = opacity,
+      show_labels = show_labels,
+      label_color = label_color,
+      label_size = label_size
     ),
     files = list()
   )
