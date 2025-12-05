@@ -230,14 +230,8 @@ ui <- page_fluid(
                         min = cfg_const$diameter$min,
                         max = cfg_const$diameter$max, step = 10),
 
-            # Center piece shape
-            radioButtons("center_shape", "Center Piece:",
-                        choices = list(
-                          "Hexagon" = "hexagon",
-                          "Circle" = "circle"
-                        ),
-                        selected = cfg_conc$center_shape,
-                        inline = TRUE),
+            # Note: center_shape is hardcoded to "hexagon" for now
+            # Future: may add UI option - see GitHub issue for refinement plans
 
             # Concentric boundary shape options
             radioButtons("conc_boundary", "Boundary Shape:",
@@ -688,7 +682,7 @@ server <- function(input, output, session) {
     # Concentric options
     updateNumericInput(session, "rings_conc", value = cfg_conc$rings)
     updateNumericInput(session, "diameter_conc", value = cfg_conc$diameter)
-    updateRadioButtons(session, "center_shape", selected = cfg_conc$center_shape)
+    # center_shape is hardcoded to "hexagon" - no UI update needed
     updateRadioButtons(session, "conc_boundary", selected = if (!is.null(cfg_conc$boundary)) cfg_conc$boundary else "straight")
     updateRadioButtons(session, "conc_boundary_facing", selected = if (!is.null(cfg_conc$boundary_facing)) cfg_conc$boundary_facing else "outward")
   })
@@ -722,8 +716,8 @@ server <- function(input, output, session) {
       conc_boundary_facing <- if (is.null(input$conc_boundary_facing)) "outward" else input$conc_boundary_facing
       conc_boundary_params <- get_conc_boundary_params(input$conc_boundary, conc_boundary_facing)
 
-      # Get center shape for concentric type
-      center_shape_value <- if (is.null(input$center_shape)) "hexagon" else input$center_shape
+      # Center shape for concentric type (hardcoded to hexagon - see GitHub issue for future refinement)
+      center_shape_value <- "hexagon"
 
       # Store base settings - these trigger piece regeneration
       base_settings(list(
@@ -992,8 +986,8 @@ server <- function(input, output, session) {
           ),
           value_box(
             title = "Center",
-            value = tools::toTitleCase(data$center_shape),
-            showcase = bsicons::bs_icon(if (data$center_shape == "circle") "circle" else "hexagon"),
+            value = "Hexagon",  # Hardcoded - see GitHub issue for future options
+            showcase = bsicons::bs_icon("hexagon"),
             theme = "warning"
           )
         )
@@ -1114,8 +1108,8 @@ server <- function(input, output, session) {
       conc_boundary_facing <- if (is.null(input$conc_boundary_facing)) "outward" else input$conc_boundary_facing
       conc_boundary_params <- get_conc_boundary_params(input$conc_boundary, conc_boundary_facing)
 
-      # Get center shape for concentric type
-      center_shape_value <- if (is.null(input$center_shape)) "hexagon" else input$center_shape
+      # Center shape for concentric type (hardcoded to hexagon - see GitHub issue for future refinement)
+      center_shape_value <- "hexagon"
 
       # Determine do_circular_border based on puzzle type
       do_circular_border_val <- if (data$type == "hexagonal") {
