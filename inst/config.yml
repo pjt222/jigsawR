@@ -31,8 +31,13 @@ default:
     offset: 0
     stroke_width: 1
     opacity: 100
-    fill_type: "none"  # none or solid
+    fill_type: "none"  # none, solid, or gradient
     fill_color: "#ffffff"
+    # Piece gradient colors (only used when fill_type = "gradient")
+    piece_gradient:
+      center: "#ffffff"
+      middle: "#e0e0e0"
+      edge: "#808080"
 
   # Seed for reproducibility
   seed: 1234

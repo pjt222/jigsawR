@@ -47,14 +47,23 @@ render_puzzle_svg <- function(positioned, fill = "none", stroke_width = 1.5,
     positioned$canvas_offset
   )
 
-  # Render background
+  # Render background (may include its own defs for background gradient)
   bg_element <- render_background(background, positioned$canvas_size, positioned$canvas_offset)
+
+  # Handle piece fill gradient - create defs section if needed
+  piece_fill_defs <- ""
+  fill_value <- fill
+  if (is.list(fill) && !is.null(fill$type) && fill$type == "gradient") {
+    # Create piece gradient definition
+    piece_fill_defs <- render_piece_fill_gradient_defs(fill)
+    fill_value <- "url(#pieceFillGradient)"
+  }
 
   # Render each piece
   piece_elements <- sapply(seq_along(positioned$pieces), function(i) {
     piece <- positioned$pieces[[i]]
     color <- colors[i]
-    render_piece(piece, fill, color, stroke_width, opacity)
+    render_piece(piece, fill_value, color, stroke_width, opacity)
   })
 
   # Render labels if requested
@@ -84,7 +93,8 @@ render_puzzle_svg <- function(positioned, fill = "none", stroke_width = 1.5,
   }
 
   # Combine and close SVG
-  svg_parts <- c(svg_header, bg_element, piece_elements, label_elements, "</svg>")
+  # piece_fill_defs goes after header but before bg_element (defs should be early)
+  svg_parts <- c(svg_header, piece_fill_defs, bg_element, piece_elements, label_elements, "</svg>")
   svg_parts <- svg_parts[svg_parts != ""]  # Remove empty strings
 
   paste(svg_parts, collapse = "\n")
@@ -165,10 +175,12 @@ render_background <- function(background, canvas_size, canvas_offset = NULL) {
 #' Render gradient background
 #'
 #' Creates an SVG radial gradient definition and rect element.
+#' Supports 2-stop (center, edge) or 3-stop (center, middle, edge) gradients.
 #'
 #' @param gradient_spec List with gradient specification:
-#'   - center_color: Color at center (default: from palette)
-#'   - edge_color: Color at edge (default: from palette)
+#'   - center (or center_color): Color at center (default: from palette)
+#'   - middle: Color at 50% (optional, for 3-stop gradient)
+#'   - edge (or edge_color): Color at edge (default: from palette)
 #'   - palette: Viridis palette to use for auto colors
 #' @param canvas_size c(width, height)
 #' @param canvas_offset c(x, y) offset
@@ -176,16 +188,20 @@ render_background <- function(background, canvas_size, canvas_offset = NULL) {
 #' @keywords internal
 render_gradient_background <- function(gradient_spec, canvas_size, canvas_offset) {
 
-  # Get colors from spec or generate from palette
-  if (!is.null(gradient_spec$center_color) && !is.null(gradient_spec$edge_color)) {
-    center_color <- gradient_spec$center_color
-    edge_color <- gradient_spec$edge_color
-  } else {
-    # Generate from palette
+  # Get colors from spec - support both field name formats
+  # Shiny app sends: center, middle, edge
+  # Legacy code may send: center_color, edge_color
+  center_color <- gradient_spec$center %||% gradient_spec$center_color
+  middle_color <- gradient_spec$middle  # Optional, may be NULL
+  edge_color <- gradient_spec$edge %||% gradient_spec$edge_color
+
+  # If colors not provided, generate from palette
+  if (is.null(center_color) || is.null(edge_color)) {
     palette <- gradient_spec$palette
     colors <- get_puzzle_colors(10, palette)
-    center_color <- colors[8]  # Lighter color at center
-    edge_color <- colors[2]    # Darker color at edge
+    if (is.null(center_color)) center_color <- colors[8]  # Lighter at center
+    if (is.null(middle_color)) middle_color <- colors[5]  # Mid tone
+    if (is.null(edge_color)) edge_color <- colors[2]      # Darker at edge
   }
 
   # Calculate center point (relative to canvas)
@@ -194,15 +210,29 @@ render_gradient_background <- function(gradient_spec, canvas_size, canvas_offset
 
   gradient_id <- "puzzleGradient"
 
-  # Build gradient definition
-  gradient_def <- paste0(
-    '<defs>\n',
-    '  <radialGradient id="', gradient_id, '" cx="', cx, '" cy="', cy, '" r="0.7">\n',
-    '    <stop offset="0%" stop-color="', center_color, '"/>\n',
-    '    <stop offset="100%" stop-color="', edge_color, '"/>\n',
-    '  </radialGradient>\n',
-    '</defs>'
-  )
+  # Build gradient definition - 2-stop or 3-stop based on middle_color
+  if (!is.null(middle_color) && nzchar(middle_color)) {
+    # 3-stop gradient: center (0%), middle (50%), edge (100%)
+    gradient_def <- paste0(
+      '<defs>\n',
+      '  <radialGradient id="', gradient_id, '" cx="', cx, '" cy="', cy, '" r="0.7">\n',
+      '    <stop offset="0%" stop-color="', center_color, '"/>\n',
+      '    <stop offset="50%" stop-color="', middle_color, '"/>\n',
+      '    <stop offset="100%" stop-color="', edge_color, '"/>\n',
+      '  </radialGradient>\n',
+      '</defs>'
+    )
+  } else {
+    # 2-stop gradient: center (0%), edge (100%)
+    gradient_def <- paste0(
+      '<defs>\n',
+      '  <radialGradient id="', gradient_id, '" cx="', cx, '" cy="', cy, '" r="0.7">\n',
+      '    <stop offset="0%" stop-color="', center_color, '"/>\n',
+      '    <stop offset="100%" stop-color="', edge_color, '"/>\n',
+      '  </radialGradient>\n',
+      '</defs>'
+    )
+  }
 
   # Build rect with gradient fill
   rect_element <- sprintf(
@@ -213,6 +243,53 @@ render_gradient_background <- function(gradient_spec, canvas_size, canvas_offset
   )
 
   paste(gradient_def, rect_element, sep = "\n")
+}
+
+
+#' Render piece fill gradient definition
+#'
+#' Creates SVG defs section with radial gradient for piece fills.
+#' Uses objectBoundingBox units so each piece gets a centered gradient.
+#'
+#' @param gradient_spec List with gradient specification:
+#'   - center: Color at center (required)
+#'   - middle: Color at 50% (optional)
+#'   - edge: Color at edge (required)
+#' @return SVG defs element string
+#' @keywords internal
+render_piece_fill_gradient_defs <- function(gradient_spec) {
+  center_color <- gradient_spec$center %||% "#ffffff"
+  middle_color <- gradient_spec$middle  # May be NULL
+  edge_color <- gradient_spec$edge %||% "#808080"
+
+  gradient_id <- "pieceFillGradient"
+
+  # Build gradient definition - 2-stop or 3-stop based on middle_color
+  # Use objectBoundingBox (default) so gradient is relative to each piece
+  if (!is.null(middle_color) && nzchar(middle_color)) {
+    # 3-stop gradient: center (0%), middle (50%), edge (100%)
+    gradient_def <- paste0(
+      '<defs>\n',
+      '  <radialGradient id="', gradient_id, '" cx="50%" cy="50%" r="70%">\n',
+      '    <stop offset="0%" stop-color="', center_color, '"/>\n',
+      '    <stop offset="50%" stop-color="', middle_color, '"/>\n',
+      '    <stop offset="100%" stop-color="', edge_color, '"/>\n',
+      '  </radialGradient>\n',
+      '</defs>'
+    )
+  } else {
+    # 2-stop gradient: center (0%), edge (100%)
+    gradient_def <- paste0(
+      '<defs>\n',
+      '  <radialGradient id="', gradient_id, '" cx="50%" cy="50%" r="70%">\n',
+      '    <stop offset="0%" stop-color="', center_color, '"/>\n',
+      '    <stop offset="100%" stop-color="', edge_color, '"/>\n',
+      '  </radialGradient>\n',
+      '</defs>'
+    )
+  }
+
+  return(gradient_def)
 }
 
 

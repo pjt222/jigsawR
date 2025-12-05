@@ -644,6 +644,45 @@ These insights emerged during the development of concentric ring mode and the re
    - **Feature opportunity**: What seemed like a bug became a configurable feature (`boundary_facing` parameter)
    - **Lesson**: "Bugs" that produce interesting visual effects can become features with a simple toggle
 
+9. **Parameter Flow Debugging in Shiny Apps (2025-12-05)**
+   - **Problem**: Background gradient colors were ignored; always fell back to palette
+   - **Root cause**: Field name mismatch between Shiny and renderer
+     - Shiny sent: `list(center = "#ff0000", middle = "#00ff00", edge = "#0000ff")`
+     - Renderer expected: `gradient_spec$center_color`, `gradient_spec$edge_color`
+   - **Discovery method**: Spawned 3 QA subagents to trace parameter flow:
+     1. Config → defaults
+     2. UI → input controls
+     3. Server → function calls
+   - **Lesson**: When a feature "doesn't work", trace the full data flow from UI to renderer
+   - **Fix pattern**: Support both naming conventions with null-coalescing:
+     ```r
+     center_color <- gradient_spec$center %||% gradient_spec$center_color
+     ```
+
+10. **SVG Radial Gradients for Piece Fills (2025-12-05)**
+    - **Challenge**: Each puzzle piece needs its own centered radial gradient
+    - **Solution**: Use `objectBoundingBox` (SVG default for gradientUnits)
+    - **How it works**: With `objectBoundingBox`, `cx="50%" cy="50%"` means "center of each element's bounding box"
+    - **Implementation**: Define one gradient, reference it in all pieces - each gets centered gradient
+    - **Key insight**: Unlike background gradients (absolute coordinates), piece gradients need relative coordinates
+    - **Code pattern**:
+      ```xml
+      <defs>
+        <radialGradient id="pieceFillGradient" cx="50%" cy="50%" r="70%">
+          <stop offset="0%" stop-color="#ffffff"/>
+          <stop offset="50%" stop-color="#cccccc"/>
+          <stop offset="100%" stop-color="#333333"/>
+        </radialGradient>
+      </defs>
+      <path d="..." fill="url(#pieceFillGradient)"/>
+      ```
+
+11. **3-Stop Gradients for Richer Visual Effects (2025-12-05)**
+    - **Standard SVG**: Supports unlimited color stops at any offset
+    - **UI design**: 3 stops (center/middle/edge at 0%/50%/100%) covers most use cases
+    - **Backward compatibility**: Make middle color optional; fall back to 2-stop if not provided
+    - **Implementation**: Check for middle color existence before building gradient def
+
 # important-instruction-reminders
 Do what has been asked; nothing more, nothing less.
 NEVER create files unless they're absolutely necessary for achieving your goal.

@@ -341,7 +341,8 @@ ui <- page_fluid(
             radioButtons("fill_type", "Piece Fill:",
                         choices = list(
                           "None (Outline only)" = "none",
-                          "Solid Color" = "solid"
+                          "Solid Color" = "solid",
+                          "Gradient" = "gradient"
                         ),
                         selected = cfg_style$fill_type,
                         inline = TRUE),
@@ -351,6 +352,28 @@ ui <- page_fluid(
                 "fill_color",
                 "Fill Color:",
                 value = cfg_style$fill_color,
+                showColour = "background"
+              )
+            ),
+            # Gradient color pickers for piece fill
+            conditionalPanel(
+              condition = "input.fill_type == 'gradient'",
+              colourpicker::colourInput(
+                "piece_gradient_center",
+                "Center Color:",
+                value = "#ffffff",
+                showColour = "background"
+              ),
+              colourpicker::colourInput(
+                "piece_gradient_middle",
+                "Middle Color:",
+                value = "#e0e0e0",
+                showColour = "background"
+              ),
+              colourpicker::colourInput(
+                "piece_gradient_edge",
+                "Edge Color:",
+                value = "#808080",
                 showColour = "background"
               )
             )
@@ -847,11 +870,17 @@ server <- function(input, output, session) {
     if (is.null(pos)) return(NULL)
 
     # Styling options (these trigger re-render, not regeneration)
-    fill_color_value <- if (is.null(input$fill_type) || input$fill_type == "none") {
-      "none"
-    } else {
-      input$fill_color
-    }
+    fill_color_value <- switch(input$fill_type,
+      "none" = "none",
+      "solid" = input$fill_color,
+      "gradient" = list(
+        type = "gradient",
+        center = input$piece_gradient_center,
+        middle = input$piece_gradient_middle,
+        edge = input$piece_gradient_edge
+      ),
+      "none"  # default
+    )
 
     background_value <- switch(input$background_type,
       "none" = "none",
@@ -1040,21 +1069,28 @@ server <- function(input, output, session) {
       data <- puzzle_data()
       if (is.null(data)) return()
 
-      # Determine fill color value
-      fill_color_value <- if (is.null(input$fill_type) || input$fill_type == "none") {
-        "none"
-      } else {
-        input$fill_color
-      }
+      # Determine fill color value (supports none, solid, gradient)
+      fill_color_value <- switch(input$fill_type,
+        "none" = "none",
+        "solid" = input$fill_color,
+        "gradient" = list(
+          type = "gradient",
+          center = input$piece_gradient_center,
+          middle = input$piece_gradient_middle,
+          edge = input$piece_gradient_edge
+        ),
+        "none"  # default
+      )
 
-      # Determine background value
+      # Determine background value (supports none, solid, gradient)
       background_value <- switch(input$background_type,
         "none" = "none",
         "solid" = input$background_color,
         "gradient" = list(
           type = "gradient",
-          center_color = input$gradient_center,
-          edge_color = input$gradient_edge
+          center = input$gradient_center,
+          middle = input$gradient_middle,
+          edge = input$gradient_edge
         )
       )
 
