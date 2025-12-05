@@ -621,6 +621,15 @@ These insights emerged during the development of concentric ring mode and the re
    - **Lesson**: Edge direction bugs manifest as visual artifacts (overlapping, gaps)
    - Debug by examining raw path coordinates, not just rendered output
 
+7. **SVG Arc Translation (2025-12-05)**
+   - **Problem**: Perfect Circle boundary arcs appeared distorted when pieces separated
+   - **Wrong assumption**: "Arcs can't be translated - convert to lines"
+   - **Correct math**: Arc translation IS valid - translate endpoints, keep radii constant
+   - **Proof**: `|P₁' - C₂| = |(P₁ + Δ) - (C₁ + Δ)| = |P₁ - C₁| = r`
+   - **Insight**: SVG renderer calculates arc center from endpoints + radii. When both endpoints translate by (dx, dy), the center also moves by (dx, dy)
+   - **Analogy**: Moving a slice of pie outward - the curved edge maintains its exact shape
+   - **Lesson**: Question mathematical assumptions in comments; verify with proofs
+
 # important-instruction-reminders
 Do what has been asked; nothing more, nothing less.
 NEVER create files unless they're absolutely necessary for achieving your goal.
