@@ -535,6 +535,42 @@ renv::restore()
 ### Code Over Output Files
 **IMPORTANT**: We focus on refining scripts rather than tinkering with output files. Reproducible code ensures data quality. Even if we achieve data quality through manual adjustments, this will not provide reliable code.
 
+### Subagents for QA and Pair Programming
+For complex debugging or investigation tasks, spawn multiple subagents in parallel to investigate different aspects of the problem. This technique was successfully used for the label centering fix (2025-12-05).
+
+**When to use subagents:**
+- Debugging issues with unclear root causes
+- Investigating multiple potential problem areas simultaneously
+- Complex refactoring requiring verification across multiple files
+- Any task benefiting from parallel investigation
+
+**Example: Label Centering Investigation**
+```
+User request: "investigate label positioning issue"
+
+Spawned 3 parallel subagents:
+1. QA Agent 1: Investigate piece center calculation during generation
+   - Found: Centers are lattice positions calculated BEFORE warp/truncation
+   - Key files: unified_piece_generation.R, hexagonal_edge_generation_fixed.R
+
+2. QA Agent 2: Investigate label rendering code
+   - Found: render_piece_label() uses piece$center directly
+   - Found: canvas_offset not applied to label coordinates
+
+3. QA Agent 3: Compare piece centers with actual geometry bounds
+   - Found: Stored centers differ from geometric centroids for warped pieces
+   - Found: Error increases with distance from origin (non-linear warp)
+```
+
+**Benefits:**
+- Parallel investigation is faster than sequential
+- Each agent focuses on one aspect deeply
+- Comprehensive reports identify root causes more reliably
+- Cross-referencing findings reveals the full picture
+
+**How to request:**
+> "Please investigate [issue]. Go step by step, slow but correct, and create subagents as quality assurance and pair programming specialists."
+
 ### Recent Work
 ✅ **COMPLETED**: Concentric as Top-Level Type (2025-12-04)
   - Elevated "concentric" from a sub-mode of hexagonal to a proper top-level puzzle type
