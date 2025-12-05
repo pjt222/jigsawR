@@ -28,8 +28,9 @@
 #' @param filename_prefix Prefix for output files
 #' @param do_warp Apply circular warping (hexagonal only)
 #' @param do_trunc Truncate edge pieces (hexagonal only)
-#' @param do_circular_border Use perfect circular arc borders (hexagonal only, requires do_warp=TRUE)
+#' @param do_circular_border Use perfect circular arc borders (hexagonal: requires do_warp=TRUE; concentric: always available)
 #' @param center_shape Center piece shape for concentric type: "hexagon" or "circle"
+#' @param boundary_facing Direction the circular arc faces (concentric only): "outward" (convex) or "inward" (concave)
 #' @param output DEPRECATED: Use offset parameter instead
 #' @return List with svg_content, pieces, canvas_size, and parameters
 #' @export
@@ -53,6 +54,7 @@ generate_puzzle <- function(type = "rectangular",
                             do_trunc = FALSE,
                             do_circular_border = FALSE,
                             center_shape = "hexagon",
+                            boundary_facing = "outward",
                             output = NULL) {
 
   # Handle deprecated 'output' parameter
@@ -115,7 +117,8 @@ generate_puzzle <- function(type = "rectangular",
     do_warp = do_warp,
     do_trunc = do_trunc,
     do_circular_border = do_circular_border,
-    center_shape = center_shape
+    center_shape = center_shape,
+    boundary_facing = boundary_facing
   )
 
   # Step 2: Apply positioning
@@ -150,6 +153,7 @@ generate_puzzle <- function(type = "rectangular",
       do_trunc = do_trunc,
       do_circular_border = do_circular_border,
       center_shape = if (type == "concentric") center_shape else NULL,
+      boundary_facing = if (type == "concentric") boundary_facing else NULL,
       fill_color = fill_color,
       stroke_width = stroke_width,
       palette = palette,

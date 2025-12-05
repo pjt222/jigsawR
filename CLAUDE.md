@@ -630,6 +630,20 @@ These insights emerged during the development of concentric ring mode and the re
    - **Analogy**: Moving a slice of pie outward - the curved edge maintains its exact shape
    - **Lesson**: Question mathematical assumptions in comments; verify with proofs
 
+8. **SVG Arc Sweep Flag for Boundary Direction (2025-12-05)**
+   - **Discovery**: Initial "Perfect Circle" boundary bent inward (concave) instead of outward (convex)
+   - **Root cause**: SVG arc sweep-flag controls arc direction
+   - **SVG arc format**: `A rx ry x-rotation large-arc-flag sweep-flag x y`
+   - **sweep-flag values**:
+     - `0` = counter-clockwise (arc curves left when traveling from start to end)
+     - `1` = clockwise (arc curves right when traveling from start to end)
+   - **Implementation**: For outward-facing (convex) boundary arcs traveling clockwise around puzzle:
+     - Forward direction (clockwise): `sweep=0` (arc bulges outward)
+     - Reverse direction (counter-clockwise): `sweep=1` (arc bulges outward)
+   - **For inward-facing (concave)**: Swap the values
+   - **Feature opportunity**: What seemed like a bug became a configurable feature (`boundary_facing` parameter)
+   - **Lesson**: "Bugs" that produce interesting visual effects can become features with a simple toggle
+
 # important-instruction-reminders
 Do what has been asked; nothing more, nothing less.
 NEVER create files unless they're absolutely necessary for achieving your goal.

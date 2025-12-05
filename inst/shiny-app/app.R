@@ -70,6 +70,21 @@ if (!loaded) {
   log_info("Current files: {files_list}")
 }
 
+# Load configuration - SINGLE SOURCE OF TRUTH for all defaults
+cfg <- get_puzzle_config()
+log_info("Loaded configuration from config.yml")
+
+# Extract commonly used config values for cleaner UI code
+cfg_rect <- cfg$rectangular
+cfg_hex <- cfg$hexagonal
+cfg_conc <- cfg$concentric
+cfg_style <- cfg$styling
+cfg_colors <- cfg$colors
+cfg_labels <- cfg$labels
+cfg_bg <- cfg$background
+cfg_ui <- cfg$ui
+cfg_const <- cfg$constraints
+
 # Define UI with enhanced bslib theme
 ui <- page_fluid(
   theme = bs_theme(
@@ -118,170 +133,233 @@ ui <- page_fluid(
     sidebar = sidebar(
       width = 300,  # Approximately same as width = 4 in old layout (300px)
 
-      # Parameter Accordion
+      # Parameter Accordion - Reorganized into Settings, Styling, Download
       accordion(
         id = "params_accordion",
-        open = c("basic", "advanced"),  # Keep basic and advanced open by default
+        open = cfg_ui$default_accordion_open,  # From config.yml
 
-        # Basic Settings Section
+        # ===== SETTINGS PANEL =====
+        # Combines Basic Settings + Advanced Settings + Generate/Reset buttons
         accordion_panel(
-          title = "Basic Settings",
-          value = "basic",
+          title = "Settings",
+          value = "settings",
+          icon = bsicons::bs_icon("gear"),
 
-        # Puzzle Type Selection
-        radioButtons("puzzle_type", "Puzzle Type:",
-                    choices = list("Rectangular" = "rectangular",
-                                  "Hexagonal" = "hexagonal",
-                                  "Concentric" = "concentric"),
-                    selected = "rectangular",
-                    inline = TRUE),
-
-        # Conditional UI for puzzle parameters
-        conditionalPanel(
-          condition = "input.puzzle_type == 'rectangular'",
-          # Grid dimensions for rectangular
-          fluidRow(
-            column(6,
-              numericInput("rows", "Rows:",
-                          value = 2, min = 1, max = 10, step = 1)
-            ),
-            column(6,
-              numericInput("cols", "Columns:",
-                          value = 2, min = 1, max = 10, step = 1)
-            )
-          ),
-
-          # Size for rectangular
-          fluidRow(
-            column(6,
-              numericInput("width", "Width (mm):",
-                          value = 200, min = 50, max = 500, step = 10)
-            ),
-            column(6,
-              numericInput("height", "Height (mm):",
-                          value = 200, min = 50, max = 500, step = 10)
-            )
-          )
-        ),
-
-        conditionalPanel(
-          condition = "input.puzzle_type == 'hexagonal'",
-          # Rings for hexagonal
-          numericInput("rings", "Rings:", value = 3, min = 2, max = 6),
-
-          # Diameter for hexagonal
-          numericInput("diameter", "Diameter (mm):",
-                      value = 240, min = 100, max = 500, step = 10),
-
-          # Hexagonal boundary shape options
-          # Five mutually exclusive outcomes
-          radioButtons("hex_boundary", "Boundary Shape:",
-                      choices = list(
-                        "Zigzag (Original)" = "zigzag",
-                        "Clean Hexagon" = "hexagon",
-                        "Warped Zigzag" = "warped",
-                        "Warped Hexagon" = "warped_hex",
-                        "Perfect Circle" = "circle"
-                      ),
-                      selected = "zigzag")
-        ),
-
-        # Concentric puzzle type panel
-        conditionalPanel(
-          condition = "input.puzzle_type == 'concentric'",
-          # Rings for concentric
-          numericInput("rings_conc", "Rings:", value = 3, min = 2, max = 6),
-
-          # Diameter for concentric
-          numericInput("diameter_conc", "Diameter (mm):",
-                      value = 240, min = 100, max = 500, step = 10),
-
-          # Center piece shape
-          radioButtons("center_shape", "Center Piece:",
-                      choices = list(
-                        "Hexagon" = "hexagon",
-                        "Circle" = "circle"
-                      ),
-                      selected = "hexagon",
-                      inline = TRUE)
-        ),
-
-        # Seed
-        fluidRow(
-          column(8,
-            numericInput("seed", "Random Seed:",
-                        value = 1234, min = 1, max = 99999, step = 1)
-          ),
-          column(4,
-            br(),
-            actionButton("randomize", "Random",
-                        icon = icon("dice"),
-                        class = "mt-4")
-          )
-        )
-        ),
-
-        # Advanced Settings Section
-        accordion_panel(
-          title = "Advanced Settings",
-          value = "advanced",
-
-        tooltip(
-          sliderInput("tabsize", "Tab Size:",
-                     min = 0, max = 100, value = 20, step = 1,
-                     ticks = TRUE,
-                     post = "%",
-                     sep = ""),
-          "Controls the size of interlocking tabs. Higher values create larger, more prominent tabs. Recommended: 15-25%"
-        ),
-
-        tooltip(
-          sliderInput("jitter", "Jitter:",
-                     min = 0, max = 100, value = 4, step = 1,
-                     ticks = TRUE,
-                     post = "%",
-                     sep = ""),
-          "Adds randomness to piece shapes for more organic variation. Higher values create more irregular pieces. Recommended: 2-6%"
-        ),
-
-        # Unified offset slider (replaces output mode dropdowns - Epic #32)
-        tooltip(
-          sliderInput("offset", "Piece Separation:",
-                     min = 0, max = 50, value = 0, step = 1,
-                     ticks = TRUE,
-                     post = " mm",
-                     sep = ""),
-          "Gap between pieces. 0mm = complete puzzle (pieces touching), >0mm = separated pieces for laser cutting"
-        ),
-
-        # Fill color for separated mode (visible when offset > 0)
-        conditionalPanel(
-          condition = "input.offset > 0",
-          radioButtons("fill_type", "Piece Fill:",
-                      choices = list(
-                        "None (Outline only)" = "none",
-                        "Solid Color" = "solid"
-                      ),
-                      selected = "none",
+          # Puzzle Type Selection
+          radioButtons("puzzle_type", "Puzzle Type:",
+                      choices = list("Rectangular" = "rectangular",
+                                    "Hexagonal" = "hexagonal",
+                                    "Concentric" = "concentric"),
+                      selected = "rectangular",
                       inline = TRUE),
+
+          # Conditional UI for puzzle parameters (values from config.yml)
           conditionalPanel(
-            condition = "input.fill_type == 'solid'",
-            colourpicker::colourInput(
-              "fill_color",
-              "Fill Color:",
-              value = "#ffffff",
-              showColour = "background"
+            condition = "input.puzzle_type == 'rectangular'",
+            # Grid dimensions for rectangular
+            fluidRow(
+              column(6,
+                numericInput("rows", "Rows:",
+                            value = cfg_rect$rows,
+                            min = cfg_const$rows$min,
+                            max = cfg_const$rows$max, step = 1)
+              ),
+              column(6,
+                numericInput("cols", "Columns:",
+                            value = cfg_rect$cols,
+                            min = cfg_const$cols$min,
+                            max = cfg_const$cols$max, step = 1)
+              )
+            ),
+
+            # Size for rectangular
+            fluidRow(
+              column(6,
+                numericInput("width", "Width (mm):",
+                            value = cfg_rect$width,
+                            min = cfg_const$width$min,
+                            max = cfg_const$width$max, step = 10)
+              ),
+              column(6,
+                numericInput("height", "Height (mm):",
+                            value = cfg_rect$height,
+                            min = cfg_const$height$min,
+                            max = cfg_const$height$max, step = 10)
+              )
             )
-          )
-        )
+          ),
+
+          conditionalPanel(
+            condition = "input.puzzle_type == 'hexagonal'",
+            # Rings for hexagonal
+            numericInput("rings", "Rings:",
+                        value = cfg_hex$rings,
+                        min = cfg_const$rings$min,
+                        max = cfg_const$rings$max),
+
+            # Diameter for hexagonal
+            numericInput("diameter", "Diameter (mm):",
+                        value = cfg_hex$diameter,
+                        min = cfg_const$diameter$min,
+                        max = cfg_const$diameter$max, step = 10),
+
+            # Hexagonal boundary shape options
+            radioButtons("hex_boundary", "Boundary Shape:",
+                        choices = list(
+                          "Zigzag (Original)" = "zigzag",
+                          "Clean Hexagon" = "hexagon",
+                          "Warped Zigzag" = "warped",
+                          "Warped Hexagon" = "warped_hex",
+                          "Perfect Circle" = "circle"
+                        ),
+                        selected = cfg_hex$boundary)
+          ),
+
+          # Concentric puzzle type panel
+          conditionalPanel(
+            condition = "input.puzzle_type == 'concentric'",
+            # Rings for concentric
+            numericInput("rings_conc", "Rings:",
+                        value = cfg_conc$rings,
+                        min = cfg_const$rings$min,
+                        max = cfg_const$rings$max),
+
+            # Diameter for concentric
+            numericInput("diameter_conc", "Diameter (mm):",
+                        value = cfg_conc$diameter,
+                        min = cfg_const$diameter$min,
+                        max = cfg_const$diameter$max, step = 10),
+
+            # Center piece shape
+            radioButtons("center_shape", "Center Piece:",
+                        choices = list(
+                          "Hexagon" = "hexagon",
+                          "Circle" = "circle"
+                        ),
+                        selected = cfg_conc$center_shape,
+                        inline = TRUE),
+
+            # Concentric boundary shape options
+            radioButtons("conc_boundary", "Boundary Shape:",
+                        choices = list(
+                          "Straight" = "straight",
+                          "Perfect Circle" = "circle"
+                        ),
+                        selected = if (!is.null(cfg_conc$boundary)) cfg_conc$boundary else "straight",
+                        inline = TRUE),
+
+            # Boundary facing direction (only shown when "Perfect Circle" is selected)
+            conditionalPanel(
+              condition = "input.conc_boundary == 'circle'",
+              radioButtons("conc_boundary_facing", "Arc Direction:",
+                          choices = list(
+                            "Outward (convex)" = "outward",
+                            "Inward (concave)" = "inward"
+                          ),
+                          selected = if (!is.null(cfg_conc$boundary_facing)) cfg_conc$boundary_facing else "outward",
+                          inline = TRUE)
+            )
+          ),
+
+          # Seed
+          fluidRow(
+            column(8,
+              numericInput("seed", "Random Seed:",
+                          value = cfg$seed,
+                          min = cfg_const$seed$min,
+                          max = cfg_const$seed$max, step = 1)
+            ),
+            column(4,
+              br(),
+              actionButton("randomize", "Random",
+                          icon = icon("dice"),
+                          class = "mt-4")
+            )
+          ),
+
+          # Divider before action buttons
+          tags$hr(class = "my-3"),
+
+          # Generate and Reset buttons
+          actionButton("generate", "Generate Puzzle",
+                      icon = icon("puzzle-piece"),
+                      class = "btn-primary btn-lg w-100 mb-2"),
+
+          actionButton("reset", "Reset to Defaults",
+                      icon = icon("undo"),
+                      class = "btn-secondary w-100")
         ),
 
-        # Styling Options Section
+        # ===== STYLING PANEL =====
+        # Visual options - changes update preview automatically (reactive)
+        # All values from config.yml
         accordion_panel(
-          title = "Styling Options",
+          title = "Styling",
           value = "styling",
+          icon = bsicons::bs_icon("palette"),
 
-        selectInput("color_palette", "Color Palette:",
+          # Piece shape options (affect piece generation - reactive)
+          tags$small(class = "text-muted", "Piece Shape"),
+
+          tooltip(
+            sliderInput("tabsize", "Tab Size:",
+                       min = cfg_const$tabsize$min,
+                       max = cfg_const$tabsize$max,
+                       value = cfg_style$tabsize, step = 1,
+                       ticks = TRUE,
+                       post = "%",
+                       sep = ""),
+            "Controls the size of interlocking tabs. Higher values create larger, more prominent tabs. Recommended: 15-25%"
+          ),
+
+          tooltip(
+            sliderInput("jitter", "Jitter:",
+                       min = cfg_const$jitter$min,
+                       max = cfg_const$jitter$max,
+                       value = cfg_style$jitter, step = 1,
+                       ticks = TRUE,
+                       post = "%",
+                       sep = ""),
+            "Adds randomness to piece shapes for more organic variation. Higher values create more irregular pieces. Recommended: 2-6%"
+          ),
+
+          # Unified offset slider (replaces output mode dropdowns - Epic #32)
+          tooltip(
+            sliderInput("offset", "Piece Separation:",
+                       min = cfg_const$offset$min,
+                       max = cfg_const$offset$max,
+                       value = cfg_style$offset, step = 1,
+                       ticks = TRUE,
+                       post = " mm",
+                       sep = ""),
+            "Gap between pieces. 0mm = complete puzzle (pieces touching), >0mm = separated pieces for laser cutting"
+          ),
+
+          # Fill color for separated mode (visible when offset > 0)
+          conditionalPanel(
+            condition = "input.offset > 0",
+            radioButtons("fill_type", "Piece Fill:",
+                        choices = list(
+                          "None (Outline only)" = "none",
+                          "Solid Color" = "solid"
+                        ),
+                        selected = cfg_style$fill_type,
+                        inline = TRUE),
+            conditionalPanel(
+              condition = "input.fill_type == 'solid'",
+              colourpicker::colourInput(
+                "fill_color",
+                "Fill Color:",
+                value = cfg_style$fill_color,
+                showColour = "background"
+              )
+            )
+          ),
+
+          tags$hr(class = "my-2"),
+          tags$small(class = "text-muted", "Appearance"),
+
+          selectInput("color_palette", "Color Palette:",
                    choices = list(
                      "Black (Solid)" = "black",
                      "Magma (Purple-Yellow)" = "magma",
@@ -293,11 +371,13 @@ ui <- page_fluid(
                      "Rocket (Black-Red-Yellow)" = "rocket",
                      "Turbo (Rainbow)" = "turbo"
                    ),
-                   selected = "magma"),
+                   selected = cfg_colors$default_palette),
 
         tooltip(
           sliderInput("stroke_width", "Line Width:",
-                     min = 0.5, max = 10, value = 1.5, step = 0.5,
+                     min = cfg_const$stroke_width$min,
+                     max = cfg_const$stroke_width$max,
+                     value = cfg_style$stroke_width, step = 0.5,
                      ticks = TRUE,
                      round = 1,
                      post = " mm",
@@ -307,7 +387,9 @@ ui <- page_fluid(
 
         tooltip(
           sliderInput("opacity", "Opacity:",
-                     min = 0, max = 100, value = 100, step = 5,
+                     min = cfg_const$opacity$min,
+                     max = cfg_const$opacity$max,
+                     value = cfg_style$opacity, step = 5,
                      ticks = TRUE,
                      post = "%",
                      sep = ""),
@@ -319,7 +401,7 @@ ui <- page_fluid(
           input_switch(
             id = "show_labels",
             label = "Show Piece Labels",
-            value = FALSE
+            value = cfg_labels$show
           ),
           "Display piece ID numbers at the center of each piece. Useful for assembly instructions."
         ),
@@ -330,12 +412,14 @@ ui <- page_fluid(
           colourpicker::colourInput(
             "label_color",
             "Label Color:",
-            value = "#000000",
+            value = cfg_labels$color,
             showColour = "background"
           ),
           tooltip(
             sliderInput("label_size", "Label Font Size:",
-                       min = 4, max = 30, value = 0, step = 1,
+                       min = cfg_const$label_size$min,
+                       max = cfg_const$label_size$max,
+                       value = cfg_labels$size, step = 1,
                        ticks = TRUE,
                        post = " mm",
                        sep = ""),
@@ -350,7 +434,7 @@ ui <- page_fluid(
                       "Solid Color" = "solid",
                       "Gradient" = "gradient"
                     ),
-                    selected = "none",
+                    selected = cfg_bg$type,
                     inline = TRUE),
 
         # Solid color picker (shown when background_type == "solid")
@@ -359,7 +443,7 @@ ui <- page_fluid(
           colourpicker::colourInput(
             "background_color",
             "Background Color:",
-            value = "#ffffff",
+            value = cfg_bg$solid_color,
             showColour = "background"
           )
         ),
@@ -370,74 +454,59 @@ ui <- page_fluid(
           colourpicker::colourInput(
             "gradient_center",
             "Center Color (0%):",
-            value = "#e3f2fd",
+            value = cfg_bg$gradient$center,
             showColour = "background"
           ),
           colourpicker::colourInput(
             "gradient_middle",
             "Middle Color (50%):",
-            value = "#bbdefb",
+            value = cfg_bg$gradient$middle,
             showColour = "background"
           ),
           colourpicker::colourInput(
             "gradient_edge",
             "Edge Color (100%):",
-            value = "#90caf9",
+            value = cfg_bg$gradient$edge,
             showColour = "background"
           )
         )
-        )
-      ),  # Close accordion
-
-      # Action Buttons
-      div(class = "mt-3",
-        actionButton("generate", "Generate Puzzle",
-                    icon = icon("puzzle-piece"),
-                    class = "btn-primary btn-lg btn-block mb-2"),
-
-        # Reset button
-        actionButton("reset", "Reset to Defaults",
-                    icon = icon("undo"),
-                    class = "btn-secondary btn-block mb-3"),
-
-        # Download buttons section (Epic #32)
-        h6("Download Options:", class = "text-muted mb-2"),
-
-        # Complete puzzle (offset=0)
-        tooltip(
-          downloadButton("download_complete", "Complete Puzzle",
-                        icon = icon("puzzle-piece"),
-                        class = "btn-success btn-block mb-2"),
-          "Download puzzle with all pieces in original positions (offset=0)"
         ),
 
-        # Current view (WYSIWYG)
-        tooltip(
-          downloadButton("download_wysiwyg", "Current View",
-                        icon = icon("eye"),
-                        class = "btn-info btn-block mb-2"),
-          "Download exactly what you see (WYSIWYG)"
-        ),
+        # ===== DOWNLOAD PANEL =====
+        # All download options - buttons disabled until puzzle is generated
+        accordion_panel(
+          title = "Download",
+          value = "download",
+          icon = bsicons::bs_icon("download"),
 
-        # Individual pieces (rectangular only for now)
-        conditionalPanel(
-          condition = "input.puzzle_type == 'rectangular'",
+          # Status message - changes based on whether puzzle is generated
+          uiOutput("download_status_message"),
+
+          # Download Complete Puzzle (offset=0)
           tooltip(
-            actionButton("download_pieces", "Individual Pieces",
-                        icon = icon("download"),
-                        class = "btn-warning btn-block mb-2"),
+            disabled(downloadButton("download_complete", "Complete Puzzle",
+                          icon = icon("puzzle-piece"),
+                          class = "btn-success w-100 mb-2")),
+            "Download puzzle with all pieces in original positions (offset=0)"
+          ),
+
+          # Download Current View (WYSIWYG)
+          tooltip(
+            disabled(downloadButton("download_wysiwyg", "Current View",
+                          icon = icon("eye"),
+                          class = "btn-info w-100 mb-2")),
+            "Download exactly what you see (WYSIWYG)"
+          ),
+
+          # Download Individual Pieces - available for ALL puzzle types
+          tooltip(
+            disabled(actionButton("download_pieces", "Individual Pieces",
+                          icon = icon("download"),
+                          class = "btn-warning w-100")),
             "Download each piece as a separate SVG file"
           )
         )
-      ),
-
-      # Info text
-      div(class = "alert alert-warning mt-3 mb-0",
-        p(class = "small mb-0",
-          icon("lightbulb"), " ",
-          strong("Tip:"), " Click 'Generate Puzzle' to create your puzzle.
-          The preview will appear on the right.")
-      )
+      )  # Close accordion
     ),  # End of sidebar
 
     # Main content area (no wrapper needed with layout_sidebar)
@@ -471,31 +540,45 @@ ui <- page_fluid(
           br(),
           div(class = "p-4",
             h4("How to Use"),
-            p("1. Adjust the settings in the left panel to customize your puzzle"),
-            p("2. Click 'Generate Puzzle' to create a new puzzle"),
-            p("3. Use the download buttons to save your puzzle"),
+            p("1. Open the ", strong("Settings"), " panel to configure your puzzle parameters"),
+            p("2. Click ", strong("Generate Puzzle"), " to create your puzzle"),
+            p("3. Adjust ", strong("Styling"), " options - the preview updates automatically"),
+            p("4. Open the ", strong("Download"), " panel to save your puzzle"),
             br(),
-            h4("Parameter Guide"),
+            h4("Settings Panel"),
             tags$ul(
-              tags$li(strong("Grid:"), " Number of rows and columns determines piece count"),
-              tags$li(strong("Size:"), " Physical dimensions in millimeters"),
-              tags$li(strong("Tab Size:"), " Controls the size of interlocking tabs (15-25%)"),
-              tags$li(strong("Jitter:"), " Adds randomness to piece shapes (2-6%)"),
-              tags$li(strong("Piece Separation:"), " Gap between pieces (0 = complete puzzle, >0 = separated)")
+              tags$li(strong("Puzzle Type:"), " Choose Rectangular, Hexagonal, or Concentric"),
+              tags$li(strong("Grid/Rings:"), " Controls piece count"),
+              tags$li(strong("Size/Diameter:"), " Physical dimensions in millimeters"),
+              tags$li(strong("Tab Size:"), " Size of interlocking tabs (15-25% recommended)"),
+              tags$li(strong("Jitter:"), " Randomness in piece shapes (2-6% recommended)"),
+              tags$li(strong("Piece Separation:"), " Gap between pieces (0 = complete, >0 = separated)")
+            ),
+            br(),
+            h4("Styling Panel"),
+            p("Changes in this panel update the preview ", strong("automatically"), " - no need to regenerate!"),
+            tags$ul(
+              tags$li(strong("Color Palette:"), " Choose from various color schemes"),
+              tags$li(strong("Line Width:"), " For laser cutting use 0.5mm"),
+              tags$li(strong("Opacity:"), " Transparency of puzzle pieces"),
+              tags$li(strong("Labels:"), " Show piece ID numbers"),
+              tags$li(strong("Background:"), " None, solid color, or gradient")
             ),
             br(),
             h4("Download Options"),
             tags$ul(
               tags$li(strong("Complete Puzzle:"), " All pieces at original positions (offset=0)"),
               tags$li(strong("Current View:"), " Exactly what you see (WYSIWYG)"),
-              tags$li(strong("Individual Pieces:"), " Each piece as a separate SVG file")
+              tags$li(strong("Individual Pieces:"), " Each piece as a separate SVG file (all types)")
             ),
             br(),
             h4("Tips for Laser Cutting"),
-            p("• Use separation of 3-5mm for rectangular, 5-10mm for hexagonal"),
-            p("• Black color with 0.5mm line width works best"),
-            p("• Consider material thickness when setting tab size"),
-            p("• Test with small puzzles first")
+            tags$ul(
+              tags$li("Use separation of 3-5mm for rectangular, 5-10mm for hexagonal/concentric"),
+              tags$li("Black color with 0.5mm line width works best"),
+              tags$li("Consider material thickness when setting tab size"),
+              tags$li("Test with small puzzles first")
+            )
           )
         )
       )  # End of tabsetPanel
@@ -515,6 +598,15 @@ get_hex_boundary_params <- function(boundary_choice) {
   )
 }
 
+# Helper function to map concentric boundary choice to parameters
+get_conc_boundary_params <- function(boundary_choice, boundary_facing = "outward") {
+  switch(boundary_choice,
+    "circle" = list(do_circular_border = TRUE, boundary_facing = boundary_facing),
+    # Default: straight (boundary_facing ignored for straight boundary)
+    list(do_circular_border = FALSE, boundary_facing = "outward")
+  )
+}
+
 # Define server logic
 server <- function(input, output, session) {
 
@@ -522,9 +614,13 @@ server <- function(input, output, session) {
   puzzle_data <- reactiveVal(NULL)
   svg_content <- reactiveVal(NULL)
 
-  # Store positioned result for re-rendering (Epic #32 enhancement)
-  # This allows styling changes without regenerating pieces
+  # Store base settings from Generate button (Epic #32 enhancement)
+  # These are the "seed" settings that require clicking Generate:
+  # - type, grid dimensions, size, seed, boundary mode, center shape
+  # Styling options (tabsize, jitter, offset) are reactive and don't need Generate
+  base_settings <- reactiveVal(NULL)
 
+  # Positioned result is now computed reactively based on base_settings + styling
   positioned_result <- reactiveVal(NULL)
 
   # Randomize seed
@@ -533,146 +629,213 @@ server <- function(input, output, session) {
                       value = sample(1:99999, 1))
   })
 
-  # Reset to defaults
+  # Reset to defaults (from config.yml - SINGLE SOURCE OF TRUTH)
   observeEvent(input$reset, {
-    updateNumericInput(session, "rows", value = 2)
-    updateNumericInput(session, "cols", value = 2)
-    updateNumericInput(session, "width", value = 200)
-    updateNumericInput(session, "height", value = 200)
-    updateNumericInput(session, "seed", value = 1234)
-    updateSliderInput(session, "tabsize", value = 20)
-    updateSliderInput(session, "jitter", value = 4)
-    updateSliderInput(session, "offset", value = 0)
-    updateSelectInput(session, "color_palette", selected = "magma")
-    updateSliderInput(session, "stroke_width", value = 1.5)
-    updateSliderInput(session, "opacity", value = 100)
-    # Reset label settings
-    update_switch(id = "show_labels", value = FALSE, session = session)
-    colourpicker::updateColourInput(session, "label_color", value = "#000000")
-    updateSliderInput(session, "label_size", value = 0)
-    # Reset fill options
-    updateRadioButtons(session, "fill_type", selected = "none")
-    # Reset background settings
-    updateRadioButtons(session, "background_type", selected = "none")
-    colourpicker::updateColourInput(session, "background_color", value = "#ffffff")
-    colourpicker::updateColourInput(session, "gradient_center", value = "#e3f2fd")
-    colourpicker::updateColourInput(session, "gradient_middle", value = "#bbdefb")
-    colourpicker::updateColourInput(session, "gradient_edge", value = "#90caf9")
-    # Reset hexagonal options
-    updateNumericInput(session, "rings", value = 3)
-    updateNumericInput(session, "diameter", value = 240)
-    updateRadioButtons(session, "hex_boundary", selected = "zigzag")
-    # Reset concentric options
-    updateNumericInput(session, "rings_conc", value = 3)
-    updateNumericInput(session, "diameter_conc", value = 240)
-    updateRadioButtons(session, "center_shape", selected = "hexagon")
+    # Rectangular options
+    updateNumericInput(session, "rows", value = cfg_rect$rows)
+    updateNumericInput(session, "cols", value = cfg_rect$cols)
+    updateNumericInput(session, "width", value = cfg_rect$width)
+    updateNumericInput(session, "height", value = cfg_rect$height)
+    # Seed
+    updateNumericInput(session, "seed", value = cfg$seed)
+    # Styling options
+    updateSliderInput(session, "tabsize", value = cfg_style$tabsize)
+    updateSliderInput(session, "jitter", value = cfg_style$jitter)
+    updateSliderInput(session, "offset", value = cfg_style$offset)
+    updateSelectInput(session, "color_palette", selected = cfg_colors$default_palette)
+    updateSliderInput(session, "stroke_width", value = cfg_style$stroke_width)
+    updateSliderInput(session, "opacity", value = cfg_style$opacity)
+    # Label settings
+    update_switch(id = "show_labels", value = cfg_labels$show, session = session)
+    colourpicker::updateColourInput(session, "label_color", value = cfg_labels$color)
+    updateSliderInput(session, "label_size", value = cfg_labels$size)
+    # Fill options
+    updateRadioButtons(session, "fill_type", selected = cfg_style$fill_type)
+    colourpicker::updateColourInput(session, "fill_color", value = cfg_style$fill_color)
+    # Background settings
+    updateRadioButtons(session, "background_type", selected = cfg_bg$type)
+    colourpicker::updateColourInput(session, "background_color", value = cfg_bg$solid_color)
+    colourpicker::updateColourInput(session, "gradient_center", value = cfg_bg$gradient$center)
+    colourpicker::updateColourInput(session, "gradient_middle", value = cfg_bg$gradient$middle)
+    colourpicker::updateColourInput(session, "gradient_edge", value = cfg_bg$gradient$edge)
+    # Hexagonal options
+    updateNumericInput(session, "rings", value = cfg_hex$rings)
+    updateNumericInput(session, "diameter", value = cfg_hex$diameter)
+    updateRadioButtons(session, "hex_boundary", selected = cfg_hex$boundary)
+    # Concentric options
+    updateNumericInput(session, "rings_conc", value = cfg_conc$rings)
+    updateNumericInput(session, "diameter_conc", value = cfg_conc$diameter)
+    updateRadioButtons(session, "center_shape", selected = cfg_conc$center_shape)
+    updateRadioButtons(session, "conc_boundary", selected = if (!is.null(cfg_conc$boundary)) cfg_conc$boundary else "straight")
+    updateRadioButtons(session, "conc_boundary_facing", selected = if (!is.null(cfg_conc$boundary_facing)) cfg_conc$boundary_facing else "outward")
   })
 
-  # Generate puzzle using unified pipeline (Epic #32)
-  # Only basic settings trigger regeneration; styling is reactive
+  # Generate button stores base settings (Epic #32 enhancement)
+  # Tabsize, jitter, offset are now reactive - they update preview without Generate
   observeEvent(input$generate, {
 
     log_header("Generate button clicked")
     log_info("Puzzle type: {.strong {input$puzzle_type}}")
-    log_info("Offset: {input$offset}mm")
 
     tryCatch({
-      # Show progress
-      withProgress(message = 'Generating puzzle...', value = 0, {
+      puzzle_type <- input$puzzle_type
 
-        incProgress(0.3, detail = "Creating puzzle structure")
+      # Build parameters based on puzzle type
+      if (puzzle_type == "hexagonal") {
+        grid_param <- c(input$rings)
+        size_param <- c(input$diameter)
+      } else if (puzzle_type == "concentric") {
+        grid_param <- c(input$rings_conc)
+        size_param <- c(input$diameter_conc)
+      } else {
+        grid_param <- c(input$rows, input$cols)
+        size_param <- c(input$width, input$height)
+      }
 
-        # === UNIFIED PIPELINE (Epic #32) ===
-        puzzle_type <- input$puzzle_type
+      # Get boundary parameters from radio button selection (hexagonal only)
+      boundary_params <- get_hex_boundary_params(input$hex_boundary)
 
-        # Build parameters based on puzzle type
-        if (puzzle_type == "hexagonal") {
-          grid_param <- c(input$rings)
-          size_param <- c(input$diameter)
-        } else if (puzzle_type == "concentric") {
-          grid_param <- c(input$rings_conc)
-          size_param <- c(input$diameter_conc)
-        } else {
-          grid_param <- c(input$rows, input$cols)
-          size_param <- c(input$width, input$height)
-        }
+      # Get concentric boundary parameters (with arc direction)
+      conc_boundary_facing <- if (is.null(input$conc_boundary_facing)) "outward" else input$conc_boundary_facing
+      conc_boundary_params <- get_conc_boundary_params(input$conc_boundary, conc_boundary_facing)
 
-        incProgress(0.5, detail = "Generating pieces")
+      # Get center shape for concentric type
+      center_shape_value <- if (is.null(input$center_shape)) "hexagon" else input$center_shape
 
-        # Step 1: Generate pieces internally (basic settings only)
-        # Get boundary parameters from radio button selection (hexagonal only)
-        boundary_params <- get_hex_boundary_params(input$hex_boundary)
+      # Store base settings - these trigger piece regeneration
+      base_settings(list(
+        type = puzzle_type,
+        seed = input$seed,
+        grid = grid_param,
+        size = size_param,
+        boundary_params = boundary_params,
+        conc_boundary_params = conc_boundary_params,
+        center_shape = center_shape_value
+      ))
 
-        # Get center shape for concentric type
-        center_shape_value <- if (is.null(input$center_shape)) "hexagon" else input$center_shape
-
-        pieces_result <- generate_pieces_internal(
-          type = puzzle_type,
+      # Store puzzle metadata for display and downloads
+      if (puzzle_type == "hexagonal") {
+        num_pieces <- 3 * input$rings * (input$rings - 1) + 1
+        puzzle_data(list(
+          type = "hexagonal",
+          rings = input$rings,
+          diameter = input$diameter,
           seed = input$seed,
-          grid = grid_param,
-          size = size_param,
-          tabsize = input$tabsize,
-          jitter = input$jitter,
-          do_warp = if (puzzle_type == "hexagonal") boundary_params$do_warp else FALSE,
-          do_trunc = if (puzzle_type == "hexagonal") boundary_params$do_trunc else FALSE,
-          do_circular_border = if (puzzle_type == "hexagonal") boundary_params$do_circular_border else FALSE,
-          center_shape = center_shape_value
-        )
+          total_pieces = num_pieces,
+          offset = input$offset
+        ))
+      } else if (puzzle_type == "concentric") {
+        num_pieces <- 3 * input$rings_conc * (input$rings_conc - 1) + 1
+        puzzle_data(list(
+          type = "concentric",
+          rings = input$rings_conc,
+          diameter = input$diameter_conc,
+          center_shape = center_shape_value,
+          seed = input$seed,
+          total_pieces = num_pieces,
+          offset = input$offset
+        ))
+      } else {
+        puzzle_data(list(
+          type = "rectangular",
+          rows = input$rows,
+          cols = input$cols,
+          width = input$width,
+          height = input$height,
+          seed = input$seed,
+          total_pieces = input$rows * input$cols,
+          offset = input$offset
+        ))
+      }
 
-        incProgress(0.7, detail = "Applying positioning")
+      log_success("Base settings stored - puzzle will regenerate reactively")
 
-        # Step 2: Apply positioning (offset is a basic setting)
-        positioned <- apply_piece_positioning(pieces_result, offset = input$offset)
+      # Enable download buttons after successful generation
+      shinyjs::enable("download_complete")
+      shinyjs::enable("download_wysiwyg")
+      shinyjs::enable("download_pieces")
 
-        incProgress(1, detail = "Complete!")
-
-        # Store positioned result for reactive rendering
-        positioned_result(positioned)
-
-        # Store puzzle data based on type
-        if (puzzle_type == "hexagonal") {
-          num_pieces <- 3 * input$rings * (input$rings - 1) + 1
-          puzzle_data(list(
-            type = "hexagonal",
-            rings = input$rings,
-            diameter = input$diameter,
-            seed = input$seed,
-            total_pieces = num_pieces,
-            offset = input$offset
-          ))
-        } else if (puzzle_type == "concentric") {
-          num_pieces <- 3 * input$rings_conc * (input$rings_conc - 1) + 1
-          puzzle_data(list(
-            type = "concentric",
-            rings = input$rings_conc,
-            diameter = input$diameter_conc,
-            center_shape = center_shape_value,
-            seed = input$seed,
-            total_pieces = num_pieces,
-            offset = input$offset
-          ))
-        } else {
-          puzzle_data(list(
-            type = "rectangular",
-            rows = input$rows,
-            cols = input$cols,
-            width = input$width,
-            height = input$height,
-            seed = input$seed,
-            total_pieces = input$rows * input$cols,
-            offset = input$offset
-          ))
-        }
-        log_success("Puzzle generation complete!")
-      })
     }, error = function(e) {
-      log_error("ERROR in puzzle generation")
+      log_error("ERROR storing base settings")
       log_error("Message: {e$message}")
-      log_error("Call: {deparse(e$call)}")
-      log_info("Traceback:")
-      print(traceback())
       showNotification(paste("Error:", e$message), type = "error", duration = 10)
     })
+  })
+
+  # Reactive piece generation - depends on base_settings + tabsize/jitter/offset
+  # This allows styling options to update the puzzle without clicking Generate
+  observe({
+    settings <- base_settings()
+    if (is.null(settings)) return()
+
+    # These inputs trigger regeneration reactively
+    tabsize_val <- input$tabsize
+    jitter_val <- input$jitter
+    offset_val <- input$offset
+
+    log_info("Regenerating pieces (tabsize={tabsize_val}, jitter={jitter_val}, offset={offset_val}mm)")
+
+    tryCatch({
+      # Determine do_circular_border based on puzzle type
+      do_circular_border_val <- if (settings$type == "hexagonal") {
+        settings$boundary_params$do_circular_border
+      } else if (settings$type == "concentric") {
+        settings$conc_boundary_params$do_circular_border
+      } else {
+        FALSE
+      }
+
+      # Determine boundary_facing for concentric type
+      boundary_facing_val <- if (settings$type == "concentric") {
+        settings$conc_boundary_params$boundary_facing
+      } else {
+        "outward"
+      }
+
+      # Generate pieces with current styling values
+      pieces_result <- generate_pieces_internal(
+        type = settings$type,
+        seed = settings$seed,
+        grid = settings$grid,
+        size = settings$size,
+        tabsize = tabsize_val,
+        jitter = jitter_val,
+        do_warp = if (settings$type == "hexagonal") settings$boundary_params$do_warp else FALSE,
+        do_trunc = if (settings$type == "hexagonal") settings$boundary_params$do_trunc else FALSE,
+        do_circular_border = do_circular_border_val,
+        center_shape = settings$center_shape,
+        boundary_facing = boundary_facing_val
+      )
+
+      # Apply positioning with current offset
+      positioned <- apply_piece_positioning(pieces_result, offset = offset_val)
+
+      # Store for rendering
+      positioned_result(positioned)
+
+      # Update puzzle_data with current offset (for downloads)
+      current_data <- puzzle_data()
+      if (!is.null(current_data)) {
+        current_data$offset <- offset_val
+        puzzle_data(current_data)
+      }
+
+    }, error = function(e) {
+      log_error("ERROR in reactive piece generation: {e$message}")
+    })
+  })
+
+  # Download status message - changes based on whether puzzle is generated
+  output$download_status_message <- renderUI({
+    if (is.null(puzzle_data())) {
+      div(class = "alert alert-info mb-3",
+        icon("info-circle"), " Generate a puzzle first to enable downloads."
+      )
+    } else {
+      div(class = "alert alert-success mb-3",
+        icon("check-circle"), " Puzzle ready! Choose a download format."
+      )
+    }
   })
 
   # Reactive SVG rendering - updates when styling options change
@@ -911,8 +1074,28 @@ server <- function(input, output, session) {
       # Get boundary parameters from radio button selection (hexagonal only)
       boundary_params <- get_hex_boundary_params(input$hex_boundary)
 
+      # Get concentric boundary parameters (with arc direction)
+      conc_boundary_facing <- if (is.null(input$conc_boundary_facing)) "outward" else input$conc_boundary_facing
+      conc_boundary_params <- get_conc_boundary_params(input$conc_boundary, conc_boundary_facing)
+
       # Get center shape for concentric type
       center_shape_value <- if (is.null(input$center_shape)) "hexagon" else input$center_shape
+
+      # Determine do_circular_border based on puzzle type
+      do_circular_border_val <- if (data$type == "hexagonal") {
+        boundary_params$do_circular_border
+      } else if (data$type == "concentric") {
+        conc_boundary_params$do_circular_border
+      } else {
+        FALSE
+      }
+
+      # Determine boundary_facing for concentric type
+      boundary_facing_val <- if (data$type == "concentric") {
+        conc_boundary_params$boundary_facing
+      } else {
+        "outward"
+      }
 
       result <- generate_puzzle(
         type = data$type,
@@ -930,8 +1113,9 @@ server <- function(input, output, session) {
         save_files = FALSE,
         do_warp = if (data$type == "hexagonal") boundary_params$do_warp else FALSE,
         do_trunc = if (data$type == "hexagonal") boundary_params$do_trunc else FALSE,
-        do_circular_border = if (data$type == "hexagonal") boundary_params$do_circular_border else FALSE,
-        center_shape = center_shape_value
+        do_circular_border = do_circular_border_val,
+        center_shape = center_shape_value,
+        boundary_facing = boundary_facing_val
       )
 
       writeLines(result$svg_content, file)
@@ -1066,12 +1250,177 @@ server <- function(input, output, session) {
         }
 
       } else if (data$type == "hexagonal") {
-        # TODO: Implement hexagonal individual pieces (Issue #10)
-        showNotification(
-          "Individual hexagonal pieces coming soon! See GitHub Issue #10",
-          type = "warning",
-          duration = 5
+        # Create www/pieces directory if it doesn't exist
+        pieces_dir <- file.path("www", "pieces")
+        if (!dir.exists(pieces_dir)) {
+          dir.create(pieces_dir, recursive = TRUE)
+        }
+
+        # Clean up old files
+        old_files <- list.files(pieces_dir, pattern = "hex_piece_.*\\.svg$", full.names = TRUE)
+        if (length(old_files) > 0) {
+          file.remove(old_files)
+        }
+
+        # Determine background value based on type
+        background_value <- switch(input$background_type,
+          "none" = "none",
+          "solid" = input$background_color,
+          "gradient" = list(
+            type = "gradient",
+            center = input$gradient_center,
+            middle = input$gradient_middle,
+            edge = input$gradient_edge
+          )
         )
+
+        # Generate hexagonal individual pieces
+        result <- tryCatch({
+          capture.output({
+            generate_hexagonal_individual_pieces(
+              rings = data$rings,
+              seed = data$seed,
+              diameter = data$diameter,
+              tabsize = input$tabsize,
+              jitter = input$jitter,
+              output_dir = pieces_dir,
+              save_combined = FALSE,
+              save_individual = TRUE,
+              stroke_width = input$stroke_width,
+              stroke_color = "black",
+              background = background_value,
+              opacity = input$opacity / 100
+            )
+          }, type = "message")
+        }, error = function(e) {
+          showNotification(
+            paste("Error generating hexagonal pieces:", e$message),
+            type = "error",
+            duration = 10
+          )
+          return(NULL)
+        })
+
+        # Verify files were created and send to browser
+        piece_files <- list.files(pieces_dir, pattern = "hex_piece_.*\\.svg$", full.names = TRUE)
+
+        if (length(piece_files) > 0) {
+          files_ok <- all(sapply(piece_files, file.size) > 0)
+
+          if (files_ok) {
+            files_list <- lapply(basename(piece_files), function(filename) {
+              list(
+                url = paste0("pieces/", filename),
+                name = filename
+              )
+            })
+            session$sendCustomMessage("downloadFiles", files_list)
+            showNotification(
+              sprintf("Downloading %d hexagonal piece files...", length(piece_files)),
+              type = "message",
+              duration = 3
+            )
+          } else {
+            showNotification(
+              "Error: Generated hexagonal files are empty. Please try again.",
+              type = "error",
+              duration = 5
+            )
+          }
+        } else {
+          showNotification(
+            "Error: No hexagonal piece files were generated. Please try again.",
+            type = "error",
+            duration = 5
+          )
+        }
+
+      } else if (data$type == "concentric") {
+        # Create www/pieces directory if it doesn't exist
+        pieces_dir <- file.path("www", "pieces")
+        if (!dir.exists(pieces_dir)) {
+          dir.create(pieces_dir, recursive = TRUE)
+        }
+
+        # Clean up old files
+        old_files <- list.files(pieces_dir, pattern = "concentric_piece_.*\\.svg$", full.names = TRUE)
+        if (length(old_files) > 0) {
+          file.remove(old_files)
+        }
+
+        # Determine background value based on type
+        background_value <- switch(input$background_type,
+          "none" = "none",
+          "solid" = input$background_color,
+          "gradient" = list(
+            type = "gradient",
+            center = input$gradient_center,
+            middle = input$gradient_middle,
+            edge = input$gradient_edge
+          )
+        )
+
+        # Generate concentric individual pieces
+        result <- tryCatch({
+          capture.output({
+            generate_concentric_individual_pieces(
+              rings = data$rings,
+              seed = data$seed,
+              diameter = data$diameter,
+              tabsize = input$tabsize,
+              jitter = input$jitter,
+              center_shape = data$center_shape,
+              output_dir = pieces_dir,
+              save_combined = FALSE,
+              save_individual = TRUE,
+              stroke_width = input$stroke_width,
+              stroke_color = "black",
+              background = background_value,
+              opacity = input$opacity / 100
+            )
+          }, type = "message")
+        }, error = function(e) {
+          showNotification(
+            paste("Error generating concentric pieces:", e$message),
+            type = "error",
+            duration = 10
+          )
+          return(NULL)
+        })
+
+        # Verify files were created and send to browser
+        piece_files <- list.files(pieces_dir, pattern = "concentric_piece_.*\\.svg$", full.names = TRUE)
+
+        if (length(piece_files) > 0) {
+          files_ok <- all(sapply(piece_files, file.size) > 0)
+
+          if (files_ok) {
+            files_list <- lapply(basename(piece_files), function(filename) {
+              list(
+                url = paste0("pieces/", filename),
+                name = filename
+              )
+            })
+            session$sendCustomMessage("downloadFiles", files_list)
+            showNotification(
+              sprintf("Downloading %d concentric piece files...", length(piece_files)),
+              type = "message",
+              duration = 3
+            )
+          } else {
+            showNotification(
+              "Error: Generated concentric files are empty. Please try again.",
+              type = "error",
+              duration = 5
+            )
+          }
+        } else {
+          showNotification(
+            "Error: No concentric piece files were generated. Please try again.",
+            type = "error",
+            duration = 5
+          )
+        }
       }
     }
   })

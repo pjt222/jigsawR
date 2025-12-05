@@ -1,23 +1,41 @@
 # jigsawR Package Configuration
 # Centralized configuration for puzzle generation parameters
+# This is the SINGLE SOURCE OF TRUTH for all default values
 
 default:
   # Rectangular puzzle defaults
   rectangular:
-    tabsize: 20
-    jitter: 4
-    width: 300
+    rows: 2
+    cols: 2
+    width: 200
     height: 200
-    corner_radius: 2.0
-    stroke_width: 1.5
 
   # Hexagonal puzzle defaults
   hexagonal:
-    tabsize: 27
-    jitter: 5
-    diameter: 240
-    rings: 6
-    stroke_width: 1.5
+    rings: 3
+    diameter: 360
+    boundary: "zigzag"  # zigzag, hexagon, warped, warped_hex, circle
+
+  # Concentric puzzle defaults
+  concentric:
+    rings: 3
+    diameter: 360
+    center_shape: "hexagon"  # hexagon or circle
+    boundary: "straight"  # straight or circle
+    boundary_facing: "outward"  # outward (convex) or inward (concave) - only applies when boundary is "circle"
+
+  # Shared styling defaults (apply to all puzzle types)
+  styling:
+    tabsize: 10
+    jitter: 2
+    offset: 0
+    stroke_width: 1
+    opacity: 100
+    fill_type: "none"  # none or solid
+    fill_color: "#ffffff"
+
+  # Seed for reproducibility
+  seed: 1234
 
   # Color palette configuration
   colors:
@@ -45,8 +63,23 @@ default:
       rocket: "Black to Red to Light Yellow"
       turbo: "Blue to Red (Rainbow)"
 
-  # Gradient background configuration
-  gradient:
+  # Label configuration
+  labels:
+    show: false
+    color: "#000000"
+    size: 0  # 0 = auto-size
+
+  # Background configuration
+  background:
+    type: "none"  # none, solid, gradient
+    solid_color: "#ffffff"
+    gradient:
+      center: "#e3f2fd"
+      middle: "#bbdefb"
+      edge: "#90caf9"
+
+  # Gradient background generation settings
+  gradient_generation:
     dpi: 300
     coord_limit: 1.3
     range_expansion: 1.20
@@ -62,6 +95,49 @@ default:
     download_delay_ms: 500
     icon_size: "48px"
     info_padding: "10px"
+    default_accordion_open: "settings"
+
+  # Input constraints
+  constraints:
+    rows:
+      min: 1
+      max: 10
+    cols:
+      min: 1
+      max: 10
+    width:
+      min: 50
+      max: 500
+    height:
+      min: 50
+      max: 500
+    rings:
+      min: 2
+      max: 6
+    diameter:
+      min: 100
+      max: 500
+    tabsize:
+      min: 0
+      max: 100
+    jitter:
+      min: 0
+      max: 100
+    offset:
+      min: 0
+      max: 50
+    stroke_width:
+      min: 0.5
+      max: 10
+    opacity:
+      min: 0
+      max: 100
+    seed:
+      min: 1
+      max: 99999
+    label_size:
+      min: 0  # 0 = auto-size
+      max: 30
 
   # Conversion constants
   constants:
@@ -70,8 +146,8 @@ default:
 
 # Development environment (for testing)
 development:
-  rectangular:
-    tabsize: 15
+  styling:
+    tabsize: 10
     jitter: 2
   colors:
     default_palette: "viridis"

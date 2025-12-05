@@ -140,11 +140,16 @@ get_inner_neighbor <- function(piece_id, rings) {
 #' @param tabsize Tab size parameter
 #' @param jitter Jitter parameter for tab variation
 #' @param center_shape "hexagon" or "circle"
+#' @param do_circular_border If TRUE, use arc commands for perfect circular boundary
+#' @param boundary_facing Direction the circular arc faces: "outward" (convex, away from center)
+#'   or "inward" (concave, toward center). Only applies when do_circular_border = TRUE.
 #' @return List with edge_map, piece_edges (list of edges per piece), and piece_vertices
 #' @export
 generate_concentric_edge_map <- function(rings, seed, diameter,
                                           tabsize = 27, jitter = 5,
-                                          center_shape = "hexagon") {
+                                          center_shape = "hexagon",
+                                          do_circular_border = FALSE,
+                                          boundary_facing = "outward") {
   # Source dependencies
   if (!exists("generate_hex_bezier_edge")) {
     source("R/hexagonal_bezier_generation.R")
@@ -153,6 +158,23 @@ generate_concentric_edge_map <- function(rings, seed, diameter,
   num_pieces <- get_concentric_piece_count(rings)
   piece_height <- get_concentric_piece_height(diameter, rings)
   tab_params <- list(tabsize = tabsize, jitter = jitter)
+
+  # Calculate circle radius for circular border option
+  circle_radius <- diameter / 2
+
+  # Calculate sweep flags based on boundary_facing direction
+
+  # SVG arc: A rx ry x-rotation large-arc-flag sweep-flag x y
+  # sweep-flag = 1: clockwise, sweep-flag = 0: counter-clockwise
+  # For outward-facing (convex): forward uses sweep=0, reverse uses sweep=1
+  # For inward-facing (concave): forward uses sweep=1, reverse uses sweep=0
+  if (boundary_facing == "outward") {
+    sweep_forward <- 0
+    sweep_reverse <- 1
+  } else {
+    sweep_forward <- 1
+    sweep_reverse <- 0
+  }
 
   # Get all piece vertices
   all_vertices <- get_all_concentric_vertices(rings, diameter, center_shape)
@@ -351,14 +373,33 @@ generate_concentric_edge_map <- function(rings, seed, diameter,
       outer_neighbors <- get_outer_neighbors(piece_id, rings)
 
       if (length(outer_neighbors) == 0) {
-        # Boundary - straight line
-        piece_edges[[piece_id]] <- c(piece_edges[[piece_id]], list(list(
-          type = "border",
-          path_forward = sprintf("L %.2f %.2f", v4[1], v4[2]),
-          path_reverse = sprintf("L %.2f %.2f", v3[1], v3[2]),
-          start_vertex = 3,
-          end_vertex = 4
-        )))
+        # Boundary - straight line or circular arc
+        if (do_circular_border) {
+          # Use arc commands for perfect circular border
+          # SVG arc: A rx ry x-rotation large-arc-flag sweep-flag x y
+          # rx = ry = circle_radius (perfect circle)
+          # x-rotation = 0 (no rotation)
+          # large-arc-flag = 0 (small arc, each segment < 180 degrees)
+          # sweep-flag determined by boundary_facing parameter (set above)
+          piece_edges[[piece_id]] <- c(piece_edges[[piece_id]], list(list(
+            type = "border",
+            path_forward = sprintf("A %.2f %.2f 0 0 %d %.2f %.2f",
+                                   circle_radius, circle_radius, sweep_forward, v4[1], v4[2]),
+            path_reverse = sprintf("A %.2f %.2f 0 0 %d %.2f %.2f",
+                                   circle_radius, circle_radius, sweep_reverse, v3[1], v3[2]),
+            start_vertex = 3,
+            end_vertex = 4
+          )))
+        } else {
+          # Straight line (original behavior)
+          piece_edges[[piece_id]] <- c(piece_edges[[piece_id]], list(list(
+            type = "border",
+            path_forward = sprintf("L %.2f %.2f", v4[1], v4[2]),
+            path_reverse = sprintf("L %.2f %.2f", v3[1], v3[2]),
+            start_vertex = 3,
+            end_vertex = 4
+          )))
+        }
       } else {
         # Connect to outer ring pieces
         # We need to subdivide this edge at the junction points
@@ -687,11 +728,15 @@ build_concentric_piece_path <- function(piece_id, edge_data) {
 #' @param tabsize Tab size parameter
 #' @param jitter Jitter parameter
 #' @param center_shape "hexagon" or "circle"
+#' @param do_circular_border If TRUE, use arc commands for perfect circular boundary
+#' @param boundary_facing Direction the circular arc faces: "outward" or "inward"
 #' @return List with pieces and metadata
 #' @export
 generate_concentric_pieces <- function(rings, seed, diameter,
                                         tabsize = 27, jitter = 5,
-                                        center_shape = "hexagon") {
+                                        center_shape = "hexagon",
+                                        do_circular_border = FALSE,
+                                        boundary_facing = "outward") {
   cat("Creating concentric edge mapping...\n")
   edge_data <- generate_concentric_edge_map(
     rings = rings,
@@ -699,7 +744,9 @@ generate_concentric_pieces <- function(rings, seed, diameter,
     diameter = diameter,
     tabsize = tabsize,
     jitter = jitter,
-    center_shape = center_shape
+    center_shape = center_shape,
+    do_circular_border = do_circular_border,
+    boundary_facing = boundary_facing
   )
   cat(sprintf("Generated %d unique edges\n", edge_data$num_edges))
 

@@ -15,8 +15,9 @@
 #' @param jitter Jitter as percentage (0-15, default: 4)
 #' @param do_warp Apply circular warp (hexagonal only, default: FALSE)
 #' @param do_trunc Truncate boundary (hexagonal only, default: FALSE)
-#' @param do_circular_border Use perfect circular arc borders (hexagonal only, requires do_warp=TRUE)
+#' @param do_circular_border Use perfect circular arc borders (hexagonal: requires do_warp=TRUE; concentric: always available)
 #' @param center_shape Center piece shape for concentric type: "hexagon" or "circle"
+#' @param boundary_facing Direction the circular arc faces (concentric only): "outward" or "inward"
 #' @return List with:
 #'   - pieces: List of piece objects with id, path, center, grid_pos/ring_pos
 #'   - canvas_size: c(width, height) for compact (offset=0) layout
@@ -32,7 +33,8 @@ generate_pieces_internal <- function(type = "rectangular",
                                      do_warp = FALSE,
                                      do_trunc = FALSE,
                                      do_circular_border = FALSE,
-                                     center_shape = "hexagon") {
+                                     center_shape = "hexagon",
+                                     boundary_facing = "outward") {
 
   # Generate seed if not provided
   if (is.null(seed)) {
@@ -47,7 +49,9 @@ generate_pieces_internal <- function(type = "rectangular",
       diameter = if (length(size) == 1) size else size[1],
       tabsize = tabsize,
       jitter = jitter,
-      center_shape = center_shape
+      center_shape = center_shape,
+      do_circular_border = do_circular_border,
+      boundary_facing = boundary_facing
     ))
   } else if (type == "hexagonal") {
     return(generate_hex_pieces_internal(
@@ -273,10 +277,14 @@ generate_hex_pieces_internal <- function(seed, rings, diameter, tabsize, jitter,
 #' @param tabsize Tab size percentage
 #' @param jitter Jitter percentage
 #' @param center_shape "hexagon" or "circle" for center piece
+#' @param do_circular_border If TRUE, use arc commands for perfect circular boundary
+#' @param boundary_facing Direction the circular arc faces: "outward" or "inward"
 #' @return Piece generation result
 #' @keywords internal
 generate_concentric_pieces_internal <- function(seed, rings, diameter, tabsize, jitter,
-                                                 center_shape = "hexagon") {
+                                                 center_shape = "hexagon",
+                                                 do_circular_border = FALSE,
+                                                 boundary_facing = "outward") {
   # Source concentric modules if needed
   if (!exists("generate_concentric_pieces")) {
     source("R/concentric_geometry.R")
@@ -290,7 +298,9 @@ generate_concentric_pieces_internal <- function(seed, rings, diameter, tabsize, 
     diameter = diameter,
     tabsize = tabsize,
     jitter = jitter,
-    center_shape = center_shape
+    center_shape = center_shape,
+    do_circular_border = do_circular_border,
+    boundary_facing = boundary_facing
   )
 
   # Extract pieces from result
@@ -368,6 +378,8 @@ generate_concentric_pieces_internal <- function(seed, rings, diameter, tabsize, 
       tabsize = tabsize,
       jitter = jitter,
       center_shape = center_shape,
+      do_circular_border = do_circular_border,
+      boundary_facing = boundary_facing,
       piece_height = piece_height,
       num_pieces = num_pieces
     )
