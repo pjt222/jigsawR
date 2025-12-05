@@ -399,6 +399,26 @@ The hexagonal puzzle supports five boundary modes controlled by `do_warp`, `do_t
      ```
    - This ensures vertices that should match (e.g., shared by 3 pieces) always produce identical keys
 
+8. **Label Centering on Geometric Bounding Box** (fixed 2025-12-05):
+   - **Problem**: Piece labels appeared increasingly offset from piece centers for outer pieces
+   - **Root cause**: Labels used **stored lattice centers** (calculated before warp/truncation), while SVG gradient fills use **geometric bounding box centers** (from actual transformed paths)
+   - For warped hexagonal pieces, these differ significantly - error increases with distance from puzzle center
+   - **Solution**: Calculate label position from actual SVG path geometry:
+     ```r
+     calculate_path_bounding_box_center <- function(path) {
+       segments <- parse_svg_path(path)
+       xs <- c(); ys <- c()
+       for (seg in segments) {
+         if (seg$type %in% c("M", "L")) { xs <- c(xs, seg$x); ys <- c(ys, seg$y) }
+         else if (seg$type == "C") { xs <- c(xs, seg$cp1x, seg$cp2x, seg$x); ys <- c(ys, seg$cp1y, seg$cp2y, seg$y) }
+         else if (seg$type == "A") { xs <- c(xs, seg$x); ys <- c(ys, seg$y) }
+       }
+       c(x = (min(xs) + max(xs)) / 2, y = (min(ys) + max(ys)) / 2)
+     }
+     ```
+   - Now labels align with where SVG `objectBoundingBox` gradients appear centered
+   - Files: `R/unified_renderer.R` (calculate_path_bounding_box_center, render_piece_label)
+
 ### Concentric Ring Mode Architecture (added 2025-12-04)
 
 The concentric ring mode creates puzzles where all pieces have **constant radial height** (distance toward center). This creates trapezoidal pieces that get **wider toward the outside**, resembling a dartboard or target pattern.
