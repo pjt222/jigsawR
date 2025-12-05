@@ -311,6 +311,11 @@ apply_hex_positioning <- function(piece_result, offset) {
 #' Applies (dx, dy) translation to all coordinates in an SVG path.
 #' Handles M, L, C, A, and Z commands.
 #'
+#' For arc commands (A), only the endpoint is translated while radii stay constant.
+#' This correctly preserves arc shape because the SVG renderer calculates the
+#' arc center from endpoints + radii - when endpoints move by (dx, dy), the
+#' calculated center also moves by (dx, dy), producing an identical arc shape.
+#'
 #' @param path_string SVG path d attribute string
 #' @param dx X translation
 #' @param dy Y translation
@@ -361,17 +366,24 @@ translate_svg_path <- function(path_string, dx, dy) {
 
     } else if (token == "A") {
       # Arc: rx ry x-rotation large-arc sweep x y
-      # Only x,y (last two) are coordinates
+      #
+      # Arc translation IS correct: translate endpoints, keep radii constant.
+      # The SVG renderer calculates the arc center from endpoints + radii.
+      # When both endpoints translate by (dx, dy) with constant radii, the
+      # renderer calculates the center also moved by (dx, dy).
+      #
+      # Math proof: |P₁' - C₂| = |(P₁ + Δ) - (C₁ + Δ)| = |P₁ - C₁| = r
+      # The arc shape is preserved - like moving a slice of pie outward.
       result <- c(result, token)
       if (i + 7 <= length(tokens)) {
-        # Copy rx, ry, rotation, large-arc, sweep unchanged
+        # Keep rx, ry, rotation, large-arc, sweep unchanged
         result <- c(result,
                     tokens[i + 1],  # rx
                     tokens[i + 2],  # ry
                     tokens[i + 3],  # x-rotation
                     tokens[i + 4],  # large-arc
                     tokens[i + 5])  # sweep
-        # Translate x, y
+        # Translate only the endpoint (x, y)
         x <- as.numeric(tokens[i + 6]) + dx
         y <- as.numeric(tokens[i + 7]) + dy
         result <- c(result, sprintf("%.2f", x), sprintf("%.2f", y))

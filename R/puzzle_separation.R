@@ -21,76 +21,8 @@ calculate_piece_offset <- function(xi, yi, offset, piece_width, piece_height) {
   return(c(x_offset, y_offset))
 }
 
-#' Apply offset to SVG path coordinates
-#' 
-#' Translates all coordinates in an SVG path by the specified offset.
-#' 
-#' @param path_string SVG path d attribute string
-#' @param x_offset X translation amount
-#' @param y_offset Y translation amount
-#' @return Translated SVG path string
-translate_svg_path <- function(path_string, x_offset, y_offset) {
-  if (x_offset == 0 && y_offset == 0) {
-    return(path_string)
-  }
-  
-  # Parse the path string to extract and modify coordinates
-  # This handles M (move), L (line), C (cubic bezier), and Z (close) commands
-  
-  # Split path into tokens
-  tokens <- strsplit(path_string, "\\s+")[[1]]
-  result <- character()
-  i <- 1
-  
-  while (i <= length(tokens)) {
-    token <- tokens[i]
-    
-    if (token %in% c("M", "L")) {
-      # Move or Line: has x,y coordinates
-      result <- c(result, token)
-      if (i + 2 <= length(tokens)) {
-        x <- as.numeric(tokens[i + 1]) + x_offset
-        y <- as.numeric(tokens[i + 2]) + y_offset
-        result <- c(result, sprintf("%.2f", x), sprintf("%.2f", y))
-        i <- i + 3
-      } else {
-        i <- i + 1
-      }
-      
-    } else if (token == "C") {
-      # Cubic Bezier: has 6 coordinates (3 points)
-      result <- c(result, token)
-      if (i + 6 <= length(tokens)) {
-        for (j in 1:3) {
-          x <- as.numeric(tokens[i + j*2 - 1]) + x_offset
-          y <- as.numeric(tokens[i + j*2]) + y_offset
-          result <- c(result, sprintf("%.2f", x), sprintf("%.2f", y))
-        }
-        i <- i + 7
-      } else {
-        i <- i + 1
-      }
-      
-    } else if (token == "Z") {
-      # Close path: no coordinates
-      result <- c(result, token)
-      i <- i + 1
-      
-    } else {
-      # Try to parse as number (continuation of previous command)
-      num_val <- suppressWarnings(as.numeric(token))
-      if (!is.na(num_val)) {
-        # It's a number, probably a coordinate
-        result <- c(result, token)
-      } else {
-        result <- c(result, token)
-      }
-      i <- i + 1
-    }
-  }
-  
-  return(paste(result, collapse = " "))
-}
+# NOTE: translate_svg_path() has been moved to R/piece_positioning.R
+# which includes proper handling for arc commands (A) in addition to M, L, C, Z.
 
 #' Generate SVG with separated puzzle pieces
 #'
