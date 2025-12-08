@@ -296,7 +296,109 @@ generate_single_piece <- function(xi, yi, puzzle_structure) {
   
   # Close path
   path <- paste0(path, "Z")
-  
+
+  return(path)
+}
+
+#' Generate a single puzzle piece path with fusion support
+#'
+#' Creates the complete boundary path for one puzzle piece,
+#' using the shared edges with adjacent pieces. Supports fusion
+#' where internal edges between fused pieces become straight lines.
+#'
+#' @param xi Column index (0-based)
+#' @param yi Row index (0-based)
+#' @param puzzle_structure Output from generate_puzzle_core()
+#' @param fused_edge_data Output from compute_fused_edges() or NULL
+#' @param fusion_style Style for fused edges: "none" (straight line), "dashed", "solid"
+#' @return SVG path string for the piece
+#' @keywords internal
+generate_single_piece_with_fusion <- function(xi, yi, puzzle_structure,
+                                               fused_edge_data = NULL,
+                                               fusion_style = "none") {
+
+  xn <- puzzle_structure$grid[2]
+  yn <- puzzle_structure$grid[1]
+  piece_width <- puzzle_structure$piece_width
+  piece_height <- puzzle_structure$piece_height
+  edges <- puzzle_structure$edges
+
+  # Calculate corners
+  x1 <- xi * piece_width
+  y1 <- yi * piece_height
+  x2 <- x1 + piece_width
+  y2 <- y1 + piece_height
+
+  # Calculate piece index (1-based) for fusion lookup
+  piece_idx <- yi * xn + xi + 1
+
+  # Helper to check if an edge should use straight line
+  # (fused with style="none")
+  use_straight_line <- function(direction) {
+    if (is.null(fused_edge_data) || fusion_style != "none") {
+      return(FALSE)
+    }
+    is_edge_fused(piece_idx, direction, fused_edge_data)
+  }
+
+  # Start from top-left, go clockwise
+  path <- sprintf("M %.2f %.2f ", x1, y1)
+
+  # Top edge (left to right)
+  if (yi == 0) {
+    # Border - straight line
+    path <- paste0(path, sprintf("L %.2f %.2f ", x2, y1))
+  } else if (use_straight_line("N")) {
+    # Fused edge with style="none" - straight line
+    path <- paste0(path, sprintf("L %.2f %.2f ", x2, y1))
+  } else {
+    # Shared edge with piece above - use forward direction
+    edge <- edges$horizontal[[yi]][[xi + 1]]
+    path <- paste0(path, edge$forward)
+  }
+
+  # Right edge (top to bottom)
+  if (xi == xn - 1) {
+    # Border - straight line
+    path <- paste0(path, sprintf("L %.2f %.2f ", x2, y2))
+  } else if (use_straight_line("E")) {
+    # Fused edge with style="none" - straight line
+    path <- paste0(path, sprintf("L %.2f %.2f ", x2, y2))
+  } else {
+    # Shared edge with piece to the right - use forward direction
+    edge <- edges$vertical[[xi + 1]][[yi + 1]]
+    path <- paste0(path, edge$forward)
+  }
+
+  # Bottom edge (right to left)
+  if (yi == yn - 1) {
+    # Border - straight line
+    path <- paste0(path, sprintf("L %.2f %.2f ", x1, y2))
+  } else if (use_straight_line("S")) {
+    # Fused edge with style="none" - straight line
+    path <- paste0(path, sprintf("L %.2f %.2f ", x1, y2))
+  } else {
+    # Shared edge with piece below - use REVERSE direction
+    edge <- edges$horizontal[[yi + 1]][[xi + 1]]
+    path <- paste0(path, edge$reverse)
+  }
+
+  # Left edge (bottom to top)
+  if (xi == 0) {
+    # Border - straight line
+    path <- paste0(path, sprintf("L %.2f %.2f ", x1, y1))
+  } else if (use_straight_line("W")) {
+    # Fused edge with style="none" - straight line
+    path <- paste0(path, sprintf("L %.2f %.2f ", x1, y1))
+  } else {
+    # Shared edge with piece to the left - use REVERSE direction
+    edge <- edges$vertical[[xi]][[yi + 1]]
+    path <- paste0(path, edge$reverse)
+  }
+
+  # Close path
+  path <- paste0(path, "Z")
+
   return(path)
 }
 
