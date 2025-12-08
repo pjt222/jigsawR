@@ -5,7 +5,7 @@
 R implementation of [Draradech's jigsaw puzzle generators](https://github.com/Draradech/jigsaw) with enhancements for manufacturing and reproducibility.
 
 [![R](https://img.shields.io/badge/R-4.0%2B-blue)](https://www.r-project.org/)
-[![License](https://img.shields.io/badge/license-CC0-green)](LICENSE)
+[![License](https://img.shields.io/badge/license-GPL--3-blue)](LICENSE.md)
 
 ---
 
@@ -169,6 +169,12 @@ We welcome contributions! Please check the [open issues](https://github.com/pjt2
 
 ## Credits
 
-*   **Original Algorithm:** [Draradech's JavaScript implementation](https://github.com/Draradech/jigsaw)
+*   **Original Algorithm:** [Draradech's JavaScript implementation](https://github.com/Draradech/jigsaw) (CC0)
 *   **R Translation:** Philipp Thoss ([@pjt222](https://github.com/pjt222))
-*   **License:** CC0 (Public Domain)
+
+## License
+
+jigsawR is dual-licensed:
+
+*   **Open Source (GPL-3):** Free for personal, academic, and open-source use. Derivative works must also be GPL-3. See [LICENSE.md](LICENSE.md) for details.
+*   **Commercial License:** For proprietary/closed-source use without GPL-3 requirements, contact ph.thoss@gmx.de or [open an issue](https://github.com/pjt222/jigsawR/issues).

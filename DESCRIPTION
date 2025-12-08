@@ -13,7 +13,7 @@ Description: R translations of Draradech's JavaScript jigsaw puzzle generators
     conversion and gradient backgrounds. Direct ports of the original JavaScript
     algorithms maintaining mathematical precision while adding R-based 
     visualization capabilities.
-License: CC0
+License: GPL-3
 URL: https://github.com/pjt222/jigsawR
 BugReports: https://github.com/pjt222/jigsawR/issues
 Encoding: UTF-8
