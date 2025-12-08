@@ -786,6 +786,57 @@ These insights emerged during the development of concentric ring mode and the re
       ```
     - **Pattern**: Any wrapper around cli functions with `{variable}` interpolation needs `.envir`
 
+16. **Edge Path Splitting for Fusion Features (2025-12-08)**
+    - **Context**: Meta-piece fusion requires splitting a piece's SVG path into individual edges
+    - **Problem**: Original `split_concentric_path_into_edges()` used fixed segment counts (3-3-1-3)
+    - **Why it failed**:
+      1. OUTER edges can have variable segment counts (3-6+) when connecting to multiple outer pieces
+      2. Translated pieces (offset>0) have different coordinates than original vertices
+      3. Vertex-based detection failed because piece_height calculation used translated center
+    - **Solution**: Segment pattern matching instead of vertex coordinate matching
+      ```r
+      # For boundary pieces: L segment marks the OUTER edge
+      l_indices <- which(sapply(content_segments, function(s) s$type == "L"))
+      if (length(l_indices) > 0) {
+        # Split around the L segment
+        l_idx <- l_indices[1]
+        # INNER + RIGHT = segments before L, OUTER = L, LEFT = segments after L
+      }
+
+      # For internal pieces: Use fixed 3-3-X-3 pattern
+      # INNER = first 3, RIGHT = next 3, OUTER = variable middle, LEFT = last 3
+      ```
+    - **Key insight**: Edge splitting must be robust to:
+      - Variable segment counts per edge
+      - Coordinate translations from offset/separation
+      - Different piece types (center hexagon vs ring trapezoids)
+    - **Verification**: Canonical edge keys (sorted "x1,y1|x2,y2") must match between adjacent pieces
+    - **Files**: `R/unified_renderer.R:split_concentric_path_into_edges()` (lines 571-736)
+    - **TODO**: Same fix needed for hexagonal puzzle type (see GitHub Issue #43)
+
+17. **Fused Edge Deduplication Strategy (2025-12-08)**
+    - **Problem**: Fused edges between adjacent pieces would be drawn twice (once per piece)
+    - **Solution**: Create canonical edge keys from sorted endpoint coordinates
+      ```r
+      # Create canonical key - smaller coordinate string first
+      p1 <- sprintf("%.1f,%.1f", start_x, start_y)
+      p2 <- sprintf("%.1f,%.1f", end_x, end_y)
+      edge_key <- if (p1 < p2) paste(p1, p2, sep = "|") else paste(p2, p1, sep = "|")
+
+      # Track drawn edges
+      if (edge_key %in% drawn_fused_edges) {
+        # Skip - already drawn by adjacent piece
+      } else {
+        drawn_fused_edges <- c(drawn_fused_edges, edge_key)
+        # Draw this edge
+      }
+      ```
+    - **Critical requirement**: Both pieces must produce identical edge paths for the shared edge
+    - **Debugging tip**: When deduplication fails, check:
+      1. Edge splitting produces correct segments for each edge
+      2. Endpoint coordinates match exactly (floating point precision)
+      3. Edge direction doesn't affect key generation (canonical ordering handles this)
+
 # important-instruction-reminders
 Do what has been asked; nothing more, nothing less.
 NEVER create files unless they're absolutely necessary for achieving your goal.
