@@ -34,8 +34,11 @@
 #' @param show_labels Logical; if TRUE, display piece ID labels at piece centers
 #' @param label_color Color for piece labels (default: "black")
 #' @param label_size Font size for labels in mm (default: auto-calculated based on piece size)
+#' @param fusion_groups List of piece ID vectors to fuse, or string like "(1,2),(7,8,9)"
+#' @param fusion_style Style for fused internal edges: "none" (invisible), "dashed", "solid"
+#' @param fusion_opacity Opacity for fused edges when style != "none" (0.0 to 1.0)
 #' @param output DEPRECATED: Use offset parameter instead
-#' @return List with svg_content, pieces, canvas_size, and parameters
+#' @return List with svg_content, pieces, canvas_size, parameters, and fusion_data (if applicable)
 #' @export
 generate_puzzle <- function(type = "rectangular",
                             grid = c(2, 2),
@@ -61,6 +64,9 @@ generate_puzzle <- function(type = "rectangular",
                             show_labels = FALSE,
                             label_color = "black",
                             label_size = NULL,
+                            fusion_groups = NULL,
+                            fusion_style = "none",
+                            fusion_opacity = 0.3,
                             output = NULL) {
 
   # Handle deprecated 'output' parameter
@@ -110,6 +116,21 @@ generate_puzzle <- function(type = "rectangular",
     dir.create(output_dir, recursive = TRUE)
   }
 
+  # === FUSION PRE-PROCESSING ===
+
+  # Parse fusion groups if provided as string
+  parsed_fusion_groups <- NULL
+  if (!is.null(fusion_groups)) {
+    if (is.character(fusion_groups)) {
+      # Parse string like "(1,2),(7,8,9)" into list of vectors
+      parsed_fusion_groups <- parse_fusion_input(fusion_groups)
+    } else if (is.list(fusion_groups)) {
+      parsed_fusion_groups <- fusion_groups
+    } else {
+      stop("fusion_groups must be a string like '(1,2),(7,8,9)' or a list of numeric vectors")
+    }
+  }
+
   # === UNIFIED PIPELINE ===
 
   # Step 1: Generate pieces internally
@@ -124,7 +145,10 @@ generate_puzzle <- function(type = "rectangular",
     do_trunc = do_trunc,
     do_circular_border = do_circular_border,
     center_shape = center_shape,
-    boundary_facing = boundary_facing
+    boundary_facing = boundary_facing,
+    fusion_groups = parsed_fusion_groups,
+    fusion_style = fusion_style,
+    fusion_opacity = fusion_opacity
   )
 
   # Step 2: Apply positioning
@@ -171,9 +195,13 @@ generate_puzzle <- function(type = "rectangular",
       opacity = opacity,
       show_labels = show_labels,
       label_color = label_color,
-      label_size = label_size
+      label_size = label_size,
+      fusion_groups = parsed_fusion_groups,
+      fusion_style = fusion_style,
+      fusion_opacity = fusion_opacity
     ),
-    files = list()
+    files = list(),
+    fusion_data = if (!is.null(parsed_fusion_groups)) pieces_result$fusion_data else NULL
   )
 
   # Save files if requested

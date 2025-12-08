@@ -18,11 +18,15 @@
 #' @param do_circular_border Use perfect circular arc borders (hexagonal: requires do_warp=TRUE; concentric: always available)
 #' @param center_shape Center piece shape for concentric type: "hexagon" or "circle"
 #' @param boundary_facing Direction the circular arc faces (concentric only): "outward" or "inward"
+#' @param fusion_groups List of piece ID vectors to fuse together (optional)
+#' @param fusion_style Style for fused internal edges: "none" (invisible), "dashed", "solid"
+#' @param fusion_opacity Opacity for fused edges when style != "none" (0.0 to 1.0)
 #' @return List with:
 #'   - pieces: List of piece objects with id, path, center, grid_pos/ring_pos
 #'   - canvas_size: c(width, height) for compact (offset=0) layout
 #'   - type: "rectangular", "hexagonal", or "concentric"
 #'   - parameters: Generation parameters used
+#'   - fusion_data: Fusion edge data (if fusion_groups provided)
 #' @export
 generate_pieces_internal <- function(type = "rectangular",
                                      seed = NULL,
@@ -34,7 +38,10 @@ generate_pieces_internal <- function(type = "rectangular",
                                      do_trunc = FALSE,
                                      do_circular_border = FALSE,
                                      center_shape = "hexagon",
-                                     boundary_facing = "outward") {
+                                     boundary_facing = "outward",
+                                     fusion_groups = NULL,
+                                     fusion_style = "none",
+                                     fusion_opacity = 0.3) {
 
   # Generate seed if not provided
   if (is.null(seed)) {
@@ -43,7 +50,7 @@ generate_pieces_internal <- function(type = "rectangular",
 
   # Dispatch to type-specific implementation
   if (type == "concentric") {
-    return(generate_concentric_pieces_internal(
+    result <- generate_concentric_pieces_internal(
       seed = seed,
       rings = if (length(grid) == 1) grid else grid[1],
       diameter = if (length(size) == 1) size else size[1],
@@ -51,10 +58,13 @@ generate_pieces_internal <- function(type = "rectangular",
       jitter = jitter,
       center_shape = center_shape,
       do_circular_border = do_circular_border,
-      boundary_facing = boundary_facing
-    ))
+      boundary_facing = boundary_facing,
+      fusion_groups = fusion_groups,
+      fusion_style = fusion_style,
+      fusion_opacity = fusion_opacity
+    )
   } else if (type == "hexagonal") {
-    return(generate_hex_pieces_internal(
+    result <- generate_hex_pieces_internal(
       seed = seed,
       rings = if (length(grid) == 1) grid else grid[1],
       diameter = if (length(size) == 1) size else size[1],
@@ -62,17 +72,25 @@ generate_pieces_internal <- function(type = "rectangular",
       jitter = jitter,
       do_warp = do_warp,
       do_trunc = do_trunc,
-      do_circular_border = do_circular_border
-    ))
+      do_circular_border = do_circular_border,
+      fusion_groups = fusion_groups,
+      fusion_style = fusion_style,
+      fusion_opacity = fusion_opacity
+    )
   } else {
-    return(generate_rect_pieces_internal(
+    result <- generate_rect_pieces_internal(
       seed = seed,
       grid = grid,
       size = size,
       tabsize = tabsize,
-      jitter = jitter
-    ))
+      jitter = jitter,
+      fusion_groups = fusion_groups,
+      fusion_style = fusion_style,
+      fusion_opacity = fusion_opacity
+    )
   }
+
+  return(result)
 }
 
 
@@ -83,9 +101,15 @@ generate_pieces_internal <- function(type = "rectangular",
 #' @param size c(width, height) in mm
 #' @param tabsize Tab size percentage
 #' @param jitter Jitter percentage
+#' @param fusion_groups List of piece ID vectors to fuse (optional)
+#' @param fusion_style Style for fused edges: "none", "dashed", "solid"
+#' @param fusion_opacity Opacity for fused edges (0.0 to 1.0)
 #' @return Piece generation result
 #' @keywords internal
-generate_rect_pieces_internal <- function(seed, grid, size, tabsize, jitter) {
+generate_rect_pieces_internal <- function(seed, grid, size, tabsize, jitter,
+                                          fusion_groups = NULL,
+                                          fusion_style = "none",
+                                          fusion_opacity = 0.3) {
 
   yn <- grid[1]  # rows
   xn <- grid[2]  # cols
@@ -104,19 +128,45 @@ generate_rect_pieces_internal <- function(seed, grid, size, tabsize, jitter) {
   piece_width <- puzzle_structure$piece_width
   piece_height <- puzzle_structure$piece_height
 
-  # Generate all pieces
+  # Compute fused edges if fusion groups provided
+  # Note: We need a minimal puzzle_result structure for compute_fused_edges
+  fused_edge_data <- NULL
+  if (!is.null(fusion_groups) && length(fusion_groups) > 0) {
+    # Create minimal structure for adjacency API
+    temp_result <- list(
+      type = "rectangular",
+      parameters = list(grid = grid)
+    )
+    fused_edge_data <- compute_fused_edges(fusion_groups, temp_result)
+  }
 
-pieces <- list()
+  # Generate all pieces
+  pieces <- list()
   piece_idx <- 1
 
   for (yi in 0:(yn - 1)) {
     for (xi in 0:(xn - 1)) {
-      # Generate closed piece path using existing function
+      # Always generate full bezier path (no fusion modification at path level)
       piece_path <- generate_single_piece(xi, yi, puzzle_structure)
+
+      # Determine which edges are fused (for render-time styling)
+      fused_edges <- list(N = FALSE, E = FALSE, S = FALSE, W = FALSE)
+      if (!is.null(fused_edge_data)) {
+        fused_edges$N <- is_edge_fused(piece_idx, "N", fused_edge_data)
+        fused_edges$E <- is_edge_fused(piece_idx, "E", fused_edge_data)
+        fused_edges$S <- is_edge_fused(piece_idx, "S", fused_edge_data)
+        fused_edges$W <- is_edge_fused(piece_idx, "W", fused_edge_data)
+      }
 
       # Calculate piece center
       center_x <- (xi + 0.5) * piece_width
       center_y <- (yi + 0.5) * piece_height
+
+      # Determine fusion group for this piece
+      fusion_group <- NA
+      if (!is.null(fused_edge_data)) {
+        fusion_group <- get_piece_fusion_group(piece_idx, fused_edge_data)
+      }
 
       # Create standardized piece object
       pieces[[piece_idx]] <- list(
@@ -124,7 +174,9 @@ pieces <- list()
         path = piece_path,
         center = c(center_x, center_y),
         grid_pos = c(xi = xi, yi = yi),
-        type = "rectangular"
+        type = "rectangular",
+        fusion_group = fusion_group,  # NA if not in any group
+        fused_edges = fused_edges     # list(N, E, S, W) - TRUE if edge is fused
       )
 
       piece_idx <- piece_idx + 1
@@ -142,8 +194,12 @@ pieces <- list()
       tabsize = tabsize,
       jitter = jitter,
       piece_width = piece_width,
-      piece_height = piece_height
+      piece_height = piece_height,
+      fusion_groups = fusion_groups,
+      fusion_style = fusion_style,
+      fusion_opacity = fusion_opacity
     ),
+    fusion_data = fused_edge_data,
     # Keep puzzle_structure for backward compatibility
     puzzle_structure = puzzle_structure
   ))
@@ -160,12 +216,17 @@ pieces <- list()
 #' @param do_warp Apply circular warp
 #' @param do_trunc Truncate boundary
 #' @param do_circular_border Use perfect circular arc borders (requires do_warp=TRUE)
+#' @param fusion_groups List of piece ID vectors to fuse (optional)
+#' @param fusion_style Style for fused edges: "none", "dashed", "solid"
+#' @param fusion_opacity Opacity for fused edges (0.0 to 1.0)
 #' @return Piece generation result
 #' @keywords internal
 generate_hex_pieces_internal <- function(seed, rings, diameter, tabsize, jitter,
                                          do_warp = FALSE, do_trunc = FALSE,
-                                         do_circular_border = FALSE) {
-
+                                         do_circular_border = FALSE,
+                                         fusion_groups = NULL,
+                                         fusion_style = "none",
+                                         fusion_opacity = 0.3) {
   # Use existing edge map generation
   # This generates all pieces with proper complementary edges
   hex_pieces <- generate_hex_pieces_with_edge_map(
@@ -181,16 +242,46 @@ generate_hex_pieces_internal <- function(seed, rings, diameter, tabsize, jitter,
     do_circular_border = do_circular_border
   )
 
+  # Compute fused edges if fusion groups provided
+  fused_edge_data <- NULL
+  if (!is.null(fusion_groups) && length(fusion_groups) > 0) {
+    # Create minimal structure for adjacency API
+    temp_result <- list(
+      type = "hexagonal",
+      parameters = list(rings = rings)
+    )
+    fused_edge_data <- compute_hex_fused_edges(fusion_groups, temp_result)
+  }
+
   # Convert to standardized piece format
   pieces <- lapply(seq_along(hex_pieces), function(i) {
     hp <- hex_pieces[[i]]
+    piece_id <- hp$id
+
+    # Determine which edges are fused (for render-time styling)
+    # Hexagonal pieces have 6 sides numbered 0-5
+    fused_edges <- list(`0` = FALSE, `1` = FALSE, `2` = FALSE,
+                        `3` = FALSE, `4` = FALSE, `5` = FALSE)
+    if (!is.null(fused_edge_data)) {
+      for (side in as.character(0:5)) {
+        fused_edges[[side]] <- is_edge_fused(piece_id, side, fused_edge_data)
+      }
+    }
+
+    # Determine fusion group for this piece
+    fusion_group <- NA
+    if (!is.null(fused_edge_data)) {
+      fusion_group <- get_piece_fusion_group(piece_id, fused_edge_data)
+    }
 
     list(
       id = sprintf("piece_%d", hp$id),
       path = hp$path,
       center = c(hp$center_x, hp$center_y),
       ring_pos = list(ring = hp$ring, position = hp$position_in_ring),
-      type = "hexagonal"
+      type = "hexagonal",
+      fusion_group = fusion_group,
+      fused_edges = fused_edges
     )
   })
 
@@ -261,8 +352,12 @@ generate_hex_pieces_internal <- function(seed, rings, diameter, tabsize, jitter,
       do_trunc = do_trunc,
       do_circular_border = do_circular_border,
       piece_radius = piece_radius,
-      num_pieces = num_pieces
-    )
+      num_pieces = num_pieces,
+      fusion_groups = fusion_groups,
+      fusion_style = fusion_style,
+      fusion_opacity = fusion_opacity
+    ),
+    fusion_data = fused_edge_data
   ))
 }
 
@@ -279,12 +374,18 @@ generate_hex_pieces_internal <- function(seed, rings, diameter, tabsize, jitter,
 #' @param center_shape "hexagon" or "circle" for center piece
 #' @param do_circular_border If TRUE, use arc commands for perfect circular boundary
 #' @param boundary_facing Direction the circular arc faces: "outward" or "inward"
+#' @param fusion_groups List of piece ID vectors to fuse (optional)
+#' @param fusion_style Style for fused edges: "none", "dashed", "solid"
+#' @param fusion_opacity Opacity for fused edges (0.0 to 1.0)
 #' @return Piece generation result
 #' @keywords internal
 generate_concentric_pieces_internal <- function(seed, rings, diameter, tabsize, jitter,
                                                  center_shape = "hexagon",
                                                  do_circular_border = FALSE,
-                                                 boundary_facing = "outward") {
+                                                 boundary_facing = "outward",
+                                                 fusion_groups = NULL,
+                                                 fusion_style = "none",
+                                                 fusion_opacity = 0.3) {
   # Source concentric modules if needed
   if (!exists("generate_concentric_pieces")) {
     source("R/concentric_geometry.R")
@@ -306,16 +407,58 @@ generate_concentric_pieces_internal <- function(seed, rings, diameter, tabsize, 
   # Extract pieces from result
   concentric_pieces <- concentric_result$pieces
 
+  # Compute fused edges if fusion groups provided
+  fused_edge_data <- NULL
+  if (!is.null(fusion_groups) && length(fusion_groups) > 0) {
+    # Create minimal structure for adjacency API
+    temp_result <- list(
+      type = "concentric",
+      parameters = list(rings = rings)
+    )
+    fused_edge_data <- compute_concentric_fused_edges(fusion_groups, temp_result)
+  }
+
   # Convert to standardized piece format
   pieces <- lapply(seq_along(concentric_pieces), function(i) {
     cp <- concentric_pieces[[i]]
+    piece_id <- cp$id
+
+    # Determine which edges are fused (for render-time styling)
+    # Center piece (ring 0) has 6 edges; trapezoid pieces have 4 edges
+    if (cp$ring == 0) {
+      # Center piece: edges 1-6
+      fused_edges <- list(`1` = FALSE, `2` = FALSE, `3` = FALSE,
+                          `4` = FALSE, `5` = FALSE, `6` = FALSE)
+      if (!is.null(fused_edge_data)) {
+        for (edge in as.character(1:6)) {
+          fused_edges[[edge]] <- is_edge_fused(piece_id, edge, fused_edge_data)
+        }
+      }
+    } else {
+      # Trapezoid piece: INNER, RIGHT, OUTER, LEFT
+      fused_edges <- list(INNER = FALSE, RIGHT = FALSE, OUTER = FALSE, LEFT = FALSE)
+      if (!is.null(fused_edge_data)) {
+        fused_edges$INNER <- is_edge_fused(piece_id, "INNER", fused_edge_data)
+        fused_edges$RIGHT <- is_edge_fused(piece_id, "RIGHT", fused_edge_data)
+        fused_edges$OUTER <- is_edge_fused(piece_id, "OUTER", fused_edge_data)
+        fused_edges$LEFT <- is_edge_fused(piece_id, "LEFT", fused_edge_data)
+      }
+    }
+
+    # Determine fusion group for this piece
+    fusion_group <- NA
+    if (!is.null(fused_edge_data)) {
+      fusion_group <- get_piece_fusion_group(piece_id, fused_edge_data)
+    }
 
     list(
       id = sprintf("piece_%d", cp$id),
       path = cp$path,
       center = c(cp$center_x, cp$center_y),
       ring_pos = list(ring = cp$ring, position = cp$position),
-      type = "concentric"
+      type = "concentric",
+      fusion_group = fusion_group,
+      fused_edges = fused_edges
     )
   })
 
@@ -381,8 +524,12 @@ generate_concentric_pieces_internal <- function(seed, rings, diameter, tabsize, 
       do_circular_border = do_circular_border,
       boundary_facing = boundary_facing,
       piece_height = piece_height,
-      num_pieces = num_pieces
-    )
+      num_pieces = num_pieces,
+      fusion_groups = fusion_groups,
+      fusion_style = fusion_style,
+      fusion_opacity = fusion_opacity
+    ),
+    fusion_data = fused_edge_data
   ))
 }
 

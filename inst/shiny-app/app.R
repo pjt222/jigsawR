@@ -271,6 +271,47 @@ ui <- page_fluid(
             )
           ),
 
+          # Divider before fusion controls
+          tags$hr(class = "my-3"),
+          tags$small(class = "text-muted", "Meta Pieces (Fusion)"),
+
+          # Fusion groups input
+          tooltip(
+            textInput("fusion_groups",
+                     "Fuse Pieces:",
+                     value = "",
+                     placeholder = "(1,2),(3,4,5)"),
+            "Fuse adjacent pieces together. Format: (1,2) to fuse pieces 1 and 2, or (1,2),(3,4,5) for multiple groups. Fused pieces move together when separated."
+          ),
+
+          # Fusion style (only shown when fusion groups are specified)
+          conditionalPanel(
+            condition = "input.fusion_groups != ''",
+            radioButtons("fusion_style", "Internal Edge Style:",
+                        choices = list(
+                          "Hidden" = "none",
+                          "Dashed" = "dashed",
+                          "Solid" = "solid"
+                        ),
+                        selected = "none",
+                        inline = TRUE),
+
+            # Fusion opacity (only shown when style != none)
+            conditionalPanel(
+              condition = "input.fusion_style != 'none'",
+              tooltip(
+                sliderInput("fusion_opacity", "Internal Edge Opacity:",
+                           min = 0,
+                           max = 100,
+                           value = 30, step = 5,
+                           ticks = TRUE,
+                           post = "%",
+                           sep = ""),
+                "Transparency of internal edges between fused pieces. 100% = fully visible, 0% = hidden."
+              )
+            )
+          ),
+
           # Divider before action buttons
           tags$hr(class = "my-3"),
 
@@ -443,6 +484,9 @@ ui <- page_fluid(
             "Font size for piece labels. Set to 0 for automatic sizing based on piece dimensions."
           )
         ),
+
+        tags$hr(class = "my-2"),
+        tags$small(class = "text-muted", "Background"),
 
         # Background type selector
         radioButtons("background_type", "Background:",
@@ -782,15 +826,21 @@ server <- function(input, output, session) {
   # Reactive piece generation - depends on base_settings + tabsize/jitter/offset
   # This allows styling options to update the puzzle without clicking Generate
   observe({
-    settings <- base_settings()
-    if (is.null(settings)) return()
-
-    # These inputs trigger regeneration reactively
+    # IMPORTANT: Read ALL inputs FIRST to establish reactive dependencies
+    # before the early return. Otherwise Shiny won't track changes to these inputs.
     tabsize_val <- input$tabsize
     jitter_val <- input$jitter
     offset_val <- input$offset
+    fusion_groups_val <- input$fusion_groups
+    fusion_style_val <- if (is.null(input$fusion_style)) "none" else input$fusion_style
+    fusion_opacity_val <- if (is.null(input$fusion_opacity)) 30 else input$fusion_opacity / 100
+
+    # Now check base_settings - but dependencies are already established above
+    settings <- base_settings()
+    if (is.null(settings)) return()
 
     log_info("Regenerating pieces (tabsize={tabsize_val}, jitter={jitter_val}, offset={offset_val}mm)")
+    log_info("Fusion input: '{fusion_groups_val}' (style={fusion_style_val})")
 
     tryCatch({
       # Determine do_circular_border based on puzzle type
@@ -809,6 +859,23 @@ server <- function(input, output, session) {
         "outward"
       }
 
+      # Parse fusion groups from text input
+      fusion_groups_parsed <- NULL
+      if (!is.null(fusion_groups_val) && nchar(trimws(fusion_groups_val)) > 0) {
+        log_info("Attempting to parse fusion groups...")
+        tryCatch({
+          fusion_groups_parsed <- parse_fusion_input(fusion_groups_val)
+          n_groups <- length(fusion_groups_parsed)
+          log_success("Parsed {n_groups} fusion groups")
+        }, error = function(e) {
+          err_msg <- e$message
+          log_warn("Invalid fusion input: {err_msg}")
+          fusion_groups_parsed <- NULL
+        })
+      } else {
+        log_info("No fusion groups specified")
+      }
+
       # Generate pieces with current styling values
       pieces_result <- generate_pieces_internal(
         type = settings$type,
@@ -821,14 +888,24 @@ server <- function(input, output, session) {
         do_trunc = if (settings$type == "hexagonal") settings$boundary_params$do_trunc else FALSE,
         do_circular_border = do_circular_border_val,
         center_shape = settings$center_shape,
-        boundary_facing = boundary_facing_val
+        boundary_facing = boundary_facing_val,
+        fusion_groups = fusion_groups_parsed,
+        fusion_style = fusion_style_val,
+        fusion_opacity = fusion_opacity_val
       )
+
+      # Log fusion result
+      if (!is.null(pieces_result$fusion_data)) {
+        n_fused <- length(pieces_result$fusion_data$fused_edges)
+        log_success("Fusion applied: {n_fused} fused edges")
+      }
 
       # Apply positioning with current offset
       positioned <- apply_piece_positioning(pieces_result, offset = offset_val)
 
       # Store for rendering
       positioned_result(positioned)
+      log_info("Updated positioned_result")
 
       # Update puzzle_data with current offset (for downloads)
       current_data <- puzzle_data()
@@ -862,6 +939,8 @@ server <- function(input, output, session) {
     # Depend on positioned result (from generate button)
     pos <- positioned_result()
     if (is.null(pos)) return(NULL)
+
+    log_info("rendered_svg() triggered - re-rendering SVG")
 
     # Styling options (these trigger re-render, not regeneration)
     fill_color_value <- switch(input$fill_type,
@@ -1127,6 +1206,17 @@ server <- function(input, output, session) {
         "outward"
       }
 
+      # Parse fusion groups for download
+      fusion_groups_val <- input$fusion_groups
+      fusion_groups_parsed <- NULL
+      if (!is.null(fusion_groups_val) && nchar(trimws(fusion_groups_val)) > 0) {
+        tryCatch({
+          fusion_groups_parsed <- parse_fusion_input(fusion_groups_val)
+        }, error = function(e) {
+          fusion_groups_parsed <- NULL
+        })
+      }
+
       result <- generate_puzzle(
         type = data$type,
         grid = grid_param,
@@ -1145,7 +1235,10 @@ server <- function(input, output, session) {
         do_trunc = if (data$type == "hexagonal") boundary_params$do_trunc else FALSE,
         do_circular_border = do_circular_border_val,
         center_shape = center_shape_value,
-        boundary_facing = boundary_facing_val
+        boundary_facing = boundary_facing_val,
+        fusion_groups = fusion_groups_parsed,
+        fusion_style = if (is.null(input$fusion_style)) "none" else input$fusion_style,
+        fusion_opacity = if (is.null(input$fusion_opacity)) 0.3 else input$fusion_opacity / 100
       )
 
       writeLines(result$svg_content, file)

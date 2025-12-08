@@ -58,14 +58,25 @@ apply_rect_positioning <- function(piece_result, offset) {
   xn <- params$grid[2]  # columns
   yn <- params$grid[1]  # rows
 
+  # Build fusion group position mapping
+  # Each piece gets an "effective" grid position for offset calculation
+  # Fused pieces share the same effective position (min of group)
+  effective_positions <- build_effective_positions_rect(
+    piece_result$pieces,
+    piece_result$fusion_data,
+    params$grid
+  )
+
   # Transform each piece
-  transformed_pieces <- lapply(piece_result$pieces, function(piece) {
+  transformed_pieces <- lapply(seq_along(piece_result$pieces), function(i) {
+    piece <- piece_result$pieces[[i]]
     xi <- piece$grid_pos["xi"]
     yi <- piece$grid_pos["yi"]
 
-    # Calculate offset for this piece
-    dx <- xi * offset
-    dy <- yi * offset
+    # Use effective position for offset calculation (handles fusion)
+    eff_pos <- effective_positions[[i]]
+    dx <- eff_pos$xi * offset
+    dy <- eff_pos$yi * offset
 
     # Apply translation to path
     new_path <- translate_svg_path(piece$path, dx, dy)
@@ -73,23 +84,31 @@ apply_rect_positioning <- function(piece_result, offset) {
     # Update center
     new_center <- piece$center + c(dx, dy)
 
-    # Return transformed piece
+    # Return transformed piece (preserve all metadata including fused_edges)
     list(
       id = piece$id,
       path = new_path,
       center = new_center,
       grid_pos = piece$grid_pos,
-      type = piece$type
+      type = piece$type,
+      fusion_group = if (!is.null(piece$fusion_group)) piece$fusion_group else NA,
+      fused_edges = piece$fused_edges  # Preserve fusion edge metadata for rendering
     )
   })
 
   # Calculate new canvas size
-  # Original size + (n-1) gaps
+  # For fusion: count unique effective positions, not individual pieces
+  # This gives correct gaps when meta-pieces span multiple grid cells
+  unique_eff_xi <- unique(sapply(effective_positions, function(p) p$xi))
+  unique_eff_yi <- unique(sapply(effective_positions, function(p) p$yi))
+  n_gaps_x <- length(unique_eff_xi) - 1
+  n_gaps_y <- length(unique_eff_yi) - 1
+
   original_width <- params$size[1]
   original_height <- params$size[2]
 
-  new_width <- original_width + (xn - 1) * offset
-  new_height <- original_height + (yn - 1) * offset
+  new_width <- original_width + n_gaps_x * offset
+  new_height <- original_height + n_gaps_y * offset
 
   # Add padding for visual clarity
   padding <- offset
@@ -102,14 +121,89 @@ apply_rect_positioning <- function(piece_result, offset) {
     canvas_offset = c(-padding, -padding),
     offset = offset,
     type = "rectangular",
-    parameters = params
+    parameters = params,
+    fusion_data = piece_result$fusion_data
   ))
+}
+
+#' Build effective positions for offset calculation with fusion
+#'
+#' For non-fused pieces, returns their grid position.
+#' For fused pieces, returns the min grid position of their group.
+#'
+#' @param pieces List of piece objects
+#' @param fusion_data Fusion data from compute_fused_edges() or NULL
+#' @param grid c(rows, cols)
+#' @return List of effective positions (one per piece)
+#' @keywords internal
+build_effective_positions_rect <- function(pieces, fusion_data, grid) {
+
+  n_pieces <- length(pieces)
+  effective_positions <- vector("list", n_pieces)
+
+  if (is.null(fusion_data) || is.null(fusion_data$piece_to_group)) {
+    # No fusion - each piece uses its own position
+    for (i in seq_len(n_pieces)) {
+      xi <- pieces[[i]]$grid_pos["xi"]
+      yi <- pieces[[i]]$grid_pos["yi"]
+      effective_positions[[i]] <- list(xi = xi, yi = yi)
+    }
+    return(effective_positions)
+  }
+
+  # With fusion - compute min position for each group
+  piece_to_group <- fusion_data$piece_to_group
+
+  # First pass: collect all positions per group
+  group_positions <- list()
+  for (i in seq_len(n_pieces)) {
+    group_id <- piece_to_group[[as.character(i)]]
+    xi <- pieces[[i]]$grid_pos["xi"]
+    yi <- pieces[[i]]$grid_pos["yi"]
+
+    if (!is.null(group_id)) {
+      key <- as.character(group_id)
+      if (is.null(group_positions[[key]])) {
+        group_positions[[key]] <- list(xis = c(), yis = c())
+      }
+      group_positions[[key]]$xis <- c(group_positions[[key]]$xis, xi)
+      group_positions[[key]]$yis <- c(group_positions[[key]]$yis, yi)
+    }
+  }
+
+  # Compute min position for each group
+  group_min_pos <- list()
+  for (key in names(group_positions)) {
+    group_min_pos[[key]] <- list(
+      xi = min(group_positions[[key]]$xis),
+      yi = min(group_positions[[key]]$yis)
+    )
+  }
+
+  # Second pass: assign effective positions
+  for (i in seq_len(n_pieces)) {
+    group_id <- piece_to_group[[as.character(i)]]
+    xi <- pieces[[i]]$grid_pos["xi"]
+    yi <- pieces[[i]]$grid_pos["yi"]
+
+    if (!is.null(group_id)) {
+      # Fused piece: use group's min position
+      key <- as.character(group_id)
+      effective_positions[[i]] <- group_min_pos[[key]]
+    } else {
+      # Non-fused piece: use own position
+      effective_positions[[i]] <- list(xi = xi, yi = yi)
+    }
+  }
+
+  return(effective_positions)
 }
 
 
 #' Apply concentric piece positioning with offset
 #'
 #' Uses radial separation for concentric ring pieces.
+#' Handles fusion groups by keeping fused pieces together.
 #'
 #' @param piece_result Output from generate_pieces_internal() for concentric
 #' @param offset Separation distance (multiplier for base spacing)
@@ -124,22 +218,42 @@ apply_concentric_positioning <- function(piece_result, offset) {
   # For concentric, offset acts as a separation factor
   separation_factor <- 1.0 + (offset / piece_size)
 
-  # Transform each piece
-  transformed_pieces <- lapply(piece_result$pieces, function(piece) {
-    current_center <- piece$center
-    new_center <- current_center * separation_factor
+  # Build effective centers for fusion groups
+  # Fused pieces share the same effective center (group centroid)
+  effective_centers <- build_effective_centers_radial(
+    piece_result$pieces,
+    piece_result$fusion_data
+  )
 
-    dx <- new_center[1] - current_center[1]
-    dy <- new_center[2] - current_center[2]
+  # Transform each piece
+  transformed_pieces <- lapply(seq_along(piece_result$pieces), function(i) {
+    piece <- piece_result$pieces[[i]]
+    current_center <- piece$center
+
+    # Use effective center for offset calculation (handles fusion)
+    eff_center <- effective_centers[[i]]
+
+    # Calculate new position based on effective center
+    new_eff_center <- eff_center * separation_factor
+
+    # Translation is based on effective center movement
+    dx <- new_eff_center[1] - eff_center[1]
+    dy <- new_eff_center[2] - eff_center[2]
 
     new_path <- translate_svg_path(piece$path, dx, dy)
 
+    # Update actual center with same translation
+    new_center <- current_center + c(dx, dy)
+
+    # Return transformed piece (preserve all metadata including fusion fields)
     list(
       id = piece$id,
       path = new_path,
       center = new_center,
       ring_pos = piece$ring_pos,
-      type = piece$type
+      type = piece$type,
+      fusion_group = if (!is.null(piece$fusion_group)) piece$fusion_group else NA,
+      fused_edges = piece$fused_edges  # Preserve fusion edge metadata for rendering
     )
   })
 
@@ -190,14 +304,85 @@ apply_concentric_positioning <- function(piece_result, offset) {
     offset = offset,
     separation_factor = separation_factor,
     type = "concentric",
-    parameters = params
+    parameters = params,
+    fusion_data = piece_result$fusion_data
   ))
+}
+
+
+#' Build effective centers for radial piece positioning with fusion
+#'
+#' For non-fused pieces, returns their own center.
+#' For fused pieces, returns the centroid of their group.
+#' This ensures all pieces in a fusion group get the same translation.
+#'
+#' @param pieces List of piece objects with center coordinates
+#' @param fusion_data Fusion data from compute_*_fused_edges() or NULL
+#' @return List of effective centers (one per piece, each a c(x, y) vector)
+#' @keywords internal
+build_effective_centers_radial <- function(pieces, fusion_data) {
+
+  n_pieces <- length(pieces)
+  effective_centers <- vector("list", n_pieces)
+
+  if (is.null(fusion_data) || is.null(fusion_data$piece_to_group)) {
+    # No fusion - each piece uses its own center
+    for (i in seq_len(n_pieces)) {
+      effective_centers[[i]] <- pieces[[i]]$center
+    }
+    return(effective_centers)
+  }
+
+  # With fusion - compute centroid for each group
+  piece_to_group <- fusion_data$piece_to_group
+
+  # First pass: collect all centers per group
+  group_centers <- list()
+  for (i in seq_len(n_pieces)) {
+    group_id <- piece_to_group[[as.character(i)]]
+    center <- pieces[[i]]$center
+
+    if (!is.null(group_id)) {
+      key <- as.character(group_id)
+      if (is.null(group_centers[[key]])) {
+        group_centers[[key]] <- list(xs = c(), ys = c())
+      }
+      group_centers[[key]]$xs <- c(group_centers[[key]]$xs, center[1])
+      group_centers[[key]]$ys <- c(group_centers[[key]]$ys, center[2])
+    }
+  }
+
+  # Compute centroid for each group
+  group_centroid <- list()
+  for (key in names(group_centers)) {
+    group_centroid[[key]] <- c(
+      mean(group_centers[[key]]$xs),
+      mean(group_centers[[key]]$ys)
+    )
+  }
+
+  # Second pass: assign effective centers
+  for (i in seq_len(n_pieces)) {
+    group_id <- piece_to_group[[as.character(i)]]
+
+    if (!is.null(group_id)) {
+      # Fused piece: use group's centroid
+      key <- as.character(group_id)
+      effective_centers[[i]] <- group_centroid[[key]]
+    } else {
+      # Non-fused piece: use own center
+      effective_centers[[i]] <- pieces[[i]]$center
+    }
+  }
+
+  return(effective_centers)
 }
 
 
 #' Apply hexagonal piece positioning with offset
 #'
 #' Uses topology-based separation for hexagonal pieces.
+#' Handles fusion groups by keeping fused pieces together.
 #'
 #' @param piece_result Output from generate_pieces_internal() for hexagonal
 #' @param offset Separation distance (multiplier for base spacing)
@@ -224,30 +409,46 @@ apply_hex_positioning <- function(piece_result, offset) {
   # separation_factor = 1.0 + offset/piece_size gives proportional separation
   separation_factor <- 1.0 + (offset / piece_size)
 
+  # Build effective centers for fusion groups
+  # Fused pieces share the same effective center (group centroid)
+  effective_centers <- build_effective_centers_radial(
+    piece_result$pieces,
+    piece_result$fusion_data
+  )
+
   # Transform each piece
-  transformed_pieces <- lapply(piece_result$pieces, function(piece) {
+  transformed_pieces <- lapply(seq_along(piece_result$pieces), function(i) {
+    piece <- piece_result$pieces[[i]]
+
     # Get the piece's current center (at compact position)
     current_center <- piece$center
 
-    # Calculate new center with separation factor
-    # The center is already relative to origin (0,0)
-    # Just scale it by separation factor
-    new_center <- current_center * separation_factor
+    # Use effective center for offset calculation (handles fusion)
+    eff_center <- effective_centers[[i]]
 
-    # Calculate translation needed
-    dx <- new_center[1] - current_center[1]
-    dy <- new_center[2] - current_center[2]
+    # Calculate new position based on effective center
+    # Effective center determines offset, but piece keeps its relative position
+    new_eff_center <- eff_center * separation_factor
+
+    # Translation is based on effective center movement
+    dx <- new_eff_center[1] - eff_center[1]
+    dy <- new_eff_center[2] - eff_center[2]
 
     # Apply translation to path
     new_path <- translate_svg_path(piece$path, dx, dy)
 
-    # Return transformed piece
+    # Update actual center with same translation
+    new_center <- current_center + c(dx, dy)
+
+    # Return transformed piece (preserve all metadata including fusion fields)
     list(
       id = piece$id,
       path = new_path,
       center = new_center,
       ring_pos = piece$ring_pos,
-      type = piece$type
+      type = piece$type,
+      fusion_group = if (!is.null(piece$fusion_group)) piece$fusion_group else NA,
+      fused_edges = piece$fused_edges  # Preserve fusion edge metadata for rendering
     )
   })
 
@@ -301,7 +502,8 @@ apply_hex_positioning <- function(piece_result, offset) {
     offset = offset,
     separation_factor = separation_factor,
     type = "hexagonal",
-    parameters = params
+    parameters = params,
+    fusion_data = piece_result$fusion_data
   ))
 }
 
