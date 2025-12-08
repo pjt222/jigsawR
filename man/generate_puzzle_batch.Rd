@@ -7,7 +7,7 @@
 generate_puzzle_batch(variations, base_dir = "output/batch")
 }
 \arguments{
-\item{variations}{List of parameter sets, each containing seed, grid, size, etc.}
+\item{variations}{List of parameter sets, each containing seed, grid, size, offset, etc.}
 
 \item{base_dir}{Base directory for output}
 }

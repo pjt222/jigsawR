@@ -8,7 +8,8 @@ save_individual_pieces(
   puzzle_structure,
   output_dir,
   filename_prefix,
-  colors = NULL
+  colors = NULL,
+  stroke_width = 1.5
 )
 }
 \arguments{
@@ -19,6 +20,8 @@ save_individual_pieces(
 \item{filename_prefix}{Prefix for output files}
 
 \item{colors}{Optional vector of colors}
+
+\item{stroke_width}{Line width for SVG strokes (default: 1.5)}
 }
 \description{
 Save individual puzzle pieces as separate SVG files

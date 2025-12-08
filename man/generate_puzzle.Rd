@@ -11,55 +11,82 @@ generate_puzzle(
   seed = NULL,
   tabsize = 20,
   jitter = 4,
-  output = "both",
+  offset = 0,
+  fill_color = "none",
+  stroke_width = 1.5,
   colors = NULL,
-  background = "none",
-  save_files = TRUE,
+  palette = NULL,
+  background = "white",
+  opacity = 1,
+  save_files = FALSE,
   output_dir = "output",
   filename_prefix = NULL,
   do_warp = FALSE,
   do_trunc = FALSE,
-  stroke_width = 1,
-  palette = NULL
+  do_circular_border = FALSE,
+  center_shape = "hexagon",
+  boundary_facing = "outward",
+  show_labels = FALSE,
+  label_color = "black",
+  label_size = NULL,
+  output = NULL
 )
 }
 \arguments{
-\item{type}{"rectangular" or "hexagonal" (currently only rectangular implemented)}
+\item{type}{Puzzle type: "rectangular", "hexagonal", or "concentric"}
 
-\item{grid}{Vector c(rows, columns) for puzzle dimensions}
+\item{grid}{For rectangular: c(rows, columns). For hexagonal/concentric: c(rings) or just rings}
 
-\item{size}{Vector c(width, height) in mm}
+\item{size}{For rectangular: c(width, height) in mm. For hexagonal/concentric: c(diameter) or just diameter}
 
 \item{seed}{Random seed for reproducibility}
 
-\item{tabsize}{Tab size as percentage (10-30)}
+\item{tabsize}{Tab size as percentage (10-40)}
 
-\item{jitter}{Jitter as percentage (0-10)}
+\item{jitter}{Jitter as percentage (0-15)}
 
-\item{output}{"complete", "individual", or "both"}
+\item{offset}{Separation offset (0 = complete puzzle, >0 = separated pieces)}
 
-\item{colors}{Vector of colors for individual pieces (optional)}
+\item{fill_color}{Fill color for pieces ("none" for unfilled)}
 
-\item{background}{"none", "gradient", or custom color}
+\item{stroke_width}{SVG stroke width (default: 1.5)}
 
-\item{save_files}{TRUE to save SVG/PNG files}
+\item{colors}{Vector of colors for pieces (optional, overrides palette)}
+
+\item{palette}{Viridis palette name (NULL = use config default)}
+
+\item{background}{"none", "white", color name, or list(type="gradient", ...)}
+
+\item{opacity}{Opacity of puzzle pieces (0.0 to 1.0)}
+
+\item{save_files}{TRUE to save SVG files}
 
 \item{output_dir}{Directory for output files}
 
 \item{filename_prefix}{Prefix for output files}
 
-\item{do_warp}{Apply circular warping (hexagonal only, default: FALSE)}
+\item{do_warp}{Apply circular warping (hexagonal only)}
 
-\item{do_trunc}{Truncate edge pieces (hexagonal only, default: FALSE)}
+\item{do_trunc}{Truncate edge pieces (hexagonal only)}
 
-\item{stroke_width}{SVG stroke width (default: 1)}
+\item{do_circular_border}{Use perfect circular arc borders (hexagonal: requires do_warp=TRUE; concentric: always available)}
 
-\item{palette}{Viridis palette name (NULL = use config default)}
+\item{center_shape}{Center piece shape for concentric type: "hexagon" or "circle"}
+
+\item{boundary_facing}{Direction the circular arc faces (concentric only): "outward" (convex) or "inward" (concave)}
+
+\item{show_labels}{Logical; if TRUE, display piece ID labels at piece centers}
+
+\item{label_color}{Color for piece labels (default: "black")}
+
+\item{label_size}{Font size for labels in mm (default: auto-calculated based on piece size)}
+
+\item{output}{DEPRECATED: Use offset parameter instead}
 }
 \value{
-List with puzzle data, SVG content, and file paths
+List with svg_content, pieces, canvas_size, and parameters
 }
 \description{
 Single entry point for all puzzle generation with clean, reproducible output.
-No hard-coded adjustments or manual tinkering.
+Uses the unified pipeline: piece generation -> positioning -> rendering.
 }

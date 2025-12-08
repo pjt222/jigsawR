@@ -7,7 +7,7 @@
 generate_background(background, size, output_dir, filename_prefix)
 }
 \arguments{
-\item{background}{"gradient", color name, or "none"}
+\item{background}{"gradient", color name, "none", or list with gradient colors}
 
 \item{size}{Vector c(width, height) in mm}
 

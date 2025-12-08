@@ -10,7 +10,10 @@ generate_puzzle_svg_enhanced(
   colors = NULL,
   offset = 0,
   show_guides = TRUE,
-  arrangement = "hexagonal"
+  arrangement = "hexagonal",
+  stroke_width = 1.5,
+  background = "white",
+  palette = NULL
 )
 }
 \arguments{
@@ -18,13 +21,19 @@ generate_puzzle_svg_enhanced(
 
 \item{mode}{"complete", "individual", or "separated"}
 
-\item{colors}{Optional vector of colors for pieces}
+\item{colors}{Optional vector of colors for pieces (if NULL, uses palette)}
 
 \item{offset}{Separation distance for "separated" mode (in mm)}
 
 \item{show_guides}{Show alignment guides in separated mode}
 
 \item{arrangement}{For hexagonal: "hexagonal" or "rectangular" packing}
+
+\item{stroke_width}{Line width for piece outlines (default 1.5)}
+
+\item{background}{Background color for SVG (default "white")}
+
+\item{palette}{Viridis palette name (NULL = use config default, only used if colors is NULL)}
 }
 \value{
 SVG string

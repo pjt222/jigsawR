@@ -15,7 +15,11 @@ generate_individual_pieces(
   output_dir = "output",
   corner_radius = 2,
   save_combined = TRUE,
-  palette = NULL
+  palette = NULL,
+  stroke_width = 1.5,
+  stroke_color = NULL,
+  background = "none",
+  opacity = 1
 )
 }
 \arguments{
@@ -40,6 +44,16 @@ generate_individual_pieces(
 \item{save_combined}{Whether to save a combined view (default: TRUE)}
 
 \item{palette}{Viridis palette name for colors (default: from config)}
+
+\item{stroke_width}{Line width for SVG strokes (default: 1.5)}
+
+\item{stroke_color}{Color for piece outlines (default: "black"). When NULL,
+uses the first color from palette if provided.}
+
+\item{background}{Background color for pieces. Can be "none", a color string,
+or a list with type="gradient" and center/middle/edge colors.}
+
+\item{opacity}{Opacity of puzzle pieces (0.0 to 1.0, default 1.0 = fully opaque)}
 }
 \value{
 List containing piece paths and metadata
@@ -55,4 +69,8 @@ Key principles:
 - No hardcoded paths or SVG manipulation
 - Works for any puzzle size (not just 2x2)
 - Deterministic output based on seed
+}
+\note{
+DEPRECATED: Use generate_puzzle() and access result$pieces instead.
+  This function will be removed in a future version.
 }

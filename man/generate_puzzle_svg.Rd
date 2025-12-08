@@ -10,7 +10,8 @@ generate_puzzle_svg(
   colors = NULL,
   background = "white",
   stroke_width = 1.5,
-  palette = NULL
+  palette = NULL,
+  opacity = 1
 )
 }
 \arguments{
@@ -25,6 +26,8 @@ generate_puzzle_svg(
 \item{stroke_width}{Stroke width for puzzle lines (default: 1.5)}
 
 \item{palette}{Viridis palette name (if colors is NULL)}
+
+\item{opacity}{Opacity of puzzle pieces (0.0 to 1.0, default 1.0 = fully opaque)}
 }
 \value{
 SVG string

@@ -13,5 +13,7 @@ get_puzzle_config(config_name = "default")
 List containing configuration values
 }
 \description{
-Loads configuration from inst/config.yml
+Loads configuration from inst/config.yml. This function searches for the
+config file in multiple locations to work both in package context and
+when running from the Shiny app directory.
 }

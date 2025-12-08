@@ -4,10 +4,12 @@
 \alias{log_subheader}
 \title{Log a subsection header}
 \usage{
-log_subheader(text)
+log_subheader(text, .envir = parent.frame())
 }
 \arguments{
 \item{text}{Subheader text}
+
+\item{.envir}{Environment for variable lookup (defaults to parent frame)}
 }
 \description{
 Log a subsection header

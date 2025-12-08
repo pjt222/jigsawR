@@ -9,7 +9,9 @@ generate_separated_puzzle_svg(
   offset = 10,
   colors = NULL,
   stroke_width = 1.5,
-  background = "white"
+  background = "white",
+  palette = NULL,
+  opacity = 1
 )
 }
 \arguments{
@@ -17,9 +19,15 @@ generate_separated_puzzle_svg(
 
 \item{offset}{Separation distance between pieces in mm}
 
-\item{colors}{Optional vector of colors for pieces}
+\item{colors}{Optional vector of colors for pieces (if NULL, uses palette)}
 
 \item{stroke_width}{Line width for piece outlines}
+
+\item{background}{Background color ("white", "none", "gradient", or any CSS color)}
+
+\item{palette}{Viridis palette name (NULL = use config default, only used if colors is NULL)}
+
+\item{opacity}{Opacity of puzzle pieces (0.0 to 1.0, default 1.0 = fully opaque)}
 }
 \value{
 SVG string with separated pieces
@@ -27,4 +35,8 @@ SVG string with separated pieces
 \description{
 Creates an SVG with individual pieces separated by the specified offset,
 maintaining their original grid positions.
+}
+\note{
+DEPRECATED: Use generate_puzzle(..., offset = X) instead.
+  This function will be removed in a future version.
 }

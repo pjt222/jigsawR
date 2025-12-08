@@ -4,7 +4,37 @@
 \alias{save_individual_piece_svg}
 \title{Save individual piece as SVG file}
 \usage{
-save_individual_piece_svg(xi, yi, piece_path, width, height, output_dir)
+save_individual_piece_svg(
+  xi,
+  yi,
+  piece_path,
+  width,
+  height,
+  output_dir,
+  stroke_width = 1.5,
+  stroke_color = "black",
+  background = "none",
+  opacity = 1
+)
+}
+\arguments{
+\item{xi}{Column index (0-based)}
+
+\item{yi}{Row index (0-based)}
+
+\item{piece_path}{SVG path data for the piece}
+
+\item{width}{Puzzle width}
+
+\item{height}{Puzzle height}
+
+\item{output_dir}{Output directory}
+
+\item{stroke_width}{Line width for SVG strokes}
+
+\item{stroke_color}{Color for the stroke (default: "black")}
+
+\item{background}{Background color or "none"/"transparent" (default: "none")}
 }
 \description{
 Save individual piece as SVG file

@@ -4,7 +4,20 @@
 \alias{save_combined_pieces_svg}
 \title{Save combined view of all pieces}
 \usage{
-save_combined_pieces_svg(pieces, width, height, output_dir, palette = NULL)
+save_combined_pieces_svg(
+  pieces,
+  width,
+  height,
+  output_dir,
+  palette = NULL,
+  stroke_width = 1.5,
+  opacity = 1
+)
+}
+\arguments{
+\item{stroke_width}{Line width for SVG strokes}
+
+\item{opacity}{Opacity of puzzle pieces (0.0 to 1.0)}
 }
 \description{
 Save combined view of all pieces

@@ -2,7 +2,7 @@
 % Please edit documentation in R/hexagonal_individual_pieces.R
 \name{generate_hexagonal_individual_pieces}
 \alias{generate_hexagonal_individual_pieces}
-\title{Generate individual hexagonal puzzle pieces}
+\title{Generate individual hexagonal puzzle pieces with file saving}
 \usage{
 generate_hexagonal_individual_pieces(
   rings = 3,
@@ -10,41 +10,48 @@ generate_hexagonal_individual_pieces(
   diameter = 240,
   tabsize = 27,
   jitter = 5,
-  do_warp = FALSE,
-  do_trunc = FALSE,
-  colors = NULL,
-  stroke_width = 1,
   output_dir = "output",
-  save_files = TRUE
+  save_combined = TRUE,
+  save_individual = TRUE,
+  colors = NULL,
+  stroke_width = 1.5,
+  stroke_color = "black",
+  background = "none",
+  opacity = 1
 )
 }
 \arguments{
-\item{rings}{Number of rings}
+\item{rings}{Number of rings (2-6)}
 
-\item{seed}{Random seed}
+\item{seed}{Random seed for reproducibility}
 
 \item{diameter}{Puzzle diameter in mm}
 
-\item{tabsize}{Tab size percentage}
+\item{tabsize}{Tab size percentage (10-40, default: 27)}
 
-\item{jitter}{Jitter percentage}
+\item{jitter}{Jitter percentage (0-15, default: 5)}
 
-\item{do_warp}{Apply circular warping}
+\item{output_dir}{Directory to save individual piece SVGs}
 
-\item{do_trunc}{Truncate edge pieces}
+\item{save_combined}{Whether to save a combined view (default: TRUE)}
 
-\item{colors}{Vector of colors for pieces (optional)}
+\item{save_individual}{Whether to save individual piece files (default: TRUE)}
 
-\item{stroke_width}{Line width for SVG}
+\item{colors}{Color palette for pieces (default: rainbow palette)}
 
-\item{output_dir}{Directory for output files}
+\item{stroke_width}{Line width for SVG strokes (default: 1.5)}
 
-\item{save_files}{Whether to save individual piece files}
+\item{stroke_color}{Color for piece outlines (default: "black")}
+
+\item{background}{Background color for pieces (default: "none")}
+
+\item{opacity}{Opacity of puzzle pieces (0.0 to 1.0, default 1.0 = fully opaque)}
 }
 \value{
-List with actual individual piece data
+List containing piece paths and metadata
 }
 \description{
-Creates individual piece shapes by parsing the complete puzzle paths.
-This is the "hard question" implementation that extracts actual piece boundaries.
+This function generates individual SVG files for each hexagonal puzzle piece
+using the edge mapping system. Adjacent pieces have complementary edges
+ensuring perfect fit.
 }

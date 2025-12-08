@@ -14,7 +14,8 @@ generate_hex_jigsaw_svg(
   do_trunc = FALSE,
   stroke_color = "black",
   stroke_width = 1,
-  background = "none"
+  background = "none",
+  opacity = 1
 )
 }
 \arguments{
@@ -37,6 +38,8 @@ generate_hex_jigsaw_svg(
 \item{stroke_width}{Width of puzzle lines (default: 1)}
 
 \item{background}{Background color or "none" (default: "none")}
+
+\item{opacity}{Opacity of puzzle pieces (0.0 to 1.0, default 1.0 = fully opaque)}
 }
 \value{
 List containing SVG path data

@@ -2,27 +2,40 @@
 % Please edit documentation in R/hexagonal_individual_pieces.R
 \name{create_hexagonal_individual_pieces_svg}
 \alias{create_hexagonal_individual_pieces_svg}
-\title{Create combined SVG for all individual pieces}
+\title{Create hexagonal individual pieces SVG (combined view only)}
 \usage{
 create_hexagonal_individual_pieces_svg(
-  pieces,
-  puzzle_struct,
-  colors,
-  stroke_width
+  rings = 3,
+  seed = NULL,
+  diameter = 240,
+  tabsize = 27,
+  jitter = 5,
+  colors = NULL,
+  stroke_width = 1.5,
+  opacity = 1
 )
 }
 \arguments{
-\item{pieces}{List of individual pieces}
+\item{rings}{Number of rings}
 
-\item{puzzle_struct}{Original puzzle structure}
+\item{seed}{Random seed}
+
+\item{diameter}{Puzzle diameter}
+
+\item{tabsize}{Tab size percentage}
+
+\item{jitter}{Jitter percentage}
 
 \item{colors}{Color palette}
 
 \item{stroke_width}{Line width}
+
+\item{opacity}{Opacity of puzzle pieces (0.0 to 1.0, default 1.0 = fully opaque)}
 }
 \value{
-Complete SVG string
+SVG content as string
 }
 \description{
-Create combined SVG for all individual pieces
+Generates a combined SVG showing all pieces with colors, without saving
+individual files. Useful for preview or when only combined view is needed.
 }

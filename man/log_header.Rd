@@ -4,10 +4,12 @@
 \alias{log_header}
 \title{Log a section header}
 \usage{
-log_header(text)
+log_header(text, .envir = parent.frame())
 }
 \arguments{
 \item{text}{Header text}
+
+\item{.envir}{Environment for variable lookup (defaults to parent frame)}
 }
 \description{
 Log a section header

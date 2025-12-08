@@ -2,21 +2,25 @@
 % Please edit documentation in R/hexagonal_separation.R
 \name{generate_separated_hexagonal_svg}
 \alias{generate_separated_hexagonal_svg}
-\title{Generate separated hexagonal puzzle SVG}
+\title{Generate separated hexagonal puzzle with placeholder pieces or bezier curves}
 \usage{
 generate_separated_hexagonal_svg(
   rings = 3,
   seed = NULL,
   diameter = 240,
   offset = 10,
-  arrangement = "hexagonal",
+  arrangement = "rectangular",
+  use_bezier = FALSE,
   tabsize = 27,
   jitter = 5,
   do_warp = FALSE,
   do_trunc = FALSE,
   colors = NULL,
   stroke_width = 1,
-  background = "none"
+  background = "none",
+  palette = NULL,
+  fill_color = "none",
+  opacity = 1
 )
 }
 \arguments{
@@ -28,25 +32,38 @@ generate_separated_hexagonal_svg(
 
 \item{offset}{Separation distance between pieces}
 
-\item{arrangement}{"hexagonal" or "rectangular" packing}
+\item{arrangement}{"rectangular" or "hexagonal" packing}
 
-\item{tabsize}{Tab size percentage}
+\item{use_bezier}{Use real bezier curves with tabs (default: FALSE for placeholder hexagons)}
 
-\item{jitter}{Jitter percentage}
+\item{tabsize}{Tab size percentage (used when use_bezier = TRUE)}
 
-\item{do_warp}{Apply circular warping}
+\item{jitter}{Jitter percentage (used when use_bezier = TRUE)}
 
-\item{do_trunc}{Truncate edge pieces}
+\item{do_warp}{Apply circular warping to border edges (creates circular puzzle boundary)}
 
-\item{colors}{Piece colors}
+\item{do_trunc}{Truncate edge pieces to regular hexagon boundary}
+
+\item{colors}{Piece colors (if NULL, uses palette)}
 
 \item{stroke_width}{Line width}
 
-\item{background}{Background color or "none"}
+\item{background}{Background color}
+
+\item{palette}{Viridis palette name (NULL = use config default, only used if colors is NULL)}
+
+\item{fill_color}{Fill color for pieces ("none" for transparent, or any CSS color)}
+
+\item{opacity}{Opacity of puzzle pieces (0.0 to 1.0, default 1.0 = fully opaque)}
 }
 \value{
 SVG content as string
 }
 \description{
-Creates an SVG with hexagonal puzzle pieces separated for laser cutting.
+Creates a layout showing where pieces would be positioned when separated.
+Can use simple hexagon shapes as placeholders OR real puzzle pieces with bezier curves.
+}
+\note{
+DEPRECATED: Use generate_puzzle(type = 'hexagonal', offset = X) instead.
+  This function will be removed in a future version.
 }

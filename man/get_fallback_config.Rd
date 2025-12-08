@@ -10,6 +10,7 @@ get_fallback_config()
 List containing default configuration values
 }
 \description{
-Returns hardcoded defaults if config file is unavailable
+Returns hardcoded defaults if config file is unavailable.
+These values should match inst/config.yml exactly.
 }
 \keyword{internal}

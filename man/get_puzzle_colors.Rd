@@ -9,7 +9,7 @@ get_puzzle_colors(n, palette = NULL)
 \arguments{
 \item{n}{Number of colors to generate}
 
-\item{palette}{Palette name (viridis, magma, plasma, inferno, cividis, mako, rocket, turbo)}
+\item{palette}{Palette name (black, viridis, magma, plasma, inferno, cividis, mako, rocket, turbo)}
 }
 \value{
 Character vector of hex colors
