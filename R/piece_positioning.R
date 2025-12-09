@@ -92,7 +92,8 @@ apply_rect_positioning <- function(piece_result, offset) {
       grid_pos = piece$grid_pos,
       type = piece$type,
       fusion_group = if (!is.null(piece$fusion_group)) piece$fusion_group else NA,
-      fused_edges = piece$fused_edges  # Preserve fusion edge metadata for rendering
+      fused_edges = piece$fused_edges,  # Preserve fusion edge metadata for rendering
+      fused_neighbor_ids = piece$fused_neighbor_ids  # Preserve neighbor IDs for deduplication
     )
   })
 
@@ -253,7 +254,8 @@ apply_concentric_positioning <- function(piece_result, offset) {
       ring_pos = piece$ring_pos,
       type = piece$type,
       fusion_group = if (!is.null(piece$fusion_group)) piece$fusion_group else NA,
-      fused_edges = piece$fused_edges  # Preserve fusion edge metadata for rendering
+      fused_edges = piece$fused_edges,  # Preserve fusion edge metadata for rendering
+      fused_neighbor_ids = piece$fused_neighbor_ids  # Preserve neighbor IDs for deduplication
     )
   })
 
@@ -448,7 +450,8 @@ apply_hex_positioning <- function(piece_result, offset) {
       ring_pos = piece$ring_pos,
       type = piece$type,
       fusion_group = if (!is.null(piece$fusion_group)) piece$fusion_group else NA,
-      fused_edges = piece$fused_edges  # Preserve fusion edge metadata for rendering
+      fused_edges = piece$fused_edges,  # Preserve fusion edge metadata for rendering
+      fused_neighbor_ids = piece$fused_neighbor_ids  # Preserve neighbor IDs for deduplication
     )
   })
 

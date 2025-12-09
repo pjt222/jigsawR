@@ -964,15 +964,9 @@ compute_concentric_fused_edges <- function(fusion_groups, puzzle_result) {
             edge_to_group[[edge_key]] <- group_idx
           }
 
-          # Also add the complementary edge from neighbor's perspective
-          comp_direction <- get_concentric_complementary_direction(direction)
-          if (!is.na(comp_direction)) {
-            comp_edge_key <- make_edge_key(neighbor_id, comp_direction)
-            if (!(comp_edge_key %in% fused_edges)) {
-              fused_edges <- c(fused_edges, comp_edge_key)
-              edge_to_group[[comp_edge_key]] <- group_idx
-            }
-          }
+          # Don't blindly add complementary edge - the neighbor will add its own
+          # when it processes its edges. This ensures we only mark edges that
+          # are actually connected to in-group pieces.
         }
       }
     }
@@ -1096,13 +1090,9 @@ compute_hex_fused_edges <- function(fusion_groups, puzzle_result) {
             edge_to_group[[edge_key]] <- group_idx
           }
 
-          # Also add the complementary edge from neighbor's perspective
-          comp_direction <- get_hex_complementary_side(direction)
-          comp_edge_key <- make_edge_key(neighbor_id, comp_direction)
-          if (!(comp_edge_key %in% fused_edges)) {
-            fused_edges <- c(fused_edges, comp_edge_key)
-            edge_to_group[[comp_edge_key]] <- group_idx
-          }
+          # Don't blindly add complementary edge - the neighbor will add its own
+          # when it processes its edges. This avoids bugs from asymmetric adjacency.
+          # The symmetric edge will be added when we process the neighbor piece.
         }
       }
     }

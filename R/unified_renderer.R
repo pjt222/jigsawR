@@ -1122,7 +1122,8 @@ render_pieces_with_fusion_styled <- function(pieces, colors, fill, stroke_width,
 
   # Pass 3: Draw fused edges with special styling
   # Each fused edge is shared by two pieces - draw it only ONCE
-  # Track drawn edges by their endpoint coordinates
+  # Use piece ID + edge name for deduplication (works with offset > 0)
+  # Key format: "min_id-edge|max_id-edge" where ids are sorted
   drawn_fused_edges <- character()
 
   # Build style attributes for fused edges
@@ -1135,6 +1136,7 @@ render_pieces_with_fusion_styled <- function(pieces, colors, fill, stroke_width,
   for (i in seq_along(pieces)) {
     piece <- pieces[[i]]
     color <- colors[i]
+    piece_id <- piece$id %||% i
 
     if (is.null(piece$fused_edges)) {
       next
@@ -1151,33 +1153,55 @@ render_pieces_with_fusion_styled <- function(pieces, colors, fill, stroke_width,
 
       edge_path <- edge_paths[[edge_name]]
       if (!is.null(edge_path) && nzchar(edge_path)) {
-        # Create a unique key for this edge based on endpoints
-        # Extract start and end points from path
-        segs <- parse_svg_path(edge_path)
-        if (length(segs) >= 2) {
-          start_x <- segs[[1]]$x
-          start_y <- segs[[1]]$y
-          # Find last non-Z segment for end point
-          end_seg <- NULL
-          for (j in length(segs):2) {
-            if (segs[[j]]$type != "Z") {
-              end_seg <- segs[[j]]
+        # Create canonical edge key using piece ID and edge name
+        # This works regardless of coordinate translation (offset > 0)
+        # Format: "piece_id-edge_name" with canonical ordering
+        this_edge_key <- sprintf("%d-%s", piece_id, edge_name)
+
+        # For deduplication, we need a canonical key that's the same
+        # whether we're processing piece A or piece B of a shared edge.
+        # Use sorted piece IDs to create consistent keys.
+        # We'll use the piece's own key and check if we've drawn the complementary edge.
+        #
+        # Since fused_edges marks BOTH pieces' edges as fused, we can simply
+        # use the smaller piece ID's edge key as the canonical form.
+        # If this piece has a smaller ID than any neighbor that shares this edge,
+        # we draw it. Otherwise, we skip (the neighbor with smaller ID will draw it).
+
+        # Get neighbor info from the fused_edges structure
+        # For now, use a simple approach: track drawn edges by this_edge_key
+        # and its complement (which will have format "neighbor_id-opposite_edge")
+        if (this_edge_key %in% drawn_fused_edges) {
+          next
+        }
+
+        # Mark this edge as drawn
+        drawn_fused_edges <- c(drawn_fused_edges, this_edge_key)
+
+        # Also mark the complementary edge as drawn to prevent double-drawing
+        # We find the neighbor piece and mark ALL of their fused edges that point to us
+        # This handles asymmetric adjacency (like in hexagonal puzzles)
+        neighbor_id <- piece$fused_neighbor_ids[[edge_name]]
+
+        if (!is.null(neighbor_id)) {
+          # Find the neighbor piece and check which of their fused edges point to us
+          neighbor_piece <- NULL
+          for (np in pieces) {
+            np_id <- np$id %||% which(sapply(pieces, function(p) identical(p$path, np$path)))
+            if (!is.null(np_id) && np_id == neighbor_id) {
+              neighbor_piece <- np
               break
             }
           }
-          if (!is.null(end_seg)) {
-            end_x <- end_seg$x
-            end_y <- end_seg$y
-            # Create canonical key: sort endpoints so (A,B) and (B,A) have same key
-            p1 <- sprintf("%.1f,%.1f", start_x, start_y)
-            p2 <- sprintf("%.1f,%.1f", end_x, end_y)
-            edge_key <- if (p1 < p2) paste(p1, p2, sep = "|") else paste(p2, p1, sep = "|")
 
-            # Skip if this edge was already drawn
-            if (edge_key %in% drawn_fused_edges) {
-              next
+          if (!is.null(neighbor_piece) && !is.null(neighbor_piece$fused_neighbor_ids)) {
+            # Mark all neighbor edges that point back to this piece as drawn
+            for (n_edge in names(neighbor_piece$fused_neighbor_ids)) {
+              if (neighbor_piece$fused_neighbor_ids[[n_edge]] == piece_id) {
+                comp_edge_key <- sprintf("%d-%s", neighbor_id, n_edge)
+                drawn_fused_edges <- c(drawn_fused_edges, comp_edge_key)
+              }
             }
-            drawn_fused_edges <- c(drawn_fused_edges, edge_key)
           }
         }
 

@@ -151,11 +151,28 @@ generate_rect_pieces_internal <- function(seed, grid, size, tabsize, jitter,
 
       # Determine which edges are fused (for render-time styling)
       fused_edges <- list(N = FALSE, E = FALSE, S = FALSE, W = FALSE)
+      # Store neighbor IDs for fused edges (for deduplication in renderer)
+      fused_neighbor_ids <- list()
+
       if (!is.null(fused_edge_data)) {
-        fused_edges$N <- is_edge_fused(piece_idx, "N", fused_edge_data)
-        fused_edges$E <- is_edge_fused(piece_idx, "E", fused_edge_data)
-        fused_edges$S <- is_edge_fused(piece_idx, "S", fused_edge_data)
-        fused_edges$W <- is_edge_fused(piece_idx, "W", fused_edge_data)
+        # Check each direction and store neighbor ID if fused
+        for (dir in c("N", "E", "S", "W")) {
+          is_fused <- is_edge_fused(piece_idx, dir, fused_edge_data)
+          fused_edges[[dir]] <- is_fused
+
+          if (is_fused) {
+            # Calculate neighbor index based on direction
+            neighbor_idx <- switch(dir,
+              "N" = if (yi > 0) piece_idx - xn else NA,
+              "E" = if (xi < xn - 1) piece_idx + 1 else NA,
+              "S" = if (yi < yn - 1) piece_idx + xn else NA,
+              "W" = if (xi > 0) piece_idx - 1 else NA
+            )
+            if (!is.na(neighbor_idx)) {
+              fused_neighbor_ids[[dir]] <- neighbor_idx
+            }
+          }
+        }
       }
 
       # Calculate piece center
@@ -170,13 +187,14 @@ generate_rect_pieces_internal <- function(seed, grid, size, tabsize, jitter,
 
       # Create standardized piece object
       pieces[[piece_idx]] <- list(
-        id = sprintf("piece_%d_%d", xi, yi),
+        id = piece_idx,  # Store as integer for deduplication
         path = piece_path,
         center = c(center_x, center_y),
         grid_pos = c(xi = xi, yi = yi),
         type = "rectangular",
         fusion_group = fusion_group,  # NA if not in any group
-        fused_edges = fused_edges     # list(N, E, S, W) - TRUE if edge is fused
+        fused_edges = fused_edges,    # list(N, E, S, W) - TRUE if edge is fused
+        fused_neighbor_ids = fused_neighbor_ids  # Neighbor IDs for deduplication
       )
 
       piece_idx <- piece_idx + 1
@@ -260,11 +278,70 @@ generate_hex_pieces_internal <- function(seed, rings, diameter, tabsize, jitter,
 
     # Determine which edges are fused (for render-time styling)
     # Hexagonal pieces have 6 sides numbered 0-5
+    # IMPORTANT: fused_edges keys must be GEOMETRIC side numbers (0-5)
+    # which correspond to edge path segments in order.
+    # The topology side (from get_hex_neighbor) may differ from geometric side!
     fused_edges <- list(`0` = FALSE, `1` = FALSE, `2` = FALSE,
                         `3` = FALSE, `4` = FALSE, `5` = FALSE)
+    # Also store neighbor IDs for fused edges (for deduplication in renderer)
+    fused_neighbor_ids <- list()
+
     if (!is.null(fused_edge_data)) {
-      for (side in as.character(0:5)) {
-        fused_edges[[side]] <- is_edge_fused(piece_id, side, fused_edge_data)
+      # Get this piece's center coordinates for direction calculations
+      piece_cx <- hp$center_x
+      piece_cy <- hp$center_y
+
+      # First, compute which geometric side each topology side maps to
+      # by checking the actual direction to each neighbor
+      topo_to_geo_map <- list()
+
+      for (topo_side in 0:5) {
+        neighbor_id <- get_hex_neighbor(piece_id, topo_side, rings)
+        if (is.na(neighbor_id)) next
+
+        # Get neighbor center
+        neighbor_hp <- hex_pieces[[neighbor_id]]
+        neighbor_cx <- neighbor_hp$center_x
+        neighbor_cy <- neighbor_hp$center_y
+
+        # Direction from this piece to neighbor
+        dir_to_neighbor <- atan2(neighbor_cy - piece_cy, neighbor_cx - piece_cx) * 180 / pi
+
+        # Find which geometric side (0-5) faces this direction
+        # Geometric side i has midpoint at direction: 30 + i*60 degrees
+        for (geo_side in 0:5) {
+          geo_dir <- 30 + geo_side * 60
+          if (geo_dir > 180) geo_dir <- geo_dir - 360
+
+          # Check if directions match (within 30 degrees)
+          dir_diff <- abs(dir_to_neighbor - geo_dir)
+          if (dir_diff > 180) dir_diff <- 360 - dir_diff
+
+          if (dir_diff < 30) {
+            topo_to_geo_map[[as.character(topo_side)]] <- geo_side
+            break
+          }
+        }
+      }
+
+      # Now populate fused_edges using geometric side keys
+      for (topo_side in as.character(0:5)) {
+        is_fused <- is_edge_fused(piece_id, topo_side, fused_edge_data)
+
+        if (is_fused) {
+          # Get geometric side for this topology side
+          geo_side <- topo_to_geo_map[[topo_side]]
+          if (!is.null(geo_side)) {
+            geo_key <- as.character(geo_side)
+            fused_edges[[geo_key]] <- TRUE
+
+            # Get neighbor ID for deduplication
+            neighbor_id <- get_hex_neighbor(piece_id, as.integer(topo_side), rings)
+            if (!is.na(neighbor_id)) {
+              fused_neighbor_ids[[geo_key]] <- neighbor_id
+            }
+          }
+        }
       }
     }
 
@@ -275,13 +352,14 @@ generate_hex_pieces_internal <- function(seed, rings, diameter, tabsize, jitter,
     }
 
     list(
-      id = sprintf("piece_%d", hp$id),
+      id = piece_id,  # Store as integer for deduplication
       path = hp$path,
       center = c(hp$center_x, hp$center_y),
       ring_pos = list(ring = hp$ring, position = hp$position_in_ring),
       type = "hexagonal",
       fusion_group = fusion_group,
-      fused_edges = fused_edges
+      fused_edges = fused_edges,
+      fused_neighbor_ids = fused_neighbor_ids
     )
   })
 
@@ -425,23 +503,45 @@ generate_concentric_pieces_internal <- function(seed, rings, diameter, tabsize, 
 
     # Determine which edges are fused (for render-time styling)
     # Center piece (ring 0) has 6 edges; trapezoid pieces have 4 edges
+    # Also store neighbor IDs for fused edges (for deduplication in renderer)
+    fused_neighbor_ids <- list()
+
     if (cp$ring == 0) {
       # Center piece: edges 1-6
       fused_edges <- list(`1` = FALSE, `2` = FALSE, `3` = FALSE,
                           `4` = FALSE, `5` = FALSE, `6` = FALSE)
       if (!is.null(fused_edge_data)) {
         for (edge in as.character(1:6)) {
-          fused_edges[[edge]] <- is_edge_fused(piece_id, edge, fused_edge_data)
+          is_fused <- is_edge_fused(piece_id, edge, fused_edge_data)
+          fused_edges[[edge]] <- is_fused
+
+          if (is_fused) {
+            # Get neighbor (ring 1 piece connected to this edge)
+            neighbor_info <- get_concentric_neighbor(piece_id, as.integer(edge), rings)
+            if (!neighbor_info$is_boundary && !is.na(neighbor_info$neighbor_id)) {
+              fused_neighbor_ids[[edge]] <- neighbor_info$neighbor_id
+            }
+          }
         }
       }
     } else {
       # Trapezoid piece: INNER, RIGHT, OUTER, LEFT
       fused_edges <- list(INNER = FALSE, RIGHT = FALSE, OUTER = FALSE, LEFT = FALSE)
       if (!is.null(fused_edge_data)) {
-        fused_edges$INNER <- is_edge_fused(piece_id, "INNER", fused_edge_data)
-        fused_edges$RIGHT <- is_edge_fused(piece_id, "RIGHT", fused_edge_data)
-        fused_edges$OUTER <- is_edge_fused(piece_id, "OUTER", fused_edge_data)
-        fused_edges$LEFT <- is_edge_fused(piece_id, "LEFT", fused_edge_data)
+        for (edge_name in c("INNER", "RIGHT", "OUTER", "LEFT")) {
+          edge_idx <- switch(edge_name,
+            "INNER" = 1, "RIGHT" = 2, "OUTER" = 3, "LEFT" = 4
+          )
+          is_fused <- is_edge_fused(piece_id, edge_name, fused_edge_data)
+          fused_edges[[edge_name]] <- is_fused
+
+          if (is_fused) {
+            neighbor_info <- get_concentric_neighbor(piece_id, edge_idx, rings)
+            if (!neighbor_info$is_boundary && !is.na(neighbor_info$neighbor_id)) {
+              fused_neighbor_ids[[edge_name]] <- neighbor_info$neighbor_id
+            }
+          }
+        }
       }
     }
 
@@ -452,13 +552,14 @@ generate_concentric_pieces_internal <- function(seed, rings, diameter, tabsize, 
     }
 
     list(
-      id = sprintf("piece_%d", cp$id),
+      id = piece_id,  # Store as integer for deduplication
       path = cp$path,
       center = c(cp$center_x, cp$center_y),
       ring_pos = list(ring = cp$ring, position = cp$position),
       type = "concentric",
       fusion_group = fusion_group,
-      fused_edges = fused_edges
+      fused_edges = fused_edges,
+      fused_neighbor_ids = fused_neighbor_ids
     )
   })
 
