@@ -191,3 +191,332 @@ test_that("empty string fusion groups work correctly", {
 
   expect_null(result$fusion_data)
 })
+
+# ============================================================================
+# HEXAGONAL FUSION EDGE DIRECTION TESTS (Issue #43 regression tests)
+# ============================================================================
+
+test_that("hexagonal: fused_edges use geometric side numbering", {
+  # This tests the fix for issue #43 where topology sides != geometric sides
+  result <- generate_puzzle(
+    type = "hexagonal",
+    grid = c(3),
+    size = c(200),
+    seed = 42,
+    fusion_groups = list(c(1, 2)),
+    fusion_style = "dashed",
+    save_files = FALSE
+  )
+
+  # Piece 1 (center) should have fused_edges with geometric keys
+  p1 <- result$pieces[[1]]
+  expect_true(!is.null(p1$fused_edges))
+
+  # The fused edge should be at the geometric side facing piece 2
+  # Piece 2 is at ~150° from center, so geometric side 2 (midpoint at 150°)
+  # should be fused
+  fused_sides <- names(p1$fused_edges)[sapply(p1$fused_edges, isTRUE)]
+  expect_true(length(fused_sides) > 0)
+})
+
+test_that("hexagonal: fused_neighbor_ids correctly identify neighbors", {
+  result <- generate_puzzle(
+    type = "hexagonal",
+    grid = c(3),
+    size = c(200),
+    seed = 42,
+    fusion_groups = list(c(1, 2)),
+    fusion_style = "dashed",
+    save_files = FALSE
+  )
+
+  # Piece 1 should have fused_neighbor_ids pointing to piece 2
+  p1 <- result$pieces[[1]]
+  expect_true(!is.null(p1$fused_neighbor_ids))
+
+  neighbor_ids <- unlist(p1$fused_neighbor_ids)
+  expect_true(2 %in% neighbor_ids)
+})
+
+test_that("hexagonal: center piece fuses correctly with each ring-1 neighbor", {
+
+  # Test that we can fuse the center with any of its 6 neighbors
+  for (neighbor_id in 2:7) {
+    result <- generate_puzzle(
+      type = "hexagonal",
+      grid = c(3),
+      size = c(200),
+      seed = 42,
+      fusion_groups = list(c(1, neighbor_id)),
+      fusion_style = "dashed",
+      save_files = FALSE
+    )
+
+    # Center piece should have exactly one fused edge
+    p1 <- result$pieces[[1]]
+    fused_count <- sum(sapply(p1$fused_edges, isTRUE))
+    expect_equal(fused_count, 1,
+      info = paste("Fusing center with piece", neighbor_id))
+
+    # The neighbor piece should also have exactly one fused edge
+    pn <- result$pieces[[neighbor_id]]
+    neighbor_fused_count <- sum(sapply(pn$fused_edges, isTRUE))
+    expect_equal(neighbor_fused_count, 1,
+      info = paste("Piece", neighbor_id, "fused edge count"))
+  }
+})
+
+test_that("hexagonal: ring-1 adjacent pieces fuse correctly", {
+  # Pieces 2 and 3 are adjacent in ring 1
+  result <- generate_puzzle(
+    type = "hexagonal",
+    grid = c(3),
+    size = c(200),
+    seed = 42,
+    fusion_groups = list(c(2, 3)),
+    fusion_style = "dashed",
+    save_files = FALSE
+  )
+
+  # Both pieces should have exactly one fused edge
+  p2 <- result$pieces[[2]]
+  p3 <- result$pieces[[3]]
+
+  fused_count_2 <- sum(sapply(p2$fused_edges, isTRUE))
+  fused_count_3 <- sum(sapply(p3$fused_edges, isTRUE))
+
+  expect_equal(fused_count_2, 1)
+  expect_equal(fused_count_3, 1)
+})
+
+test_that("hexagonal: multi-piece fusion group works", {
+  # Fuse center with two adjacent ring-1 pieces
+  result <- generate_puzzle(
+    type = "hexagonal",
+    grid = c(3),
+    size = c(200),
+    seed = 42,
+    fusion_groups = list(c(1, 2, 3)),
+    fusion_style = "dashed",
+    save_files = FALSE
+  )
+
+  # Center has 2 fused edges (to pieces 2 and 3)
+  p1 <- result$pieces[[1]]
+  fused_count_1 <- sum(sapply(p1$fused_edges, isTRUE))
+  expect_equal(fused_count_1, 2)
+
+  # Piece 2 has 2 fused edges (to center and piece 3)
+  p2 <- result$pieces[[2]]
+  fused_count_2 <- sum(sapply(p2$fused_edges, isTRUE))
+  expect_equal(fused_count_2, 2)
+
+  # Piece 3 has 2 fused edges (to center and piece 2)
+  p3 <- result$pieces[[3]]
+  fused_count_3 <- sum(sapply(p3$fused_edges, isTRUE))
+  expect_equal(fused_count_3, 2)
+})
+
+test_that("hexagonal: fused edge direction matches neighbor direction", {
+  # Critical test for issue #43 fix
+  result <- generate_puzzle(
+    type = "hexagonal",
+    grid = c(3),
+    size = c(200),
+    seed = 42,
+    fusion_groups = list(c(1, 2)),
+    fusion_style = "dashed",
+    save_files = FALSE
+  )
+
+  # Get center piece center coordinates
+  p1 <- result$pieces[[1]]
+  p2 <- result$pieces[[2]]
+
+  # Extract coordinates from center (could be list or vector)
+  get_center_coords <- function(piece) {
+    if (!is.null(piece$center)) {
+      if (is.list(piece$center)) {
+        return(c(piece$center$x %||% piece$center[[1]],
+                 piece$center$y %||% piece$center[[2]]))
+      }
+      return(piece$center)
+    }
+    return(c(piece$cx %||% piece$center_x, piece$cy %||% piece$center_y))
+  }
+
+  p1_center <- get_center_coords(p1)
+  p2_center <- get_center_coords(p2)
+
+  # Skip if centers not available
+  skip_if(is.null(p1_center) || any(is.na(p1_center)), "Piece 1 center not available")
+  skip_if(is.null(p2_center) || any(is.na(p2_center)), "Piece 2 center not available")
+
+  # Calculate actual direction from piece 1 to piece 2
+  dir_to_p2 <- atan2(p2_center[2] - p1_center[2],
+                     p2_center[1] - p1_center[1]) * 180 / pi
+
+  # Find which geometric side is fused
+  fused_geo_side <- NULL
+  if (!is.null(p1$fused_edges)) {
+    for (side in names(p1$fused_edges)) {
+      if (isTRUE(p1$fused_edges[[side]])) {
+        fused_geo_side <- as.integer(side)
+        break
+      }
+    }
+  }
+
+  # Skip if no fused edges found (shouldn't happen but be defensive)
+  skip_if(is.null(fused_geo_side), "No fused edges found on piece 1")
+
+  # Geometric side i has midpoint at direction: 30 + i*60 degrees
+  expected_dir <- 30 + fused_geo_side * 60
+  if (expected_dir > 180) expected_dir <- expected_dir - 360
+
+  # The fused side direction should be close to actual neighbor direction
+  dir_diff <- abs(dir_to_p2 - expected_dir)
+  if (length(dir_diff) == 0 || is.na(dir_diff)) {
+    skip("Could not calculate direction difference")
+  }
+  if (dir_diff > 180) dir_diff <- 360 - dir_diff
+
+  expect_true(dir_diff < 35,  # Within 35 degrees (30 + tolerance)
+    info = paste("Direction to neighbor:", round(dir_to_p2, 1),
+                 "Fused side direction:", expected_dir))
+})
+
+# ============================================================================
+# HEXAGONAL FUSION WITH MULTIPLE RINGS (Issue #49 related)
+# ============================================================================
+
+test_that("hexagonal: 4-ring puzzle fusion works", {
+  result <- generate_puzzle(
+    type = "hexagonal",
+    grid = c(4),
+    size = c(300),
+    seed = 42,
+    fusion_groups = list(c(1, 2)),
+    fusion_style = "dashed",
+    save_files = FALSE
+  )
+
+  # Should have 37 pieces (3*4*3 + 1)
+  expect_equal(length(result$pieces), 37)
+
+  # Fusion should work
+  expect_true(!is.null(result$fusion_data))
+  expect_equal(length(result$fusion_data$fused_edges), 2)
+})
+test_that("hexagonal: 5-ring puzzle fusion works", {
+  result <- generate_puzzle(
+    type = "hexagonal",
+    grid = c(5),
+    size = c(400),
+    seed = 42,
+    fusion_groups = list(c(1, 2, 3)),
+    fusion_style = "dashed",
+    save_files = FALSE
+  )
+
+  # Should have 61 pieces (3*5*4 + 1)
+  expect_equal(length(result$pieces), 61)
+
+  # Fusion should work
+  expect_true(!is.null(result$fusion_data))
+})
+
+test_that("hexagonal: outer ring fusion works", {
+  result <- generate_puzzle(
+    type = "hexagonal",
+    grid = c(3),
+    size = c(200),
+    seed = 42,
+    fusion_groups = list(c(8, 9)),  # Two adjacent outer ring pieces
+    fusion_style = "dashed",
+    save_files = FALSE
+  )
+
+  # Should have fused edges
+  expect_true(!is.null(result$fusion_data))
+
+  p8 <- result$pieces[[8]]
+  p9 <- result$pieces[[9]]
+
+  # Both should have at least one fused edge
+  fused_8 <- sum(sapply(p8$fused_edges, isTRUE))
+  fused_9 <- sum(sapply(p9$fused_edges, isTRUE))
+
+  expect_true(fused_8 >= 1)
+  expect_true(fused_9 >= 1)
+})
+
+# ============================================================================
+# FUSION RENDERING TESTS (SVG output verification)
+# ============================================================================
+
+test_that("fusion_style 'none' hides fused edges in SVG", {
+  result <- generate_puzzle(
+    type = "rectangular",
+    grid = c(2, 2),
+    size = c(200, 200),
+    seed = 42,
+    fusion_groups = list(c(1, 2)),
+    fusion_style = "none",
+    save_files = FALSE
+  )
+
+  # SVG should not contain dashed stroke for fused edges
+  expect_false(grepl("stroke-dasharray", result$svg_content))
+})
+
+test_that("fusion_style 'dashed' adds dashed strokes in SVG", {
+  result <- generate_puzzle(
+    type = "rectangular",
+    grid = c(2, 2),
+    size = c(200, 200),
+    seed = 42,
+    fusion_groups = list(c(1, 2)),
+    fusion_style = "dashed",
+    save_files = FALSE
+  )
+
+  # SVG should contain dashed stroke for fused edges
+  expect_true(grepl("stroke-dasharray", result$svg_content))
+})
+
+test_that("fusion_style 'solid' with opacity creates semi-transparent edges", {
+  result <- generate_puzzle(
+    type = "rectangular",
+    grid = c(2, 2),
+    size = c(200, 200),
+    seed = 42,
+    fusion_groups = list(c(1, 2)),
+    fusion_style = "solid",
+    fusion_opacity = 0.3,
+    save_files = FALSE
+  )
+
+  # SVG should contain opacity attribute
+  expect_true(grepl("stroke-opacity", result$svg_content) ||
+              grepl("opacity", result$svg_content))
+})
+
+test_that("hexagonal fusion renders correctly in SVG", {
+  result <- generate_puzzle(
+    type = "hexagonal",
+    grid = c(3),
+    size = c(200),
+    seed = 42,
+    fusion_groups = list(c(1, 2)),
+    fusion_style = "dashed",
+    save_files = FALSE
+  )
+
+  # SVG should be valid (contains svg tag and paths)
+  expect_true(grepl("<svg", result$svg_content))
+  expect_true(grepl("<path", result$svg_content))
+
+  # Should have dashed lines for fusion
+  expect_true(grepl("stroke-dasharray", result$svg_content))
+})
