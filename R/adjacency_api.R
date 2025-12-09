@@ -1116,35 +1116,148 @@ compute_concentric_fused_edges <- function(fusion_groups, puzzle_result) {
 
 
 # =============================================================================
-# Hexagonal Puzzle Fusion Support
+# Hexagonal Puzzle Fusion Support - O(1) Axial Coordinate Neighbor Lookup
 # =============================================================================
+
+# Module-level cache for fast neighbor lookups
+# Uses axial coordinates for O(1) neighbor computation
+.hex_neighbor_cache <- new.env(hash = TRUE, parent = emptyenv())
+
+# The 6 axial direction vectors for hexagonal neighbors
+# Each direction adds (dq, dr) to the current axial coordinates
+# Side numbering: 0=E, 1=NE, 2=NW, 3=W, 4=SW, 5=SE
+.HEX_DIRECTIONS <- list(
+  c(1, 0),   # Side 0: East
+  c(1, -1),  # Side 1: Northeast
+  c(0, -1),  # Side 2: Northwest
+  c(-1, 0),  # Side 3: West
+  c(-1, 1),  # Side 4: Southwest
+  c(0, 1)    # Side 5: Southeast
+)
+
+#' Build axial-to-piece-id lookup table for O(1) reverse mapping
+#'
+#' Creates a hash table mapping "(q,r)" strings to piece IDs.
+#' This enables O(1) lookup when computing neighbors.
+#'
+#' @param rings Number of rings in puzzle
+#' @return Environment (hash table) mapping "q,r" to piece_id
+#' @keywords internal
+build_axial_lookup <- function(rings) {
+  num_pieces <- 3 * rings * (rings - 1) + 1
+  lookup <- new.env(hash = TRUE, parent = emptyenv())
+
+  for (piece_id in 1:num_pieces) {
+    axial <- map_piece_id_to_axial(piece_id, rings)
+    key <- paste0(axial$q, ",", axial$r)
+    lookup[[key]] <- piece_id
+  }
+
+  return(lookup)
+}
+
+#' Get or build cached neighbor data for hexagonal puzzles
+#'
+#' Builds both the axial lookup table and pre-computed neighbor matrix
+#' using O(n) time with direct axial coordinate arithmetic.
+#'
+#' @param rings Number of rings in puzzle
+#' @return List with neighbor_matrix and axial_lookup
+#' @keywords internal
+get_hex_neighbor_data <- function(rings) {
+  cache_key <- as.character(rings)
+
+  # Check cache first
+  if (exists(cache_key, envir = .hex_neighbor_cache, inherits = FALSE)) {
+    return(get(cache_key, envir = .hex_neighbor_cache, inherits = FALSE))
+  }
+
+  num_pieces <- 3 * rings * (rings - 1) + 1
+
+  # Step 1: Build axial coordinate lookup (O(n))
+  axial_lookup <- build_axial_lookup(rings)
+
+  # Step 2: Pre-compute all axial coordinates (O(n))
+  piece_axial <- vector("list", num_pieces)
+  for (piece_id in 1:num_pieces) {
+    piece_axial[[piece_id]] <- map_piece_id_to_axial(piece_id, rings)
+  }
+
+  # Step 3: Build neighbor matrix using O(1) axial arithmetic (O(n))
+  neighbor_matrix <- matrix(NA_integer_, nrow = num_pieces, ncol = 6)
+
+  for (piece_id in 1:num_pieces) {
+    axial <- piece_axial[[piece_id]]
+    q <- axial$q
+    r <- axial$r
+
+    for (side in 0:5) {
+      dir <- .HEX_DIRECTIONS[[side + 1]]
+      neighbor_q <- q + dir[1]
+      neighbor_r <- r + dir[2]
+
+      # O(1) lookup in hash table
+      neighbor_key <- paste0(neighbor_q, ",", neighbor_r)
+      if (exists(neighbor_key, envir = axial_lookup, inherits = FALSE)) {
+        neighbor_matrix[piece_id, side + 1] <- axial_lookup[[neighbor_key]]
+      }
+      # NA if no neighbor (boundary edge)
+    }
+  }
+
+  # Cache the result
+  cache_data <- list(
+    neighbor_matrix = neighbor_matrix,
+    axial_lookup = axial_lookup,
+    piece_axial = piece_axial
+  )
+  assign(cache_key, cache_data, envir = .hex_neighbor_cache)
+
+  return(cache_data)
+}
+
+#' Clear hexagonal neighbor cache
+#'
+#' @export
+clear_hex_neighbor_cache <- function() {
+  rm(list = ls(envir = .hex_neighbor_cache), envir = .hex_neighbor_cache)
+}
+
+# Keep old function name for backwards compatibility
+clear_hex_topo_neighbor_cache <- clear_hex_neighbor_cache
+
+#' Get cached neighbor matrix (legacy interface)
+#'
+#' @param rings Number of rings in puzzle
+#' @return Matrix where matrix[piece_id, side+1] = neighbor_id (or NA)
+#' @keywords internal
+get_hex_topo_neighbor_matrix <- function(rings) {
+  cache_data <- get_hex_neighbor_data(rings)
+  return(cache_data$neighbor_matrix)
+}
 
 #' Get all neighbors for a hexagonal puzzle piece
 #'
 #' Returns neighbor information for all 6 sides of a hexagonal piece.
+#' Uses cached topology matrix for O(1) lookups after initial O(n*ring^2) build.
 #'
 #' @param piece_id Piece ID (1-based)
 #' @param rings Number of rings in puzzle
 #' @return Data frame with side (0-5), neighbor_id, is_boundary
 #' @export
 get_hex_neighbors_for_fusion <- function(piece_id, rings) {
+  # Use cached topology matrix for O(1) lookup
+  topo_matrix <- get_hex_topo_neighbor_matrix(rings)
+
+  # Pre-allocate data frame (no rbind needed)
+  neighbor_ids <- topo_matrix[piece_id, ]
+
   neighbors <- data.frame(
-    direction = character(),
-    neighbor_id = integer(),
-    is_boundary = logical(),
+    direction = as.character(0:5),
+    neighbor_id = neighbor_ids,
+    is_boundary = is.na(neighbor_ids),
     stringsAsFactors = FALSE
   )
-
-  for (side in 0:5) {
-    neighbor_id <- get_hex_neighbor(piece_id, side, rings)
-
-    neighbors <- rbind(neighbors, data.frame(
-      direction = as.character(side),
-      neighbor_id = if (is.na(neighbor_id)) NA_integer_ else as.integer(neighbor_id),
-      is_boundary = is.na(neighbor_id),
-      stringsAsFactors = FALSE
-    ))
-  }
 
   return(neighbors)
 }
