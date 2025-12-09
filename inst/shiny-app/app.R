@@ -278,12 +278,13 @@ ui <- page_fluid(
           tags$small(class = "text-muted", "Meta Pieces (Fusion)"),
 
           # Fusion groups input - ONLY applies when Generate is clicked
+          # Supports both PILES notation (1-2-3,4-5) and legacy format (1,2),(3,4,5)
           tooltip(
             textInput("fusion_groups",
                      "Fuse Pieces:",
                      value = "",
-                     placeholder = "(1,2),(3,4,5)"),
-            "Fuse adjacent pieces together. Format: (1,2) to fuse pieces 1 and 2, or (1,2),(3,4,5) for multiple groups. Changes apply when you click Generate."
+                     placeholder = "1-2-3,4-5"),
+            "Fuse adjacent pieces using PILES notation. Examples: '1-2' fuses pieces 1 and 2, '1-2-3,4-5' creates two groups. Use ':' for ranges (1:6), or keywords like 'R1' (row 1), 'ring1'. Changes apply when you click Generate."
           ),
 
           # Divider before action buttons
@@ -634,8 +635,23 @@ ui <- page_fluid(
               tags$li(strong("Puzzle Type:"), " Choose Rectangular, Hexagonal, or Concentric"),
               tags$li(strong("Grid/Rings:"), " Controls piece count"),
               tags$li(strong("Size/Diameter:"), " Physical dimensions in millimeters"),
-              tags$li(strong("Fuse Pieces:"), " Create meta-pieces by fusing adjacent pieces (e.g. (1,2),(3,4,5))")
+              tags$li(strong("Fuse Pieces:"), " Create meta-pieces using PILES notation (see below)")
             ),
+            br(),
+            h4("PILES Notation (Fusion Groups)"),
+            p("PILES (Puzzle Input Line Entry System) is a concise notation for specifying piece fusions:"),
+            tags$ul(
+              tags$li(code("1-2"), " - Fuse pieces 1 and 2"),
+              tags$li(code("1-2-3"), " - Fuse pieces 1, 2, and 3 in a chain"),
+              tags$li(code("1-2,3-4"), " - Create two fusion groups: (1,2) and (3,4)"),
+              tags$li(code("1:6"), " - Fuse consecutive pieces 1 through 6"),
+              tags$li(code("R1"), " - Fuse entire row 1 (rectangular only)"),
+              tags$li(code("C2"), " - Fuse entire column 2 (rectangular only)"),
+              tags$li(code("ring1"), " - Fuse all pieces in ring 1 (hexagonal/concentric)"),
+              tags$li(code("center"), " - Center piece (hexagonal/concentric)"),
+              tags$li(code("boundary"), " - All edge pieces")
+            ),
+            p(class = "text-muted", "Legacy format (1,2),(3,4) is also supported."),
             br(),
             h4("Styling Panel"),
             p("Changes in this panel update the preview ", strong("automatically"), " - no need to regenerate!"),
@@ -802,12 +818,13 @@ server <- function(input, output, session) {
       center_shape_value <- "hexagon"
 
       # Parse fusion groups from text input (only parsed on Generate click)
+      # Uses parse_fusion() which supports both PILES notation and legacy format
       fusion_groups_val <- input$fusion_groups
       fusion_groups_parsed <- NULL
       if (!is.null(fusion_groups_val) && nchar(trimws(fusion_groups_val)) > 0) {
         log_info("Parsing fusion groups: '{fusion_groups_val}'")
         tryCatch({
-          fusion_groups_parsed <- parse_fusion_input(fusion_groups_val)
+          fusion_groups_parsed <- parse_fusion(fusion_groups_val)
           n_groups <- length(fusion_groups_parsed)
           log_success("Parsed {n_groups} fusion groups")
         }, error = function(e) {
@@ -1264,11 +1281,12 @@ server <- function(input, output, session) {
       }
 
       # Parse fusion groups for download
+      # Uses parse_fusion() which supports both PILES notation and legacy format
       fusion_groups_val <- input$fusion_groups
       fusion_groups_parsed <- NULL
       if (!is.null(fusion_groups_val) && nchar(trimws(fusion_groups_val)) > 0) {
         tryCatch({
-          fusion_groups_parsed <- parse_fusion_input(fusion_groups_val)
+          fusion_groups_parsed <- parse_fusion(fusion_groups_val)
         }, error = function(e) {
           fusion_groups_parsed <- NULL
         })
