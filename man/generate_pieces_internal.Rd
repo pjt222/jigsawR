@@ -15,7 +15,10 @@ generate_pieces_internal(
   do_trunc = FALSE,
   do_circular_border = FALSE,
   center_shape = "hexagon",
-  boundary_facing = "outward"
+  boundary_facing = "outward",
+  fusion_groups = NULL,
+  fusion_style = "none",
+  fusion_opacity = 0.3
 )
 }
 \arguments{
@@ -40,6 +43,12 @@ generate_pieces_internal(
 \item{center_shape}{Center piece shape for concentric type: "hexagon" or "circle"}
 
 \item{boundary_facing}{Direction the circular arc faces (concentric only): "outward" or "inward"}
+
+\item{fusion_groups}{List of piece ID vectors to fuse together (optional)}
+
+\item{fusion_style}{Style for fused internal edges: "none" (invisible), "dashed", "solid"}
+
+\item{fusion_opacity}{Opacity for fused edges when style != "none" (0.0 to 1.0)}
 }
 \value{
 List with:
@@ -47,6 +56,7 @@ List with:
   - canvas_size: c(width, height) for compact (offset=0) layout
   - type: "rectangular", "hexagonal", or "concentric"
   - parameters: Generation parameters used
+  - fusion_data: Fusion edge data (if fusion_groups provided)
 }
 \description{
 Core function that generates piece objects with closed SVG paths.

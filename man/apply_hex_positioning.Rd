@@ -16,5 +16,6 @@ Positioned result
 }
 \description{
 Uses topology-based separation for hexagonal pieces.
+Handles fusion groups by keeping fused pieces together.
 }
 \keyword{internal}

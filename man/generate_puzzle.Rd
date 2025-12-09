@@ -16,6 +16,7 @@ generate_puzzle(
   stroke_width = 1.5,
   colors = NULL,
   palette = NULL,
+  palette_invert = FALSE,
   background = "white",
   opacity = 1,
   save_files = FALSE,
@@ -29,6 +30,9 @@ generate_puzzle(
   show_labels = FALSE,
   label_color = "black",
   label_size = NULL,
+  fusion_groups = NULL,
+  fusion_style = "none",
+  fusion_opacity = 0.3,
   output = NULL
 )
 }
@@ -54,6 +58,8 @@ generate_puzzle(
 \item{colors}{Vector of colors for pieces (optional, overrides palette)}
 
 \item{palette}{Viridis palette name (NULL = use config default)}
+
+\item{palette_invert}{Logical, if TRUE reverses the palette direction (default: FALSE)}
 
 \item{background}{"none", "white", color name, or list(type="gradient", ...)}
 
@@ -81,10 +87,16 @@ generate_puzzle(
 
 \item{label_size}{Font size for labels in mm (default: auto-calculated based on piece size)}
 
+\item{fusion_groups}{List of piece ID vectors to fuse, or string like "(1,2),(7,8,9)"}
+
+\item{fusion_style}{Style for fused internal edges: "none" (invisible), "dashed", "solid"}
+
+\item{fusion_opacity}{Opacity for fused edges when style != "none" (0.0 to 1.0)}
+
 \item{output}{DEPRECATED: Use offset parameter instead}
 }
 \value{
-List with svg_content, pieces, canvas_size, and parameters
+List with svg_content, pieces, canvas_size, parameters, and fusion_data (if applicable)
 }
 \description{
 Single entry point for all puzzle generation with clean, reproducible output.

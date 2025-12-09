@@ -12,7 +12,10 @@ generate_concentric_pieces_internal(
   jitter,
   center_shape = "hexagon",
   do_circular_border = FALSE,
-  boundary_facing = "outward"
+  boundary_facing = "outward",
+  fusion_groups = NULL,
+  fusion_style = "none",
+  fusion_opacity = 0.3
 )
 }
 \arguments{
@@ -31,6 +34,12 @@ generate_concentric_pieces_internal(
 \item{do_circular_border}{If TRUE, use arc commands for perfect circular boundary}
 
 \item{boundary_facing}{Direction the circular arc faces: "outward" or "inward"}
+
+\item{fusion_groups}{List of piece ID vectors to fuse (optional)}
+
+\item{fusion_style}{Style for fused edges: "none", "dashed", "solid"}
+
+\item{fusion_opacity}{Opacity for fused edges (0.0 to 1.0)}
 }
 \value{
 Piece generation result

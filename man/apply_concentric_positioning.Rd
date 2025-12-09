@@ -16,5 +16,6 @@ Positioned result
 }
 \description{
 Uses radial separation for concentric ring pieces.
+Handles fusion groups by keeping fused pieces together.
 }
 \keyword{internal}

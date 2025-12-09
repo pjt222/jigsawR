@@ -10,6 +10,7 @@ render_puzzle_svg(
   stroke_width = 1.5,
   colors = NULL,
   palette = NULL,
+  palette_invert = FALSE,
   background = "white",
   opacity = 1,
   show_labels = FALSE,
@@ -27,6 +28,8 @@ render_puzzle_svg(
 \item{colors}{Color palette for piece strokes (NULL = use default)}
 
 \item{palette}{Viridis palette name (NULL = use config default)}
+
+\item{palette_invert}{Logical, if TRUE reverses the palette direction (default: FALSE)}
 
 \item{background}{Background specification:
 - "none": No background

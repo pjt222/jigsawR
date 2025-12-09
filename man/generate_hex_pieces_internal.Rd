@@ -12,7 +12,10 @@ generate_hex_pieces_internal(
   jitter,
   do_warp = FALSE,
   do_trunc = FALSE,
-  do_circular_border = FALSE
+  do_circular_border = FALSE,
+  fusion_groups = NULL,
+  fusion_style = "none",
+  fusion_opacity = 0.3
 )
 }
 \arguments{
@@ -31,6 +34,12 @@ generate_hex_pieces_internal(
 \item{do_trunc}{Truncate boundary}
 
 \item{do_circular_border}{Use perfect circular arc borders (requires do_warp=TRUE)}
+
+\item{fusion_groups}{List of piece ID vectors to fuse (optional)}
+
+\item{fusion_style}{Style for fused edges: "none", "dashed", "solid"}
+
+\item{fusion_opacity}{Opacity for fused edges (0.0 to 1.0)}
 }
 \value{
 Piece generation result

@@ -4,23 +4,27 @@
 \alias{parse_fusion_input}
 \title{Parse fusion group input string}
 \usage{
-parse_fusion_input(input, puzzle_result = NULL)
+parse_fusion_input(input, puzzle_result = NULL, auto_merge = TRUE)
 }
 \arguments{
 \item{input}{String like "1,2" or "(1,2),(7,8,9)" or list}
 
-\item{puzzle_result}{Puzzle result for ID normalization}
+\item{puzzle_result}{Puzzle result for ID normalization (unused, for future)}
+
+\item{auto_merge}{If TRUE (default), automatically merge overlapping groups}
 }
 \value{
 List of integer vectors, each representing a fusion group
 }
 \description{
 Converts string input format to list of integer vectors.
+Automatically merges overlapping groups (e.g., (7,8),(5,8) becomes (5,7,8)).
 }
 \examples{
 \dontrun{
 parse_fusion_input("1,2")             # -> list(c(1, 2))
 parse_fusion_input("(1,2),(7,8,9)")   # -> list(c(1, 2), c(7, 8, 9))
+parse_fusion_input("(7,8),(5,8)")     # -> list(c(5, 7, 8)) (auto-merged)
 parse_fusion_input(list(c(1, 2)))     # -> list(c(1, 2)) (pass-through)
 }
 

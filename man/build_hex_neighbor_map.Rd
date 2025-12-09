@@ -13,5 +13,7 @@ build_hex_neighbor_map(rings)
 Data frame with piece_id, side, neighbor_id
 }
 \description{
-Build complete neighbor map for all pieces
+Uses pre-allocated vectors for O(n) performance instead of O(n²) rbind.
+For large puzzles, consider using build_hex_neighbor_map_fast() which
+leverages data.table if available.
 }

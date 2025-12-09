@@ -4,12 +4,14 @@
 \alias{get_puzzle_colors}
 \title{Get viridis color palette}
 \usage{
-get_puzzle_colors(n, palette = NULL)
+get_puzzle_colors(n, palette = NULL, invert = FALSE)
 }
 \arguments{
 \item{n}{Number of colors to generate}
 
 \item{palette}{Palette name (black, viridis, magma, plasma, inferno, cividis, mako, rocket, turbo)}
+
+\item{invert}{Logical, if TRUE reverses the palette direction (default: FALSE)}
 }
 \value{
 Character vector of hex colors

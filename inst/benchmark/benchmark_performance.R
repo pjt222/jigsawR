@@ -58,13 +58,16 @@ if (has_future && has_furrr) {
   library(future)
   library(furrr)
 
+  # Limit workers to 4 to reduce overhead and renv dependency discovery noise
+  n_workers <- min(4L, parallel::detectCores() - 1L)
+
   # Set up multicore plan (use multicore on Unix, multisession on Windows)
   if (.Platform$OS.type == "windows") {
-    plan(multisession, workers = parallel::detectCores() - 1L)
-    cli_alert_success("future: {cli::col_green('multisession')} ({availableWorkers()} workers)")
+    plan(multisession, workers = n_workers)
+    cli_alert_success("future: {cli::col_green('multisession')} ({n_workers} workers)")
   } else {
-    plan(multicore, workers = parallel::detectCores() - 1L)
-    cli_alert_success("future: {cli::col_green('multicore')} ({availableWorkers()} workers)")
+    plan(multicore, workers = n_workers)
+    cli_alert_success("future: {cli::col_green('multicore')} ({n_workers} workers)")
   }
 } else {
   cli_alert_warning("future/furrr: {cli::col_yellow('NOT INSTALLED')} (using sequential)")
@@ -94,7 +97,12 @@ time_function <- function(fn, name = "operation", iterations = 3, verbose = TRUE
     )
     median_time <- as.numeric(result$median, "seconds") * 1000  # ms
     min_time <- as.numeric(result$min, "seconds") * 1000
-    max_time <- as.numeric(result$max, "seconds") * 1000
+    # bench::mark result may not have a 'max' column; use median if not available
+    max_time <- if ("max" %in% names(result)) {
+      as.numeric(result$max, "seconds") * 1000
+    } else {
+      median_time
+    }
     mem_alloc <- result$mem_alloc
   } else {
     times <- numeric(iterations)
@@ -283,9 +291,16 @@ if (has_future && has_furrr) {
   )
 
   # Parallel with furrr
+  # Note: devtools::load_all() doesn't make the package available in workers.
+  # We need each worker to load the package via devtools::load_all().
+  # Capture the project path to pass to workers.
+  project_path <- getwd()
+
   t_parallel <- time_function(
     function() {
       future_map(1:n_puzzles, function(seed) {
+        # Load jigsawR in worker process
+        suppressMessages(devtools::load_all(project_path, quiet = TRUE))
         generate_puzzle(
           type = "hexagonal",
           grid = c(rings),

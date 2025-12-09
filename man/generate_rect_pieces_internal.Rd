@@ -4,7 +4,16 @@
 \alias{generate_rect_pieces_internal}
 \title{Generate rectangular puzzle pieces internally}
 \usage{
-generate_rect_pieces_internal(seed, grid, size, tabsize, jitter)
+generate_rect_pieces_internal(
+  seed,
+  grid,
+  size,
+  tabsize,
+  jitter,
+  fusion_groups = NULL,
+  fusion_style = "none",
+  fusion_opacity = 0.3
+)
 }
 \arguments{
 \item{seed}{Random seed}
@@ -16,6 +25,12 @@ generate_rect_pieces_internal(seed, grid, size, tabsize, jitter)
 \item{tabsize}{Tab size percentage}
 
 \item{jitter}{Jitter percentage}
+
+\item{fusion_groups}{List of piece ID vectors to fuse (optional)}
+
+\item{fusion_style}{Style for fused edges: "none", "dashed", "solid"}
+
+\item{fusion_opacity}{Opacity for fused edges (0.0 to 1.0)}
 }
 \value{
 Piece generation result

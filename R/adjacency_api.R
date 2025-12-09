@@ -180,43 +180,33 @@ get_rect_neighbors <- function(piece_id, puzzle_result, include_boundary = TRUE)
   xi <- pos$xi
   yi <- pos$yi
 
-  # Build neighbors data frame
-  neighbors <- data.frame(
-    direction = character(),
-    neighbor_id = integer(),
-    is_boundary = logical(),
-    stringsAsFactors = FALSE
-  )
+  # Pre-allocate vectors for all 4 directions (optimized - no rbind)
+  dir_names <- c("N", "E", "S", "W")
+  dx <- c(0L, 1L, 0L, -1L)
+  dy <- c(-1L, 0L, 1L, 0L)
 
-  # Check all 4 directions (N, E, S, W)
-  directions <- list(
-    list(name = "N", dx = 0, dy = -1),
-    list(name = "E", dx = 1, dy = 0),
-    list(name = "S", dx = 0, dy = 1),
-    list(name = "W", dx = -1, dy = 0)
-  )
+  # Vectorized neighbor computation
+  nx <- xi + dx
+  ny <- yi + dy
+  is_boundary <- nx < 0L | nx >= xn | ny < 0L | ny >= yn
+  neighbor_idx <- ifelse(is_boundary, NA_integer_, ny * xn + nx + 1L)
 
-  for (dir in directions) {
-    nx <- xi + dir$dx
-    ny <- yi + dir$dy
-
-    is_boundary <- nx < 0 || nx >= xn || ny < 0 || ny >= yn
-
-    if (!is_boundary) {
-      # Calculate neighbor's piece index (1-based)
-      neighbor_idx <- ny * xn + nx + 1
-    } else {
-      neighbor_idx <- NA_integer_
-    }
-
-    if (include_boundary || !is_boundary) {
-      neighbors <- rbind(neighbors, data.frame(
-        direction = dir$name,
-        neighbor_id = neighbor_idx,
-        is_boundary = is_boundary,
-        stringsAsFactors = FALSE
-      ))
-    }
+  # Build result data frame with pre-computed vectors
+  if (include_boundary) {
+    neighbors <- data.frame(
+      direction = dir_names,
+      neighbor_id = neighbor_idx,
+      is_boundary = is_boundary,
+      stringsAsFactors = FALSE
+    )
+  } else {
+    keep <- !is_boundary
+    neighbors <- data.frame(
+      direction = dir_names[keep],
+      neighbor_id = neighbor_idx[keep],
+      is_boundary = is_boundary[keep],
+      stringsAsFactors = FALSE
+    )
   }
 
   return(neighbors)
@@ -295,27 +285,32 @@ get_hex_neighbors_unified <- function(piece_id, puzzle_result, include_boundary 
   # Normalize piece_id
   id <- normalize_piece_id(piece_id, puzzle_result)
 
-  # Build neighbors data frame
-  neighbors <- data.frame(
-    direction = character(),
-    neighbor_id = integer(),
-    is_boundary = logical(),
-    stringsAsFactors = FALSE
-  )
+  # Vectorized neighbor lookup for all 6 sides (optimized - no rbind)
+  sides <- 0:5
+  neighbor_ids <- vapply(sides, function(s) {
+    nb <- get_hex_neighbor(id, s, rings)
+    if (is.na(nb)) NA_integer_ else as.integer(nb)
+  }, integer(1))
 
-  # Check all 6 sides
-  for (side in 0:5) {
-    neighbor_id <- get_hex_neighbor(id, side, rings)
-    is_boundary <- is.na(neighbor_id)
+  is_boundary <- is.na(neighbor_ids)
+  dir_names <- as.character(sides)
 
-    if (include_boundary || !is_boundary) {
-      neighbors <- rbind(neighbors, data.frame(
-        direction = as.character(side),
-        neighbor_id = if (is_boundary) NA_integer_ else as.integer(neighbor_id),
-        is_boundary = is_boundary,
-        stringsAsFactors = FALSE
-      ))
-    }
+  # Build result data frame with pre-computed vectors
+  if (include_boundary) {
+    neighbors <- data.frame(
+      direction = dir_names,
+      neighbor_id = neighbor_ids,
+      is_boundary = is_boundary,
+      stringsAsFactors = FALSE
+    )
+  } else {
+    keep <- !is_boundary
+    neighbors <- data.frame(
+      direction = dir_names[keep],
+      neighbor_id = neighbor_ids[keep],
+      is_boundary = is_boundary[keep],
+      stringsAsFactors = FALSE
+    )
   }
 
   return(neighbors)
@@ -349,15 +344,7 @@ get_concentric_neighbors_unified <- function(piece_id, puzzle_result, include_bo
   # Get piece info to determine edge count
   info <- map_concentric_piece_id(id, rings)
 
-  # Build neighbors data frame
-  neighbors <- data.frame(
-    direction = character(),
-    neighbor_id = integer(),
-    is_boundary = logical(),
-    stringsAsFactors = FALSE
-  )
-
-  # Edge directions depend on piece type
+  # Edge directions depend on piece type (optimized - no rbind)
   if (info$ring == 0) {
     # Center piece has 6 edges
     edge_names <- as.character(1:6)
@@ -368,18 +355,33 @@ get_concentric_neighbors_unified <- function(piece_id, puzzle_result, include_bo
     edges <- 1:4
   }
 
+  # Vectorized neighbor lookup
+  n_edges <- length(edges)
+  neighbor_ids <- integer(n_edges)
+  is_boundary <- logical(n_edges)
+
   for (i in seq_along(edges)) {
     result <- get_concentric_neighbor(id, edges[i], rings)
-    is_boundary <- result$is_boundary
+    is_boundary[i] <- result$is_boundary
+    neighbor_ids[i] <- if (result$is_boundary) NA_integer_ else as.integer(result$neighbor_id)
+  }
 
-    if (include_boundary || !is_boundary) {
-      neighbors <- rbind(neighbors, data.frame(
-        direction = edge_names[i],
-        neighbor_id = if (is_boundary) NA_integer_ else as.integer(result$neighbor_id),
-        is_boundary = is_boundary,
-        stringsAsFactors = FALSE
-      ))
-    }
+  # Build result data frame with pre-computed vectors
+  if (include_boundary) {
+    neighbors <- data.frame(
+      direction = edge_names,
+      neighbor_id = neighbor_ids,
+      is_boundary = is_boundary,
+      stringsAsFactors = FALSE
+    )
+  } else {
+    keep <- !is_boundary
+    neighbors <- data.frame(
+      direction = edge_names[keep],
+      neighbor_id = neighbor_ids[keep],
+      is_boundary = is_boundary[keep],
+      stringsAsFactors = FALSE
+    )
   }
 
   return(neighbors)
@@ -930,36 +932,43 @@ get_group_internal_edges <- function(group_idx, fused_edge_data) {
 #'
 #' @export
 get_group_boundary_edges <- function(fusion_group, puzzle_result, fused_edge_data) {
-  boundary_edges <- data.frame(
-    piece_id = integer(),
-    direction = character(),
-    neighbor_id = integer(),
-    is_puzzle_boundary = logical(),
-    stringsAsFactors = FALSE
-  )
+  # Pre-collect all boundary edges using lists (optimized - no rbind)
+  results <- vector("list", length(fusion_group))
 
-  for (piece_id in fusion_group) {
+  for (idx in seq_along(fusion_group)) {
+    piece_id <- fusion_group[idx]
     neighbors <- get_piece_neighbors(piece_id, puzzle_result, include_boundary = TRUE)
 
-    for (i in seq_len(nrow(neighbors))) {
-      direction <- neighbors$direction[i]
-      neighbor_id <- neighbors$neighbor_id[i]
-      is_boundary <- neighbors$is_boundary[i]
+    # Find non-fused edges for this piece
+    is_fused <- vapply(seq_len(nrow(neighbors)), function(i) {
+      is_edge_fused(piece_id, neighbors$direction[i], fused_edge_data)
+    }, logical(1))
 
-      # Check if this edge is NOT fused (i.e., it's a boundary of the group)
-      if (!is_edge_fused(piece_id, direction, fused_edge_data)) {
-        boundary_edges <- rbind(boundary_edges, data.frame(
-          piece_id = piece_id,
-          direction = direction,
-          neighbor_id = if (is.na(neighbor_id)) NA_integer_ else neighbor_id,
-          is_puzzle_boundary = is_boundary,
-          stringsAsFactors = FALSE
-        ))
-      }
+    keep <- !is_fused
+    if (any(keep)) {
+      results[[idx]] <- data.frame(
+        piece_id = rep(piece_id, sum(keep)),
+        direction = neighbors$direction[keep],
+        neighbor_id = ifelse(is.na(neighbors$neighbor_id[keep]),
+                             NA_integer_, neighbors$neighbor_id[keep]),
+        is_puzzle_boundary = neighbors$is_boundary[keep],
+        stringsAsFactors = FALSE
+      )
     }
   }
 
-  return(boundary_edges)
+  # Combine all results efficiently using do.call(rbind, ...)
+  results <- results[!vapply(results, is.null, logical(1))]
+  if (length(results) == 0) {
+    return(data.frame(
+      piece_id = integer(),
+      direction = character(),
+      neighbor_id = integer(),
+      is_puzzle_boundary = logical(),
+      stringsAsFactors = FALSE
+    ))
+  }
+  do.call(rbind, results)
 }
 
 
@@ -990,26 +999,23 @@ get_concentric_neighbors <- function(piece_id, rings) {
     direction_names <- c("INNER", "RIGHT", "OUTER", "LEFT")
   }
 
-  neighbors <- data.frame(
-    direction = character(),
-    neighbor_id = integer(),
-    is_boundary = logical(),
-    stringsAsFactors = FALSE
-  )
+  # Pre-allocate vectors (optimized - no rbind)
+  n_edges <- length(edges)
+  neighbor_ids <- integer(n_edges)
+  is_boundary <- logical(n_edges)
 
   for (i in seq_along(edges)) {
-    edge_idx <- edges[i]
-    neighbor_info <- get_concentric_neighbor(piece_id, edge_idx, rings)
-
-    neighbors <- rbind(neighbors, data.frame(
-      direction = direction_names[i],
-      neighbor_id = if (is.na(neighbor_info$neighbor_id)) NA_integer_ else as.integer(neighbor_info$neighbor_id),
-      is_boundary = neighbor_info$is_boundary,
-      stringsAsFactors = FALSE
-    ))
+    neighbor_info <- get_concentric_neighbor(piece_id, edges[i], rings)
+    neighbor_ids[i] <- if (is.na(neighbor_info$neighbor_id)) NA_integer_ else as.integer(neighbor_info$neighbor_id)
+    is_boundary[i] <- neighbor_info$is_boundary
   }
 
-  return(neighbors)
+  data.frame(
+    direction = direction_names,
+    neighbor_id = neighbor_ids,
+    is_boundary = is_boundary,
+    stringsAsFactors = FALSE
+  )
 }
 
 

@@ -204,6 +204,10 @@ get_inner_ring_neighbor <- function(piece_id, side, ring_info, rings) {
 
 #' Build complete neighbor map for all pieces
 #'
+#' Uses pre-allocated vectors for O(n) performance instead of O(n²) rbind.
+#' For large puzzles, consider using build_hex_neighbor_map_fast() which
+#' leverages data.table if available.
+#'
 #' @param rings Number of rings
 #' @return Data frame with piece_id, side, neighbor_id
 #'
@@ -211,25 +215,28 @@ get_inner_ring_neighbor <- function(piece_id, side, ring_info, rings) {
 build_hex_neighbor_map <- function(rings) {
   num_pieces <- 3 * rings * (rings - 1) + 1
 
-  result <- data.frame(
-    piece_id = integer(),
-    side = integer(),
-    neighbor_id = integer(),
-    stringsAsFactors = FALSE
-  )
+  # Pre-allocate vectors (optimized - no rbind)
+  n_rows <- num_pieces * 6L
+  piece_ids <- integer(n_rows)
+  sides <- integer(n_rows)
+  neighbor_ids <- integer(n_rows)
 
-  for (piece_id in 1:num_pieces) {
+  row_idx <- 1L
+  for (piece_id in seq_len(num_pieces)) {
     for (side in 0:5) {
       neighbor_id <- get_hex_neighbor(piece_id, side, rings)
 
-      result <- rbind(result, data.frame(
-        piece_id = piece_id,
-        side = side,
-        neighbor_id = if (is.na(neighbor_id)) NA_integer_ else neighbor_id,
-        stringsAsFactors = FALSE
-      ))
+      piece_ids[row_idx] <- piece_id
+      sides[row_idx] <- side
+      neighbor_ids[row_idx] <- if (is.na(neighbor_id)) NA_integer_ else as.integer(neighbor_id)
+      row_idx <- row_idx + 1L
     }
   }
 
-  return(result)
+  data.frame(
+    piece_id = piece_ids,
+    side = sides,
+    neighbor_id = neighbor_ids,
+    stringsAsFactors = FALSE
+  )
 }
