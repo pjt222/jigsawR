@@ -245,8 +245,12 @@ generate_hex_pieces_internal <- function(seed, rings, diameter, tabsize, jitter,
                                          fusion_groups = NULL,
                                          fusion_style = "none",
                                          fusion_opacity = 0.3) {
+  # Calculate total pieces for progress reporting
+  num_pieces <- 3 * rings * (rings - 1) + 1
+
   # Use existing edge map generation
   # This generates all pieces with proper complementary edges
+  cli::cli_progress_step("Generating {num_pieces} hexagonal pieces...")
   hex_pieces <- generate_hex_pieces_with_edge_map(
     rings = rings,
     seed = seed,
@@ -263,6 +267,8 @@ generate_hex_pieces_internal <- function(seed, rings, diameter, tabsize, jitter,
   # Compute fused edges if fusion groups provided
   fused_edge_data <- NULL
   if (!is.null(fusion_groups) && length(fusion_groups) > 0) {
+    n_groups <- length(fusion_groups)
+    cli::cli_progress_step("Computing fused edges for {n_groups} fusion group{?s}...")
     # Create minimal structure for adjacency API
     temp_result <- list(
       type = "hexagonal",
@@ -272,6 +278,7 @@ generate_hex_pieces_internal <- function(seed, rings, diameter, tabsize, jitter,
   }
 
   # Convert to standardized piece format
+  cli::cli_progress_step("Processing piece geometry ({num_pieces} pieces)...")
   pieces <- lapply(seq_along(hex_pieces), function(i) {
     hp <- hex_pieces[[i]]
     piece_id <- hp$id
@@ -464,6 +471,9 @@ generate_concentric_pieces_internal <- function(seed, rings, diameter, tabsize, 
                                                  fusion_groups = NULL,
                                                  fusion_style = "none",
                                                  fusion_opacity = 0.3) {
+  # Calculate total pieces for progress reporting
+  num_pieces <- 3 * rings * (rings - 1) + 1
+
   # Source concentric modules if needed
   if (!exists("generate_concentric_pieces")) {
     source("R/concentric_geometry.R")
@@ -471,6 +481,7 @@ generate_concentric_pieces_internal <- function(seed, rings, diameter, tabsize, 
   }
 
   # Generate pieces using concentric edge generation
+  cli::cli_progress_step("Generating {num_pieces} concentric pieces...")
   concentric_result <- generate_concentric_pieces(
     rings = rings,
     seed = seed,
@@ -488,6 +499,8 @@ generate_concentric_pieces_internal <- function(seed, rings, diameter, tabsize, 
   # Compute fused edges if fusion groups provided
   fused_edge_data <- NULL
   if (!is.null(fusion_groups) && length(fusion_groups) > 0) {
+    n_groups <- length(fusion_groups)
+    cli::cli_progress_step("Computing fused edges for {n_groups} fusion group{?s}...")
     # Create minimal structure for adjacency API
     temp_result <- list(
       type = "concentric",
@@ -497,6 +510,7 @@ generate_concentric_pieces_internal <- function(seed, rings, diameter, tabsize, 
   }
 
   # Convert to standardized piece format
+  cli::cli_progress_step("Processing piece geometry ({num_pieces} pieces)...")
   pieces <- lapply(seq_along(concentric_pieces), function(i) {
     cp <- concentric_pieces[[i]]
     piece_id <- cp$id

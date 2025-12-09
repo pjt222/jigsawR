@@ -4,6 +4,7 @@
 library(shiny)
 library(bslib)
 library(shinyjs)
+library(waiter)
 library(cli)
 
 # Source logging utilities first
@@ -98,6 +99,7 @@ ui <- page_fluid(
     danger = "#e74c3c"
   ),
   useShinyjs(),
+  useWaiter(),  # Enable waiter loading screens
 
   # Add minimal custom CSS and JavaScript for sequential downloads
   tags$head(
@@ -271,6 +273,19 @@ ui <- page_fluid(
             )
           ),
 
+          # Divider before fusion section
+          tags$hr(class = "my-2"),
+          tags$small(class = "text-muted", "Meta Pieces (Fusion)"),
+
+          # Fusion groups input - ONLY applies when Generate is clicked
+          tooltip(
+            textInput("fusion_groups",
+                     "Fuse Pieces:",
+                     value = "",
+                     placeholder = "(1,2),(3,4,5)"),
+            "Fuse adjacent pieces together. Format: (1,2) to fuse pieces 1 and 2, or (1,2),(3,4,5) for multiple groups. Changes apply when you click Generate."
+          ),
+
           # Divider before action buttons
           tags$hr(class = "my-3"),
 
@@ -374,18 +389,10 @@ ui <- page_fluid(
           ),
 
           tags$hr(class = "my-2"),
-          tags$small(class = "text-muted", "Meta Pieces (Fusion)"),
+          tags$small(class = "text-muted", "Internal Edges (Fusion)"),
 
-          # Fusion groups input
-          tooltip(
-            textInput("fusion_groups",
-                     "Fuse Pieces:",
-                     value = "",
-                     placeholder = "(1,2),(3,4,5)"),
-            "Fuse adjacent pieces together. Format: (1,2) to fuse pieces 1 and 2, or (1,2),(3,4,5) for multiple groups. Fused pieces move together when separated."
-          ),
-
-          # Fusion style (only shown when fusion groups are specified)
+          # Fusion style - reactive styling for internal edges (fusion groups defined in Settings)
+          # Only shown when fusion groups are specified in Settings panel
           conditionalPanel(
             condition = "input.fusion_groups != ''",
             radioButtons("fusion_style", "Internal Edge Style:",
@@ -410,7 +417,14 @@ ui <- page_fluid(
                            sep = ""),
                 "Transparency of internal edges between fused pieces. 100% = fully visible, 0% = hidden."
               )
-            )
+            ),
+            tags$small(class = "text-muted fst-italic", "Define fusion groups in Settings panel")
+          ),
+
+          # Message when no fusion groups are defined
+          conditionalPanel(
+            condition = "input.fusion_groups == ''",
+            tags$small(class = "text-muted fst-italic", "No fusion groups defined (set in Settings panel)")
           ),
 
           tags$hr(class = "my-2"),
@@ -615,18 +629,21 @@ ui <- page_fluid(
             p("4. Open the ", strong("Download"), " panel to save your puzzle"),
             br(),
             h4("Settings Panel"),
+            p("Changes here require clicking ", strong("Generate Puzzle"), " to apply."),
             tags$ul(
               tags$li(strong("Puzzle Type:"), " Choose Rectangular, Hexagonal, or Concentric"),
               tags$li(strong("Grid/Rings:"), " Controls piece count"),
               tags$li(strong("Size/Diameter:"), " Physical dimensions in millimeters"),
-              tags$li(strong("Tab Size:"), " Size of interlocking tabs (15-25% recommended)"),
-              tags$li(strong("Jitter:"), " Randomness in piece shapes (2-6% recommended)"),
-              tags$li(strong("Piece Separation:"), " Gap between pieces (0 = complete, >0 = separated)")
+              tags$li(strong("Fuse Pieces:"), " Create meta-pieces by fusing adjacent pieces (e.g. (1,2),(3,4,5))")
             ),
             br(),
             h4("Styling Panel"),
             p("Changes in this panel update the preview ", strong("automatically"), " - no need to regenerate!"),
             tags$ul(
+              tags$li(strong("Tab Size:"), " Size of interlocking tabs (15-25% recommended)"),
+              tags$li(strong("Jitter:"), " Randomness in piece shapes (2-6% recommended)"),
+              tags$li(strong("Piece Separation:"), " Gap between pieces (0 = complete, >0 = separated)"),
+              tags$li(strong("Internal Edges:"), " Style of edges between fused pieces (hidden/dashed/solid)"),
               tags$li(strong("Color Palette:"), " Choose from various color schemes"),
               tags$li(strong("Line Width:"), " For laser cutting use 0.5mm"),
               tags$li(strong("Opacity:"), " Transparency of puzzle pieces"),
@@ -678,6 +695,19 @@ get_conc_boundary_params <- function(boundary_choice, boundary_facing = "outward
 
 # Define server logic
 server <- function(input, output, session) {
+
+  # Create a Waiter for the puzzle preview area
+
+  # Shows spinner with message during puzzle generation, centered in the card
+  w <- Waiter$new(
+    id = "puzzle_display",
+    html = div(
+      style = "display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%;",
+      spin_fading_circles(),
+      h4("Generating puzzle...", style = "color: white; margin-top: 10px;")
+    ),
+    color = "rgba(0, 0, 0, 0.7)"
+  )
 
   # Reactive values to store puzzle data
   puzzle_data <- reactiveVal(NULL)
@@ -771,7 +801,25 @@ server <- function(input, output, session) {
       # Center shape for concentric type (hardcoded to hexagon - see GitHub issue for future refinement)
       center_shape_value <- "hexagon"
 
+      # Parse fusion groups from text input (only parsed on Generate click)
+      fusion_groups_val <- input$fusion_groups
+      fusion_groups_parsed <- NULL
+      if (!is.null(fusion_groups_val) && nchar(trimws(fusion_groups_val)) > 0) {
+        log_info("Parsing fusion groups: '{fusion_groups_val}'")
+        tryCatch({
+          fusion_groups_parsed <- parse_fusion_input(fusion_groups_val)
+          n_groups <- length(fusion_groups_parsed)
+          log_success("Parsed {n_groups} fusion groups")
+        }, error = function(e) {
+          err_msg <- e$message
+          log_warn("Invalid fusion input: {err_msg}")
+          showNotification(paste("Invalid fusion groups:", err_msg), type = "warning", duration = 5)
+          fusion_groups_parsed <- NULL
+        })
+      }
+
       # Store base settings - these trigger piece regeneration
+      # fusion_groups is stored here and only updates on Generate click
       base_settings(list(
         type = puzzle_type,
         seed = input$seed,
@@ -779,7 +827,8 @@ server <- function(input, output, session) {
         size = size_param,
         boundary_params = boundary_params,
         conc_boundary_params = conc_boundary_params,
-        center_shape = center_shape_value
+        center_shape = center_shape_value,
+        fusion_groups = fusion_groups_parsed  # Stored on Generate click only
       ))
 
       # Store puzzle metadata for display and downloads
@@ -833,13 +882,16 @@ server <- function(input, output, session) {
 
   # Reactive piece generation - depends on base_settings + tabsize/jitter/offset
   # This allows styling options to update the puzzle without clicking Generate
+  # IMPORTANT: fusion_groups is stored in base_settings (not reactive) to avoid slow re-parsing
+  # Only fusion_style and fusion_opacity are reactive for quick styling changes
   observe({
     # IMPORTANT: Read ALL inputs FIRST to establish reactive dependencies
     # before the early return. Otherwise Shiny won't track changes to these inputs.
     tabsize_val <- input$tabsize
     jitter_val <- input$jitter
     offset_val <- input$offset
-    fusion_groups_val <- input$fusion_groups
+    # NOTE: fusion_groups input is NOT read here - it's stored in base_settings on Generate click
+    # This prevents slow reactive re-computation when fusion text changes
     fusion_style_val <- if (is.null(input$fusion_style)) "none" else input$fusion_style
     fusion_opacity_val <- if (is.null(input$fusion_opacity)) 30 else input$fusion_opacity / 100
 
@@ -847,8 +899,15 @@ server <- function(input, output, session) {
     settings <- base_settings()
     if (is.null(settings)) return()
 
+    # Use fusion_groups from base_settings (stored on Generate click)
+    fusion_groups_parsed <- settings$fusion_groups
+    n_fusion <- if (!is.null(fusion_groups_parsed)) length(fusion_groups_parsed) else 0
+
     log_info("Regenerating pieces (tabsize={tabsize_val}, jitter={jitter_val}, offset={offset_val}mm)")
-    log_info("Fusion input: '{fusion_groups_val}' (style={fusion_style_val})")
+    log_info("Fusion: {n_fusion} groups from Generate click (style={fusion_style_val})")
+
+    # Show loading indicator on preview area
+    w$show()
 
     tryCatch({
       # Determine do_circular_border based on puzzle type
@@ -867,24 +926,9 @@ server <- function(input, output, session) {
         "outward"
       }
 
-      # Parse fusion groups from text input
-      fusion_groups_parsed <- NULL
-      if (!is.null(fusion_groups_val) && nchar(trimws(fusion_groups_val)) > 0) {
-        log_info("Attempting to parse fusion groups...")
-        tryCatch({
-          fusion_groups_parsed <- parse_fusion_input(fusion_groups_val)
-          n_groups <- length(fusion_groups_parsed)
-          log_success("Parsed {n_groups} fusion groups")
-        }, error = function(e) {
-          err_msg <- e$message
-          log_warn("Invalid fusion input: {err_msg}")
-          fusion_groups_parsed <- NULL
-        })
-      } else {
-        log_info("No fusion groups specified")
-      }
-
       # Generate pieces with current styling values
+      # fusion_groups comes from base_settings (Generate click)
+      # fusion_style and fusion_opacity are reactive (Styling panel)
       pieces_result <- generate_pieces_internal(
         type = settings$type,
         seed = settings$seed,
@@ -922,8 +966,12 @@ server <- function(input, output, session) {
         puzzle_data(current_data)
       }
 
+      # Hide loading indicator after successful generation
+      w$hide()
+
     }, error = function(e) {
       log_error("ERROR in reactive piece generation: {e$message}")
+      w$hide()  # Also hide on error
     })
   })
 

@@ -404,6 +404,43 @@ These insights emerged during development and capture lessons learned for future
 - **Files modified**: `R/unified_piece_generation.R:generate_hex_pieces_internal()` (lines 289-345)
 - **Related**: GitHub Issue #43 - Hexagonal edge path splitting for fusion features
 
+### 19. Progress Feedback for Long-Running Operations (2025-12-09)
+
+**Problem**: Large puzzles (7+ rings with fusion) take significant time to generate, leaving users without feedback.
+
+**Solution**: Two-layer progress feedback:
+1. **Console (cli package)**: `cli::cli_progress_step()` for step-by-step console progress
+2. **UI (waiter package)**: Overlay spinner during puzzle generation
+
+**Console Progress** (`R/unified_piece_generation.R`):
+```r
+cli::cli_progress_step("Generating {num_pieces} hexagonal pieces...")
+cli::cli_progress_step("Computing fused edges for {n_groups} fusion group{?s}...")
+cli::cli_progress_step("Processing piece geometry ({num_pieces} pieces)...")
+```
+Output shows timing: `✔ Generating 127 hexagonal pieces... [1.2s]`
+
+**UI Progress** (`inst/shiny-app/app.R`):
+```r
+w <- Waiter$new(
+  id = "puzzle_display",
+  html = div(
+    style = "display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%;",
+    spin_fading_circles(),
+    h4("Generating puzzle...", style = "color: white; margin-top: 10px;")
+  ),
+  color = "rgba(0, 0, 0, 0.7)"
+)
+# In reactive: w$show() before generation, w$hide() after (including on error)
+```
+
+**Key insight**: Centering the waiter overlay requires flexbox CSS (`display: flex; align-items: center; justify-content: center; height: 100%;`) on the html content div.
+
+**Files modified**:
+- `R/unified_piece_generation.R` (hexagonal and concentric progress steps)
+- `inst/shiny-app/app.R` (waiter integration)
+- `DESCRIPTION` (waiter dependency)
+
 ---
 
 ## Development History
