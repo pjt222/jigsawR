@@ -441,6 +441,53 @@ w <- Waiter$new(
 - `inst/shiny-app/app.R` (waiter integration)
 - `DESCRIPTION` (waiter dependency)
 
+### 20. Hash Set Optimization for Fusion Edge Computation (2025-12-09)
+
+**Problem**: Large hexagonal puzzles (7+ rings) with fusion had multiple O(n²) bottlenecks:
+1. `get_hex_neighbor()` used O(ring²) recursive reverse lookup loop
+2. `%in%` membership checks are O(n) per call
+3. Vector `c()` concatenation is O(n) per operation, leading to O(n²) total
+
+**Solution**: R environments as hash maps for O(1) operations:
+
+**Cached Adjacency Matrix** (`R/hexagonal_adjacency_cache.R`):
+```r
+# Pre-compute adjacency matrix using axial coordinate math
+# O(n) construction, O(1) lookups thereafter
+adj_matrix <- get_hex_adjacency_matrix(rings)
+neighbor_id <- adj_matrix[piece_id, side + 1]  # O(1) instead of O(ring²)
+```
+
+**Hash Sets for Membership** (`compute_hex_fused_edges_fast()`):
+```r
+# Build group membership hash sets
+group_set <- new.env(hash = TRUE, parent = emptyenv())
+for (piece_id in group) {
+  group_set[[as.character(piece_id)]] <- TRUE
+}
+# O(1) membership test instead of O(n) %in%
+if (exists(as.character(neighbor_id), envir = group_set, inherits = FALSE))
+```
+
+**List Accumulation** (instead of vector `c()`):
+```r
+# O(1) append, O(n) final unlist
+fused_edges_list <- list()
+fused_edges_list[[length(fused_edges_list) + 1]] <- edge_key
+# Instead of: fused_edges <- c(fused_edges, edge_key)  # O(n) per call!
+```
+
+**Benchmark Results** (5 rings, 61 pieces):
+- Old method: 0.132s
+- New method: 0.036s
+- **Speedup: 3.7x** for fusion edge computation
+
+**Key insight**: When maintaining compatibility with existing functions, use the SAME neighbor function (`get_hex_neighbors_for_fusion()`) for topology-side mapping but apply hash set optimizations for membership and deduplication checks. The adjacency matrix uses axial coordinate mapping which differs from the topology-side numbering.
+
+**Files modified**:
+- `R/hexagonal_adjacency_cache.R` (new file - adjacency matrix cache and fast functions)
+- `R/unified_piece_generation.R` (updated to use `compute_hex_fused_edges_fast()`)
+
 ---
 
 ## Development History

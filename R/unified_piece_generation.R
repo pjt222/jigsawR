@@ -269,12 +269,8 @@ generate_hex_pieces_internal <- function(seed, rings, diameter, tabsize, jitter,
   if (!is.null(fusion_groups) && length(fusion_groups) > 0) {
     n_groups <- length(fusion_groups)
     cli::cli_progress_step("Computing fused edges for {n_groups} fusion group{?s}...")
-    # Create minimal structure for adjacency API
-    temp_result <- list(
-      type = "hexagonal",
-      parameters = list(rings = rings)
-    )
-    fused_edge_data <- compute_hex_fused_edges(fusion_groups, temp_result)
+    # Use optimized fast version with hash sets and cached adjacency matrix
+    fused_edge_data <- compute_hex_fused_edges_fast(fusion_groups, rings)
   }
 
   # Convert to standardized piece format
@@ -298,13 +294,21 @@ generate_hex_pieces_internal <- function(seed, rings, diameter, tabsize, jitter,
       piece_cx <- hp$center_x
       piece_cy <- hp$center_y
 
+      # Get neighbors using the SAME function that compute_hex_fused_edges_fast uses
+      # This ensures topo_side numbers match edge keys in fused_edge_data
+      neighbors <- get_hex_neighbors_for_fusion(piece_id, rings)
+
       # First, compute which geometric side each topology side maps to
       # by checking the actual direction to each neighbor
       topo_to_geo_map <- list()
+      topo_to_neighbor_map <- list()
 
-      for (topo_side in 0:5) {
-        neighbor_id <- get_hex_neighbor(piece_id, topo_side, rings)
+      for (i in seq_len(nrow(neighbors))) {
+        topo_side <- as.integer(neighbors$direction[i])
+        neighbor_id <- neighbors$neighbor_id[i]
         if (is.na(neighbor_id)) next
+
+        topo_to_neighbor_map[[as.character(topo_side)]] <- neighbor_id
 
         # Get neighbor center
         neighbor_hp <- hex_pieces[[neighbor_id]]
@@ -315,20 +319,10 @@ generate_hex_pieces_internal <- function(seed, rings, diameter, tabsize, jitter,
         dir_to_neighbor <- atan2(neighbor_cy - piece_cy, neighbor_cx - piece_cx) * 180 / pi
 
         # Find which geometric side (0-5) faces this direction
-        # Geometric side i has midpoint at direction: 30 + i*60 degrees
-        for (geo_side in 0:5) {
-          geo_dir <- 30 + geo_side * 60
-          if (geo_dir > 180) geo_dir <- geo_dir - 360
-
-          # Check if directions match (within 30 degrees)
-          dir_diff <- abs(dir_to_neighbor - geo_dir)
-          if (dir_diff > 180) dir_diff <- 360 - dir_diff
-
-          if (dir_diff < 30) {
-            topo_to_geo_map[[as.character(topo_side)]] <- geo_side
-            break
-          }
-        }
+        # Use direct formula: geo_side = round((dir_to_neighbor - 30) / 60) %% 6
+        dir_normalized <- (dir_to_neighbor + 360) %% 360
+        geo_side <- round((dir_normalized - 30) / 60) %% 6
+        topo_to_geo_map[[as.character(topo_side)]] <- geo_side
       }
 
       # Now populate fused_edges using geometric side keys
@@ -343,8 +337,8 @@ generate_hex_pieces_internal <- function(seed, rings, diameter, tabsize, jitter,
             fused_edges[[geo_key]] <- TRUE
 
             # Get neighbor ID for deduplication
-            neighbor_id <- get_hex_neighbor(piece_id, as.integer(topo_side), rings)
-            if (!is.na(neighbor_id)) {
+            neighbor_id <- topo_to_neighbor_map[[topo_side]]
+            if (!is.null(neighbor_id) && !is.na(neighbor_id)) {
               fused_neighbor_ids[[geo_key]] <- neighbor_id
             }
           }
