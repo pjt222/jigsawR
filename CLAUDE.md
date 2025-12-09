@@ -23,9 +23,10 @@ jigsawR/
 │   ├── rectangular_puzzle.R     # Rectangular puzzle core
 │   ├── hexagonal_puzzle.R       # Hexagonal puzzle core
 │   ├── concentric_geometry.R    # Concentric puzzle geometry
-│   └── bezier_utils.R          # Bezier curve utilities
+│   ├── bezier_utils.R          # Bezier curve utilities
+│   └── piles_notation.R        # PILES notation parser/serializer
 ├── inst/shiny-app/         # Shiny web application
-├── tests/testthat/         # Test suite (796+ tests)
+├── tests/testthat/         # Test suite (1065+ tests)
 ├── output/                 # Generated puzzle files
 └── docs/development-guides/  # Detailed architecture docs
 ```
@@ -39,6 +40,31 @@ generate_puzzle() → generate_pieces_internal() → apply_piece_positioning() �
 - `generate_puzzle()`: **THE main entry point** - handles all puzzle types
   - Types: `"rectangular"`, `"hexagonal"`, `"concentric"`
   - Returns: `$svg_content`, `$pieces`, `$canvas_size`, `$files`
+
+### PILES Notation (Fusion Groups)
+
+PILES (Puzzle Input Line Entry System) is a SMILES-inspired notation for specifying piece fusion groups.
+See [`docs/PILES-notation.md`](docs/PILES-notation.md) for full documentation.
+
+**Quick Reference:**
+```r
+# Basic syntax
+"1-2"           # Fuse pieces 1 and 2
+"1-2-3,4-5"     # Two groups: (1,2,3) and (4,5)
+"1:6"           # Range: pieces 1 through 6
+
+# Keywords (require puzzle_result)
+"center"        # Center piece (hex/concentric)
+"ring1"         # All pieces in ring 1
+"R1"            # Row 1 (rectangular)
+"boundary"      # All boundary pieces
+
+# Functions
+parse_piles("1-2-3,4-5")                    # Parse PILES string
+parse_fusion("1-2-3", puzzle)               # Auto-detect format
+to_piles(list(c(1,2), c(3,4)))              # Convert to PILES
+validate_piles_syntax("1-2(-3)-4")          # Validate syntax
+```
 
 ## Code Style Guidelines
 
