@@ -102,28 +102,37 @@ validate_fusion_group <- function(piece_ids, puzzle_result) {
   # Normalize all IDs to integers
   ids <- sapply(piece_ids, function(id) normalize_piece_id(id, puzzle_result))
 
+  # Use hash set for O(1) group membership lookup instead of O(n) vector search
+  ids_set <- new.env(hash = TRUE, parent = emptyenv())
+  for (id in ids) {
+    ids_set[[as.character(id)]] <- TRUE
+  }
+
   # Build adjacency within the group using BFS/DFS
   visited <- rep(FALSE, length(ids))
   names(visited) <- as.character(ids)
 
-  # Start BFS from first piece
-  queue <- ids[1]
+  # Start BFS from first piece - use list for O(1) queue operations
+  queue_list <- list(ids[1])
+  queue_head <- 1L
   visited[as.character(ids[1])] <- TRUE
 
-  while (length(queue) > 0) {
-    current <- queue[1]
-    queue <- queue[-1]
+  while (queue_head <= length(queue_list)) {
+    current <- queue_list[[queue_head]]
+    queue_head <- queue_head + 1L
 
     # Get neighbors of current piece
     neighbors <- get_piece_neighbors(current, puzzle_result, include_boundary = FALSE)
 
     # Check which neighbors are in our group and unvisited
     for (neighbor_id in neighbors$neighbor_id) {
-      if (!is.na(neighbor_id) && neighbor_id %in% ids) {
+      if (!is.na(neighbor_id)) {
         neighbor_key <- as.character(neighbor_id)
-        if (!visited[neighbor_key]) {
+        # O(1) hash lookup instead of O(n) vector search
+        if (exists(neighbor_key, envir = ids_set, inherits = FALSE) && !visited[neighbor_key]) {
           visited[neighbor_key] <- TRUE
-          queue <- c(queue, neighbor_id)
+          # O(1) list append instead of O(n) vector copy
+          queue_list[[length(queue_list) + 1L]] <- neighbor_id
         }
       }
     }
@@ -758,20 +767,25 @@ compute_fused_edges <- function(fusion_groups, puzzle_result) {
   if (is.null(fusion_groups) || length(fusion_groups) == 0) {
     return(list(
       fused_edges = character(),
+      fused_edges_set = new.env(hash = TRUE, parent = emptyenv()),
       edge_to_group = list(),
       piece_to_group = list()
     ))
   }
 
-  fused_edges <- character()
+  # Use environment as hash set for O(1) lookups instead of O(n) vector search
+  fused_edges_set <- new.env(hash = TRUE, parent = emptyenv())
+  fused_edges_list <- list()  # Accumulate in list, convert once at end
   edge_to_group <- list()
   piece_to_group <- list()
 
   for (group_idx in seq_along(fusion_groups)) {
     group <- fusion_groups[[group_idx]]
 
-    # Map pieces to this group
+    # Create hash set for group membership (O(1) lookup instead of O(n))
+    group_set <- new.env(hash = TRUE, parent = emptyenv())
     for (piece_id in group) {
+      group_set[[as.character(piece_id)]] <- TRUE
       piece_to_group[[as.character(piece_id)]] <- group_idx
     }
 
@@ -783,18 +797,21 @@ compute_fused_edges <- function(fusion_groups, puzzle_result) {
         neighbor_id <- neighbors$neighbor_id[i]
         direction <- neighbors$direction[i]
 
-        # If neighbor is also in this group, this is an internal edge
-        if (neighbor_id %in% group) {
+        # O(1) hash lookup instead of O(n) vector search
+        if (exists(as.character(neighbor_id), envir = group_set, inherits = FALSE)) {
           edge_key <- make_edge_key(piece_id, direction)
 
-          if (!(edge_key %in% fused_edges)) {
-            fused_edges <- c(fused_edges, edge_key)
+          # O(1) hash lookup instead of O(n) vector search
+          if (!exists(edge_key, envir = fused_edges_set, inherits = FALSE)) {
+            fused_edges_list[[length(fused_edges_list) + 1]] <- edge_key
+            fused_edges_set[[edge_key]] <- TRUE
             edge_to_group[[edge_key]] <- group_idx
 
             # Also add the complementary edge
             comp_key <- get_complementary_edge_key(edge_key, puzzle_result)
-            if (!is.na(comp_key) && !(comp_key %in% fused_edges)) {
-              fused_edges <- c(fused_edges, comp_key)
+            if (!is.na(comp_key) && !exists(comp_key, envir = fused_edges_set, inherits = FALSE)) {
+              fused_edges_list[[length(fused_edges_list) + 1]] <- comp_key
+              fused_edges_set[[comp_key]] <- TRUE
               edge_to_group[[comp_key]] <- group_idx
             }
           }
@@ -803,8 +820,13 @@ compute_fused_edges <- function(fusion_groups, puzzle_result) {
     }
   }
 
+  # Convert list to vector once at end (O(n) instead of O(n²))
+  fused_edges <- unlist(fused_edges_list)
+  if (is.null(fused_edges)) fused_edges <- character()
+
   return(list(
     fused_edges = fused_edges,
+    fused_edges_set = fused_edges_set,  # Include hash set for O(1) lookups
     edge_to_group = edge_to_group,
     piece_to_group = piece_to_group
   ))
@@ -820,11 +842,18 @@ compute_fused_edges <- function(fusion_groups, puzzle_result) {
 #'
 #' @export
 is_edge_fused <- function(piece_id, direction, fused_edge_data) {
-  if (is.null(fused_edge_data) || length(fused_edge_data$fused_edges) == 0) {
+  if (is.null(fused_edge_data)) {
     return(FALSE)
   }
 
   edge_key <- make_edge_key(piece_id, direction)
+
+  # Use O(1) hash set lookup if available, fall back to O(n) vector search
+  if (!is.null(fused_edge_data$fused_edges_set)) {
+    return(exists(edge_key, envir = fused_edge_data$fused_edges_set, inherits = FALSE))
+  }
+
+  # Fallback for backwards compatibility
   return(edge_key %in% fused_edge_data$fused_edges)
 }
 

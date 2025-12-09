@@ -459,6 +459,46 @@ save_puzzle_svg <- function(svg_content, filename, output_dir = "output") {
 }
 
 
+#' Build SVG path string from segments efficiently
+#'
+#' Converts a list of path segments to an SVG path string using vectorized
+#' operations instead of repeated string concatenation. This is significantly
+#' faster for paths with many segments.
+#'
+#' @param segs List of segment objects with type, x, y, and other properties
+#' @param start_point Starting c(x, y) coordinates for M command
+#' @return SVG path string
+#' @keywords internal
+build_path_string_fast <- function(segs, start_point) {
+  if (length(segs) == 0) {
+    return(sprintf("M %.2f %.2f", start_point[1], start_point[2]))
+  }
+
+  # Pre-allocate character vector for all segments
+  n_segs <- length(segs)
+  seg_strings <- character(n_segs)
+
+  for (i in seq_len(n_segs)) {
+    seg <- segs[[i]]
+    seg_strings[i] <- switch(
+      seg$type,
+      "L" = sprintf(" L %.2f %.2f", seg$x, seg$y),
+      "C" = sprintf(" C %.2f %.2f %.2f %.2f %.2f %.2f",
+                    seg$cp1x, seg$cp1y, seg$cp2x, seg$cp2y, seg$x, seg$y),
+      "A" = sprintf(" A %.2f %.2f %d %d %d %.2f %.2f",
+                    seg$rx, seg$ry, seg$rotation, seg$large_arc, seg$sweep,
+                    seg$x, seg$y),
+      ""
+    )
+  }
+
+  # Single paste operation at the end
+
+  paste0(sprintf("M %.2f %.2f", start_point[1], start_point[2]),
+         paste(seg_strings, collapse = ""))
+}
+
+
 #' Split rectangular piece path into individual edge paths
 #'
 #' Parses a closed rectangular piece path and extracts the 4 edge segments.
@@ -524,7 +564,7 @@ split_rect_path_into_edges <- function(path, piece = NULL) {
     current_y <- end_y
   }
 
-  # Convert segment lists to path strings
+  # Convert segment lists to path strings using fast builder
   edge_paths <- list()
   prev_end <- c(start_x, start_y)
 
@@ -535,22 +575,14 @@ split_rect_path_into_edges <- function(path, piece = NULL) {
       next
     }
 
-    # Build path string starting with M at previous endpoint
-    path_str <- sprintf("M %.2f %.2f", prev_end[1], prev_end[2])
+    # Use optimized path string builder (avoids O(n²) string concatenation)
+    edge_paths[[edge_name]] <- build_path_string_fast(segs, prev_end)
 
-    for (seg in segs) {
-      if (seg$type == "L") {
-        path_str <- paste0(path_str, sprintf(" L %.2f %.2f", seg$x, seg$y))
-      } else if (seg$type == "C") {
-        path_str <- paste0(path_str, sprintf(" C %.2f %.2f %.2f %.2f %.2f %.2f",
-                                              seg$cp1x, seg$cp1y,
-                                              seg$cp2x, seg$cp2y,
-                                              seg$x, seg$y))
-      }
-      prev_end <- c(seg$x, seg$y)
+    # Update prev_end to last segment's endpoint
+    if (length(segs) > 0) {
+      last_seg <- segs[[length(segs)]]
+      prev_end <- c(last_seg$x, last_seg$y)
     }
-
-    edge_paths[[edge_name]] <- path_str
   }
 
   return(edge_paths)
@@ -736,7 +768,7 @@ split_concentric_path_into_edges <- function(path, piece = NULL) {
 
   }
 
-  # Convert segment lists to path strings
+  # Convert segment lists to path strings using fast builder
   edge_paths <- list()
   prev_end <- c(start_x, start_y)
 
@@ -747,26 +779,14 @@ split_concentric_path_into_edges <- function(path, piece = NULL) {
       next
     }
 
-    path_str <- sprintf("M %.2f %.2f", prev_end[1], prev_end[2])
+    # Use optimized path string builder (avoids O(n²) string concatenation)
+    edge_paths[[edge_name]] <- build_path_string_fast(segs, prev_end)
 
-    for (seg in segs) {
-      if (seg$type == "L") {
-        path_str <- paste0(path_str, sprintf(" L %.2f %.2f", seg$x, seg$y))
-      } else if (seg$type == "C") {
-        path_str <- paste0(path_str, sprintf(" C %.2f %.2f %.2f %.2f %.2f %.2f",
-                                              seg$cp1x, seg$cp1y,
-                                              seg$cp2x, seg$cp2y,
-                                              seg$x, seg$y))
-      } else if (seg$type == "A") {
-        path_str <- paste0(path_str, sprintf(" A %.2f %.2f %d %d %d %.2f %.2f",
-                                              seg$rx, seg$ry,
-                                              seg$rotation, seg$large_arc, seg$sweep,
-                                              seg$x, seg$y))
-      }
-      prev_end <- c(seg$x, seg$y)
+    # Update prev_end to last segment's endpoint
+    if (length(segs) > 0) {
+      last_seg <- segs[[length(segs)]]
+      prev_end <- c(last_seg$x, last_seg$y)
     }
-
-    edge_paths[[edge_name]] <- path_str
   }
 
   return(edge_paths)
@@ -974,7 +994,7 @@ split_hex_path_into_edges <- function(path, piece = NULL) {
     }
   }
 
-  # Convert segment lists to path strings
+  # Convert segment lists to path strings using fast builder
   edge_paths <- list()
   prev_end <- c(start_x, start_y)
 
@@ -985,26 +1005,14 @@ split_hex_path_into_edges <- function(path, piece = NULL) {
       next
     }
 
-    path_str <- sprintf("M %.2f %.2f", prev_end[1], prev_end[2])
+    # Use optimized path string builder (avoids O(n²) string concatenation)
+    edge_paths[[edge_name]] <- build_path_string_fast(segs, prev_end)
 
-    for (seg in segs) {
-      if (seg$type == "L") {
-        path_str <- paste0(path_str, sprintf(" L %.2f %.2f", seg$x, seg$y))
-      } else if (seg$type == "C") {
-        path_str <- paste0(path_str, sprintf(" C %.2f %.2f %.2f %.2f %.2f %.2f",
-                                              seg$cp1x, seg$cp1y,
-                                              seg$cp2x, seg$cp2y,
-                                              seg$x, seg$y))
-      } else if (seg$type == "A") {
-        path_str <- paste0(path_str, sprintf(" A %.2f %.2f %d %d %d %.2f %.2f",
-                                              seg$rx, seg$ry,
-                                              seg$rotation, seg$large_arc, seg$sweep,
-                                              seg$x, seg$y))
-      }
-      prev_end <- c(seg$x, seg$y)
+    # Update prev_end to last segment's endpoint
+    if (length(segs) > 0) {
+      last_seg <- segs[[length(segs)]]
+      prev_end <- c(last_seg$x, last_seg$y)
     }
-
-    edge_paths[[edge_name]] <- path_str
   }
 
   return(edge_paths)
