@@ -21,6 +21,7 @@
 #' @param stroke_width SVG stroke width (default: 1.5)
 #' @param colors Vector of colors for pieces (optional, overrides palette)
 #' @param palette Viridis palette name (NULL = use config default)
+#' @param palette_invert Logical, if TRUE reverses the palette direction (default: FALSE)
 #' @param background "none", "white", color name, or list(type="gradient", ...)
 #' @param opacity Opacity of puzzle pieces (0.0 to 1.0)
 #' @param save_files TRUE to save SVG files
@@ -51,6 +52,7 @@ generate_puzzle <- function(type = "rectangular",
                             stroke_width = 1.5,
                             colors = NULL,
                             palette = NULL,
+                            palette_invert = FALSE,
                             background = "white",
                             opacity = 1.0,
                             save_files = FALSE,
@@ -118,17 +120,11 @@ generate_puzzle <- function(type = "rectangular",
 
   # === FUSION PRE-PROCESSING ===
 
-  # Parse fusion groups if provided as string
+  # Parse and merge fusion groups (handles both string and list input)
+  # parse_fusion_input auto-merges overlapping groups (e.g., (7,8),(5,8) -> (5,7,8))
   parsed_fusion_groups <- NULL
   if (!is.null(fusion_groups)) {
-    if (is.character(fusion_groups)) {
-      # Parse string like "(1,2),(7,8,9)" into list of vectors
-      parsed_fusion_groups <- parse_fusion_input(fusion_groups)
-    } else if (is.list(fusion_groups)) {
-      parsed_fusion_groups <- fusion_groups
-    } else {
-      stop("fusion_groups must be a string like '(1,2),(7,8,9)' or a list of numeric vectors")
-    }
+    parsed_fusion_groups <- parse_fusion_input(fusion_groups)
   }
 
   # === UNIFIED PIPELINE ===
@@ -161,6 +157,7 @@ generate_puzzle <- function(type = "rectangular",
     stroke_width = stroke_width,
     colors = colors,
     palette = palette,
+    palette_invert = palette_invert,
     background = background,
     opacity = opacity,
     show_labels = show_labels,
@@ -191,6 +188,7 @@ generate_puzzle <- function(type = "rectangular",
       fill_color = fill_color,
       stroke_width = stroke_width,
       palette = palette,
+      palette_invert = palette_invert,
       background = background,
       opacity = opacity,
       show_labels = show_labels,

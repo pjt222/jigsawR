@@ -271,47 +271,6 @@ ui <- page_fluid(
             )
           ),
 
-          # Divider before fusion controls
-          tags$hr(class = "my-3"),
-          tags$small(class = "text-muted", "Meta Pieces (Fusion)"),
-
-          # Fusion groups input
-          tooltip(
-            textInput("fusion_groups",
-                     "Fuse Pieces:",
-                     value = "",
-                     placeholder = "(1,2),(3,4,5)"),
-            "Fuse adjacent pieces together. Format: (1,2) to fuse pieces 1 and 2, or (1,2),(3,4,5) for multiple groups. Fused pieces move together when separated."
-          ),
-
-          # Fusion style (only shown when fusion groups are specified)
-          conditionalPanel(
-            condition = "input.fusion_groups != ''",
-            radioButtons("fusion_style", "Internal Edge Style:",
-                        choices = list(
-                          "Hidden" = "none",
-                          "Dashed" = "dashed",
-                          "Solid" = "solid"
-                        ),
-                        selected = "none",
-                        inline = TRUE),
-
-            # Fusion opacity (only shown when style != none)
-            conditionalPanel(
-              condition = "input.fusion_style != 'none'",
-              tooltip(
-                sliderInput("fusion_opacity", "Internal Edge Opacity:",
-                           min = 0,
-                           max = 100,
-                           value = 30, step = 5,
-                           ticks = TRUE,
-                           post = "%",
-                           sep = ""),
-                "Transparency of internal edges between fused pieces. 100% = fully visible, 0% = hidden."
-              )
-            )
-          ),
-
           # Divider before action buttons
           tags$hr(class = "my-3"),
 
@@ -415,6 +374,46 @@ ui <- page_fluid(
           ),
 
           tags$hr(class = "my-2"),
+          tags$small(class = "text-muted", "Meta Pieces (Fusion)"),
+
+          # Fusion groups input
+          tooltip(
+            textInput("fusion_groups",
+                     "Fuse Pieces:",
+                     value = "",
+                     placeholder = "(1,2),(3,4,5)"),
+            "Fuse adjacent pieces together. Format: (1,2) to fuse pieces 1 and 2, or (1,2),(3,4,5) for multiple groups. Fused pieces move together when separated."
+          ),
+
+          # Fusion style (only shown when fusion groups are specified)
+          conditionalPanel(
+            condition = "input.fusion_groups != ''",
+            radioButtons("fusion_style", "Internal Edge Style:",
+                        choices = list(
+                          "Hidden" = "none",
+                          "Dashed" = "dashed",
+                          "Solid" = "solid"
+                        ),
+                        selected = "none",
+                        inline = TRUE),
+
+            # Fusion opacity (only shown when style != none)
+            conditionalPanel(
+              condition = "input.fusion_style != 'none'",
+              tooltip(
+                sliderInput("fusion_opacity", "Internal Edge Opacity:",
+                           min = 0,
+                           max = 100,
+                           value = 30, step = 5,
+                           ticks = TRUE,
+                           post = "%",
+                           sep = ""),
+                "Transparency of internal edges between fused pieces. 100% = fully visible, 0% = hidden."
+              )
+            )
+          ),
+
+          tags$hr(class = "my-2"),
           tags$small(class = "text-muted", "Appearance"),
 
           selectInput("color_palette", "Color Palette:",
@@ -430,6 +429,15 @@ ui <- page_fluid(
                      "Turbo (Rainbow)" = "turbo"
                    ),
                    selected = cfg_colors$default_palette),
+
+          tooltip(
+            input_switch(
+              "palette_invert",
+              "Invert Palette",
+              value = FALSE
+            ),
+            "Reverse the color palette direction. Light colors become dark and vice versa."
+          ),
 
         tooltip(
           sliderInput("stroke_width", "Line Width:",
@@ -979,6 +987,7 @@ server <- function(input, output, session) {
       stroke_width = input$stroke_width,
       colors = NULL,
       palette = input$color_palette,
+      palette_invert = isTRUE(input$palette_invert),
       background = background_value,
       opacity = input$opacity / 100,
       show_labels = show_labels_value,
@@ -1228,6 +1237,7 @@ server <- function(input, output, session) {
         fill_color = fill_color_value,
         stroke_width = input$stroke_width,
         palette = input$color_palette,
+        palette_invert = isTRUE(input$palette_invert),
         background = background_value,
         opacity = input$opacity / 100,
         save_files = FALSE,

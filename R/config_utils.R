@@ -53,9 +53,10 @@ get_puzzle_config <- function(config_name = "default") {
 #'
 #' @param n Number of colors to generate
 #' @param palette Palette name (black, viridis, magma, plasma, inferno, cividis, mako, rocket, turbo)
+#' @param invert Logical, if TRUE reverses the palette direction (default: FALSE)
 #' @return Character vector of hex colors
 #' @export
-get_puzzle_colors <- function(n, palette = NULL) {
+get_puzzle_colors <- function(n, palette = NULL, invert = FALSE) {
   if (is.null(palette)) {
     cfg <- get_puzzle_config()
     palette <- cfg$colors$default_palette
@@ -77,7 +78,14 @@ get_puzzle_colors <- function(n, palette = NULL) {
   }
 
   # Generate colors using viridis
-  viridis::viridis_pal(option = palette)(n)
+  colors <- viridis::viridis_pal(option = palette)(n)
+
+  # Reverse palette if requested
+  if (isTRUE(invert)) {
+    colors <- rev(colors)
+  }
+
+  colors
 }
 
 #' Get fallback configuration

@@ -309,3 +309,120 @@ test_that("all parameters are preserved in result", {
   expect_equal(params$opacity, 0.8)
   expect_equal(params$stroke_width, 2.0)
 })
+
+# =============================================================================
+# PALETTE INVERSION (Issue #45)
+# =============================================================================
+
+test_that("get_puzzle_colors with invert=FALSE returns normal order", {
+  skip_if_not(exists("get_puzzle_colors"), "get_puzzle_colors not available")
+
+  colors_normal <- get_puzzle_colors(4, palette = "magma", invert = FALSE)
+
+  expect_type(colors_normal, "character")
+  expect_equal(length(colors_normal), 4)
+})
+
+test_that("get_puzzle_colors with invert=TRUE reverses palette", {
+  skip_if_not(exists("get_puzzle_colors"), "get_puzzle_colors not available")
+
+  colors_normal <- get_puzzle_colors(4, palette = "magma", invert = FALSE)
+  colors_inverted <- get_puzzle_colors(4, palette = "magma", invert = TRUE)
+
+  # Colors should be in reverse order
+  expect_equal(colors_inverted, rev(colors_normal))
+})
+
+test_that("palette inversion works for all valid palettes", {
+  skip_if_not(exists("get_puzzle_colors"), "get_puzzle_colors not available")
+
+  palettes <- c("viridis", "magma", "plasma", "inferno", "cividis", "mako", "rocket", "turbo")
+
+  for (pal in palettes) {
+    colors_normal <- get_puzzle_colors(5, palette = pal, invert = FALSE)
+    colors_inverted <- get_puzzle_colors(5, palette = pal, invert = TRUE)
+
+    expect_equal(colors_inverted, rev(colors_normal),
+                 info = paste("Palette:", pal))
+  }
+})
+
+test_that("black palette is not affected by inversion", {
+  skip_if_not(exists("get_puzzle_colors"), "get_puzzle_colors not available")
+
+  colors_normal <- get_puzzle_colors(4, palette = "black", invert = FALSE)
+  colors_inverted <- get_puzzle_colors(4, palette = "black", invert = TRUE)
+
+  # Black palette should be all #000000 regardless of inversion
+  expect_equal(colors_normal, colors_inverted)
+  expect_true(all(colors_normal == "#000000"))
+})
+
+test_that("generate_puzzle accepts palette_invert parameter", {
+  result <- generate_puzzle(
+    type = "rectangular",
+    grid = c(2, 2),
+    seed = 42,
+    palette = "magma",
+    palette_invert = TRUE,
+    save_files = FALSE
+  )
+
+  expect_type(result$svg_content, "character")
+  expect_equal(result$parameters$palette_invert, TRUE)
+})
+
+test_that("palette_invert changes colors in SVG output", {
+  # Generate with normal palette
+  result_normal <- generate_puzzle(
+    type = "rectangular",
+    grid = c(2, 2),
+    seed = 42,
+    palette = "viridis",
+    palette_invert = FALSE,
+    save_files = FALSE
+  )
+
+  # Generate with inverted palette
+  result_inverted <- generate_puzzle(
+    type = "rectangular",
+    grid = c(2, 2),
+    seed = 42,
+    palette = "viridis",
+    palette_invert = TRUE,
+    save_files = FALSE
+  )
+
+  # SVG content should differ due to color inversion
+  expect_false(result_normal$svg_content == result_inverted$svg_content)
+})
+
+test_that("palette_invert works with hexagonal puzzles", {
+  result <- generate_puzzle(
+    type = "hexagonal",
+    grid = c(2),
+    size = c(100),
+    seed = 42,
+    palette = "plasma",
+    palette_invert = TRUE,
+    save_files = FALSE
+  )
+
+  expect_type(result$svg_content, "character")
+  expect_equal(result$parameters$palette_invert, TRUE)
+})
+
+test_that("palette_invert works with concentric puzzles", {
+  result <- generate_puzzle(
+    type = "concentric",
+    grid = c(2),
+    size = c(100),
+    seed = 42,
+    palette = "rocket",
+    palette_invert = TRUE,
+    save_files = FALSE
+  )
+
+  expect_type(result$svg_content, "character")
+  expect_equal(result$parameters$palette_invert, TRUE)
+})

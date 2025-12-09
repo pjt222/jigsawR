@@ -380,12 +380,114 @@ get_concentric_neighbors_unified <- function(piece_id, puzzle_result, include_bo
 # FUSION INPUT PARSING
 # ============================================================================
 
+#' Merge overlapping fusion groups
+#'
+#' Uses Union-Find algorithm to merge fusion groups that share common pieces.
+#' For example, (7,8) and (5,8) share piece 8, so they merge into (5,7,8).
+#'
+#' @param fusion_groups List of integer vectors representing fusion groups
+#'
+#' @return List of merged integer vectors (sorted, deduplicated)
+#'
+#' @examples
+#' \dontrun{
+#' merge_fusion_groups(list(c(7,8), c(5,8)))    # -> list(c(5,7,8))
+#' merge_fusion_groups(list(c(1,2), c(2,3)))    # -> list(c(1,2,3))
+#' merge_fusion_groups(list(c(1,2), c(3,4)))    # -> list(c(1,2), c(3,4))
+#' }
+#'
+#' @export
+merge_fusion_groups <- function(fusion_groups) {
+  if (is.null(fusion_groups) || length(fusion_groups) == 0) {
+    return(list())
+  }
+
+  # Filter empty groups and groups with < 2 pieces
+  fusion_groups <- lapply(fusion_groups, function(g) {
+    g <- unique(as.integer(g[!is.na(g)]))
+    g[g > 0]  # Only positive integers
+  })
+  fusion_groups <- fusion_groups[sapply(fusion_groups, length) >= 2]
+
+  if (length(fusion_groups) == 0) {
+    return(list())
+  }
+
+  # If only one group, just return it sorted
+  if (length(fusion_groups) == 1) {
+    return(list(sort(fusion_groups[[1]])))
+  }
+
+  # Collect all unique piece IDs
+  all_pieces <- unique(unlist(fusion_groups))
+
+  # Union-Find data structure
+  # parent[piece_id] = parent piece ID (initially self)
+  parent <- setNames(all_pieces, all_pieces)
+
+  # Find with path compression
+  find_root <- function(x) {
+    if (parent[[as.character(x)]] != x) {
+      parent[[as.character(x)]] <<- find_root(parent[[as.character(x)]])
+    }
+    return(parent[[as.character(x)]])
+  }
+
+  # Union two pieces into same group
+  union_pieces <- function(a, b) {
+    root_a <- find_root(a)
+    root_b <- find_root(b)
+    if (root_a != root_b) {
+      # Union by smaller root (for deterministic results)
+      if (root_a < root_b) {
+        parent[[as.character(root_b)]] <<- root_a
+      } else {
+        parent[[as.character(root_a)]] <<- root_b
+      }
+    }
+  }
+
+  # Union all pieces within each fusion group
+  for (group in fusion_groups) {
+    if (length(group) >= 2) {
+      first_piece <- group[1]
+      for (piece in group[-1]) {
+        union_pieces(first_piece, piece)
+      }
+    }
+  }
+
+  # Group pieces by their root
+  piece_to_root <- sapply(all_pieces, find_root)
+  roots <- unique(piece_to_root)
+
+  # Build merged groups
+  merged_groups <- lapply(roots, function(root) {
+    pieces <- all_pieces[piece_to_root == root]
+    sort(pieces)
+  })
+
+  # Sort groups by their first (smallest) piece ID
+  merged_groups <- merged_groups[order(sapply(merged_groups, function(g) g[1]))]
+
+  # Log if merging occurred
+  if (length(merged_groups) < length(fusion_groups)) {
+    original_count <- length(fusion_groups)
+    merged_count <- length(merged_groups)
+    log_info("Merged {original_count} overlapping fusion groups into {merged_count} groups")
+  }
+
+  return(merged_groups)
+}
+
 #' Parse fusion group input string
 #'
 #' Converts string input format to list of integer vectors.
+#' Automatically merges overlapping groups (e.g., (7,8),(5,8) becomes (5,7,8)).
 #'
 #' @param input String like "1,2" or "(1,2),(7,8,9)" or list
-#' @param puzzle_result Puzzle result for ID normalization
+#' @param puzzle_result Puzzle result for ID normalization (unused, for future)
+#' @param auto_merge If TRUE (default), automatically merge overlapping groups
 #'
 #' @return List of integer vectors, each representing a fusion group
 #'
@@ -393,46 +495,50 @@ get_concentric_neighbors_unified <- function(piece_id, puzzle_result, include_bo
 #' \dontrun{
 #' parse_fusion_input("1,2")             # -> list(c(1, 2))
 #' parse_fusion_input("(1,2),(7,8,9)")   # -> list(c(1, 2), c(7, 8, 9))
+#' parse_fusion_input("(7,8),(5,8)")     # -> list(c(5, 7, 8)) (auto-merged)
 #' parse_fusion_input(list(c(1, 2)))     # -> list(c(1, 2)) (pass-through)
 #' }
 #'
 #' @export
-parse_fusion_input <- function(input, puzzle_result = NULL) {
+parse_fusion_input <- function(input, puzzle_result = NULL, auto_merge = TRUE) {
   if (is.null(input) || length(input) == 0) {
     return(list())
   }
 
-  # If already a list, normalize and return
+  # If already a list, normalize
   if (is.list(input)) {
-    return(lapply(input, function(group) {
+    result <- lapply(input, function(group) {
       as.integer(group)
-    }))
-  }
+    })
+  } else if (is.character(input)) {
+    # Parse string format
+    input <- trimws(input)
 
-  # Parse string format
-  if (!is.character(input)) {
+    if (nchar(input) == 0) {
+      return(list())
+    }
+
+    # Check format: "(1,2),(3,4)" or "1,2"
+    if (grepl("^\\(", input)) {
+      # Multiple groups: "(1,2),(3,4,5)"
+      # Extract each group
+      groups <- regmatches(input, gregexpr("\\([^)]+\\)", input))[[1]]
+      result <- lapply(groups, function(g) {
+        # Remove parentheses and split
+        inner <- gsub("[()]", "", g)
+        as.integer(strsplit(inner, ",")[[1]])
+      })
+    } else {
+      # Single group: "1,2,3"
+      result <- list(as.integer(strsplit(input, ",")[[1]]))
+    }
+  } else {
     stop("Fusion input must be a string or list")
   }
 
-  input <- trimws(input)
-
-  if (nchar(input) == 0) {
-    return(list())
-  }
-
-  # Check format: "(1,2),(3,4)" or "1,2"
-  if (grepl("^\\(", input)) {
-    # Multiple groups: "(1,2),(3,4,5)"
-    # Extract each group
-    groups <- regmatches(input, gregexpr("\\([^)]+\\)", input))[[1]]
-    result <- lapply(groups, function(g) {
-      # Remove parentheses and split
-      inner <- gsub("[()]", "", g)
-      as.integer(strsplit(inner, ",")[[1]])
-    })
-  } else {
-    # Single group: "1,2,3"
-    result <- list(as.integer(strsplit(input, ",")[[1]]))
+  # Automatically merge overlapping groups
+  if (isTRUE(auto_merge) && length(result) > 0) {
+    result <- merge_fusion_groups(result)
   }
 
   return(result)

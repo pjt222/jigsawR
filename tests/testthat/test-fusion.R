@@ -520,3 +520,219 @@ test_that("hexagonal fusion renders correctly in SVG", {
   # Should have dashed lines for fusion
   expect_true(grepl("stroke-dasharray", result$svg_content))
 })
+
+# =============================================================================
+# FUSION GROUP MERGING (Union-Find Algorithm)
+# =============================================================================
+
+test_that("merge_fusion_groups: simple two-group overlap", {
+  # (1,2) and (2,3) share piece 2 -> should merge to (1,2,3)
+  input <- list(c(1, 2), c(2, 3))
+  result <- merge_fusion_groups(input)
+
+  expect_equal(length(result), 1)
+  expect_equal(result[[1]], c(1, 2, 3))
+})
+
+test_that("merge_fusion_groups: user example (7,8),(5,8)", {
+  # Issue example: (7,8),(5,8) share piece 8 -> should merge to (5,7,8)
+  input <- list(c(7, 8), c(5, 8))
+  result <- merge_fusion_groups(input)
+
+  expect_equal(length(result), 1)
+  expect_equal(result[[1]], c(5, 7, 8))
+})
+
+test_that("merge_fusion_groups: no overlap keeps groups separate", {
+  input <- list(c(1, 2), c(3, 4))
+  result <- merge_fusion_groups(input)
+
+  expect_equal(length(result), 2)
+  expect_equal(result[[1]], c(1, 2))
+  expect_equal(result[[2]], c(3, 4))
+})
+
+test_that("merge_fusion_groups: chain overlap", {
+  # (1,2),(2,3),(3,4) should all merge into one
+  input <- list(c(1, 2), c(2, 3), c(3, 4))
+  result <- merge_fusion_groups(input)
+
+  expect_equal(length(result), 1)
+  expect_equal(result[[1]], c(1, 2, 3, 4))
+})
+
+test_that("merge_fusion_groups: multiple independent chains", {
+  # Two separate chains
+  input <- list(c(1, 2), c(2, 3), c(5, 6), c(6, 7))
+  result <- merge_fusion_groups(input)
+
+  expect_equal(length(result), 2)
+  expect_equal(result[[1]], c(1, 2, 3))
+  expect_equal(result[[2]], c(5, 6, 7))
+})
+
+test_that("merge_fusion_groups: star pattern (all share center)", {
+  # All groups share piece 1 -> should merge to single group
+  input <- list(c(1, 2), c(1, 3), c(1, 4), c(1, 5))
+  result <- merge_fusion_groups(input)
+
+  expect_equal(length(result), 1)
+  expect_equal(result[[1]], c(1, 2, 3, 4, 5))
+})
+
+test_that("merge_fusion_groups: bridge connection", {
+  # (1,2) and (3,4) are separate, but (2,3) bridges them
+  input <- list(c(1, 2), c(3, 4), c(2, 3))
+  result <- merge_fusion_groups(input)
+
+  expect_equal(length(result), 1)
+  expect_equal(result[[1]], c(1, 2, 3, 4))
+})
+
+test_that("merge_fusion_groups: multi-point overlap", {
+  # (1,2,3) shares 2 with (2,4) and shares 3 with (3,5)
+  input <- list(c(1, 2, 3), c(2, 4), c(3, 5))
+  result <- merge_fusion_groups(input)
+
+  expect_equal(length(result), 1)
+  expect_equal(result[[1]], c(1, 2, 3, 4, 5))
+})
+
+test_that("merge_fusion_groups: subset relationship", {
+  # (2,3) is subset of (1,2,3) -> should merge
+  input <- list(c(1, 2, 3), c(2, 3))
+  result <- merge_fusion_groups(input)
+
+  expect_equal(length(result), 1)
+  expect_equal(result[[1]], c(1, 2, 3))
+})
+
+test_that("merge_fusion_groups: removes duplicates within group", {
+  input <- list(c(1, 1, 2, 2, 3))
+  result <- merge_fusion_groups(input)
+
+  expect_equal(length(result), 1)
+  expect_equal(result[[1]], c(1, 2, 3))
+})
+
+test_that("merge_fusion_groups: handles NULL input", {
+  expect_equal(merge_fusion_groups(NULL), list())
+})
+
+test_that("merge_fusion_groups: handles empty list", {
+  expect_equal(merge_fusion_groups(list()), list())
+})
+
+test_that("merge_fusion_groups: filters single-piece groups", {
+  input <- list(c(1), c(2, 3))
+  result <- merge_fusion_groups(input)
+
+  expect_equal(length(result), 1)
+  expect_equal(result[[1]], c(2, 3))
+})
+
+test_that("merge_fusion_groups: filters empty groups", {
+  input <- list(c(1, 2), integer(0), c(3, 4))
+  result <- merge_fusion_groups(input)
+
+  expect_equal(length(result), 2)
+  expect_equal(result[[1]], c(1, 2))
+  expect_equal(result[[2]], c(3, 4))
+})
+
+test_that("merge_fusion_groups: order independence", {
+  # Same groups in different orders should produce same result
+  result1 <- merge_fusion_groups(list(c(1, 2), c(2, 3), c(3, 4)))
+  result2 <- merge_fusion_groups(list(c(3, 4), c(1, 2), c(2, 3)))
+  result3 <- merge_fusion_groups(list(c(2, 3), c(3, 4), c(1, 2)))
+
+  expect_equal(result1, result2)
+  expect_equal(result2, result3)
+})
+
+test_that("merge_fusion_groups: sorts output consistently", {
+  # Output should be sorted by smallest piece ID
+  input <- list(c(5, 6), c(1, 2))
+  result <- merge_fusion_groups(input)
+
+  expect_equal(result[[1]], c(1, 2))
+  expect_equal(result[[2]], c(5, 6))
+})
+
+test_that("parse_fusion_input auto-merges overlapping groups", {
+  # Verify that parsing automatically merges
+  result <- parse_fusion_input("(7,8),(5,8)")
+
+  expect_equal(length(result), 1)
+  expect_equal(result[[1]], c(5, 7, 8))
+})
+
+test_that("parse_fusion_input auto-merge can be disabled", {
+  result <- parse_fusion_input("(7,8),(5,8)", auto_merge = FALSE)
+
+  expect_equal(length(result), 2)
+  expect_equal(result[[1]], c(7, 8))
+  expect_equal(result[[2]], c(5, 8))
+})
+
+test_that("parse_fusion_input with list input also merges", {
+  result <- parse_fusion_input(list(c(1, 2), c(2, 3)))
+
+  expect_equal(length(result), 1)
+  expect_equal(result[[1]], c(1, 2, 3))
+})
+
+test_that("generate_puzzle with overlapping fusion groups auto-merges", {
+  # Use the user's example: 3x3 rectangular with (7,8),(5,8)
+  result <- generate_puzzle(
+    type = "rectangular",
+    grid = c(3, 3),
+    size = c(300, 300),
+    seed = 42,
+    fusion_groups = "(7,8),(5,8)",
+    save_files = FALSE
+  )
+
+  # Should have merged into single fusion group
+  expect_equal(length(result$parameters$fusion_groups), 1)
+  expect_equal(sort(result$parameters$fusion_groups[[1]]), c(5, 7, 8))
+})
+
+test_that("generate_puzzle with chain fusion merges correctly", {
+  # 2x3 rectangular: (1,2),(2,3),(4,5),(5,6)
+  result <- generate_puzzle(
+    type = "rectangular",
+    grid = c(2, 3),
+    size = c(200, 300),
+    seed = 42,
+    fusion_groups = "(1,2),(2,3),(4,5),(5,6)",
+    save_files = FALSE
+  )
+
+  # Should have 2 merged groups: (1,2,3) and (4,5,6)
+  expect_equal(length(result$parameters$fusion_groups), 2)
+})
+
+test_that("hexagonal fusion with overlapping groups merges", {
+  result <- generate_puzzle(
+    type = "hexagonal",
+    grid = c(2),
+    size = c(100),
+    seed = 42,
+    fusion_groups = list(c(1, 2), c(2, 3)),
+    save_files = FALSE
+  )
+
+  # Should have merged
+  expect_equal(length(result$parameters$fusion_groups), 1)
+  expect_equal(sort(result$parameters$fusion_groups[[1]]), c(1, 2, 3))
+})
+
+test_that("large chain merges efficiently", {
+  # Create a chain of 20 overlapping pairs
+  groups <- lapply(1:19, function(i) c(i, i + 1))
+  result <- merge_fusion_groups(groups)
+
+  expect_equal(length(result), 1)
+  expect_equal(result[[1]], 1:20)
+})

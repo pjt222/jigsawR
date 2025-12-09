@@ -12,6 +12,7 @@
 #' @param stroke_width Line width for piece strokes
 #' @param colors Color palette for piece strokes (NULL = use default)
 #' @param palette Viridis palette name (NULL = use config default)
+#' @param palette_invert Logical, if TRUE reverses the palette direction (default: FALSE)
 #' @param background Background specification:
 #'   - "none": No background
 #'   - "white", "#FFFFFF", etc.: Solid color background
@@ -23,7 +24,7 @@
 #' @return Complete SVG string
 #' @export
 render_puzzle_svg <- function(positioned, fill = "none", stroke_width = 1.5,
-                               colors = NULL, palette = NULL,
+                               colors = NULL, palette = NULL, palette_invert = FALSE,
                                background = "white", opacity = 1.0,
                                show_labels = FALSE, label_color = "black",
                                label_size = NULL) {
@@ -33,7 +34,7 @@ render_puzzle_svg <- function(positioned, fill = "none", stroke_width = 1.5,
 
   # Generate colors if not provided
   if (is.null(colors)) {
-    colors <- get_puzzle_colors(n_pieces, palette)
+    colors <- get_puzzle_colors(n_pieces, palette, invert = palette_invert)
   }
 
   # Ensure we have enough colors (cycle if needed)
