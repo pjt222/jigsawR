@@ -368,10 +368,15 @@ test_that("hexagonal: fused edge direction matches neighbor direction", {
   }
 
   # Skip if no fused edges found (shouldn't happen but be defensive)
+
   skip_if(is.null(fused_geo_side), "No fused edges found on piece 1")
 
-  # Geometric side i has midpoint at direction: 30 + i*60 degrees
-  expected_dir <- 30 + fused_geo_side * 60
+  # Hexagonal side numbering based on axial coordinate system:
+  # Side 0 → 30° (E/right), Side 1 → -30° (NE), Side 2 → -90° (NW/up)
+  # Side 3 → -150° (W/left), Side 4 → 150° (SW), Side 5 → 90° (SE/down)
+  # Formula: expected_dir = 30 - side * 60, adjusted for [-180, 180] range
+  expected_dir <- 30 - fused_geo_side * 60
+  if (expected_dir < -180) expected_dir <- expected_dir + 360
   if (expected_dir > 180) expected_dir <- expected_dir - 360
 
   # The fused side direction should be close to actual neighbor direction
@@ -735,4 +740,253 @@ test_that("large chain merges efficiently", {
 
   expect_equal(length(result), 1)
   expect_equal(result[[1]], 1:20)
+})
+
+# =============================================================================
+# TOPOLOGY-TO-GEOMETRY MAPPING TESTS (Issue #43, #49 - 2025-12-10)
+# =============================================================================
+# These tests verify the mathematical correctness of the pointed-top hexagon
+# geometry formula: geo_side = round((30 - direction_angle) / 60) %% 6
+#
+# Pointed-top hexagon side directions:
+#   Side 0 →  30° (E)
+#   Side 1 → -30° (NE)
+#   Side 2 → -90° (N)
+#   Side 3 → -150° (W)
+#   Side 4 →  150° (SW)
+#   Side 5 →  90° (SE)
+# =============================================================================
+
+test_that("topo-to-geo formula: canonical direction angles", {
+  # Test the formula: geo_side = round((30 - dir) / 60) %% 6
+  # with exact canonical direction angles
+  test_cases <- list(
+    list(dir = 30, expected_side = 0, label = "E"),
+    list(dir = -30, expected_side = 1, label = "NE"),
+    list(dir = -90, expected_side = 2, label = "N"),
+    list(dir = -150, expected_side = 3, label = "W"),
+    list(dir = 150, expected_side = 4, label = "SW"),
+    list(dir = 90, expected_side = 5, label = "SE")
+  )
+
+  for (tc in test_cases) {
+    geo_side <- round((30 - tc$dir) / 60) %% 6
+    expect_equal(geo_side, tc$expected_side,
+      info = paste0("Direction ", tc$dir, "° (", tc$label, "): ",
+                    "expected side ", tc$expected_side, ", got ", geo_side))
+  }
+})
+
+test_that("topo-to-geo formula: boundary direction angles", {
+  # Test with angles at ±30° boundaries (should round to nearest side)
+  # Boundary at 0°: between side 0 (30°) and side 1 (-30°)
+  # Formula: (30 - 0) / 60 = 0.5 → rounds to 0 (R's banker's rounding)
+  geo_side_0 <- round((30 - 0) / 60) %% 6
+  expect_true(geo_side_0 %in% c(0, 1),
+    info = paste("0° should map to side 0 or 1, got", geo_side_0))
+
+  # Boundary at 60°: between side 0 (30°) and side 5 (90°)
+  geo_side_60 <- round((30 - 60) / 60) %% 6
+  expect_true(geo_side_60 %in% c(0, 5),
+    info = paste("60° should map to side 0 or 5, got", geo_side_60))
+
+  # Boundary at -60°: between side 1 (-30°) and side 2 (-90°)
+  geo_side_minus60 <- round((30 - (-60)) / 60) %% 6
+  expect_true(geo_side_minus60 %in% c(1, 2),
+    info = paste("-60° should map to side 1 or 2, got", geo_side_minus60))
+})
+
+test_that("topo-to-geo formula: practical direction angles", {
+  # Test with practical angles that might occur from atan2 calculations
+  # These should be within ±25° of canonical angles
+  test_cases <- list(
+    list(dir = 25, expected_side = 0),   # Close to 30° (E)
+    list(dir = 35, expected_side = 0),   # Close to 30° (E)
+    list(dir = -25, expected_side = 1),  # Close to -30° (NE)
+    list(dir = -35, expected_side = 1),  # Close to -30° (NE)
+    list(dir = -85, expected_side = 2),  # Close to -90° (N)
+    list(dir = -95, expected_side = 2),  # Close to -90° (N)
+    list(dir = -145, expected_side = 3), # Close to -150° (W)
+    list(dir = -155, expected_side = 3), # Close to -150° (W)
+    list(dir = 145, expected_side = 4),  # Close to 150° (SW)
+    list(dir = 155, expected_side = 4),  # Close to 150° (SW)
+    list(dir = 85, expected_side = 5),   # Close to 90° (SE)
+    list(dir = 95, expected_side = 5)    # Close to 90° (SE)
+  )
+
+  for (tc in test_cases) {
+    geo_side <- round((30 - tc$dir) / 60) %% 6
+    expect_equal(geo_side, tc$expected_side,
+      info = paste0("Direction ", tc$dir, "°: ",
+                    "expected side ", tc$expected_side, ", got ", geo_side))
+  }
+})
+
+test_that("topo-to-geo formula: negative modulo handling", {
+  # R's %% operator handles negative numbers correctly, but let's verify
+  # (30 - 150) / 60 = -2 → -2 %% 6 = 4 (correct)
+  # (30 - 180) / 60 = -2.5 → rounds to -2 → -2 %% 6 = 4
+  expect_equal(round((30 - 150) / 60) %% 6, 4)
+  expect_equal(round((30 - (-150)) / 60) %% 6, 3)
+  expect_equal(round((30 - 210) / 60) %% 6, 3)  # 210° = -150° equivalent
+  expect_equal(round((30 - (-210)) / 60) %% 6, 4)  # -210° = 150° equivalent
+})
+
+test_that("hexagonal: 7-ring puzzle ALL-X fusion has correct neighbor mapping", {
+  # This is the specific bug case: 7-ring hex with ALL-127 fusion
+  # Piece 127 is the last piece; fusing all except it
+  result <- generate_puzzle(
+    type = "hexagonal",
+    grid = c(7),
+    size = c(400),
+    seed = 1234,
+    fusion_groups = "ALL-127",
+    fusion_style = "dashed",
+    save_files = FALSE
+  )
+
+  # Should have 127 pieces (3*7*6 + 1 = 127)
+  expect_equal(length(result$pieces), 127)
+
+  # Check several pieces in different rings for correct neighbor mapping
+  # Piece 52 should have neighbor 113 at direction ~150° (side 4)
+  # Piece 80 should have specific neighbors
+
+  # For each fused piece, verify fused_neighbor_ids point to actual neighbors
+  for (piece_id in seq_len(min(10, length(result$pieces)))) {
+    piece <- result$pieces[[piece_id]]
+    if (is.null(piece$fused_neighbor_ids)) next
+
+    for (side in names(piece$fused_neighbor_ids)) {
+      neighbor_id <- piece$fused_neighbor_ids[[side]]
+      if (is.na(neighbor_id) || is.null(neighbor_id)) next
+
+      # Verify neighbor exists
+      expect_true(neighbor_id <= length(result$pieces),
+        info = paste("Piece", piece_id, "side", side, "claims neighbor",
+                     neighbor_id, "which doesn't exist"))
+
+      # If we have center coordinates, verify the direction is correct
+      if (!is.null(piece$center) && !is.null(result$pieces[[neighbor_id]]$center)) {
+        p_cx <- piece$center[1]
+        p_cy <- piece$center[2]
+        n_cx <- result$pieces[[neighbor_id]]$center[1]
+        n_cy <- result$pieces[[neighbor_id]]$center[2]
+
+        if (!is.na(p_cx) && !is.na(n_cx)) {
+          # Calculate actual direction
+          actual_dir <- atan2(n_cy - p_cy, n_cx - p_cx) * 180 / pi
+
+          # Calculate expected direction for this geometric side
+          geo_side <- as.integer(side)
+          expected_dir <- 30 - geo_side * 60
+          if (expected_dir < -180) expected_dir <- expected_dir + 360
+          if (expected_dir > 180) expected_dir <- expected_dir - 360
+
+          # Direction difference should be < 35° (30° sector + tolerance)
+          diff <- abs(actual_dir - expected_dir)
+          if (diff > 180) diff <- 360 - diff
+
+          expect_true(diff < 35,
+            info = paste("Piece", piece_id, "side", side, ": actual dir",
+                         round(actual_dir, 1), "expected ~", expected_dir))
+        }
+      }
+    }
+  }
+})
+
+test_that("hexagonal: center piece fused to all ring-1 neighbors", {
+  # Generate center fused with all 6 ring-1 neighbors
+  result <- generate_puzzle(
+    type = "hexagonal",
+    grid = c(3),
+    size = c(200),
+    seed = 42,
+    fusion_groups = list(c(1, 2, 3, 4, 5, 6, 7)),  # Center + all ring-1
+    fusion_style = "dashed",
+    save_files = FALSE
+  )
+
+  # Center piece should have 6 fused edges (one to each ring-1 neighbor)
+  center <- result$pieces[[1]]
+  fused_count <- sum(sapply(center$fused_edges, isTRUE))
+  expect_equal(fused_count, 6,
+    info = "Center piece should have 6 fused edges")
+
+  # Verify neighbor IDs point to pieces 2-7
+  neighbor_ids <- unlist(center$fused_neighbor_ids)
+  expect_true(all(neighbor_ids %in% 2:7),
+    info = paste("Neighbor IDs should be 2-7, got:", paste(neighbor_ids, collapse = ", ")))
+})
+
+test_that("hexagonal: fused edges are symmetric (both pieces have matching fused edge)", {
+  result <- generate_puzzle(
+    type = "hexagonal",
+    grid = c(3),
+    size = c(200),
+    seed = 42,
+    fusion_groups = list(c(1, 2)),  # Fuse center with piece 2
+    fusion_style = "dashed",
+    save_files = FALSE
+  )
+
+  p1 <- result$pieces[[1]]
+  p2 <- result$pieces[[2]]
+
+  # Find which side of piece 1 is fused to piece 2
+  p1_fused_side <- NULL
+  for (side in names(p1$fused_neighbor_ids)) {
+    if (isTRUE(p1$fused_neighbor_ids[[side]] == 2)) {
+      p1_fused_side <- side
+      break
+    }
+  }
+
+  # Find which side of piece 2 is fused to piece 1
+  p2_fused_side <- NULL
+  for (side in names(p2$fused_neighbor_ids)) {
+    if (isTRUE(p2$fused_neighbor_ids[[side]] == 1)) {
+      p2_fused_side <- side
+      break
+    }
+  }
+
+  expect_true(!is.null(p1_fused_side),
+    info = "Piece 1 should have a fused side pointing to piece 2")
+  expect_true(!is.null(p2_fused_side),
+    info = "Piece 2 should have a fused side pointing to piece 1")
+
+  # Both pieces should mark this edge as fused
+  expect_true(isTRUE(p1$fused_edges[[p1_fused_side]]))
+  expect_true(isTRUE(p2$fused_edges[[p2_fused_side]]))
+})
+
+test_that("hexagonal: ring 2 pieces have correct topo-to-geo mapping", {
+  # Ring 2 pieces (8-19 in 3-ring puzzle) have different orientations
+  result <- generate_puzzle(
+    type = "hexagonal",
+    grid = c(3),
+    size = c(200),
+    seed = 42,
+    fusion_groups = list(c(8, 9, 10)),  # Three adjacent ring-2 pieces
+    fusion_style = "dashed",
+    save_files = FALSE
+  )
+
+  # Each piece should have exactly 2 fused edges (to its 2 fused neighbors)
+  for (piece_id in c(8, 9, 10)) {
+    piece <- result$pieces[[piece_id]]
+    fused_count <- sum(sapply(piece$fused_edges, isTRUE))
+
+    # Piece 9 is in the middle, so has 2 fused edges (to 8 and 10)
+    # Pieces 8 and 10 are on the ends, so have 1 fused edge each
+    if (piece_id == 9) {
+      expect_equal(fused_count, 2,
+        info = paste("Piece", piece_id, "should have 2 fused edges"))
+    } else {
+      expect_equal(fused_count, 1,
+        info = paste("Piece", piece_id, "should have 1 fused edge"))
+    }
+  }
 })

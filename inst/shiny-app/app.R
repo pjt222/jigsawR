@@ -398,11 +398,11 @@ ui <- page_fluid(
             condition = "input.fusion_groups != ''",
             radioButtons("fusion_style", "Internal Edge Style:",
                         choices = list(
-                          "Hidden" = "none",
                           "Dashed" = "dashed",
-                          "Solid" = "solid"
+                          "Solid" = "solid",
+                          "Hidden" = "none"
                         ),
-                        selected = "none",
+                        selected = "dashed",
                         inline = TRUE),
 
             # Fusion opacity (only shown when style != none)
@@ -649,7 +649,9 @@ ui <- page_fluid(
               tags$li(code("C2"), " - Fuse entire column 2 (rectangular only)"),
               tags$li(code("ring1"), " - Fuse all pieces in ring 1 (hexagonal/concentric)"),
               tags$li(code("center"), " - Center piece (hexagonal/concentric)"),
-              tags$li(code("boundary"), " - All edge pieces")
+              tags$li(code("boundary"), " - All edge pieces"),
+              tags$li(code("ALL-5"), " - Fuse all pieces except piece 5"),
+              tags$li(code("!1!7"), " - Fuse all pieces except pieces 1 and 7")
             ),
             p(class = "text-muted", "Legacy format (1,2),(3,4) is also supported."),
             br(),
@@ -817,26 +819,15 @@ server <- function(input, output, session) {
       # Center shape for concentric type (hardcoded to hexagon - see GitHub issue for future refinement)
       center_shape_value <- "hexagon"
 
-      # Parse fusion groups from text input (only parsed on Generate click)
-      # Uses parse_fusion() which supports both PILES notation and legacy format
-      fusion_groups_val <- input$fusion_groups
-      fusion_groups_parsed <- NULL
-      if (!is.null(fusion_groups_val) && nchar(trimws(fusion_groups_val)) > 0) {
-        log_info("Parsing fusion groups: '{fusion_groups_val}'")
-        tryCatch({
-          fusion_groups_parsed <- parse_fusion(fusion_groups_val)
-          n_groups <- length(fusion_groups_parsed)
-          log_success("Parsed {n_groups} fusion groups")
-        }, error = function(e) {
-          err_msg <- e$message
-          log_warn("Invalid fusion input: {err_msg}")
-          showNotification(paste("Invalid fusion groups:", err_msg), type = "warning", duration = 5)
-          fusion_groups_parsed <- NULL
-        })
+      # Store fusion groups STRING (not parsed) - parsing happens in generate_puzzle()
+      # This ensures keywords like "ring1", "R1", "boundary" are resolved with puzzle context
+      fusion_groups_str <- input$fusion_groups
+      if (!is.null(fusion_groups_str) && nchar(trimws(fusion_groups_str)) > 0) {
+        log_info("Fusion groups string: '{fusion_groups_str}'")
       }
 
       # Store base settings - these trigger piece regeneration
-      # fusion_groups is stored here and only updates on Generate click
+      # fusion_groups is stored as STRING and parsed by generate_puzzle() with context
       base_settings(list(
         type = puzzle_type,
         seed = input$seed,
@@ -845,7 +836,7 @@ server <- function(input, output, session) {
         boundary_params = boundary_params,
         conc_boundary_params = conc_boundary_params,
         center_shape = center_shape_value,
-        fusion_groups = fusion_groups_parsed  # Stored on Generate click only
+        fusion_groups = fusion_groups_str  # Store STRING, not parsed - generate_puzzle() handles parsing
       ))
 
       # Store puzzle metadata for display and downloads
@@ -899,8 +890,7 @@ server <- function(input, output, session) {
 
   # Reactive piece generation - depends on base_settings + tabsize/jitter/offset
   # This allows styling options to update the puzzle without clicking Generate
-  # IMPORTANT: fusion_groups is stored in base_settings (not reactive) to avoid slow re-parsing
-  # Only fusion_style and fusion_opacity are reactive for quick styling changes
+  # Uses generate_puzzle() for proper PILES keyword resolution (ring1, R1, boundary, etc.)
   observe({
     # IMPORTANT: Read ALL inputs FIRST to establish reactive dependencies
     # before the early return. Otherwise Shiny won't track changes to these inputs.
@@ -916,12 +906,15 @@ server <- function(input, output, session) {
     settings <- base_settings()
     if (is.null(settings)) return()
 
-    # Use fusion_groups from base_settings (stored on Generate click)
-    fusion_groups_parsed <- settings$fusion_groups
-    n_fusion <- if (!is.null(fusion_groups_parsed)) length(fusion_groups_parsed) else 0
+    # Use fusion_groups STRING from base_settings (stored on Generate click)
+    # generate_puzzle() will parse it with proper puzzle context for keyword resolution
+    fusion_groups_str <- settings$fusion_groups
+    has_fusion <- !is.null(fusion_groups_str) && nchar(trimws(fusion_groups_str)) > 0
 
-    log_info("Regenerating pieces (tabsize={tabsize_val}, jitter={jitter_val}, offset={offset_val}mm)")
-    log_info("Fusion: {n_fusion} groups from Generate click (style={fusion_style_val})")
+    log_info("Regenerating puzzle (tabsize={tabsize_val}, jitter={jitter_val}, offset={offset_val}mm)")
+    if (has_fusion) {
+      log_info("Fusion string: '{fusion_groups_str}' (style={fusion_style_val})")
+    }
 
     # Show loading indicator on preview area
     w$show()
@@ -943,37 +936,36 @@ server <- function(input, output, session) {
         "outward"
       }
 
-      # Generate pieces with current styling values
-      # fusion_groups comes from base_settings (Generate click)
-      # fusion_style and fusion_opacity are reactive (Styling panel)
-      pieces_result <- generate_pieces_internal(
+      # Use generate_puzzle() which handles PILES keyword resolution internally
+      # This ensures keywords like "ring1", "R1", "boundary", "ALL-5" work correctly
+      puzzle_result <- generate_puzzle(
         type = settings$type,
         seed = settings$seed,
         grid = settings$grid,
         size = settings$size,
         tabsize = tabsize_val,
         jitter = jitter_val,
+        offset = offset_val,
         do_warp = if (settings$type == "hexagonal") settings$boundary_params$do_warp else FALSE,
         do_trunc = if (settings$type == "hexagonal") settings$boundary_params$do_trunc else FALSE,
         do_circular_border = do_circular_border_val,
         center_shape = settings$center_shape,
         boundary_facing = boundary_facing_val,
-        fusion_groups = fusion_groups_parsed,
+        fusion_groups = if (has_fusion) fusion_groups_str else NULL,
         fusion_style = fusion_style_val,
-        fusion_opacity = fusion_opacity_val
+        fusion_opacity = fusion_opacity_val,
+        save_files = FALSE  # Don't auto-save in Shiny app
       )
 
       # Log fusion result
-      if (!is.null(pieces_result$fusion_data)) {
-        n_fused <- length(pieces_result$fusion_data$fused_edges)
+      if (!is.null(puzzle_result$fusion_data)) {
+        n_fused <- length(puzzle_result$fusion_data$fused_edges)
         log_success("Fusion applied: {n_fused} fused edges")
       }
 
-      # Apply positioning with current offset
-      positioned <- apply_piece_positioning(pieces_result, offset = offset_val)
-
-      # Store for rendering
-      positioned_result(positioned)
+      # Store the positioned result for rendering
+      # generate_puzzle() already applies positioning based on offset
+      positioned_result(puzzle_result)
       log_info("Updated positioned_result")
 
       # Update puzzle_data with current offset (for downloads)
@@ -987,8 +979,9 @@ server <- function(input, output, session) {
       w$hide()
 
     }, error = function(e) {
-      log_error("ERROR in reactive piece generation: {e$message}")
+      log_error("ERROR in reactive puzzle generation: {e$message}")
       w$hide()  # Also hide on error
+      showNotification(paste("Error generating puzzle:", e$message), type = "error", duration = 5)
     })
   })
 
@@ -1280,17 +1273,10 @@ server <- function(input, output, session) {
         "outward"
       }
 
-      # Parse fusion groups for download
-      # Uses parse_fusion() which supports both PILES notation and legacy format
-      fusion_groups_val <- input$fusion_groups
-      fusion_groups_parsed <- NULL
-      if (!is.null(fusion_groups_val) && nchar(trimws(fusion_groups_val)) > 0) {
-        tryCatch({
-          fusion_groups_parsed <- parse_fusion(fusion_groups_val)
-        }, error = function(e) {
-          fusion_groups_parsed <- NULL
-        })
-      }
+      # Pass fusion groups STRING directly - generate_puzzle() handles parsing with context
+      # This ensures keywords like "ring1", "R1", "boundary", "ALL-5" work correctly
+      fusion_groups_str <- input$fusion_groups
+      has_fusion <- !is.null(fusion_groups_str) && nchar(trimws(fusion_groups_str)) > 0
 
       result <- generate_puzzle(
         type = data$type,
@@ -1312,7 +1298,7 @@ server <- function(input, output, session) {
         do_circular_border = do_circular_border_val,
         center_shape = center_shape_value,
         boundary_facing = boundary_facing_val,
-        fusion_groups = fusion_groups_parsed,
+        fusion_groups = if (has_fusion) fusion_groups_str else NULL,
         fusion_style = if (is.null(input$fusion_style)) "none" else input$fusion_style,
         fusion_opacity = if (is.null(input$fusion_opacity)) 0.3 else input$fusion_opacity / 100
       )

@@ -319,9 +319,10 @@ generate_hex_pieces_internal <- function(seed, rings, diameter, tabsize, jitter,
         dir_to_neighbor <- atan2(neighbor_cy - piece_cy, neighbor_cx - piece_cx) * 180 / pi
 
         # Find which geometric side (0-5) faces this direction
-        # Use direct formula: geo_side = round((dir_to_neighbor - 30) / 60) %% 6
-        dir_normalized <- (dir_to_neighbor + 360) %% 360
-        geo_side <- round((dir_normalized - 30) / 60) %% 6
+        # For pointed-top hexagons (SVG): Side 0 → 30°, Side 1 → -30°, etc.
+        # Formula: geo_side = round((30 - dir) / 60) %% 6
+        # This is derived from: expected_dir = 30 - side * 60
+        geo_side <- round((30 - dir_to_neighbor) / 60) %% 6
         topo_to_geo_map[[as.character(topo_side)]] <- geo_side
       }
 
@@ -709,4 +710,130 @@ validate_pieces <- function(result) {
   }
 
   return(TRUE)
+}
+
+# =============================================================================
+# FUSION APPLICATION (Post-generation)
+# =============================================================================
+
+#' Apply fusion groups to generated pieces
+#'
+#' Applies fusion styling to pieces after they have been generated.
+#' This is called after keyword resolution when we have full puzzle context.
+#'
+#' @param pieces_result Result from generate_pieces_internal()
+#' @param fusion_groups List of integer vectors (resolved piece IDs)
+#' @param puzzle_result Puzzle result structure for adjacency lookup
+#' @return Updated pieces_result with fusion data applied
+#' @export
+apply_fusion_to_pieces <- function(pieces_result, fusion_groups, puzzle_result) {
+  if (is.null(fusion_groups) || length(fusion_groups) == 0) {
+    return(pieces_result)
+  }
+
+  type <- pieces_result$type
+  pieces <- pieces_result$pieces
+
+  # Compute fused edges using the adjacency API
+  fused_edge_data <- compute_fused_edges(fusion_groups, puzzle_result)
+
+  if (is.null(fused_edge_data) || length(fused_edge_data$fused_edges) == 0) {
+    return(pieces_result)
+  }
+
+  # Get edge names based on puzzle type
+  edge_names <- switch(type,
+    "rectangular" = c("N", "E", "S", "W"),
+    "hexagonal" = as.character(0:5),
+    "concentric" = c("INNER", "RIGHT", "OUTER", "LEFT"),
+    c("N", "E", "S", "W")
+  )
+
+  # Apply fused edge markers to each piece
+  for (i in seq_along(pieces)) {
+    piece <- pieces[[i]]
+    piece_id <- piece$id %||% i
+
+    # Initialize fused_edges if not present
+    if (is.null(piece$fused_edges)) {
+      piece$fused_edges <- setNames(as.list(rep(FALSE, length(edge_names))), edge_names)
+    }
+    if (is.null(piece$fused_neighbor_ids)) {
+      piece$fused_neighbor_ids <- list()
+    }
+
+    # Check each edge for fusion
+    neighbors <- get_piece_neighbors(piece_id, puzzle_result, include_boundary = FALSE)
+
+    # For hexagonal puzzles, we need to map topology side to geometric side
+    # because the path segments are ordered by geometric side (0-5 starting from East)
+    # but neighbor detection returns topology sides
+    if (type == "hexagonal") {
+      # Get piece center for direction calculations
+      piece_cx <- piece$center[1]
+      piece_cy <- piece$center[2]
+
+      # Build topology-to-geometry mapping
+      topo_to_geo_map <- list()
+      for (j in seq_len(nrow(neighbors))) {
+        topo_side <- neighbors$direction[j]
+        neighbor_id <- neighbors$neighbor_id[j]
+        if (is.na(neighbor_id)) next
+
+        # Get neighbor center
+        neighbor_piece <- pieces[[neighbor_id]]
+        if (is.null(neighbor_piece)) next
+        neighbor_cx <- neighbor_piece$center[1]
+        neighbor_cy <- neighbor_piece$center[2]
+
+        # Direction from this piece to neighbor
+        dir_to_neighbor <- atan2(neighbor_cy - piece_cy, neighbor_cx - piece_cx) * 180 / pi
+
+        # Find which geometric side (0-5) faces this direction
+        # For pointed-top hexagons (SVG): Side 0 → 30°, Side 1 → -30°, etc.
+        # Formula: geo_side = round((30 - dir) / 60) %% 6
+        # This is derived from: expected_dir = 30 - side * 60
+        geo_side <- as.character(round((30 - dir_to_neighbor) / 60) %% 6)
+        topo_to_geo_map[[topo_side]] <- geo_side
+      }
+
+      # Apply fusion using geometric side keys
+      for (j in seq_len(nrow(neighbors))) {
+        topo_dir <- neighbors$direction[j]
+        neighbor_id <- neighbors$neighbor_id[j]
+
+        if (is_edge_fused(piece_id, topo_dir, fused_edge_data)) {
+          geo_dir <- topo_to_geo_map[[topo_dir]]
+          if (!is.null(geo_dir)) {
+            piece$fused_edges[[geo_dir]] <- TRUE
+            if (!is.na(neighbor_id)) {
+              piece$fused_neighbor_ids[[geo_dir]] <- neighbor_id
+            }
+          }
+        }
+      }
+    } else {
+      # For non-hexagonal puzzles, topology = geometry
+      for (j in seq_len(nrow(neighbors))) {
+        dir <- neighbors$direction[j]
+        neighbor_id <- neighbors$neighbor_id[j]
+
+        if (is_edge_fused(piece_id, dir, fused_edge_data)) {
+          piece$fused_edges[[dir]] <- TRUE
+          if (!is.na(neighbor_id)) {
+            piece$fused_neighbor_ids[[dir]] <- neighbor_id
+          }
+        }
+      }
+    }
+
+    pieces[[i]] <- piece
+  }
+
+  # Update pieces_result
+  pieces_result$pieces <- pieces
+  pieces_result$fusion_data <- fused_edge_data
+  pieces_result$parameters$fusion_groups <- fusion_groups
+
+  return(pieces_result)
 }

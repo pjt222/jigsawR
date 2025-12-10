@@ -377,31 +377,61 @@ These insights emerged during development and capture lessons learned for future
   2. Endpoint coordinates match exactly (floating point precision)
   3. Edge direction doesn't affect key generation (canonical ordering handles this)
 
-### 18. Hexagonal Topology vs Geometric Side Mapping (2025-12-09)
-- **Context**: Hexagonal fusion features require matching topology sides (from neighbor mapping) to geometric sides (in SVG paths)
-- **Problem**: `get_hex_neighbor(piece_id, side, rings)` uses a "topology side" convention that differs from the "geometric side" in the SVG path
-- **Root cause**: Topology sides are defined by the honeycomb grid iteration order during piece generation, while geometric sides are defined by vertex angles (V0 at 0°, V1 at 60°, etc.)
-- **Example mismatch for center piece**:
-  - Topology side 0 → piece 2 (at direction 150° from center)
-  - Geometric side 0 → edge at direction 30° (from V0 to V1)
-  - These don't match! Topology side 0 should map to geometric side 2.
-- **Solution**: Dynamically compute the topology-to-geometry mapping for each piece based on actual neighbor directions
-  ```r
-  # For each topology side with a neighbor:
-  dir_to_neighbor <- atan2(neighbor_cy - piece_cy, neighbor_cx - piece_cx) * 180 / pi
+### 18. Hexagonal Topology vs Geometric Side Mapping (2025-12-09, Updated 2025-12-10)
+- **Context**: Hexagonal fusion features require matching topology sides (from neighbor detection) to geometric sides (actual SVG path segments)
+- **Problem**: Fused edges were rendered on wrong piece sides - e.g., piece 80's fused edge appeared on side 5 instead of the correct neighbor direction
+- **Root cause (multi-layered)**:
+  1. Topology sides (from `get_hex_neighbors_unified()`) differ from geometric sides (SVG path order)
+  2. The conversion formula was **inverted**: `(dir - 30) / 60` instead of `(30 - dir) / 60`
+  3. `apply_fusion_to_pieces()` was overwriting correctly-mapped data with raw topology keys
 
-  # Find matching geometric side (direction 30 + geo_side * 60)
-  for (geo_side in 0:5) {
-    geo_dir <- 30 + geo_side * 60
-    if (geo_dir > 180) geo_dir <- geo_dir - 360
-    if (abs(dir_to_neighbor - geo_dir) < 30) {
-      topo_to_geo_map[[topo_side]] <- geo_side
-      break
-    }
-  }
-  ```
-- **Key insight**: The mapping varies by piece because each piece is rotated differently in the honeycomb grid. Only the center piece (piece 1) has a consistent formula `(2 - topo + 6) % 6`.
-- **Files modified**: `R/unified_piece_generation.R:generate_hex_pieces_internal()` (lines 289-345)
+#### Pointed-Top Hexagon Geometry (SVG)
+The geometric sides are numbered by the vertex angles in the SVG path:
+```
+     Side 2 (N, -90°)
+        ____
+ Side 1/    \Side 3  (-30°, -150°)
+ (NE)  \____/  (NW)
+ Side 0       Side 4  (30°, 150°)
+ (E)   Side 5 (S, 90°)
+```
+**Formula derivation**:
+- Side 0 → direction 30° (E, edge from V0 to V1)
+- Side 1 → direction -30° (NE)
+- Side N → direction `30 - N * 60`
+
+Given direction `dir`, the geometric side is: `geo_side = round((30 - dir) / 60) %% 6`
+
+**Verification examples**:
+| Direction | Formula | Result | Expected Side |
+|-----------|---------|--------|---------------|
+| 30°       | (30-30)/60 = 0 | 0 | E ✓ |
+| -30°      | (30-(-30))/60 = 1 | 1 | NE ✓ |
+| -90°      | (30-(-90))/60 = 2 | 2 | N ✓ |
+| 150°      | (30-150)/60 = -2 mod 6 = 4 | 4 | SW ✓ |
+
+#### Bug Fix Details
+
+**Bug 1**: Formula inversion in `generate_hex_pieces_with_fusion()` (line 326)
+```r
+# OLD (wrong):
+geo_side <- round((dir_normalized - 30) / 60) %% 6
+
+# NEW (correct):
+geo_side <- round((30 - dir_to_neighbor) / 60) %% 6
+```
+
+**Bug 2**: Missing topo-to-geo mapping in `apply_fusion_to_pieces()` (lines 764-829)
+- The function was using topology side keys directly as `fused_edges[["5"]]`
+- For hexagonal puzzles, it now builds a mapping and converts: `fused_edges[[geo_dir]]`
+
+**Test case**: For piece 52 with neighbor 113 at direction 150°:
+- Expected geometric side: `(30 - 150) / 60 = -2 mod 6 = 4`
+- Stored as: `fused_neighbor_ids[["4"]] = 113` ✓
+
+- **Files modified**:
+  - `R/unified_piece_generation.R:generate_hex_pieces_with_fusion()` (line 326)
+  - `R/unified_piece_generation.R:apply_fusion_to_pieces()` (lines 764-829)
 - **Related**: GitHub Issue #43 - Hexagonal edge path splitting for fusion features
 
 ### 19. Progress Feedback for Long-Running Operations (2025-12-09)
