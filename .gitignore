@@ -42,6 +42,7 @@ output/
 
 # Debug scripts (local development)
 debug_scripts/
+inst/debug/
 
 # Legacy generated files from old structure
 svg_puzzle_*rings_*.png
