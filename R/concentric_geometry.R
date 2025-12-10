@@ -207,10 +207,12 @@ get_concentric_neighbor <- function(piece_id, edge_index, rings) {
       # Outermost ring - boundary
       return(list(neighbor_id = NA, neighbor_edge = NA, is_boundary = TRUE))
     } else {
-      # Connects to piece in ring+1
+      # Connects to piece(s) in ring+1
+      # NOTE: Inner ring pieces may touch MULTIPLE outer ring pieces because
+      # inner rings have fewer pieces (wider angular span per piece).
+      # This function returns the FIRST matching neighbor for backwards compatibility.
+      # Use get_all_concentric_outer_neighbors() for complete neighbor list.
       outer_pieces <- 6 * (ring + 1)
-      # Position mapping: find which outer piece(s) this inner edge connects to
-      # For simplicity, connect to the corresponding position ratio
       outer_pos <- floor(position * outer_pieces / pieces_in_ring)
       outer_piece_start <- 3 * (ring + 1) * ring + 2  # First piece of outer ring
       neighbor_id <- outer_piece_start + outer_pos
@@ -228,6 +230,59 @@ get_concentric_neighbor <- function(piece_id, edge_index, rings) {
 
   return(list(neighbor_id = NA, neighbor_edge = NA, is_boundary = TRUE))
 }
+
+#' Get ALL outer neighbors for a concentric piece's OUTER edge
+#'
+#' In concentric puzzles, inner ring pieces have wider angular spans than outer
+#' ring pieces. This means an inner piece's OUTER edge may touch MULTIPLE outer
+#' ring pieces' INNER edges. This function returns ALL such neighbors.
+#'
+#' @param piece_id Piece ID
+#' @param rings Total rings
+#' @return Vector of neighbor piece IDs (empty if boundary or center piece)
+#' @export
+get_all_concentric_outer_neighbors <- function(piece_id, rings) {
+  info <- map_concentric_piece_id(piece_id, rings)
+  ring <- info$ring
+  position <- info$position
+  pieces_in_ring <- info$pieces_in_ring
+
+  # Center piece (ring 0) doesn't have an OUTER edge in the same sense
+  if (ring == 0) {
+    return(integer(0))
+  }
+
+  # Outermost ring - boundary, no outer neighbors
+  if (ring == rings - 1) {
+    return(integer(0))
+  }
+
+  # Calculate angular span of this piece
+  arc_angle <- 2 * pi / pieces_in_ring
+  start_angle <- position * arc_angle
+  end_angle <- (position + 1) * arc_angle
+
+  # Outer ring info
+  outer_pieces <- 6 * (ring + 1)
+  outer_arc_angle <- 2 * pi / outer_pieces
+  outer_piece_start <- 3 * (ring + 1) * ring + 2  # First piece of outer ring
+
+  # Find all outer pieces whose angular range overlaps with this piece's range
+  neighbors <- integer(0)
+  for (outer_pos in 0:(outer_pieces - 1)) {
+    outer_start <- outer_pos * outer_arc_angle
+    outer_end <- (outer_pos + 1) * outer_arc_angle
+
+    # Check for overlap (with small tolerance for floating point)
+    eps <- 1e-10
+    if (outer_end > start_angle + eps && outer_start < end_angle - eps) {
+      neighbors <- c(neighbors, outer_piece_start + outer_pos)
+    }
+  }
+
+  return(neighbors)
+}
+
 
 #' Get all vertices for all pieces in a concentric puzzle
 #'

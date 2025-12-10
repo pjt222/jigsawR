@@ -812,8 +812,40 @@ apply_fusion_to_pieces <- function(pieces_result, fusion_groups, puzzle_result) 
           }
         }
       }
+    } else if (type == "concentric") {
+      # For concentric puzzles, handle many-to-one OUTER edge relationships
+      rings <- puzzle_result$parameters$grid[1] %||% puzzle_result$parameters$rings
+
+      for (j in seq_len(nrow(neighbors))) {
+        dir <- neighbors$direction[j]
+        neighbor_id <- neighbors$neighbor_id[j]
+
+        if (is_edge_fused(piece_id, dir, fused_edge_data)) {
+          piece$fused_edges[[dir]] <- TRUE
+          if (!is.na(neighbor_id)) {
+            piece$fused_neighbor_ids[[dir]] <- neighbor_id
+          }
+        }
+      }
+
+      # Special case: Check if OUTER edge should be fused due to many-to-one
+      # relationship with outer ring pieces
+      if (!is.null(rings) && !isTRUE(piece$fused_edges[["OUTER"]])) {
+        all_outer_neighbors <- get_all_concentric_outer_neighbors(piece_id, rings)
+        for (outer_neighbor_id in all_outer_neighbors) {
+          # Check if this outer neighbor is in any fusion group with this piece
+          piece_group <- fused_edge_data$piece_to_group[[as.character(piece_id)]]
+          outer_group <- fused_edge_data$piece_to_group[[as.character(outer_neighbor_id)]]
+          if (!is.null(piece_group) && !is.null(outer_group) && piece_group == outer_group) {
+            piece$fused_edges[["OUTER"]] <- TRUE
+            # Store the neighbor that triggered the fusion
+            piece$fused_neighbor_ids[["OUTER"]] <- outer_neighbor_id
+            break  # One fused neighbor is enough to mark the edge as fused
+          }
+        }
+      }
     } else {
-      # For non-hexagonal puzzles, topology = geometry
+      # For rectangular puzzles, topology = geometry
       for (j in seq_len(nrow(neighbors))) {
         dir <- neighbors$direction[j]
         neighbor_id <- neighbors$neighbor_id[j]

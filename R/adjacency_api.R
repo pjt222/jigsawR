@@ -785,6 +785,9 @@ compute_fused_edges <- function(fusion_groups, puzzle_result) {
     ))
   }
 
+  # Get puzzle type to handle type-specific neighbor relationships
+  type <- puzzle_result$type %||% puzzle_result$parameters$type
+
   # Use environment as hash set for O(1) lookups instead of O(n) vector search
   fused_edges_set <- new.env(hash = TRUE, parent = emptyenv())
   fused_edges_list <- list()  # Accumulate in list, convert once at end
@@ -825,6 +828,28 @@ compute_fused_edges <- function(fusion_groups, puzzle_result) {
               fused_edges_list[[length(fused_edges_list) + 1]] <- comp_key
               fused_edges_set[[comp_key]] <- TRUE
               edge_to_group[[comp_key]] <- group_idx
+            }
+          }
+        }
+      }
+
+      # CONCENTRIC SPECIAL CASE: Handle many-to-one OUTER edge relationships
+      # An inner ring piece's OUTER edge may touch MULTIPLE outer ring pieces.
+      # The standard get_piece_neighbors() only returns one neighbor per direction,
+      # so we need to check ALL outer neighbors.
+      if (type == "concentric") {
+        rings <- puzzle_result$parameters$grid[1] %||% puzzle_result$parameters$rings
+        if (!is.null(rings)) {
+          all_outer_neighbors <- get_all_concentric_outer_neighbors(piece_id, rings)
+          for (outer_neighbor_id in all_outer_neighbors) {
+            if (exists(as.character(outer_neighbor_id), envir = group_set, inherits = FALSE)) {
+              # Mark the OUTER edge as fused
+              edge_key <- make_edge_key(piece_id, "OUTER")
+              if (!exists(edge_key, envir = fused_edges_set, inherits = FALSE)) {
+                fused_edges_list[[length(fused_edges_list) + 1]] <- edge_key
+                fused_edges_set[[edge_key]] <- TRUE
+                edge_to_group[[edge_key]] <- group_idx
+              }
             }
           }
         }
@@ -1060,6 +1085,10 @@ get_concentric_complementary_direction <- function(direction) {
 #' fusion groups. An edge is fused if both pieces it connects are in the same
 #' fusion group.
 #'
+#' NOTE: This handles the many-to-one relationship where an inner ring piece's
+#' OUTER edge may touch MULTIPLE outer ring pieces' INNER edges. For example,
+#' in a 3-ring puzzle, piece 4's OUTER edge touches both pieces 12 and 13.
+#'
 #' @param fusion_groups List of piece ID vectors, where each vector represents
 #'   pieces that should be fused together into a meta-piece
 #' @param puzzle_result Output from generate_puzzle() containing piece data
@@ -1080,7 +1109,6 @@ compute_concentric_fused_edges <- function(fusion_groups, puzzle_result) {
   piece_to_group <- list()
 
   # Build piece-to-group mapping
-
   for (group_idx in seq_along(fusion_groups)) {
     group <- fusion_groups[[group_idx]]
     for (piece_id in group) {
@@ -1093,7 +1121,7 @@ compute_concentric_fused_edges <- function(fusion_groups, puzzle_result) {
     group <- fusion_groups[[group_idx]]
 
     for (piece_id in group) {
-      # Get all neighbors for this piece
+      # Get standard neighbors for this piece
       neighbors <- get_concentric_neighbors(piece_id, rings)
 
       for (i in seq_len(nrow(neighbors))) {
@@ -1114,10 +1142,22 @@ compute_concentric_fused_edges <- function(fusion_groups, puzzle_result) {
             fused_edges <- c(fused_edges, edge_key)
             edge_to_group[[edge_key]] <- group_idx
           }
+        }
+      }
 
-          # Don't blindly add complementary edge - the neighbor will add its own
-          # when it processes its edges. This ensures we only mark edges that
-          # are actually connected to in-group pieces.
+      # CRITICAL: Handle many-to-one relationship for OUTER edges
+      # An inner ring piece's OUTER edge may touch MULTIPLE outer ring pieces.
+      # The standard get_concentric_neighbors() only returns one neighbor,
+      # so we need to check ALL outer neighbors for the OUTER direction.
+      all_outer_neighbors <- get_all_concentric_outer_neighbors(piece_id, rings)
+      for (outer_neighbor_id in all_outer_neighbors) {
+        if (outer_neighbor_id %in% group) {
+          # Mark the OUTER edge as fused
+          edge_key <- make_edge_key(piece_id, "OUTER")
+          if (!(edge_key %in% fused_edges)) {
+            fused_edges <- c(fused_edges, edge_key)
+            edge_to_group[[edge_key]] <- group_idx
+          }
         }
       }
     }
