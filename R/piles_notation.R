@@ -26,9 +26,23 @@
 # - [I], [R], [O], [L] for concentric (Inner, Right, Outer, Left)
 #
 # Wildcards and Patterns:
-# - Asterisk (*) matches any adjacent piece
 # - Range notation: 1:5 means pieces 1, 2, 3, 4, 5
 # - Row/column for rectangular: R1 (row 1), C2 (column 2)
+#
+# Keywords (require puzzle_result):
+# - "all"                   -> All pieces in the puzzle
+# - "center"                -> Center piece (hexagonal/concentric)
+# - "ring1", "ring2"        -> All pieces in ring N
+# - "R1", "R2", "row1"      -> Row N (rectangular)
+# - "C1", "C2", "col1"      -> Column N (rectangular)
+# - "boundary", "border"    -> All boundary pieces
+# - "inner"                 -> All non-boundary pieces
+#
+# Exclusion Syntax (require puzzle_result):
+# - "ALL-N"                 -> All pieces EXCEPT piece N
+# - "ALL-N-M"               -> All pieces EXCEPT pieces N and M
+# - "!N" or "!N!M"          -> All pieces EXCEPT N (and M)
+# - "-N" or "-N-M"          -> All pieces EXCEPT N (and M) [standalone]
 #
 # Examples:
 # ---------
@@ -43,6 +57,9 @@
 # "ring1"                  -> Special: all pieces in ring 1 (hex/concentric)
 # "R1"                     -> Row 1 (rectangular)
 # "C2-C3"                  -> Fuse columns 2 and 3 (rectangular)
+# "all"                    -> Fuse ALL pieces into one meta-piece
+# "ALL-1"                  -> Fuse all EXCEPT center piece
+# "!1!7"                   -> Fuse all EXCEPT pieces 1 and 7
 #
 # Sources:
 # - SMILES notation: https://en.wikipedia.org/wiki/Simplified_Molecular_Input_Line_Entry_System
@@ -145,6 +162,13 @@ parse_piles_group <- function(group_str, puzzle_result = NULL) {
   keyword_result <- parse_piles_keyword(group_str, puzzle_result)
   if (!is.null(keyword_result)) {
     return(keyword_result)
+  }
+
+  # Handle negative/exclusion syntax: ALL-N, ALL-N-M, !N, -N
+  # These require puzzle_result to determine total piece count
+  exclusion_result <- parse_exclusion_syntax(group_str, puzzle_result)
+  if (!is.null(exclusion_result)) {
+    return(exclusion_result)
   }
 
   # Handle range notation: "1:5"
@@ -310,6 +334,81 @@ parse_piles_keyword <- function(keyword, puzzle_result = NULL) {
   }
 
   return(NULL)  # Not a keyword
+}
+
+#' Parse exclusion/negative syntax (internal)
+#'
+#' Handles various exclusion syntaxes:
+#' - "ALL-N" or "ALL-N-M" - all pieces except N (and M)
+#' - "!N" or "!N!M" - all pieces except N (and M)
+#' - "-N" at start of group - all pieces except N (standalone negation)
+#'
+#' @param group_str Group string potentially containing exclusion syntax
+#' @param puzzle_result Puzzle result (required for total piece count)
+#' @return Integer vector of included piece IDs, or NULL if not exclusion syntax
+#' @keywords internal
+parse_exclusion_syntax <- function(group_str, puzzle_result = NULL) {
+  str <- trimws(group_str)
+  str_lower <- tolower(str)
+
+  # Pattern 1: "ALL-N-M..." - ALL with exclusions
+  if (grepl("^all-", str_lower)) {
+    if (is.null(puzzle_result)) {
+      log_warn("Cannot resolve 'ALL-...' without puzzle_result")
+      return(NULL)
+    }
+    total_pieces <- length(puzzle_result$pieces)
+    # Extract exclusions after "ALL-"
+    excl_part <- sub("^all-", "", str_lower)
+    # Split by hyphen to get individual exclusions
+    excl_nums <- as.integer(strsplit(excl_part, "-")[[1]])
+    excl_nums <- excl_nums[!is.na(excl_nums)]
+    if (length(excl_nums) == 0) {
+      return(seq_len(total_pieces))  # ALL with no valid exclusions
+    }
+    # Return all pieces except excluded ones
+    return(setdiff(seq_len(total_pieces), excl_nums))
+  }
+
+  # Pattern 2: "!N" or "!N!M!..." - exclamation mark syntax
+  if (grepl("^!", str)) {
+    if (is.null(puzzle_result)) {
+      log_warn("Cannot resolve '!...' exclusion without puzzle_result")
+      return(NULL)
+    }
+    total_pieces <- length(puzzle_result$pieces)
+    # Extract all numbers after ! marks
+    excl_matches <- gregexpr("!(\\d+)", str)
+    if (excl_matches[[1]][1] == -1) {
+      return(NULL)  # No valid exclusions found
+    }
+    excl_strs <- regmatches(str, excl_matches)[[1]]
+    excl_nums <- as.integer(gsub("!", "", excl_strs))
+    # Return all pieces except excluded ones
+    return(setdiff(seq_len(total_pieces), excl_nums))
+  }
+
+  # Pattern 3: Standalone "-N" (only if it's just negation, not a chain like "1-2")
+  # This pattern is tricky - we only match if it starts with - and only has numbers
+  if (grepl("^-\\d+$", str) || grepl("^-\\d+(-\\d+)*$", str)) {
+    # Check if this looks like just negations (e.g., "-1-7" means exclude 1 and 7)
+    # vs a chain like "1-2-3" which is handled elsewhere
+    if (is.null(puzzle_result)) {
+      log_warn("Cannot resolve '-N' exclusion without puzzle_result")
+      return(NULL)
+    }
+    total_pieces <- length(puzzle_result$pieces)
+    # Extract all numbers (the pieces to exclude)
+    excl_nums <- as.integer(strsplit(gsub("^-", "", str), "-")[[1]])
+    excl_nums <- excl_nums[!is.na(excl_nums)]
+    if (length(excl_nums) == 0) {
+      return(NULL)
+    }
+    # Return all pieces except excluded ones
+    return(setdiff(seq_len(total_pieces), excl_nums))
+  }
+
+  return(NULL)  # Not exclusion syntax
 }
 
 #' Get pieces in a specific ring (internal)

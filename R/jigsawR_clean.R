@@ -118,18 +118,10 @@ generate_puzzle <- function(type = "rectangular",
     dir.create(output_dir, recursive = TRUE)
   }
 
-  # === FUSION PRE-PROCESSING ===
-
-  # Parse and merge fusion groups (handles both string and list input)
-  # parse_fusion_input auto-merges overlapping groups (e.g., (7,8),(5,8) -> (5,7,8))
-  parsed_fusion_groups <- NULL
-  if (!is.null(fusion_groups)) {
-    parsed_fusion_groups <- parse_fusion_input(fusion_groups)
-  }
-
   # === UNIFIED PIPELINE ===
 
-  # Step 1: Generate pieces internally
+  # Step 1: Generate pieces internally (WITHOUT fusion yet)
+  # We generate pieces first so we have context for keyword resolution
   pieces_result <- generate_pieces_internal(
     type = type,
     seed = seed,
@@ -142,10 +134,40 @@ generate_puzzle <- function(type = "rectangular",
     do_circular_border = do_circular_border,
     center_shape = center_shape,
     boundary_facing = boundary_facing,
-    fusion_groups = parsed_fusion_groups,
+    fusion_groups = NULL,  # Will apply fusion after keyword resolution
     fusion_style = fusion_style,
     fusion_opacity = fusion_opacity
   )
+
+  # Step 1.5: Parse and apply fusion groups with full puzzle context
+  # This allows keywords like "all", "ring1", "R1", "ALL-1" to resolve
+  parsed_fusion_groups <- NULL
+  if (!is.null(fusion_groups)) {
+    # Create temporary puzzle_result for keyword resolution
+    temp_puzzle_result <- list(
+      type = type,
+      pieces = pieces_result$pieces,
+      parameters = list(
+        type = type,
+        grid = grid,
+        rings = if (type != "rectangular") grid[1] else NULL
+      )
+    )
+
+    # parse_fusion() handles:
+    #   - PILES notation: "1-2-3,4-5" (hyphen-separated chains)
+    #   - Legacy format: "(1,2),(3,4,5)" (parenthesized groups)
+    #   - Keywords: "all", "ring1", "R1", "boundary", etc.
+    #   - Exclusions: "ALL-1", "!1!7", etc.
+    #   - List input: list(c(1,2), c(3,4,5)) (pass-through)
+    # Auto-merges overlapping groups (e.g., "1-2,2-3" -> c(1,2,3))
+    parsed_fusion_groups <- parse_fusion(fusion_groups, puzzle_result = temp_puzzle_result)
+
+    # Apply fusion to pieces if groups were parsed
+    if (length(parsed_fusion_groups) > 0) {
+      pieces_result <- apply_fusion_to_pieces(pieces_result, parsed_fusion_groups, temp_puzzle_result)
+    }
+  }
 
   # Step 2: Apply positioning
   positioned <- apply_piece_positioning(pieces_result, offset = offset)

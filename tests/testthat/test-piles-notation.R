@@ -295,3 +295,110 @@ test_that("PILES integration with generate_puzzle", {
   expect_true(!is.null(result$svg_content))
   expect_equal(length(result$pieces), 9)
 })
+
+# =============================================================================
+# EXCLUSION SYNTAX TESTS (Issue #47)
+# =============================================================================
+
+test_that("parse_exclusion_syntax handles ALL-N format", {
+  # Create a mock puzzle_result for testing
+  puzzle <- generate_puzzle(
+    type = "rectangular",
+    grid = c(3, 3),
+    size = c(300, 300),
+    seed = 42,
+    save_files = FALSE
+  )
+
+  # ALL-5 should return all pieces except 5
+  result <- parse_piles("ALL-5", puzzle)
+  expect_equal(length(result), 1)
+  expect_equal(sort(result[[1]]), c(1L, 2L, 3L, 4L, 6L, 7L, 8L, 9L))
+
+  # ALL-1-9 should return pieces 2-8
+  result <- parse_piles("ALL-1-9", puzzle)
+  expect_equal(length(result), 1)
+  expect_equal(sort(result[[1]]), c(2L, 3L, 4L, 5L, 6L, 7L, 8L))
+})
+
+test_that("parse_exclusion_syntax handles !N format", {
+  puzzle <- generate_puzzle(
+    type = "rectangular",
+    grid = c(3, 3),
+    size = c(300, 300),
+    seed = 42,
+    save_files = FALSE
+  )
+
+  # !5 should return all pieces except 5
+  result <- parse_piles("!5", puzzle)
+  expect_equal(length(result), 1)
+  expect_equal(sort(result[[1]]), c(1L, 2L, 3L, 4L, 6L, 7L, 8L, 9L))
+
+  # !1!7 should return all pieces except 1 and 7
+  result <- parse_piles("!1!7", puzzle)
+  expect_equal(length(result), 1)
+  expect_equal(sort(result[[1]]), c(2L, 3L, 4L, 5L, 6L, 8L, 9L))
+})
+
+test_that("exclusion syntax works with generate_puzzle directly", {
+  # Test ALL-N works when passed as string to generate_puzzle
+  result <- generate_puzzle(
+    type = "rectangular",
+    grid = c(3, 3),
+    size = c(300, 300),
+    seed = 42,
+    fusion_groups = "ALL-5",
+    save_files = FALSE
+  )
+
+  expect_true(!is.null(result$fusion_data))
+  pieces <- as.integer(names(result$fusion_data$piece_to_group))
+  expect_equal(sort(pieces), c(1L, 2L, 3L, 4L, 6L, 7L, 8L, 9L))
+})
+
+test_that("keyword 'all' works with generate_puzzle", {
+  result <- generate_puzzle(
+    type = "rectangular",
+    grid = c(3, 3),
+    size = c(300, 300),
+    seed = 42,
+    fusion_groups = "all",
+    save_files = FALSE
+  )
+
+  expect_true(!is.null(result$fusion_data))
+  pieces <- as.integer(names(result$fusion_data$piece_to_group))
+  expect_equal(sort(pieces), 1:9)
+})
+
+test_that("row keyword 'R1' works with generate_puzzle", {
+  result <- generate_puzzle(
+    type = "rectangular",
+    grid = c(3, 3),
+    size = c(300, 300),
+    seed = 42,
+    fusion_groups = "R1",
+    save_files = FALSE
+  )
+
+  expect_true(!is.null(result$fusion_data))
+  pieces <- as.integer(names(result$fusion_data$piece_to_group))
+  expect_equal(sort(pieces), c(1L, 2L, 3L))
+})
+
+test_that("ring keyword 'ring1' works with hexagonal puzzles", {
+  result <- generate_puzzle(
+    type = "hexagonal",
+    grid = c(3),
+    size = c(200),
+    seed = 42,
+    fusion_groups = "ring1",
+    save_files = FALSE
+  )
+
+  expect_true(!is.null(result$fusion_data))
+  pieces <- as.integer(names(result$fusion_data$piece_to_group))
+  # Ring 1 should be pieces 2-7
+  expect_equal(sort(pieces), 2:7)
+})

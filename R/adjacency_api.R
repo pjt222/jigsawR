@@ -285,15 +285,15 @@ get_hex_neighbors_unified <- function(piece_id, puzzle_result, include_boundary 
   # Normalize piece_id
   id <- normalize_piece_id(piece_id, puzzle_result)
 
-  # Vectorized neighbor lookup for all 6 sides (optimized - no rbind)
-  sides <- 0:5
-  neighbor_ids <- vapply(sides, function(s) {
-    nb <- get_hex_neighbor(id, s, rings)
-    if (is.na(nb)) NA_integer_ else as.integer(nb)
-  }, integer(1))
+  # Use axial-based topology matrix for consistent neighbor ordering
+
+  # This aligns with get_hex_neighbors_for_fusion() and .HEX_DIRECTIONS
+  # Side 0=E, 1=NE, 2=NW, 3=W, 4=SW, 5=SE (geometric compass directions)
+  topo_matrix <- get_hex_topo_neighbor_matrix(rings)
+  neighbor_ids <- topo_matrix[id, ]
 
   is_boundary <- is.na(neighbor_ids)
-  dir_names <- as.character(sides)
+  dir_names <- as.character(0:5)
 
   # Build result data frame with pre-computed vectors
   if (include_boundary) {
@@ -716,15 +716,25 @@ get_complementary_edge_key <- function(edge_key, puzzle_result) {
     return(make_edge_key(neighbor_row$neighbor_id, opposite))
 
   } else if (type == "hexagonal") {
-    # Hexagonal: opposite side is (side + 3) mod 6
+    # Hexagonal: find which side of the NEIGHBOR points back to this piece
+    # We can't use simple (side + 3) mod 6 because the hexagonal grid topology
+    # doesn't guarantee opposite sides are exactly 3 apart in numbering
     side <- as.integer(direction)
-    opposite <- (side + 3) %% 6
     neighbors <- get_piece_neighbors(piece_id, puzzle_result, include_boundary = FALSE)
     neighbor_row <- neighbors[neighbors$direction == as.character(side), ]
     if (nrow(neighbor_row) == 0 || is.na(neighbor_row$neighbor_id)) {
       return(NA)
     }
-    return(make_edge_key(neighbor_row$neighbor_id, opposite))
+    neighbor_id <- neighbor_row$neighbor_id
+
+    # Look up which side of the neighbor points back to us
+    neighbor_neighbors <- get_piece_neighbors(neighbor_id, puzzle_result, include_boundary = FALSE)
+    back_row <- neighbor_neighbors[neighbor_neighbors$neighbor_id == piece_id, ]
+    if (nrow(back_row) == 0) {
+      return(NA)
+    }
+    opposite <- back_row$direction[1]
+    return(make_edge_key(neighbor_id, opposite))
 
   } else if (type == "concentric") {
     # Concentric: INNER<->OUTER (for radial), LEFT<->RIGHT (for circumferential)

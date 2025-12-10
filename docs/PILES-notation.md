@@ -20,6 +20,8 @@ Just as SMILES uses simple ASCII strings to represent complex molecular bonds, P
 | `()` | Branching | `1-2(-3)-4` (2 bonds to 1, 3, and 4) |
 | `@n` | Ring closure | `1-2-3-4@1` (4 connects back to 1) |
 | `[D]` | Direction hint | `1-2[E]-3` (optional validation) |
+| `ALL-n` | Exclusion | `ALL-5` (all except piece 5) |
+| `!n` | Exclusion (alt) | `!5` (same as ALL-5) |
 
 ## Basic Syntax
 
@@ -134,6 +136,57 @@ parse_piles("R1", puzzle_result)
 # Fuse columns 1 and 2
 parse_piles("C1,C2", puzzle_result)
 ```
+
+## Exclusion Syntax
+
+PILES supports exclusion patterns to fuse "all pieces except..." This is useful when you want to fuse most pieces but leave a few separate.
+
+### Exclusion Patterns
+
+| Syntax | Meaning | Example |
+|--------|---------|---------|
+| `ALL-n` | All pieces except n | `ALL-5` (all except piece 5) |
+| `ALL-n-m` | All pieces except n and m | `ALL-1-9` (all except 1 and 9) |
+| `!n` | All pieces except n | `!5` (same as `ALL-5`) |
+| `!n!m` | All pieces except n and m | `!1!7` (all except 1 and 7) |
+
+### Exclusion Examples
+
+```r
+# Create a 3x3 puzzle (9 pieces)
+puzzle <- generate_puzzle(
+  type = "rectangular",
+  grid = c(3, 3),
+  seed = 42
+)
+
+# Fuse all except the center piece (piece 5)
+parse_piles("ALL-5", puzzle)
+# Returns: list(c(1L, 2L, 3L, 4L, 6L, 7L, 8L, 9L))
+
+# Fuse all except corners (pieces 1, 3, 7, 9)
+parse_piles("!1!3!7!9", puzzle)
+# Returns: list(c(2L, 4L, 5L, 6L, 8L))
+
+# Direct use with generate_puzzle
+result <- generate_puzzle(
+  type = "rectangular",
+  grid = c(3, 3),
+  fusion_groups = "ALL-5",  # Fuse all except center
+  save_files = FALSE
+)
+```
+
+### Combining Exclusion with Other Syntax
+
+Exclusion patterns create single fusion groups. To create multiple groups with exclusions, use comma separation:
+
+```r
+# NOT YET SUPPORTED: combining exclusion with regular groups
+# "ALL-5,1-2" would need future implementation
+```
+
+**Note**: Exclusion syntax requires puzzle context to know the total number of pieces. It cannot be used with `parse_piles()` without providing a `puzzle_result`.
 
 ## R Functions
 

@@ -544,7 +544,8 @@ test_that("compute_fused_edges: hexagonal fusion", {
   expect_equal(length(fused$fused_edges), 2)
 
   # Verify edge fusion check works
-  expect_true(is_edge_fused(1, "0", fused))  # Center's side 0 connects to piece 2
+  # In axial coordinate system, piece 2 is at side 4 from center (SW direction)
+  expect_true(is_edge_fused(1, "4", fused))  # Center's side 4 connects to piece 2
 })
 
 test_that("compute_fused_edges: concentric fusion", {
