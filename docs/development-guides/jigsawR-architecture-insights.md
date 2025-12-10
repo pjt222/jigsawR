@@ -518,6 +518,65 @@ fused_edges_list[[length(fused_edges_list) + 1]] <- edge_key
 - `R/hexagonal_adjacency_cache.R` (new file - adjacency matrix cache and fast functions)
 - `R/unified_piece_generation.R` (updated to use `compute_hex_fused_edges_fast()`)
 
+### 21. Concentric Puzzle Many-to-One Neighbor Relationships (2025-12-10)
+
+**Problem**: In concentric puzzles with `ALL-18` fusion, the edge between pieces 4 and 13 was not rendering as dashed. Investigation revealed piece 4's OUTER edge was marked as neighbor=12 (solid), but piece 13's INNER edge was marked as neighbor=4 (dashed), causing overplotting.
+
+**Root Cause**: Concentric puzzles have a **many-to-one neighbor relationship** between rings:
+- Ring 1: 6 pieces, each spanning 60° angular width
+- Ring 2: 12 pieces, each spanning 30° angular width
+
+This means one inner ring piece's OUTER edge can touch **multiple** outer ring pieces' INNER edges:
+
+```
+Piece 4 (Ring 1, position 2):
+  OUTER edge spans: 120° - 180°
+
+  Touches:
+    - Piece 12 (Ring 2, position 4): 120° - 150°
+    - Piece 13 (Ring 2, position 5): 150° - 180°
+```
+
+The existing `get_concentric_neighbor()` function only returned ONE neighbor per edge (using `floor()` which gets the first), missing the second neighbor.
+
+**Solution**: Added `get_all_concentric_outer_neighbors()` to return ALL outer neighbors:
+
+```r
+get_all_concentric_outer_neighbors <- function(piece_id, rings) {
+  # Calculate angular span of this piece
+  arc_angle <- 2 * pi / pieces_in_ring
+  start_angle <- position * arc_angle
+  end_angle <- (position + 1) * arc_angle
+
+  # Find ALL outer pieces whose angular range overlaps
+  neighbors <- integer(0)
+  for (outer_pos in 0:(outer_pieces - 1)) {
+    outer_start <- outer_pos * outer_arc_angle
+    outer_end <- (outer_pos + 1) * outer_arc_angle
+    if (outer_end > start_angle && outer_start < end_angle) {
+      neighbors <- c(neighbors, outer_piece_start + outer_pos)
+    }
+  }
+  return(neighbors)
+}
+```
+
+**Integration Points**:
+1. `compute_fused_edges()` now checks all outer neighbors for concentric puzzles
+2. `apply_fusion_to_pieces()` has concentric-specific handling to mark OUTER edges as fused when ANY outer neighbor is in the fusion group
+
+**Verification**:
+```r
+get_all_concentric_outer_neighbors(4, 3)  # Returns c(12, 13) ✓
+result$pieces[[4]]$fused_edges$OUTER      # TRUE ✓
+result$pieces[[13]]$fused_edges$INNER     # TRUE ✓
+```
+
+**Files modified**:
+- `R/concentric_geometry.R` (added `get_all_concentric_outer_neighbors()`)
+- `R/adjacency_api.R` (updated `compute_fused_edges()` for concentric)
+- `R/unified_piece_generation.R` (updated `apply_fusion_to_pieces()` for concentric)
+
 ---
 
 ## Development History
