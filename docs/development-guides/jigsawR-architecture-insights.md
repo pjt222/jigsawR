@@ -855,6 +855,107 @@ Formula: Side N faces direction (30 + N*60)°
 
 ---
 
+### Insight #23: Unified Single-Piece Rendering API (2025-12-11)
+
+**Problem (Issue #51)**: The individual pieces download handler in the Shiny app used three separate legacy functions:
+- `generate_individual_pieces()` for rectangular
+- `generate_hexagonal_individual_pieces()` for hexagonal
+- `generate_concentric_individual_pieces()` for concentric
+
+Each function had different parameters, features, and output formats. Adding new styling features required updating three separate code paths.
+
+**Solution**: Created `render_single_piece_svg()` function in `R/unified_renderer.R` that works with ANY puzzle type:
+
+```r
+render_single_piece_svg <- function(piece,
+                                     fill = "none",
+                                     stroke_color = "black",
+                                     stroke_width = 1.5,
+                                     opacity = 1.0,
+                                     background = "none",
+                                     padding = 0.15,
+                                     show_label = FALSE,
+                                     label_color = "black",
+                                     label_size = NULL)
+```
+
+**Key Design Decisions**:
+
+1. **Takes piece object, not puzzle type**: Works with `result$pieces[[i]]` from ANY puzzle type
+2. **Computes viewBox from path bounds**: Uses `calculate_piece_bounds()` to extract coordinates from SVG path
+3. **Consistent styling across types**: Fill, stroke, opacity, labels all work identically
+4. **Self-contained output**: Each piece is a complete SVG with XML declaration, viewBox, and proper sizing
+
+**ViewBox Calculation**:
+```r
+calculate_piece_bounds <- function(path) {
+  segments <- parse_svg_path(path)
+  # Extract all x,y coordinates from M, L, C, A segments
+  x_coords <- c(...)
+  y_coords <- c(...)
+  list(
+    min_x = min(x_coords), max_x = max(x_coords),
+    min_y = min(y_coords), max_y = max(y_coords),
+    width = max_x - min_x, height = max_y - min_y
+  )
+}
+```
+
+**Before/After Comparison**:
+| Aspect | Before (Legacy) | After (Unified) |
+|--------|-----------------|-----------------|
+| Lines of code | ~300 (3 functions) | ~165 (1 function) |
+| Feature parity | Inconsistent | Complete |
+| Adding new style | 3 code changes | 1 code change |
+| Test coverage | Minimal | 12 dedicated tests |
+
+**Insight**: When you have type-specific functions that do similar things, look for the **common abstraction**. Here, all three functions ultimately needed to render a single piece with styling - the piece object itself already contains all type-specific information in its `path` field.
+
+**Files Changed**:
+- `R/unified_renderer.R`: Added `render_single_piece_svg()`, `calculate_piece_bounds()`
+- `inst/shiny-app/app.R`: Refactored download handler (~300 → ~165 lines)
+- `tests/testthat/test-individual-pieces.R`: Added 12 new tests
+
+---
+
+### Insight #24: Reuse Positioned Results Instead of Regenerating (2025-12-11)
+
+**Context**: The individual pieces download handler was regenerating puzzles using legacy functions instead of using the already-generated `positioned_result()` from the reactive chain.
+
+**Anti-pattern Identified**:
+```r
+# OLD (wasteful): Regenerate puzzle just to get pieces
+individual_result <- generate_hexagonal_individual_pieces(
+  seed = input$seed,
+  rings = input$rings,
+  ...
+)
+pieces <- individual_result$pieces
+```
+
+**Better Pattern**:
+```r
+# NEW (efficient): Reuse already-computed positioned pieces
+pos <- positioned_result()  # Already computed by reactive chain
+pieces <- pos$pieces        # Same pieces with all fusion/styling applied
+```
+
+**Benefits**:
+1. **No redundant computation**: Puzzle already generated when user views it
+2. **Consistent results**: Download matches exactly what user sees
+3. **All features work**: Fusion, offset, styling all preserved
+4. **Simpler code**: No need to recreate parameter lists
+
+**Key Insight**: In Shiny apps, reactive values represent a **computation cache**. When multiple outputs need the same data, let them share the reactive result rather than each computing independently.
+
+**Verification**: The download now produces pieces with:
+- Fusion groups applied (if configured)
+- Correct positioning (from offset slider)
+- All styling options (fill/stroke palettes, gradients)
+- Piece metadata intact (id, center, type, ring_pos)
+
+---
+
 ## Development History
 
 ### Completed Work (Archive)
