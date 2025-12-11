@@ -698,6 +698,49 @@ cat("   Path contains arc:", grepl(" A ", path_hex), "\n")  # Verify path output
 
 **Lesson**: When a parameter "doesn't work", test each processing layer independently rather than only checking input and output.
 
+### 25. Segment-Level Fusion Data Preservation in Positioning (2025-12-11)
+
+**Context**: In concentric puzzles with fusion, piece 7's OUTER edge touches both piece 18 and piece 19. When using `ALL-18` fusion (all pieces except 18), the segment toward piece 18 should be SOLID (external edge of meta-piece), but was being rendered DASHED.
+
+**Problem (Issue #52 follow-up)**: The segment-level fusion data (`outer_segments_mixed`, `fused_edge_segments`, `inner_radius`, `outer_radius`) was being computed correctly in `apply_fusion_to_pieces()`, but **lost during positioning** when `apply_piece_positioning()` created new piece objects without preserving these fields.
+
+**Root Cause Analysis**:
+1. `apply_fusion_to_pieces()` correctly computes segment-level fusion data (lines 840-882 in `unified_piece_generation.R`)
+2. `apply_piece_positioning()` is called AFTER fusion but creates NEW piece objects (lines 250-259 in `piece_positioning.R`)
+3. The new piece objects only preserved `fused_edges` and `fused_neighbor_ids`, NOT the segment-level fields
+4. Without `outer_segments_mixed = TRUE`, the renderer (Pass 3.5) skipped segment-level rendering entirely
+
+**Fix Applied** (`R/piece_positioning.R` lines 250-264 for concentric, lines 451-465 for hexagonal):
+```r
+list(
+  id = piece$id,
+  path = new_path,
+  center = new_center,
+  ring_pos = piece$ring_pos,
+  type = piece$type,
+  fusion_group = if (!is.null(piece$fusion_group)) piece$fusion_group else NA,
+  fused_edges = piece$fused_edges,
+  fused_neighbor_ids = piece$fused_neighbor_ids,
+  # Segment-level fusion data for many-to-one OUTER edges
+  outer_segments_mixed = piece$outer_segments_mixed,
+  fused_edge_segments = piece$fused_edge_segments,
+  inner_radius = piece$inner_radius,
+  outer_radius = piece$outer_radius
+)
+```
+
+**Secondary Fix** (`R/adjacency_api.R` lines 853-860): Also added complementary INNER edge marking for each fused outer neighbor to ensure correct edge-level fusion status.
+
+**Key Insight**: When transforming piece objects through pipeline stages, ALL metadata fields must be explicitly preserved - R does not automatically copy fields when creating new lists.
+
+**Verification**:
+- Segment 1 (toward piece 18): `fused=FALSE` → renders SOLID ✓
+- Segment 2 (toward piece 19): `fused=TRUE` → renders DASHED ✓
+
+**Tests Added**: 2 new tests in `tests/testthat/test-segment-fusion.R`:
+1. `"excluded piece's INNER edge is NOT marked fused"` - verifies ALL-18 case
+2. `"complementary edges marked correctly for many-to-one"` - verifies ALL-19 case
+
 ---
 
 ## Development History

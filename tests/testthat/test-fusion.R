@@ -990,3 +990,75 @@ test_that("hexagonal: ring 2 pieces have correct topo-to-geo mapping", {
     }
   }
 })
+
+# Hexagonal completeness tests for edge deduplication
+# These tests verify hexagonal puzzles don't have the many-to-one issues
+# that required special handling in concentric puzzles
+
+test_that("hexagonal: fusion works correctly with offset > 0", {
+  result <- generate_puzzle(
+    type = "hexagonal",
+    grid = c(3),
+    size = c(200),
+    seed = 42,
+    fusion_groups = list(c(1, 2, 3)),
+    fusion_style = "dashed",
+    offset = 20,
+    save_files = FALSE
+  )
+
+  # Should have dashed strokes even with offset
+  expect_true(grepl("stroke-dasharray", result$svg_content))
+
+  # Verify fused edges are still marked correctly
+  piece1 <- result$pieces[[1]]
+  expect_true(any(unlist(piece1$fused_edges)))
+
+  # Verify pieces are separated (center should be offset from origin)
+  # With offset > 0, pieces should have translated positions
+  expect_true(result$canvas_size[1] > 200)  # Canvas expanded due to offset
+})
+
+test_that("hexagonal: fused edges are drawn exactly once", {
+  result <- generate_puzzle(
+    type = "hexagonal",
+    grid = c(3),
+    size = c(200),
+    seed = 42,
+    fusion_groups = "1-2-3-4-5-6-7",  # Center + all ring-1
+    fusion_style = "dashed",
+    save_files = FALSE
+  )
+
+  svg <- result$svg_content
+
+  # Count dashed stroke paths
+  dashed_matches <- gregexpr('stroke-dasharray', svg)
+  dashed_count <- sum(sapply(dashed_matches, function(m) if (m[1] == -1) 0 else length(m)))
+
+  # 12 fused edges: 6 center-to-ring1 + 6 ring1-to-ring1 adjacents
+  # Each should be drawn exactly once (no double-drawing)
+  expect_equal(dashed_count, 12)
+})
+
+test_that("hexagonal: never has outer_segments_mixed or fused_edge_segments", {
+  # Hexagonal puzzles have 1-to-1 edge relationships, unlike concentric
+  # which has many-to-one OUTER edges requiring segment-level fusion
+  result <- generate_puzzle(
+    type = "hexagonal",
+    grid = c(4),
+    size = c(300),
+    seed = 42,
+    fusion_groups = "ALL-37",  # All except piece 37
+    fusion_style = "dashed",
+    save_files = FALSE
+  )
+
+  # No hexagonal piece should have segment-level fusion data
+  for (piece in result$pieces) {
+    expect_null(piece$outer_segments_mixed,
+      info = paste("Piece", piece$id, "should not have outer_segments_mixed"))
+    expect_null(piece$fused_edge_segments,
+      info = paste("Piece", piece$id, "should not have fused_edge_segments"))
+  }
+})
