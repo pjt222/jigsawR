@@ -805,6 +805,56 @@ Formula: Side N faces direction (30 + N*60)°
 
 ---
 
+### Insight #22: Independent UI Controls for Related Options (2025-12-11)
+
+**Problem**: The Shiny app had a shared `color_palette` dropdown that controlled both stroke and fill colors when using palette mode. This created confusion:
+- Users couldn't have different palettes for stroke vs fill
+- The "black" palette was redundant (same as solid black color)
+- UI labels were inconsistent ("Use Palette" vs "Solid Color" vs "None")
+
+**Solution**: Independent palette controls for each styling element:
+
+1. **Consistent Labels**: Standardized across all radio button groups:
+   - Fill: "None", "Solid", "Palette", "Gradient"
+   - Stroke: "None", "Solid", "Palette"
+   - Background: "None", "Solid", "Gradient"
+
+2. **Independent Controls**: Each element has its OWN settings:
+   ```
+   Stroke Color:  [None] [Solid] [Palette]
+                  └─ stroke_color (color picker, when Solid)
+                  └─ stroke_palette + stroke_palette_invert (when Palette)
+
+   Piece Fill:    [None] [Solid] [Palette] [Gradient]
+                  └─ fill_color (color picker, when Solid)
+                  └─ fill_palette + fill_palette_invert (when Palette)
+                  └─ piece_gradient_center/middle/edge (when Gradient)
+   ```
+
+3. **Config Structure** (`inst/config.yml`):
+   ```yaml
+   styling:
+     stroke_color_type: "solid"
+     stroke_color: "#000000"
+     stroke_palette: "viridis"
+     stroke_palette_invert: false
+     fill_type: "solid"
+     fill_color: "#a1a1a1"
+     fill_palette: "magma"
+     fill_palette_invert: false
+   ```
+
+**Key Insight**: When UI has related but independent options, give each its own controls rather than sharing. This:
+- Enables more flexible combinations (e.g., viridis stroke + magma fill)
+- Makes the relationship between controls explicit
+- Simplifies the code (no conditional logic to determine which context applies)
+
+**Files Changed**:
+- `inst/config.yml`: Added independent palette settings, removed "black" palette
+- `inst/shiny-app/app.R`: UI restructuring, server logic updates
+
+---
+
 ## Development History
 
 ### Completed Work (Archive)

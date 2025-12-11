@@ -47,6 +47,52 @@ test_that("get_puzzle_config returns valid config", {
   expect_true(length(config) > 0)
 })
 
+test_that("config has independent stroke palette settings", {
+  skip_if_not(exists("get_puzzle_config"), "get_puzzle_config not available")
+
+  config <- get_puzzle_config()
+
+  # Stroke palette settings should exist
+
+  expect_true("stroke_color_type" %in% names(config$styling))
+  expect_true("stroke_color" %in% names(config$styling))
+  expect_true("stroke_palette" %in% names(config$styling))
+  expect_true("stroke_palette_invert" %in% names(config$styling))
+
+  # Verify default values
+  expect_equal(config$styling$stroke_color_type, "solid")
+  expect_equal(config$styling$stroke_palette, "viridis")
+  expect_false(config$styling$stroke_palette_invert)
+})
+
+test_that("config has independent fill palette settings", {
+  skip_if_not(exists("get_puzzle_config"), "get_puzzle_config not available")
+
+  config <- get_puzzle_config()
+
+  # Fill palette settings should exist
+  expect_true("fill_type" %in% names(config$styling))
+  expect_true("fill_color" %in% names(config$styling))
+  expect_true("fill_palette" %in% names(config$styling))
+  expect_true("fill_palette_invert" %in% names(config$styling))
+
+  # Verify default values
+  expect_equal(config$styling$fill_type, "solid")
+  expect_equal(config$styling$fill_palette, "magma")
+  expect_false(config$styling$fill_palette_invert)
+})
+
+test_that("config does not have 'black' palette", {
+  skip_if_not(exists("get_puzzle_config"), "get_puzzle_config not available")
+
+  config <- get_puzzle_config()
+
+  # "black" should not be in available palettes (use solid color instead)
+  expect_false("black" %in% config$colors$available_palettes)
+  # default_palette should not be "black"
+  expect_true(config$colors$default_palette != "black")
+})
+
 test_that("get_puzzle_colors returns color vector", {
   skip_if_not(exists("get_puzzle_colors"), "get_puzzle_colors not available")
 
