@@ -1197,6 +1197,28 @@ render_pieces_with_fusion_styled <- function(pieces, colors, fill, stroke_width,
         next
       }
 
+      # Skip INNER edges if the neighbor has outer_segments_mixed = TRUE
+      # Those edges are handled in Pass 3.5 from the neighbor's perspective
+      if (edge_name == "INNER") {
+        neighbor_id <- piece$fused_neighbor_ids[[edge_name]]
+        if (!is.null(neighbor_id)) {
+          # Find the neighbor piece and check if it has mixed segments
+          skip_this_edge <- FALSE
+          for (np in pieces) {
+            np_id <- np$id %||% which(sapply(pieces, function(p) identical(p$path, np$path)))
+            if (!is.null(np_id) && np_id == neighbor_id) {
+              if (isTRUE(np$outer_segments_mixed)) {
+                skip_this_edge <- TRUE
+              }
+              break
+            }
+          }
+          if (skip_this_edge) {
+            next  # Skip - will be handled in Pass 3.5
+          }
+        }
+      }
+
       if (!isTRUE(piece$fused_edges[[edge_name]])) {
         next  # Only draw fused edges here
       }
@@ -1231,25 +1253,43 @@ render_pieces_with_fusion_styled <- function(pieces, colors, fill, stroke_width,
         # Also mark the complementary edge as drawn to prevent double-drawing
         # We find the neighbor piece and mark ALL of their fused edges that point to us
         # This handles asymmetric adjacency (like in hexagonal puzzles)
-        neighbor_id <- piece$fused_neighbor_ids[[edge_name]]
+        #
+        # For OUTER edges with many-to-one relationships (segment data), we need to
+        # mark ALL neighbors' INNER edges as drawn, not just the one in fused_neighbor_ids
+        neighbor_ids <- NULL
 
-        if (!is.null(neighbor_id)) {
-          # Find the neighbor piece and check which of their fused edges point to us
-          neighbor_piece <- NULL
-          for (np in pieces) {
-            np_id <- np$id %||% which(sapply(pieces, function(p) identical(p$path, np$path)))
-            if (!is.null(np_id) && np_id == neighbor_id) {
-              neighbor_piece <- np
-              break
+        # Check for segment data first (many-to-one relationships)
+        if (edge_name == "OUTER" && !is.null(piece$fused_edge_segments) &&
+            !is.null(piece$fused_edge_segments$OUTER)) {
+          # Get all neighbor IDs from segment data
+          neighbor_ids <- sapply(piece$fused_edge_segments$OUTER, function(seg) seg$neighbor_id)
+          neighbor_ids <- unique(neighbor_ids[!is.na(neighbor_ids)])
+        }
+
+        # Fall back to single neighbor from fused_neighbor_ids
+        if (is.null(neighbor_ids) || length(neighbor_ids) == 0) {
+          neighbor_ids <- piece$fused_neighbor_ids[[edge_name]]
+        }
+
+        if (!is.null(neighbor_ids) && length(neighbor_ids) > 0) {
+          for (neighbor_id in neighbor_ids) {
+            # Find the neighbor piece and check which of their fused edges point to us
+            neighbor_piece <- NULL
+            for (np in pieces) {
+              np_id <- np$id %||% which(sapply(pieces, function(p) identical(p$path, np$path)))
+              if (!is.null(np_id) && np_id == neighbor_id) {
+                neighbor_piece <- np
+                break
+              }
             }
-          }
 
-          if (!is.null(neighbor_piece) && !is.null(neighbor_piece$fused_neighbor_ids)) {
-            # Mark all neighbor edges that point back to this piece as drawn
-            for (n_edge in names(neighbor_piece$fused_neighbor_ids)) {
-              if (neighbor_piece$fused_neighbor_ids[[n_edge]] == piece_id) {
-                comp_edge_key <- sprintf("%d-%s", neighbor_id, n_edge)
-                drawn_fused_edges <- c(drawn_fused_edges, comp_edge_key)
+            if (!is.null(neighbor_piece) && !is.null(neighbor_piece$fused_neighbor_ids)) {
+              # Mark all neighbor edges that point back to this piece as drawn
+              for (n_edge in names(neighbor_piece$fused_neighbor_ids)) {
+                if (neighbor_piece$fused_neighbor_ids[[n_edge]] == piece_id) {
+                  comp_edge_key <- sprintf("%d-%s", neighbor_id, n_edge)
+                  drawn_fused_edges <- c(drawn_fused_edges, comp_edge_key)
+                }
               }
             }
           }
@@ -1303,25 +1343,40 @@ render_pieces_with_fusion_styled <- function(pieces, colors, fill, stroke_width,
       }
       drawn_segment_keys <- c(drawn_segment_keys, seg_key)
 
-      # Generate arc path for this segment
-      arc_path <- generate_arc_segment_path(
-        radius = outer_radius,
-        start_angle = seg$start_angle,
-        end_angle = seg$end_angle
-      )
+      # IMPORTANT: Also mark the neighbor's complementary edge as drawn in
+      # drawn_fused_edges so Pass 3 doesn't draw it again.
+      # The neighbor's INNER edge points to this piece.
+      neighbor_inner_key <- sprintf("%d-INNER", neighbor_id)
+      drawn_fused_edges <- c(drawn_fused_edges, neighbor_inner_key)
+
+      # Use the actual edge path with bezier tabs if available,
+      # otherwise fall back to arc generation
+      if (!is.null(seg$path) && !is.null(seg$start_point)) {
+        # Use the pre-computed bezier path
+        # Path needs M (moveto) + the bezier curves
+        edge_path <- sprintf("M %.2f %.2f %s",
+                            seg$start_point[1], seg$start_point[2], seg$path)
+      } else {
+        # Fallback to arc generation
+        edge_path <- generate_arc_segment_path(
+          radius = outer_radius,
+          start_angle = seg$start_angle,
+          end_angle = seg$end_angle
+        )
+      }
 
       # Apply styling based on segment fusion status
       if (isTRUE(seg$fused)) {
         # Fused segment - dashed with fusion opacity
         edge_element <- sprintf(
           '<path d="%s" fill="none" stroke="%s" stroke-width="%.2f" stroke-linecap="round" stroke-linejoin="round"%s%s/>',
-          arc_path, color, stroke_width, dash_attr, fusion_opacity_attr
+          edge_path, color, stroke_width, dash_attr, fusion_opacity_attr
         )
       } else {
         # Non-fused segment - solid with normal opacity
         edge_element <- sprintf(
           '<path d="%s" fill="none" stroke="%s" stroke-width="%.2f" stroke-linecap="round" stroke-linejoin="round"/>',
-          arc_path, color, stroke_width
+          edge_path, color, stroke_width
         )
       }
       elements <- c(elements, edge_element)

@@ -850,6 +850,14 @@ compute_fused_edges <- function(fusion_groups, puzzle_result) {
                 fused_edges_set[[edge_key]] <- TRUE
                 edge_to_group[[edge_key]] <- group_idx
               }
+              # Mark the specific neighbor's INNER edge as fused
+              # This is the correct complementary edge for THIS neighbor
+              comp_key <- make_edge_key(outer_neighbor_id, "INNER")
+              if (!exists(comp_key, envir = fused_edges_set, inherits = FALSE)) {
+                fused_edges_list[[length(fused_edges_list) + 1]] <- comp_key
+                fused_edges_set[[comp_key]] <- TRUE
+                edge_to_group[[comp_key]] <- group_idx
+              }
             }
           }
         }

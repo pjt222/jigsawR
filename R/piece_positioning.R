@@ -246,6 +246,25 @@ apply_concentric_positioning <- function(piece_result, offset) {
     # Update actual center with same translation
     new_center <- current_center + c(dx, dy)
 
+    # Translate segment-level edge paths if present
+    translated_segments <- piece$fused_edge_segments
+    if (!is.null(translated_segments) && !is.null(translated_segments$OUTER)) {
+      for (seg_idx in seq_along(translated_segments$OUTER)) {
+        seg <- translated_segments$OUTER[[seg_idx]]
+        # Translate start_point and end_point
+        if (!is.null(seg$start_point)) {
+          translated_segments$OUTER[[seg_idx]]$start_point <- seg$start_point + c(dx, dy)
+        }
+        if (!is.null(seg$end_point)) {
+          translated_segments$OUTER[[seg_idx]]$end_point <- seg$end_point + c(dx, dy)
+        }
+        # Translate the bezier path
+        if (!is.null(seg$path)) {
+          translated_segments$OUTER[[seg_idx]]$path <- translate_svg_path(seg$path, dx, dy)
+        }
+      }
+    }
+
     # Return transformed piece (preserve all metadata including fusion fields)
     list(
       id = piece$id,
@@ -255,7 +274,12 @@ apply_concentric_positioning <- function(piece_result, offset) {
       type = piece$type,
       fusion_group = if (!is.null(piece$fusion_group)) piece$fusion_group else NA,
       fused_edges = piece$fused_edges,  # Preserve fusion edge metadata for rendering
-      fused_neighbor_ids = piece$fused_neighbor_ids  # Preserve neighbor IDs for deduplication
+      fused_neighbor_ids = piece$fused_neighbor_ids,  # Preserve neighbor IDs for deduplication
+      # Segment-level fusion data for many-to-one OUTER edges
+      outer_segments_mixed = piece$outer_segments_mixed,
+      fused_edge_segments = translated_segments,
+      inner_radius = piece$inner_radius,
+      outer_radius = piece$outer_radius
     )
   })
 
@@ -442,6 +466,25 @@ apply_hex_positioning <- function(piece_result, offset) {
     # Update actual center with same translation
     new_center <- current_center + c(dx, dy)
 
+    # Translate segment-level edge paths if present
+    translated_segments <- piece$fused_edge_segments
+    if (!is.null(translated_segments) && !is.null(translated_segments$OUTER)) {
+      for (seg_idx in seq_along(translated_segments$OUTER)) {
+        seg <- translated_segments$OUTER[[seg_idx]]
+        # Translate start_point and end_point
+        if (!is.null(seg$start_point)) {
+          translated_segments$OUTER[[seg_idx]]$start_point <- seg$start_point + c(dx, dy)
+        }
+        if (!is.null(seg$end_point)) {
+          translated_segments$OUTER[[seg_idx]]$end_point <- seg$end_point + c(dx, dy)
+        }
+        # Translate the bezier path
+        if (!is.null(seg$path)) {
+          translated_segments$OUTER[[seg_idx]]$path <- translate_svg_path(seg$path, dx, dy)
+        }
+      }
+    }
+
     # Return transformed piece (preserve all metadata including fusion fields)
     list(
       id = piece$id,
@@ -451,7 +494,12 @@ apply_hex_positioning <- function(piece_result, offset) {
       type = piece$type,
       fusion_group = if (!is.null(piece$fusion_group)) piece$fusion_group else NA,
       fused_edges = piece$fused_edges,  # Preserve fusion edge metadata for rendering
-      fused_neighbor_ids = piece$fused_neighbor_ids  # Preserve neighbor IDs for deduplication
+      fused_neighbor_ids = piece$fused_neighbor_ids,  # Preserve neighbor IDs for deduplication
+      # Segment-level fusion data (may be set for radial puzzles)
+      outer_segments_mixed = piece$outer_segments_mixed,
+      fused_edge_segments = translated_segments,
+      inner_radius = piece$inner_radius,
+      outer_radius = piece$outer_radius
     )
   })
 

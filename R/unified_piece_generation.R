@@ -639,7 +639,8 @@ generate_concentric_pieces_internal <- function(seed, rings, diameter, tabsize, 
       fusion_style = fusion_style,
       fusion_opacity = fusion_opacity
     ),
-    fusion_data = fused_edge_data
+    fusion_data = fused_edge_data,
+    edge_map = concentric_result$edge_map  # Include edge_map for segment-level rendering
   ))
 }
 
@@ -848,6 +849,9 @@ apply_fusion_to_pieces <- function(pieces_result, fusion_groups, puzzle_result) 
           any_fused <- FALSE
           all_fused <- TRUE
 
+          # Get edge_map for looking up actual edge paths
+          edge_map <- pieces_result$edge_map
+
           for (seg_idx in seq_along(outer_segments)) {
             neighbor_id <- outer_segments[[seg_idx]]$neighbor_id
             neighbor_group <- fused_edge_data$piece_to_group[[as.character(neighbor_id)]]
@@ -859,6 +863,19 @@ apply_fusion_to_pieces <- function(pieces_result, fusion_groups, puzzle_result) 
             outer_segments[[seg_idx]]$fused <- is_fused
             if (is_fused) any_fused <- TRUE
             if (!is_fused) all_fused <- FALSE
+
+            # Look up the actual edge path with bezier tabs
+            # Edge key format: E{innerPiece}-{outerPiece}-radial
+            if (!is.null(edge_map)) {
+              edge_key <- sprintf("E%d-%d-radial", piece_id, neighbor_id)
+              edge_data <- edge_map[[edge_key]]
+              if (!is.null(edge_data)) {
+                # For the inner piece (piece_id), use reverse path (outer to inner direction)
+                outer_segments[[seg_idx]]$path <- edge_data$reverse
+                outer_segments[[seg_idx]]$start_point <- edge_data$end
+                outer_segments[[seg_idx]]$end_point <- edge_data$start
+              }
+            }
           }
 
           # Store segment-level fusion data

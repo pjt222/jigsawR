@@ -808,6 +808,7 @@ generate_concentric_pieces <- function(rings, seed, diameter,
     rings = rings,
     diameter = diameter,
     num_pieces = num_pieces,
-    center_shape = center_shape
+    center_shape = center_shape,
+    edge_map = edge_data$edge_map  # Include edge_map for segment-level rendering
   ))
 }
