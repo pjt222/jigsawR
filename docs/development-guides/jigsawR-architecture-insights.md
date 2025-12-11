@@ -662,6 +662,42 @@ grepl(" A ", circle_path)  # TRUE ✓
 - `R/concentric_edge_generation.R` (updated `build_concentric_piece_path()`)
 - `tests/testthat/test-core-integration.R` (added 4 center_shape tests)
 
+### 24. Diagnostic Test Script Pattern (2025-12-11)
+
+**Context**: When investigating why `center_shape = "circle"` wasn't working, a systematic diagnostic approach was essential.
+
+**Pattern**: Create targeted test scripts that isolate and verify each layer of the system:
+
+```r
+# test_center_debug.R - Layer-by-layer diagnostic
+cat("1. Testing calculate_concentric_vertices directly:\n")
+hex_vertices <- calculate_concentric_vertices(1, 3, 200, "hexagon")
+circle_vertices <- calculate_concentric_vertices(1, 3, 200, "circle")
+cat("   Hexagon type:", hex_vertices$type, "\n")  # Verify geometry layer
+cat("   Circle type:", circle_vertices$type, "\n")
+
+cat("\n2. Testing generate_concentric_edge_map:\n")
+edge_hex <- generate_concentric_edge_map(rings = 3, seed = 42, diameter = 200, center_shape = "hexagon")
+cat("   Hexagon center piece type:", edge_hex$piece_vertices[[1]]$type, "\n")  # Verify edge generation
+
+cat("\n3. Edge types for center piece:\n")
+cat("   Edge types:", paste(sapply(edge_hex$piece_edges[[1]], function(e) e$type), collapse=", "), "\n")
+
+cat("\n4. Building paths:\n")
+path_hex <- build_concentric_piece_path(1, edge_hex)
+cat("   Path contains arc:", grepl(" A ", path_hex), "\n")  # Verify path output
+```
+
+**Benefits**:
+1. **Layer isolation**: Test geometry → edge generation → path building → rendering separately
+2. **Quick feedback**: Script runs in seconds vs full test suite (60+ seconds)
+3. **Clear output**: Human-readable diagnostics pinpoint exact failure layer
+4. **Reusable**: Can be converted to formal tests once bug is fixed
+
+**Insight**: The bug was found in layer 4 (path building) - the geometry and edge generation were correct (`type="circle"`, `edge_type="radial"`), but the path builder wasn't using SVG arc commands.
+
+**Lesson**: When a parameter "doesn't work", test each processing layer independently rather than only checking input and output.
+
 ---
 
 ## Development History
