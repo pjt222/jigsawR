@@ -1063,6 +1063,36 @@ get_piece_edge_names <- function(piece) {
 }
 
 
+#' Generate SVG arc path for an angular segment
+#'
+#' Creates an SVG path string for an arc segment at a given radius between
+#' two angles. Used for rendering segment-level fusion in concentric puzzles.
+#'
+#' @param radius Arc radius
+#' @param start_angle Start angle in radians
+#' @param end_angle End angle in radians
+#' @param center Optional center point (default: c(0, 0))
+#' @return SVG path string
+#' @keywords internal
+generate_arc_segment_path <- function(radius, start_angle, end_angle, center = c(0, 0)) {
+  # Calculate start and end points
+  x1 <- center[1] + radius * cos(start_angle)
+  y1 <- center[2] + radius * sin(start_angle)
+  x2 <- center[1] + radius * cos(end_angle)
+  y2 <- center[2] + radius * sin(end_angle)
+
+  # Determine arc flags
+  # large-arc-flag: 1 if arc > 180 degrees, 0 otherwise
+  arc_span <- end_angle - start_angle
+  large_arc <- if (arc_span > pi) 1 else 0
+  # sweep-flag: 1 for clockwise (which matches increasing angle in SVG coords)
+  sweep <- 1
+
+  sprintf("M%.2f,%.2f A%.2f,%.2f 0 %d,%d %.2f,%.2f",
+          x1, y1, radius, radius, large_arc, sweep, x2, y2)
+}
+
+
 #' Render pieces with styled fusion edges
 #'
 #' Three-pass rendering: fills, non-fused edges, fused edges with styling.
@@ -1114,6 +1144,12 @@ render_pieces_with_fusion_styled <- function(pieces, colors, fill, stroke_width,
     edge_names <- get_piece_edge_names(piece)
 
     for (edge_name in edge_names) {
+      # Check for segment-level fusion (many-to-one OUTER edges)
+      if (edge_name == "OUTER" && isTRUE(piece$outer_segments_mixed)) {
+        # Mixed segments - handle in pass 3.5 (segment-level rendering)
+        next
+      }
+
       if (isTRUE(piece$fused_edges[[edge_name]])) {
         next  # Will handle in pass 3
       }
@@ -1156,6 +1192,11 @@ render_pieces_with_fusion_styled <- function(pieces, colors, fill, stroke_width,
     edge_names <- get_piece_edge_names(piece)
 
     for (edge_name in edge_names) {
+      # Skip mixed segment edges - handled in Pass 3.5
+      if (edge_name == "OUTER" && isTRUE(piece$outer_segments_mixed)) {
+        next
+      }
+
       if (!isTRUE(piece$fused_edges[[edge_name]])) {
         next  # Only draw fused edges here
       }
@@ -1220,6 +1261,70 @@ render_pieces_with_fusion_styled <- function(pieces, colors, fill, stroke_width,
         )
         elements <- c(elements, edge_element)
       }
+    }
+  }
+
+  # Pass 3.5: Draw segment-level fused OUTER edges for concentric puzzles
+  # This handles many-to-one relationships where different segments of an
+  # OUTER edge have different fusion status (some fused, some not)
+  drawn_segment_keys <- character()
+
+  for (i in seq_along(pieces)) {
+    piece <- pieces[[i]]
+    color <- colors[i]
+    piece_id <- piece$id %||% i
+
+    # Only process pieces with mixed segment fusion
+    if (!isTRUE(piece$outer_segments_mixed)) {
+      next
+    }
+
+    # Get outer radius for arc generation
+    outer_radius <- piece$outer_radius
+    if (is.null(outer_radius)) {
+      next  # Can't render without radius
+    }
+
+    # Get segment fusion data
+    segments <- piece$fused_edge_segments[["OUTER"]]
+    if (is.null(segments) || length(segments) == 0) {
+      next
+    }
+
+    # Render each segment with appropriate styling
+    for (seg in segments) {
+      # Create segment key for deduplication: "innerPiece-outerPiece"
+      # Use sorted IDs for canonical form
+      neighbor_id <- seg$neighbor_id
+      seg_key <- sprintf("%d-%d", min(piece_id, neighbor_id), max(piece_id, neighbor_id))
+
+      if (seg_key %in% drawn_segment_keys) {
+        next
+      }
+      drawn_segment_keys <- c(drawn_segment_keys, seg_key)
+
+      # Generate arc path for this segment
+      arc_path <- generate_arc_segment_path(
+        radius = outer_radius,
+        start_angle = seg$start_angle,
+        end_angle = seg$end_angle
+      )
+
+      # Apply styling based on segment fusion status
+      if (isTRUE(seg$fused)) {
+        # Fused segment - dashed with fusion opacity
+        edge_element <- sprintf(
+          '<path d="%s" fill="none" stroke="%s" stroke-width="%.2f" stroke-linecap="round" stroke-linejoin="round"%s%s/>',
+          arc_path, color, stroke_width, dash_attr, fusion_opacity_attr
+        )
+      } else {
+        # Non-fused segment - solid with normal opacity
+        edge_element <- sprintf(
+          '<path d="%s" fill="none" stroke="%s" stroke-width="%.2f" stroke-linecap="round" stroke-linejoin="round"/>',
+          arc_path, color, stroke_width
+        )
+      }
+      elements <- c(elements, edge_element)
     }
   }
 

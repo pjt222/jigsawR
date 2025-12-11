@@ -150,7 +150,9 @@ generate_puzzle <- function(type = "rectangular",
       parameters = list(
         type = type,
         grid = grid,
-        rings = if (type != "rectangular") grid[1] else NULL
+        size = size,  # Needed for segment-level fusion radius calculations
+        rings = if (type != "rectangular") grid[1] else NULL,
+        diameter = if (type == "concentric") size[1] else NULL
       )
     )
 

@@ -284,6 +284,70 @@ get_all_concentric_outer_neighbors <- function(piece_id, rings) {
 }
 
 
+#' Get segment breakdown of OUTER edge by neighbor
+#'
+#' In concentric puzzles, an inner ring piece's OUTER edge may span multiple
+#' outer ring pieces' INNER edges (many-to-one relationship). This function
+#' returns the angular segments of the OUTER edge, each tagged with the
+#' neighbor piece that segment touches.
+#'
+#' @param piece_id Piece ID
+#' @param rings Total rings
+#' @return List of segments, each with start_angle, end_angle, neighbor_id.
+#'   Returns empty list for center piece or boundary pieces.
+#' @export
+get_outer_edge_segments <- function(piece_id, rings) {
+  info <- map_concentric_piece_id(piece_id, rings)
+  ring <- info$ring
+  position <- info$position
+  pieces_in_ring <- info$pieces_in_ring
+
+
+  # Center piece has no OUTER edge in the trapezoid sense
+  if (ring == 0) {
+    return(list())
+  }
+
+  # Outermost ring - boundary, no outer neighbors
+  if (ring == rings - 1) {
+    return(list())
+  }
+
+  # This piece's angular span
+  arc_angle <- 2 * pi / pieces_in_ring
+  piece_start <- position * arc_angle
+  piece_end <- (position + 1) * arc_angle
+
+  # Outer ring info
+  outer_pieces <- 6 * (ring + 1)
+  outer_arc_angle <- 2 * pi / outer_pieces
+  outer_piece_start_id <- 3 * (ring + 1) * ring + 2
+
+  # Build segments based on outer piece boundaries
+  segments <- list()
+
+  for (outer_pos in 0:(outer_pieces - 1)) {
+    outer_start <- outer_pos * outer_arc_angle
+    outer_end <- (outer_pos + 1) * outer_arc_angle
+
+    # Check for overlap with small tolerance for floating point
+    eps <- 1e-10
+    if (outer_end > piece_start + eps && outer_start < piece_end - eps) {
+      seg_start <- max(piece_start, outer_start)
+      seg_end <- min(piece_end, outer_end)
+
+      segments[[length(segments) + 1]] <- list(
+        start_angle = seg_start,
+        end_angle = seg_end,
+        neighbor_id = outer_piece_start_id + outer_pos
+      )
+    }
+  }
+
+  return(segments)
+}
+
+
 #' Get all vertices for all pieces in a concentric puzzle
 #'
 #' @param rings Number of rings

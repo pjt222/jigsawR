@@ -23,3 +23,8 @@ Determines which edges should be fused (internal to meta-pieces) based on
 fusion groups. An edge is fused if both pieces it connects are in the same
 fusion group.
 }
+\details{
+NOTE: This handles the many-to-one relationship where an inner ring piece's
+OUTER edge may touch MULTIPLE outer ring pieces' INNER edges. For example,
+in a 3-ring puzzle, piece 4's OUTER edge touches both pieces 12 and 13.
+}

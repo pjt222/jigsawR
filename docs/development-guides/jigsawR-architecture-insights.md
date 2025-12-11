@@ -577,6 +577,52 @@ result$pieces[[13]]$fused_edges$INNER     # TRUE ✓
 - `R/adjacency_api.R` (updated `compute_fused_edges()` for concentric)
 - `R/unified_piece_generation.R` (updated `apply_fusion_to_pieces()` for concentric)
 
+### 22. Edge-Segment-Level Fusion Rendering (2025-12-11)
+
+**Problem (Issue #52)**: Insight #21 solved the *detection* of many-to-one neighbors, but the *rendering* was still incorrect. When one inner piece's OUTER edge spans multiple outer pieces, and only SOME of those outer pieces are in the fusion group, the entire OUTER edge was being rendered with a single style (either all dashed or all solid).
+
+**Example**: With `ALL-18` fusion (all pieces except 18):
+- Piece 7's OUTER edge spans 300°-360°
+- Segment 300°-330° touches piece 18 (NOT in group) → should be **SOLID**
+- Segment 330°-360° touches piece 19 (IN group) → should be **DASHED**
+- Previous behavior: Entire edge rendered as DASHED
+
+**Solution**: Implemented segment-level fusion rendering:
+
+1. **New geometry function**: `get_outer_edge_segments(piece_id, rings)` returns angular segments of the OUTER edge with their neighbor IDs:
+   ```r
+   get_outer_edge_segments(7, 3)
+   # Returns:
+   # [[1]] list(start_angle=300°, end_angle=330°, neighbor_id=18)
+   # [[2]] list(start_angle=330°, end_angle=360°, neighbor_id=19)
+   ```
+
+2. **Segment-level fusion data**: Each piece now stores `fused_edge_segments$OUTER` with per-segment fusion status:
+   ```r
+   piece$fused_edge_segments$OUTER[[1]]$fused  # FALSE (neighbor 18 not in group)
+   piece$fused_edge_segments$OUTER[[2]]$fused  # TRUE (neighbor 19 in group)
+   piece$outer_segments_mixed  # TRUE (mixed fusion status)
+   ```
+
+3. **Pass 3.5 rendering**: New rendering pass draws each segment as a separate SVG arc with appropriate styling:
+   ```r
+   generate_arc_segment_path(radius, start_angle, end_angle)
+   # Returns: "M40.00,-69.28 A80.00,80.00 0 0,1 69.28,-40.00"
+   ```
+
+**Key implementation details**:
+- `outer_radius` and `inner_radius` now stored in each piece for segment rendering
+- Mixed segments skip Pass 2 (non-fused) and Pass 3 (fused) rendering
+- Pass 3.5 handles segment-level arcs with deduplication by "innerPiece-outerPiece" keys
+- Non-mixed pieces (all fused or all non-fused) use existing edge-level rendering
+
+**Files modified**:
+- `R/concentric_geometry.R` (added `get_outer_edge_segments()`)
+- `R/unified_piece_generation.R` (segment-level fusion data, radius storage)
+- `R/unified_renderer.R` (added `generate_arc_segment_path()`, Pass 3.5)
+- `R/jigsawR_clean.R` (added `size` and `diameter` to temp_puzzle_result)
+- `tests/testthat/test-segment-fusion.R` (27 new tests)
+
 ---
 
 ## Development History
