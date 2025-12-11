@@ -956,6 +956,54 @@ pieces <- pos$pieces        # Same pieces with all fusion/styling applied
 
 ---
 
+### Insight #25: UI Separation by Parameter Scope (2025-12-11)
+
+**Problem**: The Shiny app had fusion-related controls mixed together in the Styling panel:
+- `fusion_groups` (PILES notation) - defines WHICH pieces to fuse
+- `fusion_style` and `fusion_opacity` - defines HOW fused edges look
+
+Users were confused because changing `fusion_groups` required clicking "Generate Puzzle", while style changes updated instantly.
+
+**Root Cause**: Two different parameter scopes were conflated:
+1. **Generation-time parameters**: Affect puzzle geometry, require regeneration
+2. **Render-time parameters**: Affect SVG styling only, can update reactively
+
+**Solution**: Separate UI controls by their scope:
+
+| Control | Panel | Scope | Update Mechanism |
+|---------|-------|-------|------------------|
+| `fusion_groups` | Settings | Generation-time | Requires "Generate Puzzle" click |
+| `fusion_style` | Styling | Render-time | Reactive (instant) |
+| `fusion_opacity` | Styling | Render-time | Reactive (instant) |
+
+**Implementation**:
+```
+Settings Panel:
+├── Puzzle Type, Grid, Size...
+├── Piece Fusion              ← NEW section
+│   └── fusion_groups input
+├── Seed
+└── [Generate Puzzle] button
+
+Styling Panel:
+├── Piece Shape (tabsize, jitter)
+├── Internal Edges (Fusion)   ← Renamed section
+│   ├── fusion_style
+│   └── fusion_opacity
+├── Stroke, Fill, Background...
+```
+
+**Key Insight**: In reactive UIs, group controls by their **data flow**, not by their **conceptual domain**. Even though fusion_groups and fusion_style are both "fusion-related", they belong in different panels because they have different update semantics.
+
+**General Rule for Shiny Apps**:
+- **Settings panel**: Parameters that trigger expensive computation (puzzle generation)
+- **Styling panel**: Parameters that only affect rendering (SVG attributes, colors, opacity)
+
+**Files Changed**:
+- `inst/shiny-app/app.R`: Moved `fusion_groups` to Settings, renamed section headers
+
+---
+
 ## Development History
 
 ### Completed Work (Archive)
