@@ -345,47 +345,44 @@ ui <- page_fluid(
             "Gap between pieces. 0mm = complete puzzle (pieces touching), >0mm = separated pieces for laser cutting"
           ),
 
-          # Fill color for separated mode (visible when offset > 0)
+          # Piece fill options (always visible)
+          radioButtons("fill_type", "Piece Fill:",
+                      choices = list(
+                        "None (Outline only)" = "none",
+                        "Solid Color" = "solid",
+                        "Gradient" = "gradient"
+                      ),
+                      selected = cfg_style$fill_type,
+                      inline = TRUE),
           conditionalPanel(
-            condition = "input.offset > 0",
-            radioButtons("fill_type", "Piece Fill:",
-                        choices = list(
-                          "None (Outline only)" = "none",
-                          "Solid Color" = "solid",
-                          "Gradient" = "gradient"
-                        ),
-                        selected = cfg_style$fill_type,
-                        inline = TRUE),
-            conditionalPanel(
-              condition = "input.fill_type == 'solid'",
-              colourpicker::colourInput(
-                "fill_color",
-                "Fill Color:",
-                value = cfg_style$fill_color,
-                showColour = "background"
-              )
+            condition = "input.fill_type == 'solid'",
+            colourpicker::colourInput(
+              "fill_color",
+              "Fill Color:",
+              value = cfg_style$fill_color,
+              showColour = "background"
+            )
+          ),
+          # Gradient color pickers for piece fill
+          conditionalPanel(
+            condition = "input.fill_type == 'gradient'",
+            colourpicker::colourInput(
+              "piece_gradient_center",
+              "Center Color:",
+              value = "#ffffff",
+              showColour = "background"
             ),
-            # Gradient color pickers for piece fill
-            conditionalPanel(
-              condition = "input.fill_type == 'gradient'",
-              colourpicker::colourInput(
-                "piece_gradient_center",
-                "Center Color:",
-                value = "#ffffff",
-                showColour = "background"
-              ),
-              colourpicker::colourInput(
-                "piece_gradient_middle",
-                "Middle Color:",
-                value = "#e0e0e0",
-                showColour = "background"
-              ),
-              colourpicker::colourInput(
-                "piece_gradient_edge",
-                "Edge Color:",
-                value = "#808080",
-                showColour = "background"
-              )
+            colourpicker::colourInput(
+              "piece_gradient_middle",
+              "Middle Color:",
+              value = "#e0e0e0",
+              showColour = "background"
+            ),
+            colourpicker::colourInput(
+              "piece_gradient_edge",
+              "Edge Color:",
+              value = "#808080",
+              showColour = "background"
             )
           ),
 
@@ -393,40 +390,30 @@ ui <- page_fluid(
           tags$small(class = "text-muted", "Internal Edges (Fusion)"),
 
           # Fusion style - reactive styling for internal edges (fusion groups defined in Settings)
-          # Only shown when fusion groups are specified in Settings panel
-          conditionalPanel(
-            condition = "input.fusion_groups != ''",
-            radioButtons("fusion_style", "Internal Edge Style:",
-                        choices = list(
-                          "Dashed" = "dashed",
-                          "Solid" = "solid",
-                          "Hidden" = "none"
-                        ),
-                        selected = "dashed",
-                        inline = TRUE),
+          radioButtons("fusion_style", "Internal Edge Style:",
+                      choices = list(
+                        "Dashed" = "dashed",
+                        "Solid" = "solid",
+                        "Hidden" = "none"
+                      ),
+                      selected = "dashed",
+                      inline = TRUE),
 
-            # Fusion opacity (only shown when style != none)
-            conditionalPanel(
-              condition = "input.fusion_style != 'none'",
-              tooltip(
-                sliderInput("fusion_opacity", "Internal Edge Opacity:",
-                           min = 0,
-                           max = 100,
-                           value = 30, step = 5,
-                           ticks = TRUE,
-                           post = "%",
-                           sep = ""),
-                "Transparency of internal edges between fused pieces. 100% = fully visible, 0% = hidden."
-              )
-            ),
-            tags$small(class = "text-muted fst-italic", "Define fusion groups in Settings panel")
-          ),
-
-          # Message when no fusion groups are defined
+          # Fusion opacity (only shown when style != none)
           conditionalPanel(
-            condition = "input.fusion_groups == ''",
-            tags$small(class = "text-muted fst-italic", "No fusion groups defined (set in Settings panel)")
+            condition = "input.fusion_style != 'none'",
+            tooltip(
+              sliderInput("fusion_opacity", "Internal Edge Opacity:",
+                         min = 0,
+                         max = 100,
+                         value = 30, step = 5,
+                         ticks = TRUE,
+                         post = "%",
+                         sep = ""),
+              "Transparency of internal edges between fused pieces. 100% = fully visible, 0% = hidden."
+            )
           ),
+          tags$small(class = "text-muted fst-italic", "Define fusion groups in Settings panel"),
 
           tags$hr(class = "my-2"),
           tags$small(class = "text-muted", "Appearance"),
@@ -452,6 +439,27 @@ ui <- page_fluid(
               value = FALSE
             ),
             "Reverse the color palette direction. Light colors become dark and vice versa."
+          ),
+
+          # Stroke color type selection (none, solid, palette)
+          radioButtons("stroke_color_type", "Stroke Color:",
+                      choices = list(
+                        "None" = "none",
+                        "Solid Color" = "solid",
+                        "Use Palette" = "palette"
+                      ),
+                      selected = cfg_style$stroke_color_type,
+                      inline = TRUE),
+
+          # Stroke color picker (shown when stroke_color_type == "solid")
+          conditionalPanel(
+            condition = "input.stroke_color_type == 'solid'",
+            colourpicker::colourInput(
+              "stroke_color",
+              "Stroke Color:",
+              value = cfg_style$stroke_color,
+              showColour = "background"
+            )
           ),
 
         tooltip(
@@ -487,25 +495,22 @@ ui <- page_fluid(
           "Display piece ID numbers at the center of each piece. Useful for assembly instructions."
         ),
 
-        # Conditional label options (shown when labels are enabled)
-        conditionalPanel(
-          condition = "input.show_labels == true",
-          colourpicker::colourInput(
-            "label_color",
-            "Label Color:",
-            value = cfg_labels$color,
-            showColour = "background"
-          ),
-          tooltip(
-            sliderInput("label_size", "Label Font Size:",
-                       min = cfg_const$label_size$min,
-                       max = cfg_const$label_size$max,
-                       value = cfg_labels$size, step = 1,
-                       ticks = TRUE,
-                       post = " mm",
-                       sep = ""),
-            "Font size for piece labels. Set to 0 for automatic sizing based on piece dimensions."
-          )
+        # Label options (always visible)
+        colourpicker::colourInput(
+          "label_color",
+          "Label Color:",
+          value = cfg_labels$color,
+          showColour = "background"
+        ),
+        tooltip(
+          sliderInput("label_size", "Label Font Size:",
+                     min = cfg_const$label_size$min,
+                     max = cfg_const$label_size$max,
+                     value = cfg_labels$size, step = 1,
+                     ticks = TRUE,
+                     post = " mm",
+                     sep = ""),
+          "Font size for piece labels. Set to 0 for automatic sizing based on piece dimensions."
         ),
 
         tags$hr(class = "my-2"),
@@ -760,6 +765,8 @@ server <- function(input, output, session) {
     updateSliderInput(session, "jitter", value = cfg_style$jitter)
     updateSliderInput(session, "offset", value = cfg_style$offset)
     updateSelectInput(session, "color_palette", selected = cfg_colors$default_palette)
+    updateRadioButtons(session, "stroke_color_type", selected = cfg_style$stroke_color_type)
+    colourpicker::updateColourInput(session, "stroke_color", value = cfg_style$stroke_color)
     updateSliderInput(session, "stroke_width", value = cfg_style$stroke_width)
     updateSliderInput(session, "opacity", value = cfg_style$opacity)
     # Label settings
@@ -1038,13 +1045,30 @@ server <- function(input, output, session) {
     # 0 means auto-size, convert to NULL for render function
     label_size_value <- if (is.null(input$label_size) || input$label_size == 0) NULL else input$label_size
 
+    # Handle stroke color based on stroke_color_type
+    stroke_color_type_val <- if (is.null(input$stroke_color_type)) "palette" else input$stroke_color_type
+    stroke_width_value <- input$stroke_width
+    stroke_colors_value <- NULL
+    stroke_palette_value <- input$color_palette
+
+    if (stroke_color_type_val == "none") {
+      # No stroke - set width to 0
+      stroke_width_value <- 0
+    } else if (stroke_color_type_val == "solid") {
+      # Solid color - use single color for all pieces
+      n_pieces <- length(pos$pieces)
+      stroke_colors_value <- rep(input$stroke_color, n_pieces)
+      stroke_palette_value <- NULL
+    }
+    # "palette" uses default behavior (colors = NULL, palette used)
+
     # Render SVG with current styling
     svg <- render_puzzle_svg(
       pos,
       fill = fill_color_value,
-      stroke_width = input$stroke_width,
-      colors = NULL,
-      palette = input$color_palette,
+      stroke_width = stroke_width_value,
+      colors = stroke_colors_value,
+      palette = stroke_palette_value,
       palette_invert = isTRUE(input$palette_invert),
       background = background_value,
       opacity = input$opacity / 100,
@@ -1278,6 +1302,19 @@ server <- function(input, output, session) {
       fusion_groups_str <- input$fusion_groups
       has_fusion <- !is.null(fusion_groups_str) && nchar(trimws(fusion_groups_str)) > 0
 
+      # Handle stroke color based on stroke_color_type
+      stroke_color_type_val <- if (is.null(input$stroke_color_type)) "palette" else input$stroke_color_type
+      stroke_width_dl <- input$stroke_width
+      stroke_colors_dl <- NULL
+      stroke_palette_dl <- input$color_palette
+
+      if (stroke_color_type_val == "none") {
+        stroke_width_dl <- 0
+      } else if (stroke_color_type_val == "solid") {
+        stroke_colors_dl <- rep(input$stroke_color, data$total_pieces)
+        stroke_palette_dl <- NULL
+      }
+
       result <- generate_puzzle(
         type = data$type,
         grid = grid_param,
@@ -1287,8 +1324,9 @@ server <- function(input, output, session) {
         jitter = input$jitter,
         offset = 0,  # Always complete for this download
         fill_color = fill_color_value,
-        stroke_width = input$stroke_width,
-        palette = input$color_palette,
+        stroke_width = stroke_width_dl,
+        colors = stroke_colors_dl,
+        palette = stroke_palette_dl,
         palette_invert = isTRUE(input$palette_invert),
         background = background_value,
         opacity = input$opacity / 100,
@@ -1459,6 +1497,17 @@ server <- function(input, output, session) {
           )
         )
 
+        # Handle stroke color based on stroke_color_type
+        stroke_color_type_hex <- if (is.null(input$stroke_color_type)) "palette" else input$stroke_color_type
+        stroke_width_hex <- input$stroke_width
+        stroke_color_hex <- "black"
+
+        if (stroke_color_type_hex == "none") {
+          stroke_width_hex <- 0
+        } else if (stroke_color_type_hex == "solid") {
+          stroke_color_hex <- input$stroke_color
+        }
+
         # Generate hexagonal individual pieces
         result <- tryCatch({
           capture.output({
@@ -1471,8 +1520,8 @@ server <- function(input, output, session) {
               output_dir = pieces_dir,
               save_combined = FALSE,
               save_individual = TRUE,
-              stroke_width = input$stroke_width,
-              stroke_color = "black",
+              stroke_width = stroke_width_hex,
+              stroke_color = stroke_color_hex,
               background = background_value,
               opacity = input$opacity / 100
             )
@@ -1545,6 +1594,17 @@ server <- function(input, output, session) {
           )
         )
 
+        # Handle stroke color based on stroke_color_type
+        stroke_color_type_conc <- if (is.null(input$stroke_color_type)) "palette" else input$stroke_color_type
+        stroke_width_conc <- input$stroke_width
+        stroke_color_conc <- "black"
+
+        if (stroke_color_type_conc == "none") {
+          stroke_width_conc <- 0
+        } else if (stroke_color_type_conc == "solid") {
+          stroke_color_conc <- input$stroke_color
+        }
+
         # Generate concentric individual pieces
         result <- tryCatch({
           capture.output({
@@ -1558,8 +1618,8 @@ server <- function(input, output, session) {
               output_dir = pieces_dir,
               save_combined = FALSE,
               save_individual = TRUE,
-              stroke_width = input$stroke_width,
-              stroke_color = "black",
+              stroke_width = stroke_width_conc,
+              stroke_color = stroke_color_conc,
               background = background_value,
               opacity = input$opacity / 100
             )

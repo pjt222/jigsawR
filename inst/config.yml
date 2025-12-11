@@ -5,8 +5,8 @@
 default:
   # Rectangular puzzle defaults
   rectangular:
-    rows: 2
-    cols: 2
+    rows: 3
+    cols: 4
     width: 200
     height: 200
 
@@ -30,9 +30,11 @@ default:
     jitter: 2
     offset: 0
     stroke_width: 1
+    stroke_color_type: "palette"  # none, solid, or palette
+    stroke_color: "#000000"  # used when stroke_color_type = "solid"
     opacity: 100
-    fill_type: "none"  # none, solid, or gradient
-    fill_color: "#ffffff"
+    fill_type: "solid"  # none, solid, or gradient
+    fill_color: "#a1a1a1"
     # Piece gradient colors (only used when fill_type = "gradient")
     piece_gradient:
       center: "#ffffff"
@@ -44,7 +46,7 @@ default:
 
   # Color palette configuration
   colors:
-    default_palette: "magma"
+    default_palette: "black"
     available_palettes:
       - "black"
       - "viridis"
@@ -70,13 +72,13 @@ default:
 
   # Label configuration
   labels:
-    show: false
+    show: true
     color: "#000000"
     size: 0  # 0 = auto-size
 
   # Background configuration
   background:
-    type: "none"  # none, solid, gradient
+    type: "solid"  # none, solid, gradient
     solid_color: "#ffffff"
     gradient:
       center: "#e3f2fd"
@@ -130,7 +132,7 @@ default:
       max: 100
     offset:
       min: 0
-      max: 50
+      max: 100
     stroke_width:
       min: 0.5
       max: 10
