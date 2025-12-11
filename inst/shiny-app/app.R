@@ -1411,311 +1411,169 @@ server <- function(input, output, session) {
     contentType = "image/svg+xml"
   )
 
-  # Handle individual pieces download with sequential browser downloads
+  # Handle individual pieces download - UNIFIED using render_single_piece_svg()
   observeEvent(input$download_pieces, {
-    if (!is.null(puzzle_data())) {
-      data <- puzzle_data()
+    pos <- positioned_result()
+    data <- puzzle_data()
 
-      if (data$type == "rectangular") {
-        # Create www/pieces directory if it doesn't exist
-        pieces_dir <- file.path("www", "pieces")
-        if (!dir.exists(pieces_dir)) {
-          dir.create(pieces_dir, recursive = TRUE)
+    if (is.null(pos) || is.null(data)) {
+      showNotification("Please generate a puzzle first.", type = "warning", duration = 3)
+      return(NULL)
+    }
+
+    # Create www/pieces directory
+    pieces_dir <- file.path("www", "pieces")
+    if (!dir.exists(pieces_dir)) {
+      dir.create(pieces_dir, recursive = TRUE)
+    }
+
+    # Clean up ALL old piece files
+    old_files <- list.files(pieces_dir, pattern = ".*piece.*\\.svg$", full.names = TRUE)
+    if (length(old_files) > 0) {
+      file.remove(old_files)
+    }
+
+    # Determine fill color/value
+    fill_value <- "none"
+    if (input$fill_type == "solid") {
+      fill_value <- input$fill_color
+    } else if (input$fill_type == "gradient") {
+      fill_value <- list(
+        type = "gradient",
+        center = input$piece_gradient_center,
+        middle = input$piece_gradient_middle,
+        edge = input$piece_gradient_edge
+      )
+    }
+    # Note: For palette fill, we use per-piece colors below
+
+    # Determine background value
+    background_value <- switch(input$background_type,
+      "none" = "none",
+      "solid" = input$background_color,
+      "gradient" = list(
+        type = "gradient",
+        center = input$gradient_center,
+        middle = input$gradient_middle,
+        edge = input$gradient_edge
+      )
+    )
+
+    # Handle stroke color based on stroke_color_type
+    stroke_color_type_val <- if (is.null(input$stroke_color_type)) "solid" else input$stroke_color_type
+    stroke_width_val <- input$stroke_width
+    stroke_palette_val <- if (is.null(input$stroke_palette)) "viridis" else input$stroke_palette
+
+    # Generate stroke colors for all pieces
+    n_pieces <- length(pos$pieces)
+    stroke_colors <- if (stroke_color_type_val == "none") {
+      rep("none", n_pieces)
+    } else if (stroke_color_type_val == "solid") {
+      rep(input$stroke_color, n_pieces)
+    } else {
+      # Palette mode
+      get_puzzle_colors(n_pieces, stroke_palette_val, invert = isTRUE(input$stroke_palette_invert))
+    }
+
+    # Generate fill colors for palette mode
+    fill_colors <- NULL
+    if (input$fill_type == "palette") {
+      fill_palette_val <- if (is.null(input$fill_palette)) "magma" else input$fill_palette
+      fill_colors <- get_puzzle_colors(n_pieces, fill_palette_val, invert = isTRUE(input$fill_palette_invert))
+    }
+
+    # Set stroke width to 0 for "none" mode
+    if (stroke_color_type_val == "none") {
+      stroke_width_val <- 0
+    }
+
+    # Generate filename prefix based on type
+    file_prefix <- switch(data$type,
+      "hexagonal" = "hex_piece",
+      "concentric" = "concentric_piece",
+      "piece"  # rectangular default
+    )
+
+    # Generate individual piece SVGs using render_single_piece_svg()
+    result <- tryCatch({
+      for (i in seq_along(pos$pieces)) {
+        piece <- pos$pieces[[i]]
+
+        # Determine fill for this piece
+        piece_fill <- if (!is.null(fill_colors)) {
+          fill_colors[i]
+        } else {
+          fill_value
         }
 
-        # Clean up old files
-        old_files <- list.files(pieces_dir, pattern = "piece_.*\\.svg$", full.names = TRUE)
-        if (length(old_files) > 0) {
-          file.remove(old_files)
-        }
-
-        # Test write permissions
-        test_file <- file.path(pieces_dir, "test.txt")
-        tryCatch({
-          writeLines("test", test_file)
-          if (file.exists(test_file)) file.remove(test_file)
-        }, error = function(e) {
-          showNotification(
-            paste("Cannot write to directory:", e$message),
-            type = "error",
-            duration = 10
-          )
-          return(NULL)
-        })
-
-        # Determine background value based on type
-        background_value <- switch(input$background_type,
-          "none" = "none",
-          "solid" = input$background_color,
-          "gradient" = list(
-            type = "gradient",
-            center = input$gradient_center,
-            middle = input$gradient_middle,
-            edge = input$gradient_edge
-          )
+        # Render individual piece SVG
+        piece_svg <- render_single_piece_svg(
+          piece = piece,
+          fill = piece_fill,
+          stroke_color = stroke_colors[i],
+          stroke_width = stroke_width_val,
+          opacity = input$opacity / 100,
+          background = background_value,
+          padding = 0.15,
+          show_label = isTRUE(input$show_labels),
+          label_color = if (is.null(input$label_color)) "#000000" else input$label_color,
+          label_size = if (is.null(input$label_size) || input$label_size == 0) NULL else input$label_size
         )
 
-        # Generate individual pieces (suppress console output)
-        result <- tryCatch({
-          capture.output({
-            generate_individual_pieces(
-              seed = data$seed,
-              xn = data$cols,
-              yn = data$rows,
-              width = data$width,
-              height = data$height,
-              tabsize = input$tabsize,
-              jitter = input$jitter,
-              output_dir = pieces_dir,
-              save_combined = FALSE,
-              palette = input$color_palette,
-              stroke_width = input$stroke_width,
-              background = background_value
-            )
-          }, type = "message")
-        }, error = function(e) {
-          showNotification(
-            paste("Error generating pieces:", e$message),
-            type = "error",
-            duration = 10
-          )
-          return(NULL)
-        })
+        # Generate filename
+        filename <- sprintf("%s_%02d_seed%d.svg", file_prefix, i, data$seed)
+        filepath <- file.path(pieces_dir, filename)
 
-        # Verify files were created and send to browser
-        piece_files <- list.files(pieces_dir, pattern = "piece_.*\\.svg$", full.names = TRUE)
-
-        if (length(piece_files) > 0) {
-          # Check that files have content
-          files_ok <- all(sapply(piece_files, file.size) > 0)
-
-          if (files_ok) {
-            # Create file list for JavaScript
-            files_list <- lapply(basename(piece_files), function(filename) {
-              list(
-                url = paste0("pieces/", filename),
-                name = filename
-              )
-            })
-
-            # Send to JavaScript for sequential download
-            session$sendCustomMessage("downloadFiles", files_list)
-
-            showNotification(
-              sprintf("Downloading %d piece files...", length(piece_files)),
-              type = "message",
-              duration = 3
-            )
-          } else {
-            showNotification(
-              "Error: Generated files are empty. Please try again.",
-              type = "error",
-              duration = 5
-            )
-          }
-        } else {
-          showNotification(
-            "Error: No piece files were generated. Please try again.",
-            type = "error",
-            duration = 5
-          )
-        }
-
-      } else if (data$type == "hexagonal") {
-        # Create www/pieces directory if it doesn't exist
-        pieces_dir <- file.path("www", "pieces")
-        if (!dir.exists(pieces_dir)) {
-          dir.create(pieces_dir, recursive = TRUE)
-        }
-
-        # Clean up old files
-        old_files <- list.files(pieces_dir, pattern = "hex_piece_.*\\.svg$", full.names = TRUE)
-        if (length(old_files) > 0) {
-          file.remove(old_files)
-        }
-
-        # Determine background value based on type
-        background_value <- switch(input$background_type,
-          "none" = "none",
-          "solid" = input$background_color,
-          "gradient" = list(
-            type = "gradient",
-            center = input$gradient_center,
-            middle = input$gradient_middle,
-            edge = input$gradient_edge
-          )
-        )
-
-        # Handle stroke color based on stroke_color_type
-        stroke_color_type_hex <- if (is.null(input$stroke_color_type)) "palette" else input$stroke_color_type
-        stroke_width_hex <- input$stroke_width
-        stroke_color_hex <- "black"
-
-        if (stroke_color_type_hex == "none") {
-          stroke_width_hex <- 0
-        } else if (stroke_color_type_hex == "solid") {
-          stroke_color_hex <- input$stroke_color
-        }
-
-        # Generate hexagonal individual pieces
-        result <- tryCatch({
-          capture.output({
-            generate_hexagonal_individual_pieces(
-              rings = data$rings,
-              seed = data$seed,
-              diameter = data$diameter,
-              tabsize = input$tabsize,
-              jitter = input$jitter,
-              output_dir = pieces_dir,
-              save_combined = FALSE,
-              save_individual = TRUE,
-              stroke_width = stroke_width_hex,
-              stroke_color = stroke_color_hex,
-              background = background_value,
-              opacity = input$opacity / 100
-            )
-          }, type = "message")
-        }, error = function(e) {
-          showNotification(
-            paste("Error generating hexagonal pieces:", e$message),
-            type = "error",
-            duration = 10
-          )
-          return(NULL)
-        })
-
-        # Verify files were created and send to browser
-        piece_files <- list.files(pieces_dir, pattern = "hex_piece_.*\\.svg$", full.names = TRUE)
-
-        if (length(piece_files) > 0) {
-          files_ok <- all(sapply(piece_files, file.size) > 0)
-
-          if (files_ok) {
-            files_list <- lapply(basename(piece_files), function(filename) {
-              list(
-                url = paste0("pieces/", filename),
-                name = filename
-              )
-            })
-            session$sendCustomMessage("downloadFiles", files_list)
-            showNotification(
-              sprintf("Downloading %d hexagonal piece files...", length(piece_files)),
-              type = "message",
-              duration = 3
-            )
-          } else {
-            showNotification(
-              "Error: Generated hexagonal files are empty. Please try again.",
-              type = "error",
-              duration = 5
-            )
-          }
-        } else {
-          showNotification(
-            "Error: No hexagonal piece files were generated. Please try again.",
-            type = "error",
-            duration = 5
-          )
-        }
-
-      } else if (data$type == "concentric") {
-        # Create www/pieces directory if it doesn't exist
-        pieces_dir <- file.path("www", "pieces")
-        if (!dir.exists(pieces_dir)) {
-          dir.create(pieces_dir, recursive = TRUE)
-        }
-
-        # Clean up old files
-        old_files <- list.files(pieces_dir, pattern = "concentric_piece_.*\\.svg$", full.names = TRUE)
-        if (length(old_files) > 0) {
-          file.remove(old_files)
-        }
-
-        # Determine background value based on type
-        background_value <- switch(input$background_type,
-          "none" = "none",
-          "solid" = input$background_color,
-          "gradient" = list(
-            type = "gradient",
-            center = input$gradient_center,
-            middle = input$gradient_middle,
-            edge = input$gradient_edge
-          )
-        )
-
-        # Handle stroke color based on stroke_color_type
-        stroke_color_type_conc <- if (is.null(input$stroke_color_type)) "palette" else input$stroke_color_type
-        stroke_width_conc <- input$stroke_width
-        stroke_color_conc <- "black"
-
-        if (stroke_color_type_conc == "none") {
-          stroke_width_conc <- 0
-        } else if (stroke_color_type_conc == "solid") {
-          stroke_color_conc <- input$stroke_color
-        }
-
-        # Generate concentric individual pieces
-        result <- tryCatch({
-          capture.output({
-            generate_concentric_individual_pieces(
-              rings = data$rings,
-              seed = data$seed,
-              diameter = data$diameter,
-              tabsize = input$tabsize,
-              jitter = input$jitter,
-              center_shape = data$center_shape,
-              output_dir = pieces_dir,
-              save_combined = FALSE,
-              save_individual = TRUE,
-              stroke_width = stroke_width_conc,
-              stroke_color = stroke_color_conc,
-              background = background_value,
-              opacity = input$opacity / 100
-            )
-          }, type = "message")
-        }, error = function(e) {
-          showNotification(
-            paste("Error generating concentric pieces:", e$message),
-            type = "error",
-            duration = 10
-          )
-          return(NULL)
-        })
-
-        # Verify files were created and send to browser
-        piece_files <- list.files(pieces_dir, pattern = "concentric_piece_.*\\.svg$", full.names = TRUE)
-
-        if (length(piece_files) > 0) {
-          files_ok <- all(sapply(piece_files, file.size) > 0)
-
-          if (files_ok) {
-            files_list <- lapply(basename(piece_files), function(filename) {
-              list(
-                url = paste0("pieces/", filename),
-                name = filename
-              )
-            })
-            session$sendCustomMessage("downloadFiles", files_list)
-            showNotification(
-              sprintf("Downloading %d concentric piece files...", length(piece_files)),
-              type = "message",
-              duration = 3
-            )
-          } else {
-            showNotification(
-              "Error: Generated concentric files are empty. Please try again.",
-              type = "error",
-              duration = 5
-            )
-          }
-        } else {
-          showNotification(
-            "Error: No concentric piece files were generated. Please try again.",
-            type = "error",
-            duration = 5
-          )
-        }
+        # Write SVG file
+        writeLines(piece_svg, filepath)
       }
+      TRUE
+    }, error = function(e) {
+      showNotification(
+        paste("Error generating pieces:", e$message),
+        type = "error",
+        duration = 10
+      )
+      return(FALSE)
+    })
+
+    if (!isTRUE(result)) return(NULL)
+
+    # Verify files were created
+    piece_files <- list.files(pieces_dir, pattern = paste0(file_prefix, ".*\\.svg$"), full.names = TRUE)
+
+    if (length(piece_files) > 0) {
+      files_ok <- all(sapply(piece_files, file.size) > 0)
+
+      if (files_ok) {
+        # Create file list for JavaScript sequential download
+        files_list <- lapply(basename(piece_files), function(filename) {
+          list(
+            url = paste0("pieces/", filename),
+            name = filename
+          )
+        })
+
+        session$sendCustomMessage("downloadFiles", files_list)
+
+        showNotification(
+          sprintf("Downloading %d %s piece files...", length(piece_files), data$type),
+          type = "message",
+          duration = 3
+        )
+      } else {
+        showNotification(
+          "Error: Generated files are empty. Please try again.",
+          type = "error",
+          duration = 5
+        )
+      }
+    } else {
+      showNotification(
+        "Error: No piece files were generated. Please try again.",
+        type = "error",
+        duration = 5
+      )
     }
   })
 }

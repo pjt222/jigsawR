@@ -7,6 +7,7 @@
 render_puzzle_svg(
   positioned,
   fill = "none",
+  fills = NULL,
   stroke_width = 1.5,
   colors = NULL,
   palette = NULL,
@@ -21,7 +22,10 @@ render_puzzle_svg(
 \arguments{
 \item{positioned}{Output from apply_piece_positioning()}
 
-\item{fill}{Fill color for pieces ("none" or a color value)}
+\item{fill}{Fill color for pieces ("none", a color value, or gradient list)}
+
+\item{fills}{Vector of per-piece fill colors (optional, overrides fill parameter).
+When provided, each piece gets its own fill color from this vector.}
 
 \item{stroke_width}{Line width for piece strokes}
 

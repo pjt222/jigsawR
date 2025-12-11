@@ -359,3 +359,174 @@ test_that("reverse_path_segments reverses correctly", {
   # reverse_path_segments returns a path string
   expect_type(reversed, "character")
 })
+
+# =============================================================================
+# RENDER_SINGLE_PIECE_SVG TESTS (Issue #51)
+# =============================================================================
+
+test_that("render_single_piece_svg creates valid SVG for rectangular piece", {
+  result <- generate_puzzle(
+    type = "rectangular",
+    grid = c(2, 2),
+    seed = 42,
+    save_files = FALSE
+  )
+
+  svg <- render_single_piece_svg(result$pieces[[1]], fill = "#FF0000", stroke_color = "black")
+
+  expect_type(svg, "character")
+  expect_match(svg, "^<\\?xml version")
+  expect_match(svg, "<svg.*xmlns=")
+  expect_match(svg, "viewBox=")
+  expect_match(svg, "<path")
+  expect_match(svg, 'fill="#FF0000"')
+  expect_match(svg, 'stroke="black"')
+  expect_match(svg, "</svg>$")
+})
+
+test_that("render_single_piece_svg creates valid SVG for hexagonal piece", {
+  result <- generate_puzzle(
+    type = "hexagonal",
+    grid = c(2),
+    size = c(100),
+    seed = 42,
+    save_files = FALSE
+  )
+
+  svg <- render_single_piece_svg(result$pieces[[1]], fill = "blue", stroke_color = "#000000")
+
+  expect_type(svg, "character")
+  expect_match(svg, "viewBox=")
+  expect_match(svg, 'fill="blue"')
+})
+
+test_that("render_single_piece_svg creates valid SVG for concentric piece", {
+  result <- generate_puzzle(
+    type = "concentric",
+    grid = c(2),
+    size = c(100),
+    seed = 42,
+    save_files = FALSE
+  )
+
+  svg <- render_single_piece_svg(result$pieces[[1]], fill = "green", stroke_color = "gray")
+
+  expect_type(svg, "character")
+  expect_match(svg, "viewBox=")
+  expect_match(svg, 'fill="green"')
+})
+
+test_that("render_single_piece_svg supports labels", {
+  result <- generate_puzzle(
+    type = "rectangular",
+    grid = c(2, 2),
+    seed = 42,
+    save_files = FALSE
+  )
+
+  svg <- render_single_piece_svg(result$pieces[[2]], fill = "yellow", show_label = TRUE)
+
+  expect_match(svg, "<text")
+  expect_match(svg, "2")  # Piece ID should appear
+})
+
+test_that("render_single_piece_svg supports background", {
+  result <- generate_puzzle(
+    type = "rectangular",
+    grid = c(2, 2),
+    seed = 42,
+    save_files = FALSE
+  )
+
+  svg <- render_single_piece_svg(result$pieces[[3]], fill = "purple", background = "white")
+
+  expect_match(svg, '<rect.*fill="white"')
+})
+
+test_that("render_single_piece_svg respects opacity parameter", {
+  result <- generate_puzzle(
+    type = "rectangular",
+    grid = c(2, 2),
+    seed = 42,
+    save_files = FALSE
+  )
+
+  svg <- render_single_piece_svg(result$pieces[[1]], fill = "red", opacity = 0.5)
+
+  expect_match(svg, "opacity")
+})
+
+test_that("render_single_piece_svg respects stroke_width parameter", {
+  result <- generate_puzzle(
+    type = "rectangular",
+    grid = c(2, 2),
+    seed = 42,
+    save_files = FALSE
+  )
+
+  svg <- render_single_piece_svg(result$pieces[[1]], stroke_width = 3.0)
+
+  # Stroke width may include decimal places (3.00)
+  expect_match(svg, 'stroke-width="3')
+})
+
+test_that("render_single_piece_svg validates piece input", {
+  # Missing path field
+  expect_error(
+    render_single_piece_svg(list(id = 1)),
+    "path"
+  )
+
+  # Empty path field
+  expect_error(
+    render_single_piece_svg(list(id = 1, path = "")),
+    "path"
+  )
+})
+
+test_that("render_single_piece_svg supports none fill and stroke", {
+  result <- generate_puzzle(
+    type = "rectangular",
+    grid = c(2, 2),
+    seed = 42,
+    save_files = FALSE
+  )
+
+  svg <- render_single_piece_svg(result$pieces[[1]], fill = "none", stroke_color = "none")
+
+  expect_match(svg, 'fill="none"')
+  expect_match(svg, 'stroke="none"')
+})
+
+test_that("calculate_piece_bounds extracts correct bounds", {
+  skip_if_not(exists("calculate_piece_bounds"), "calculate_piece_bounds not available")
+
+  # Simple square path
+  path <- "M 0 0 L 100 0 L 100 100 L 0 100 Z"
+  bounds <- calculate_piece_bounds(path)
+
+  expect_type(bounds, "list")
+  expect_equal(bounds$min_x, 0, tolerance = 0.001)
+  expect_equal(bounds$max_x, 100, tolerance = 0.001)
+  expect_equal(bounds$min_y, 0, tolerance = 0.001)
+  expect_equal(bounds$max_y, 100, tolerance = 0.001)
+  expect_equal(bounds$width, 100, tolerance = 0.001)
+  expect_equal(bounds$height, 100, tolerance = 0.001)
+})
+
+test_that("render_single_piece_svg works with all pieces from a puzzle", {
+  result <- generate_puzzle(
+    type = "rectangular",
+    grid = c(2, 2),
+    seed = 42,
+    save_files = FALSE
+  )
+
+  # All pieces should render successfully
+  for (piece in result$pieces) {
+    svg <- render_single_piece_svg(piece, fill = "lightblue")
+    expect_type(svg, "character")
+    expect_match(svg, "viewBox=")
+    expect_match(svg, "<path")
+  }
+})

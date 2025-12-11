@@ -13,6 +13,7 @@ generate_puzzle(
   jitter = 4,
   offset = 0,
   fill_color = "none",
+  fills = NULL,
   stroke_width = 1.5,
   colors = NULL,
   palette = NULL,
@@ -52,6 +53,8 @@ generate_puzzle(
 \item{offset}{Separation offset (0 = complete puzzle, >0 = separated pieces)}
 
 \item{fill_color}{Fill color for pieces ("none" for unfilled)}
+
+\item{fills}{Vector of per-piece fill colors (optional, overrides fill_color for palette fills)}
 
 \item{stroke_width}{SVG stroke width (default: 1.5)}
 

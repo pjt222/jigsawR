@@ -19,7 +19,7 @@ render_pieces_with_fusion_styled(
 
 \item{colors}{Vector of stroke colors}
 
-\item{fill}{Fill value for pieces}
+\item{fill}{Fill value for pieces (single value or vector of per-piece fills)}
 
 \item{stroke_width}{Stroke width}
 

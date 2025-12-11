@@ -1482,3 +1482,164 @@ generate_and_render_puzzle <- function(type = "rectangular",
     )
   )
 }
+
+
+#' Render a single puzzle piece as a standalone SVG
+#'
+#' Takes a piece object from generate_puzzle()$pieces and renders it as
+#' a complete SVG with appropriate viewBox calculated from the piece's bounds.
+#'
+#' @param piece A piece object containing path, center, id, and type fields
+#' @param fill Fill specification: "none", color string, or gradient list
+#' @param stroke_color Stroke color (default: "black")
+#' @param stroke_width Stroke line width in mm (default: 1.5)
+#' @param opacity Piece opacity 0.0-1.0 (default: 1.0)
+#' @param background Background: "none", color string, or gradient list (default: "none")
+#' @param padding Padding around piece as fraction of size (default: 0.15)
+#' @param show_label Show piece ID label (default: FALSE)
+#' @param label_color Label text color (default: "black")
+#' @param label_size Label font size in mm (default: auto-calculated)
+#' @return Complete SVG string for the single piece
+#' @export
+render_single_piece_svg <- function(piece,
+                                     fill = "none",
+                                     stroke_color = "black",
+                                     stroke_width = 1.5,
+                                     opacity = 1.0,
+                                     background = "none",
+                                     padding = 0.15,
+                                     show_label = FALSE,
+                                     label_color = "black",
+                                     label_size = NULL) {
+
+  # Validate piece object
+
+  if (is.null(piece$path) || !nzchar(piece$path)) {
+    stop("Piece object must have a non-empty 'path' field")
+  }
+
+  # Calculate bounding box from path
+  bounds <- calculate_piece_bounds(piece$path)
+
+  # Add padding
+  pad_x <- bounds$width * padding
+  pad_y <- bounds$height * padding
+
+  vb_x <- bounds$min_x - pad_x
+  vb_y <- bounds$min_y - pad_y
+  vb_width <- bounds$width + 2 * pad_x
+  vb_height <- bounds$height + 2 * pad_y
+
+  # Build SVG header with viewBox
+  svg_header <- sprintf(
+    '<?xml version="1.0" encoding="UTF-8"?>\n<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="%.2fmm" height="%.2fmm" viewBox="%.2f %.2f %.2f %.2f">',
+    vb_width, vb_height, vb_x, vb_y, vb_width, vb_height
+  )
+
+  # Render background
+  bg_element <- ""
+  if (is.character(background) && background != "none") {
+    bg_element <- sprintf(
+      '<rect x="%.2f" y="%.2f" width="%.2f" height="%.2f" fill="%s"/>',
+      vb_x, vb_y, vb_width, vb_height, background
+    )
+  } else if (is.list(background) && !is.null(background$type) && background$type == "gradient") {
+    # Simple radial gradient for background
+    bg_element <- sprintf(
+      '<defs><radialGradient id="bgGrad"><stop offset="0%%" stop-color="%s"/><stop offset="50%%" stop-color="%s"/><stop offset="100%%" stop-color="%s"/></radialGradient></defs><rect x="%.2f" y="%.2f" width="%.2f" height="%.2f" fill="url(#bgGrad)"/>',
+      background$center %||% "#ffffff",
+      background$middle %||% "#e0e0e0",
+      background$edge %||% "#808080",
+      vb_x, vb_y, vb_width, vb_height
+    )
+  }
+
+  # Handle fill (including gradient)
+  defs_section <- ""
+  fill_value <- fill
+
+  if (is.list(fill) && !is.null(fill$type) && fill$type == "gradient") {
+    defs_section <- render_piece_fill_gradient_defs(fill)
+    fill_value <- "url(#pieceFillGradient)"
+  }
+
+  # Render piece path
+  opacity_attr <- if (opacity < 1.0) sprintf(' opacity="%.2f"', opacity) else ""
+  piece_element <- sprintf(
+    '<path d="%s" fill="%s" stroke="%s" stroke-width="%.2f" stroke-linecap="round" stroke-linejoin="round"%s/>',
+    piece$path, fill_value, stroke_color, stroke_width, opacity_attr
+  )
+
+  # Render label if requested
+  label_element <- ""
+  if (show_label) {
+    bbox_center <- calculate_path_bounding_box_center(piece$path)
+
+    # Auto-calculate label size
+    if (is.null(label_size)) {
+      piece_dim <- min(bounds$width, bounds$height)
+      label_size <- max(4, min(20, piece_dim * 0.25))
+    }
+
+    piece_id <- piece$id %||% 1
+    label_element <- sprintf(
+      '<text x="%.2f" y="%.2f" font-family="sans-serif" font-size="%.1f" font-weight="bold" fill="%s" text-anchor="middle" dominant-baseline="central">%d</text>',
+      bbox_center["x"], bbox_center["y"], label_size, label_color, piece_id
+    )
+  }
+
+  # Assemble SVG
+  svg_parts <- c(
+    svg_header,
+    if (nzchar(defs_section)) defs_section else NULL,
+    if (nzchar(bg_element)) bg_element else NULL,
+    piece_element,
+    if (nzchar(label_element)) label_element else NULL,
+    "</svg>"
+  )
+
+  paste(svg_parts[!sapply(svg_parts, is.null)], collapse = "\n")
+}
+
+
+#' Calculate bounding box from SVG path
+#'
+#' Parses an SVG path and extracts all coordinates to compute bounds.
+#'
+#' @param path SVG path d attribute string
+#' @return List with min_x, max_x, min_y, max_y, width, height
+#' @keywords internal
+calculate_piece_bounds <- function(path) {
+  segments <- parse_svg_path(path)
+
+  xs <- c()
+  ys <- c()
+
+  for (seg in segments) {
+    if (seg$type %in% c("M", "L")) {
+      xs <- c(xs, seg$x)
+      ys <- c(ys, seg$y)
+    } else if (seg$type == "C") {
+      # Include control points for accurate bezier bounds
+      xs <- c(xs, seg$cp1x, seg$cp2x, seg$x)
+      ys <- c(ys, seg$cp1y, seg$cp2y, seg$y)
+    } else if (seg$type == "A") {
+      xs <- c(xs, seg$x)
+      ys <- c(ys, seg$y)
+    }
+  }
+
+  if (length(xs) == 0 || length(ys) == 0) {
+    return(list(min_x = 0, max_x = 100, min_y = 0, max_y = 100,
+                width = 100, height = 100))
+  }
+
+  list(
+    min_x = min(xs),
+    max_x = max(xs),
+    min_y = min(ys),
+    max_y = max(ys),
+    width = max(xs) - min(xs),
+    height = max(ys) - min(ys)
+  )
+}
