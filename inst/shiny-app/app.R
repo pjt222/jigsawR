@@ -257,6 +257,18 @@ ui <- page_fluid(
             )
           ),
 
+          # Fusion groups input - affects puzzle generation (requires Generate click)
+          # Supports both PILES notation (1-2-3,4-5) and legacy format (1,2),(3,4,5)
+          tags$hr(class = "my-2"),
+          tags$small(class = "text-muted", "Piece Fusion"),
+          tooltip(
+            textInput("fusion_groups",
+                     "Fuse Pieces:",
+                     value = "",
+                     placeholder = "1-2-3,4-5"),
+            "Fuse adjacent pieces using PILES notation. Examples: '1-2' fuses pieces 1 and 2, '1-2-3,4-5' creates two groups. Use ':' for ranges (1:6), or keywords like 'R1' (row 1), 'ring1'. Changes apply when you click Generate."
+          ),
+
           # Seed
           fluidRow(
             column(8,
@@ -398,19 +410,10 @@ ui <- page_fluid(
           ),
 
           tags$hr(class = "my-2"),
-          tags$small(class = "text-muted", "Fusion"),
-
-          # Fusion groups input - applies when Generate is clicked
-          # Supports both PILES notation (1-2-3,4-5) and legacy format (1,2),(3,4,5)
-          tooltip(
-            textInput("fusion_groups",
-                     "Fuse Pieces:",
-                     value = "",
-                     placeholder = "1-2-3,4-5"),
-            "Fuse adjacent pieces using PILES notation. Examples: '1-2' fuses pieces 1 and 2, '1-2-3,4-5' creates two groups. Use ':' for ranges (1:6), or keywords like 'R1' (row 1), 'ring1'. Changes apply when you click Generate."
-          ),
+          tags$small(class = "text-muted", "Internal Edges (Fusion)"),
 
           # Fusion style - reactive styling for internal edges
+          # Note: Fusion groups are defined in Settings panel (requires Generate)
           radioButtons("fusion_style", "Internal Edge Style:",
                       choices = list(
                         "Dashed" = "dashed",
