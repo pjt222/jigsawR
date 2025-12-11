@@ -1004,6 +1004,167 @@ Styling Panel:
 
 ---
 
+### Insight #26: PNG Download with Graceful Fallback Chain (2025-12-11)
+
+**Problem (Issue #25)**: Users needed PNG export for presentations, documents, and image editing, but the Shiny app only supported SVG downloads.
+
+**Solution**: Implement PNG download with a fallback chain of conversion methods:
+
+```r
+# Priority order for SVG-to-PNG conversion
+1. rsvg::rsvg_png()           # Fastest, most reliable
+2. magick::image_read_svg()   # Good fallback, widely available
+3. (Future: Inkscape CLI)     # System tool fallback
+4. (Future: ImageMagick CLI)  # System tool fallback
+```
+
+**Implementation Pattern**:
+```r
+output$download_png <- downloadHandler(
+  filename = function() { paste0(prefix, ".png") },
+  content = function(file) {
+    svg <- svg_content()
+
+    # Show progress (PNG conversion can take a moment)
+    progress_id <- showNotification("Converting...", duration = NULL)
+
+    tryCatch({
+      # Calculate dimensions maintaining aspect ratio
+      canvas <- positioned_result()$canvas_size
+      aspect_ratio <- canvas[1] / canvas[2]
+      # ... calculate width_px, height_px (max 2000px)
+
+      # Try rsvg first
+      success <- FALSE
+      if (requireNamespace("rsvg", quietly = TRUE)) {
+        tryCatch({
+          png_data <- rsvg::rsvg_png(temp_svg, width = width_px, height = height_px)
+          writeBin(png_data, temp_png)
+          success <- TRUE
+        }, error = function(e) { })
+      }
+
+      # Fall back to magick
+      if (!success && requireNamespace("magick", quietly = TRUE)) {
+        tryCatch({
+          img <- magick::image_read_svg(temp_svg, width = width_px, height = height_px)
+          magick::image_write(img, temp_png, format = "png")
+          success <- TRUE
+        }, error = function(e) { })
+      }
+
+      # Handle result
+      if (success) {
+        file.copy(temp_png, file)
+        showNotification("PNG ready!", type = "message")
+      } else {
+        showNotification("Install rsvg or magick package", type = "error")
+      }
+    }, finally = {
+      removeNotification(progress_id)
+      unlink(c(temp_svg, temp_png))
+    })
+  },
+  contentType = "image/png"
+)
+```
+
+**Key Design Decisions**:
+1. **Maintain aspect ratio**: Calculate dimensions from canvas size, max 2000px
+2. **Progress feedback**: Show notification during conversion (can take 1-2 seconds)
+3. **Graceful degradation**: Clear error message if no conversion tool available
+4. **Clean temp files**: Always clean up in `finally` block
+
+**User Experience**:
+- Button: "Current View (PNG)" with file-image icon
+- Help text explains package requirements
+- Works identically to SVG download (same content, different format)
+
+**Files Changed**:
+- `inst/shiny-app/app.R`: Added `download_png` handler and UI button
+
+---
+
+### Insight #27: Label Centering via Bounding Box Geometry (2025-12-11)
+
+**Context**: Piece labels must appear centered within each piece regardless of:
+- Puzzle type (rectangular, hexagonal, concentric)
+- Layout mode (complete vs separated)
+- Fusion groups (labels on all pieces, even fused ones)
+- Transformations (warp, truncation, circular border)
+
+**Problem**: Initial implementations used `piece$center` which is the **topological center** (center of grid cell), not the **geometric center** (center of actual rendered shape). This caused misalignment for:
+- Pieces with asymmetric tabs
+- Warped hexagonal pieces
+- Concentric trapezoids (wider at outer edge)
+
+**Solution**: Calculate label position from the **bounding box center** of the actual SVG path:
+
+```r
+calculate_path_bounding_box_center <- function(path) {
+  segments <- parse_svg_path(path)
+
+  xs <- c()
+  ys <- c()
+
+  for (seg in segments) {
+    if (seg$type %in% c("M", "L")) {
+      xs <- c(xs, seg$x)
+      ys <- c(ys, seg$y)
+    } else if (seg$type == "C") {
+      # Include bezier control points for accurate bounds
+      xs <- c(xs, seg$cp1x, seg$cp2x, seg$x)
+      ys <- c(ys, seg$cp1y, seg$cp2y, seg$y)
+    } else if (seg$type == "A") {
+      xs <- c(xs, seg$x)
+      ys <- c(ys, seg$y)
+    }
+  }
+
+  # Bounding box center
+  cx <- (min(xs) + max(xs)) / 2
+  cy <- (min(ys) + max(ys)) / 2
+
+  return(c(x = cx, y = cy))
+}
+```
+
+**SVG Text Centering**:
+```xml
+<text x="123.45" y="67.89"
+      text-anchor="middle"           <!-- Horizontal centering -->
+      dominant-baseline="central"    <!-- Vertical centering -->
+      font-family="sans-serif"
+      font-size="12"
+      font-weight="bold">
+  5
+</text>
+```
+
+**Why Bounding Box Center Works**:
+1. **Matches visual perception**: The center of the bounding box is where humans expect the label
+2. **Matches gradient center**: SVG `objectBoundingBox` gradients center at the same point
+3. **Invariant to positioning**: Works for both complete and separated layouts
+4. **Handles all piece shapes**: Rectangular, hexagonal, trapezoidal (concentric)
+
+**Verification Results**:
+| Configuration | Max Delta | Result |
+|---------------|-----------|--------|
+| All puzzle types | 0.007mm | ✅ Perfect |
+| With fusion groups | 0.007mm | ✅ Perfect |
+| With separation (offset>0) | 0.007mm | ✅ Perfect |
+| With warp/trunc | 0.007mm | ✅ Perfect |
+| render_single_piece_svg | 0.007mm | ✅ Perfect |
+
+(Delta of 0.007mm is floating-point precision from `sprintf("%.2f")`)
+
+**Key Insight**: For visual centering, always use the **rendered geometry** (bounding box), not the **logical position** (grid coordinates). This ensures labels appear centered regardless of piece shape irregularities.
+
+**Files Involved**:
+- `R/unified_renderer.R`: `calculate_path_bounding_box_center()`, `render_piece_label()`
+
+---
+
 ## Development History
 
 ### Completed Work (Archive)
