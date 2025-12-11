@@ -603,12 +603,20 @@ ui <- page_fluid(
             "Download puzzle with all pieces in original positions (offset=0)"
           ),
 
-          # Download Current View (WYSIWYG)
+          # Download Current View (WYSIWYG) - SVG format
           tooltip(
-            disabled(downloadButton("download_wysiwyg", "Current View",
-                          icon = icon("eye"),
+            disabled(downloadButton("download_wysiwyg", "Current View (SVG)",
+                          icon = icon("file-code"),
                           class = "btn-info w-100 mb-2")),
-            "Download exactly what you see (WYSIWYG)"
+            "Download exactly what you see as SVG (vector format)"
+          ),
+
+          # Download Current View as PNG
+          tooltip(
+            disabled(downloadButton("download_png", "Current View (PNG)",
+                          icon = icon("file-image"),
+                          class = "btn-info w-100 mb-2")),
+            "Download exactly what you see as PNG (raster image, 2000x2000px)"
           ),
 
           # Download Individual Pieces - available for ALL puzzle types
@@ -700,10 +708,15 @@ ui <- page_fluid(
             br(),
             h4("Download Options"),
             tags$ul(
-              tags$li(strong("Complete Puzzle:"), " All pieces at original positions (offset=0)"),
-              tags$li(strong("Current View:"), " Exactly what you see (WYSIWYG)"),
-              tags$li(strong("Individual Pieces:"), " Each piece as a separate SVG file (all types)")
+              tags$li(strong("Complete Puzzle:"), " All pieces at original positions (offset=0, SVG)"),
+              tags$li(strong("Current View (SVG):"), " Exactly what you see as vector format"),
+              tags$li(strong("Current View (PNG):"), " Raster image (2000px), ideal for presentations"),
+              tags$li(strong("Individual Pieces:"), " Each piece as a separate SVG file")
             ),
+            p(tags$small(class = "text-muted",
+              "Note: PNG requires 'rsvg' or 'magick' package. Install with: ",
+              code("install.packages(c('rsvg', 'magick'))")
+            )),
             br(),
             h4("Tips for Laser Cutting"),
             tags$ul(
@@ -914,6 +927,7 @@ server <- function(input, output, session) {
       # Enable download buttons after successful generation
       shinyjs::enable("download_complete")
       shinyjs::enable("download_wysiwyg")
+      shinyjs::enable("download_png")
       shinyjs::enable("download_pieces")
 
     }, error = function(e) {
@@ -1412,6 +1426,100 @@ server <- function(input, output, session) {
       }
     },
     contentType = "image/svg+xml"
+  )
+
+  # Download handler for PNG (current view converted to PNG)
+  output$download_png <- downloadHandler(
+    filename = function() {
+      data <- puzzle_data()
+      if (is.null(data)) return("puzzle.png")
+      sep_suffix <- if (data$offset > 0) "_separated" else "_complete"
+      paste0(build_filename_prefix(), sep_suffix, ".png")
+    },
+    content = function(file) {
+      svg <- svg_content()
+      if (is.null(svg)) {
+        showNotification("No puzzle to download.", type = "warning")
+        return()
+      }
+
+      # Show progress notification
+      progress_id <- showNotification(
+        "Converting SVG to PNG...",
+        type = "message",
+        duration = NULL  # Don't auto-close
+      )
+
+      tryCatch({
+        # Get canvas size for aspect ratio
+        pos <- positioned_result()
+        canvas <- if (!is.null(pos)) pos$canvas_size else c(2000, 2000)
+
+        # Calculate dimensions maintaining aspect ratio (max 2000px)
+        max_dim <- 2000
+        aspect_ratio <- canvas[1] / canvas[2]
+        if (aspect_ratio >= 1) {
+          width_px <- max_dim
+          height_px <- round(max_dim / aspect_ratio)
+        } else {
+          height_px <- max_dim
+          width_px <- round(max_dim * aspect_ratio)
+        }
+
+        # Create temp file for PNG output
+        temp_png <- tempfile(fileext = ".png")
+
+        # Convert SVG to PNG using convert_svg_to_png()
+        # Note: convert_svg_to_png adds "output/" prefix, so we work around it
+        temp_svg <- tempfile(fileext = ".svg")
+        writeLines(svg, temp_svg)
+
+        # Try rsvg first (most reliable)
+        success <- FALSE
+        if (requireNamespace("rsvg", quietly = TRUE)) {
+          tryCatch({
+            png_data <- rsvg::rsvg_png(temp_svg, width = width_px, height = height_px)
+            writeBin(png_data, temp_png)
+            success <- TRUE
+          }, error = function(e) {
+            log_warn("rsvg conversion failed: {e$message}")
+          })
+        }
+
+        # Fall back to magick if rsvg failed
+        if (!success && requireNamespace("magick", quietly = TRUE)) {
+          tryCatch({
+            img <- magick::image_read_svg(temp_svg, width = width_px, height = height_px)
+            magick::image_write(img, temp_png, format = "png")
+            success <- TRUE
+          }, error = function(e) {
+            log_warn("magick conversion failed: {e$message}")
+          })
+        }
+
+        # Clean up temp SVG
+        unlink(temp_svg)
+
+        if (success && file.exists(temp_png)) {
+          # Copy to download file
+          file.copy(temp_png, file, overwrite = TRUE)
+          unlink(temp_png)
+          removeNotification(progress_id)
+          showNotification("PNG download ready!", type = "message", duration = 3)
+        } else {
+          removeNotification(progress_id)
+          showNotification(
+            "PNG conversion failed. Please install 'rsvg' or 'magick' package.",
+            type = "error",
+            duration = 10
+          )
+        }
+      }, error = function(e) {
+        removeNotification(progress_id)
+        showNotification(paste("Error:", e$message), type = "error", duration = 10)
+      })
+    },
+    contentType = "image/png"
   )
 
   # Handle individual pieces download - UNIFIED using render_single_piece_svg()
