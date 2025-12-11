@@ -348,9 +348,9 @@ ui <- page_fluid(
           # Piece fill options (always visible)
           radioButtons("fill_type", "Piece Fill:",
                       choices = list(
-                        "None (Outline only)" = "none",
-                        "Solid Color" = "solid",
-                        "Use Palette" = "palette",
+                        "None" = "none",
+                        "Solid" = "solid",
+                        "Palette" = "palette",
                         "Gradient" = "gradient"
                       ),
                       selected = cfg_style$fill_type,
@@ -362,6 +362,30 @@ ui <- page_fluid(
               "Fill Color:",
               value = cfg_style$fill_color,
               showColour = "background"
+            )
+          ),
+          # Fill palette options (shown when fill_type == "palette")
+          conditionalPanel(
+            condition = "input.fill_type == 'palette'",
+            selectInput("fill_palette", "Fill Palette:",
+                     choices = list(
+                       "Magma (Purple-Yellow)" = "magma",
+                       "Viridis (Blue-Green-Yellow)" = "viridis",
+                       "Plasma (Purple-Red-Yellow)" = "plasma",
+                       "Inferno (Black-Purple-Yellow)" = "inferno",
+                       "Cividis (Colorblind Friendly)" = "cividis",
+                       "Mako (Blue-Green)" = "mako",
+                       "Rocket (Black-Red-Yellow)" = "rocket",
+                       "Turbo (Rainbow)" = "turbo"
+                     ),
+                     selected = cfg_style$fill_palette),
+            tooltip(
+              input_switch(
+                "fill_palette_invert",
+                "Invert Fill Palette",
+                value = FALSE
+              ),
+              "Reverse the fill palette direction."
             )
           ),
           # Gradient color pickers for piece fill
@@ -417,37 +441,14 @@ ui <- page_fluid(
           tags$small(class = "text-muted fst-italic", "Define fusion groups in Settings panel"),
 
           tags$hr(class = "my-2"),
-          tags$small(class = "text-muted", "Appearance"),
-
-          selectInput("color_palette", "Color Palette:",
-                   choices = list(
-                     "Black (Solid)" = "black",
-                     "Magma (Purple-Yellow)" = "magma",
-                     "Viridis (Blue-Green-Yellow)" = "viridis",
-                     "Plasma (Purple-Red-Yellow)" = "plasma",
-                     "Inferno (Black-Purple-Yellow)" = "inferno",
-                     "Cividis (Colorblind Friendly)" = "cividis",
-                     "Mako (Blue-Green)" = "mako",
-                     "Rocket (Black-Red-Yellow)" = "rocket",
-                     "Turbo (Rainbow)" = "turbo"
-                   ),
-                   selected = cfg_colors$default_palette),
-
-          tooltip(
-            input_switch(
-              "palette_invert",
-              "Invert Palette",
-              value = FALSE
-            ),
-            "Reverse the color palette direction. Light colors become dark and vice versa."
-          ),
+          tags$small(class = "text-muted", "Stroke"),
 
           # Stroke color type selection (none, solid, palette)
           radioButtons("stroke_color_type", "Stroke Color:",
                       choices = list(
                         "None" = "none",
-                        "Solid Color" = "solid",
-                        "Use Palette" = "palette"
+                        "Solid" = "solid",
+                        "Palette" = "palette"
                       ),
                       selected = cfg_style$stroke_color_type,
                       inline = TRUE),
@@ -460,6 +461,30 @@ ui <- page_fluid(
               "Stroke Color:",
               value = cfg_style$stroke_color,
               showColour = "background"
+            )
+          ),
+          # Stroke palette options (shown when stroke_color_type == "palette")
+          conditionalPanel(
+            condition = "input.stroke_color_type == 'palette'",
+            selectInput("stroke_palette", "Stroke Palette:",
+                     choices = list(
+                       "Viridis (Blue-Green-Yellow)" = "viridis",
+                       "Magma (Purple-Yellow)" = "magma",
+                       "Plasma (Purple-Red-Yellow)" = "plasma",
+                       "Inferno (Black-Purple-Yellow)" = "inferno",
+                       "Cividis (Colorblind Friendly)" = "cividis",
+                       "Mako (Blue-Green)" = "mako",
+                       "Rocket (Black-Red-Yellow)" = "rocket",
+                       "Turbo (Rainbow)" = "turbo"
+                     ),
+                     selected = cfg_style$stroke_palette),
+            tooltip(
+              input_switch(
+                "stroke_palette_invert",
+                "Invert Stroke Palette",
+                value = FALSE
+              ),
+              "Reverse the stroke palette direction."
             )
           ),
 
@@ -521,7 +546,7 @@ ui <- page_fluid(
         radioButtons("background_type", "Background:",
                     choices = list(
                       "None" = "none",
-                      "Solid Color" = "solid",
+                      "Solid" = "solid",
                       "Gradient" = "gradient"
                     ),
                     selected = cfg_bg$type,
@@ -765,9 +790,11 @@ server <- function(input, output, session) {
     updateSliderInput(session, "tabsize", value = cfg_style$tabsize)
     updateSliderInput(session, "jitter", value = cfg_style$jitter)
     updateSliderInput(session, "offset", value = cfg_style$offset)
-    updateSelectInput(session, "color_palette", selected = cfg_colors$default_palette)
+    # Stroke options
     updateRadioButtons(session, "stroke_color_type", selected = cfg_style$stroke_color_type)
     colourpicker::updateColourInput(session, "stroke_color", value = cfg_style$stroke_color)
+    updateSelectInput(session, "stroke_palette", selected = cfg_style$stroke_palette)
+    update_switch(id = "stroke_palette_invert", value = cfg_style$stroke_palette_invert, session = session)
     updateSliderInput(session, "stroke_width", value = cfg_style$stroke_width)
     updateSliderInput(session, "opacity", value = cfg_style$opacity)
     # Label settings
@@ -777,6 +804,8 @@ server <- function(input, output, session) {
     # Fill options
     updateRadioButtons(session, "fill_type", selected = cfg_style$fill_type)
     colourpicker::updateColourInput(session, "fill_color", value = cfg_style$fill_color)
+    updateSelectInput(session, "fill_palette", selected = cfg_style$fill_palette)
+    update_switch(id = "fill_palette_invert", value = cfg_style$fill_palette_invert, session = session)
     # Background settings
     updateRadioButtons(session, "background_type", selected = cfg_bg$type)
     colourpicker::updateColourInput(session, "background_color", value = cfg_bg$solid_color)
@@ -1028,9 +1057,10 @@ server <- function(input, output, session) {
     } else if (input$fill_type == "solid") {
       fill_color_value <- input$fill_color
     } else if (input$fill_type == "palette") {
-      # Generate per-piece fill colors from the selected palette
-      fill_colors_value <- get_puzzle_colors(n_pieces, input$color_palette,
-                                              invert = isTRUE(input$palette_invert))
+      # Generate per-piece fill colors from the fill palette
+      fill_palette_val <- if (is.null(input$fill_palette)) "magma" else input$fill_palette
+      fill_colors_value <- get_puzzle_colors(n_pieces, fill_palette_val,
+                                              invert = isTRUE(input$fill_palette_invert))
     } else if (input$fill_type == "gradient") {
       fill_color_value <- list(
         type = "gradient",
@@ -1058,10 +1088,11 @@ server <- function(input, output, session) {
     label_size_value <- if (is.null(input$label_size) || input$label_size == 0) NULL else input$label_size
 
     # Handle stroke color based on stroke_color_type
-    stroke_color_type_val <- if (is.null(input$stroke_color_type)) "palette" else input$stroke_color_type
+    stroke_color_type_val <- if (is.null(input$stroke_color_type)) "solid" else input$stroke_color_type
     stroke_width_value <- input$stroke_width
     stroke_colors_value <- NULL
-    stroke_palette_value <- input$color_palette
+    stroke_palette_value <- if (is.null(input$stroke_palette)) "viridis" else input$stroke_palette
+    stroke_palette_invert_val <- isTRUE(input$stroke_palette_invert)
 
     if (stroke_color_type_val == "none") {
       # No stroke - set width to 0
@@ -1081,7 +1112,7 @@ server <- function(input, output, session) {
       stroke_width = stroke_width_value,
       colors = stroke_colors_value,
       palette = stroke_palette_value,
-      palette_invert = isTRUE(input$palette_invert),
+      palette_invert = stroke_palette_invert_val,
       background = background_value,
       opacity = input$opacity / 100,
       show_labels = show_labels_value,
@@ -1254,9 +1285,10 @@ server <- function(input, output, session) {
       } else if (input$fill_type == "solid") {
         fill_color_dl <- input$fill_color
       } else if (input$fill_type == "palette") {
-        # Generate per-piece fill colors from the selected palette
-        fills_dl <- get_puzzle_colors(data$total_pieces, input$color_palette,
-                                       invert = isTRUE(input$palette_invert))
+        # Generate per-piece fill colors from the fill palette
+        fill_palette_dl <- if (is.null(input$fill_palette)) "magma" else input$fill_palette
+        fills_dl <- get_puzzle_colors(data$total_pieces, fill_palette_dl,
+                                       invert = isTRUE(input$fill_palette_invert))
       } else if (input$fill_type == "gradient") {
         fill_color_dl <- list(
           type = "gradient",
@@ -1323,10 +1355,11 @@ server <- function(input, output, session) {
       has_fusion <- !is.null(fusion_groups_str) && nchar(trimws(fusion_groups_str)) > 0
 
       # Handle stroke color based on stroke_color_type
-      stroke_color_type_val <- if (is.null(input$stroke_color_type)) "palette" else input$stroke_color_type
+      stroke_color_type_val <- if (is.null(input$stroke_color_type)) "solid" else input$stroke_color_type
       stroke_width_dl <- input$stroke_width
       stroke_colors_dl <- NULL
-      stroke_palette_dl <- input$color_palette
+      stroke_palette_dl <- if (is.null(input$stroke_palette)) "viridis" else input$stroke_palette
+      stroke_palette_invert_dl <- isTRUE(input$stroke_palette_invert)
 
       if (stroke_color_type_val == "none") {
         stroke_width_dl <- 0
@@ -1348,7 +1381,7 @@ server <- function(input, output, session) {
         stroke_width = stroke_width_dl,
         colors = stroke_colors_dl,
         palette = stroke_palette_dl,
-        palette_invert = isTRUE(input$palette_invert),
+        palette_invert = stroke_palette_invert_dl,
         background = background_value,
         opacity = input$opacity / 100,
         save_files = FALSE,

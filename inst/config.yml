@@ -30,11 +30,15 @@ default:
     jitter: 2
     offset: 0
     stroke_width: 1
-    stroke_color_type: "palette"  # none, solid, or palette
+    stroke_color_type: "solid"  # none, solid, or palette
     stroke_color: "#000000"  # used when stroke_color_type = "solid"
+    stroke_palette: "viridis"  # used when stroke_color_type = "palette"
+    stroke_palette_invert: false
     opacity: 100
-    fill_type: "solid"  # none, solid, gradient, or palette
-    fill_color: "#a1a1a1"
+    fill_type: "solid"  # none, solid, palette, or gradient
+    fill_color: "#a1a1a1"  # used when fill_type = "solid"
+    fill_palette: "magma"  # used when fill_type = "palette"
+    fill_palette_invert: false
     # Piece gradient colors (only used when fill_type = "gradient")
     piece_gradient:
       center: "#ffffff"
@@ -46,9 +50,8 @@ default:
 
   # Color palette configuration
   colors:
-    default_palette: "black"
+    default_palette: "viridis"
     available_palettes:
-      - "black"
       - "viridis"
       - "magma"
       - "plasma"
@@ -60,9 +63,8 @@ default:
 
     # Palette descriptions for UI
     palette_descriptions:
-      black: "Solid Black"
       viridis: "Blue to Green to Yellow"
-      magma: "Black to Purple to Yellow (Default)"
+      magma: "Black to Purple to Yellow"
       plasma: "Purple to Red to Yellow"
       inferno: "Black to Purple to Yellow (High Contrast)"
       cividis: "Blue to Yellow (Colorblind Friendly)"
