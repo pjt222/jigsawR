@@ -371,12 +371,11 @@ test_that("hexagonal: fused edge direction matches neighbor direction", {
 
   skip_if(is.null(fused_geo_side), "No fused edges found on piece 1")
 
-  # Hexagonal side numbering based on axial coordinate system:
-  # Side 0 → 30° (E/right), Side 1 → -30° (NE), Side 2 → -90° (NW/up)
-  # Side 3 → -150° (W/left), Side 4 → 150° (SW), Side 5 → 90° (SE/down)
-  # Formula: expected_dir = 30 - side * 60, adjusted for [-180, 180] range
-  expected_dir <- 30 - fused_geo_side * 60
-  if (expected_dir < -180) expected_dir <- expected_dir + 360
+  # Hexagonal side numbering for flat-top hexagon (base_offset=0):
+  # Side 0 → 30° (NE), Side 1 → 90° (N), Side 2 → 150° (NW)
+  # Side 3 → -150° (SW), Side 4 → -90° (S), Side 5 → -30° (SE)
+  # Formula: expected_dir = 30 + side * 60, adjusted for [-180, 180] range
+  expected_dir <- 30 + fused_geo_side * 60
   if (expected_dir > 180) expected_dir <- expected_dir - 360
 
   # The fused side direction should be close to actual neighbor direction
@@ -743,34 +742,35 @@ test_that("large chain merges efficiently", {
 })
 
 # =============================================================================
-# TOPOLOGY-TO-GEOMETRY MAPPING TESTS (Issue #43, #49 - 2025-12-10)
+# TOPOLOGY-TO-GEOMETRY MAPPING TESTS (Issue #43, #49, #53 - 2025-12-11)
 # =============================================================================
-# These tests verify the mathematical correctness of the pointed-top hexagon
-# geometry formula: geo_side = round((30 - direction_angle) / 60) %% 6
+# These tests verify the mathematical correctness of the flat-top hexagon
+# geometry formula: geo_side = round((dir - 30) / 60) %% 6
 #
-# Pointed-top hexagon side directions:
-#   Side 0 →  30° (E)
-#   Side 1 → -30° (NE)
-#   Side 2 → -90° (N)
-#   Side 3 → -150° (W)
-#   Side 4 →  150° (SW)
-#   Side 5 →  90° (SE)
+# Flat-top hexagon (base_offset=0): vertices at 0°, 60°, 120°, 180°, 240°, 300°
+# Each side faces outward at the midpoint between its two vertices:
+#   Side 0: vertex 0° to 60° → faces  30° (NE)
+#   Side 1: vertex 60° to 120° → faces  90° (N)
+#   Side 2: vertex 120° to 180° → faces 150° (NW)
+#   Side 3: vertex 180° to 240° → faces -150° (SW)
+#   Side 4: vertex 240° to 300° → faces -90° (S)
+#   Side 5: vertex 300° to 0° → faces -30° (SE)
 # =============================================================================
 
 test_that("topo-to-geo formula: canonical direction angles", {
-  # Test the formula: geo_side = round((30 - dir) / 60) %% 6
+  # Test the formula: geo_side = round((dir - 30) / 60) %% 6
   # with exact canonical direction angles
   test_cases <- list(
-    list(dir = 30, expected_side = 0, label = "E"),
-    list(dir = -30, expected_side = 1, label = "NE"),
-    list(dir = -90, expected_side = 2, label = "N"),
-    list(dir = -150, expected_side = 3, label = "W"),
-    list(dir = 150, expected_side = 4, label = "SW"),
-    list(dir = 90, expected_side = 5, label = "SE")
+    list(dir = 30, expected_side = 0, label = "NE"),
+    list(dir = 90, expected_side = 1, label = "N"),
+    list(dir = 150, expected_side = 2, label = "NW"),
+    list(dir = -150, expected_side = 3, label = "SW"),
+    list(dir = -90, expected_side = 4, label = "S"),
+    list(dir = -30, expected_side = 5, label = "SE")
   )
 
   for (tc in test_cases) {
-    geo_side <- round((30 - tc$dir) / 60) %% 6
+    geo_side <- round((tc$dir - 30) / 60) %% 6
     expect_equal(geo_side, tc$expected_side,
       info = paste0("Direction ", tc$dir, "° (", tc$label, "): ",
                     "expected side ", tc$expected_side, ", got ", geo_side))
@@ -779,43 +779,43 @@ test_that("topo-to-geo formula: canonical direction angles", {
 
 test_that("topo-to-geo formula: boundary direction angles", {
   # Test with angles at ±30° boundaries (should round to nearest side)
-  # Boundary at 0°: between side 0 (30°) and side 1 (-30°)
-  # Formula: (30 - 0) / 60 = 0.5 → rounds to 0 (R's banker's rounding)
-  geo_side_0 <- round((30 - 0) / 60) %% 6
-  expect_true(geo_side_0 %in% c(0, 1),
-    info = paste("0° should map to side 0 or 1, got", geo_side_0))
+  # Boundary at 0°: between side 5 (-30°) and side 0 (30°)
+  # Formula: (0 - 30) / 60 = -0.5 → rounds to 0 (R's banker's rounding)
+  geo_side_0 <- round((0 - 30) / 60) %% 6
+  expect_true(geo_side_0 %in% c(0, 5),
+    info = paste("0° should map to side 0 or 5, got", geo_side_0))
 
-  # Boundary at 60°: between side 0 (30°) and side 5 (90°)
-  geo_side_60 <- round((30 - 60) / 60) %% 6
-  expect_true(geo_side_60 %in% c(0, 5),
-    info = paste("60° should map to side 0 or 5, got", geo_side_60))
+  # Boundary at 60°: between side 0 (30°) and side 1 (90°)
+  geo_side_60 <- round((60 - 30) / 60) %% 6
+  expect_true(geo_side_60 %in% c(0, 1),
+    info = paste("60° should map to side 0 or 1, got", geo_side_60))
 
-  # Boundary at -60°: between side 1 (-30°) and side 2 (-90°)
-  geo_side_minus60 <- round((30 - (-60)) / 60) %% 6
-  expect_true(geo_side_minus60 %in% c(1, 2),
-    info = paste("-60° should map to side 1 or 2, got", geo_side_minus60))
+  # Boundary at -60°: between side 5 (-30°) and side 4 (-90°)
+  geo_side_minus60 <- round((-60 - 30) / 60) %% 6
+  expect_true(geo_side_minus60 %in% c(4, 5),
+    info = paste("-60° should map to side 4 or 5, got", geo_side_minus60))
 })
 
 test_that("topo-to-geo formula: practical direction angles", {
   # Test with practical angles that might occur from atan2 calculations
   # These should be within ±25° of canonical angles
   test_cases <- list(
-    list(dir = 25, expected_side = 0),   # Close to 30° (E)
-    list(dir = 35, expected_side = 0),   # Close to 30° (E)
-    list(dir = -25, expected_side = 1),  # Close to -30° (NE)
-    list(dir = -35, expected_side = 1),  # Close to -30° (NE)
-    list(dir = -85, expected_side = 2),  # Close to -90° (N)
-    list(dir = -95, expected_side = 2),  # Close to -90° (N)
-    list(dir = -145, expected_side = 3), # Close to -150° (W)
-    list(dir = -155, expected_side = 3), # Close to -150° (W)
-    list(dir = 145, expected_side = 4),  # Close to 150° (SW)
-    list(dir = 155, expected_side = 4),  # Close to 150° (SW)
-    list(dir = 85, expected_side = 5),   # Close to 90° (SE)
-    list(dir = 95, expected_side = 5)    # Close to 90° (SE)
+    list(dir = 25, expected_side = 0),   # Close to 30° (NE)
+    list(dir = 35, expected_side = 0),   # Close to 30° (NE)
+    list(dir = 85, expected_side = 1),   # Close to 90° (N)
+    list(dir = 95, expected_side = 1),   # Close to 90° (N)
+    list(dir = 145, expected_side = 2),  # Close to 150° (NW)
+    list(dir = 155, expected_side = 2),  # Close to 150° (NW)
+    list(dir = -145, expected_side = 3), # Close to -150° (SW)
+    list(dir = -155, expected_side = 3), # Close to -150° (SW)
+    list(dir = -85, expected_side = 4),  # Close to -90° (S)
+    list(dir = -95, expected_side = 4),  # Close to -90° (S)
+    list(dir = -25, expected_side = 5),  # Close to -30° (SE)
+    list(dir = -35, expected_side = 5)   # Close to -30° (SE)
   )
 
   for (tc in test_cases) {
-    geo_side <- round((30 - tc$dir) / 60) %% 6
+    geo_side <- round((tc$dir - 30) / 60) %% 6
     expect_equal(geo_side, tc$expected_side,
       info = paste0("Direction ", tc$dir, "°: ",
                     "expected side ", tc$expected_side, ", got ", geo_side))
@@ -824,12 +824,12 @@ test_that("topo-to-geo formula: practical direction angles", {
 
 test_that("topo-to-geo formula: negative modulo handling", {
   # R's %% operator handles negative numbers correctly, but let's verify
-  # (30 - 150) / 60 = -2 → -2 %% 6 = 4 (correct)
-  # (30 - 180) / 60 = -2.5 → rounds to -2 → -2 %% 6 = 4
-  expect_equal(round((30 - 150) / 60) %% 6, 4)
-  expect_equal(round((30 - (-150)) / 60) %% 6, 3)
-  expect_equal(round((30 - 210) / 60) %% 6, 3)  # 210° = -150° equivalent
-  expect_equal(round((30 - (-210)) / 60) %% 6, 4)  # -210° = 150° equivalent
+  # (150 - 30) / 60 = 2 → 2 %% 6 = 2 (side facing 150°)
+  # (-150 - 30) / 60 = -3 → -3 %% 6 = 3 (side facing -150°)
+  expect_equal(round((150 - 30) / 60) %% 6, 2)
+  expect_equal(round((-150 - 30) / 60) %% 6, 3)
+  expect_equal(round((210 - 30) / 60) %% 6, 3)  # 210° = -150° equivalent
+  expect_equal(round((-210 - 30) / 60) %% 6, 2)  # -210° = 150° equivalent
 })
 
 test_that("hexagonal: 7-ring puzzle ALL-X fusion has correct neighbor mapping", {
@@ -878,9 +878,9 @@ test_that("hexagonal: 7-ring puzzle ALL-X fusion has correct neighbor mapping", 
           actual_dir <- atan2(n_cy - p_cy, n_cx - p_cx) * 180 / pi
 
           # Calculate expected direction for this geometric side
+          # For flat-top hexagon: side N faces direction (30 + N*60)°
           geo_side <- as.integer(side)
-          expected_dir <- 30 - geo_side * 60
-          if (expected_dir < -180) expected_dir <- expected_dir + 360
+          expected_dir <- 30 + geo_side * 60
           if (expected_dir > 180) expected_dir <- expected_dir - 360
 
           # Direction difference should be < 35° (30° sector + tolerance)

@@ -319,10 +319,10 @@ generate_hex_pieces_internal <- function(seed, rings, diameter, tabsize, jitter,
         dir_to_neighbor <- atan2(neighbor_cy - piece_cy, neighbor_cx - piece_cx) * 180 / pi
 
         # Find which geometric side (0-5) faces this direction
-        # For pointed-top hexagons (SVG): Side 0 → 30°, Side 1 → -30°, etc.
-        # Formula: geo_side = round((30 - dir) / 60) %% 6
-        # This is derived from: expected_dir = 30 - side * 60
-        geo_side <- round((30 - dir_to_neighbor) / 60) %% 6
+        # For flat-top hexagons (base_offset=0): vertices at 0°, 60°, 120°, etc.
+        # Side 0 faces 30°, Side 1 faces 90°, Side 2 faces 150°, etc.
+        # Formula: geo_side = round((dir - 30) / 60) %% 6
+        geo_side <- round((dir_to_neighbor - 30) / 60) %% 6
         topo_to_geo_map[[as.character(topo_side)]] <- geo_side
       }
 
@@ -791,10 +791,10 @@ apply_fusion_to_pieces <- function(pieces_result, fusion_groups, puzzle_result) 
         dir_to_neighbor <- atan2(neighbor_cy - piece_cy, neighbor_cx - piece_cx) * 180 / pi
 
         # Find which geometric side (0-5) faces this direction
-        # For pointed-top hexagons (SVG): Side 0 → 30°, Side 1 → -30°, etc.
-        # Formula: geo_side = round((30 - dir) / 60) %% 6
-        # This is derived from: expected_dir = 30 - side * 60
-        geo_side <- as.character(round((30 - dir_to_neighbor) / 60) %% 6)
+        # For flat-top hexagons (base_offset=0): vertices at 0°, 60°, 120°, etc.
+        # Side 0 faces 30°, Side 1 faces 90°, Side 2 faces 150°, etc.
+        # Formula: geo_side = round((dir - 30) / 60) %% 6
+        geo_side <- as.character(round((dir_to_neighbor - 30) / 60) %% 6)
         topo_to_geo_map[[topo_side]] <- geo_side
       }
 
