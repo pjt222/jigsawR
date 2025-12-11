@@ -741,6 +741,68 @@ list(
 1. `"excluded piece's INNER edge is NOT marked fused"` - verifies ALL-18 case
 2. `"complementary edges marked correctly for many-to-one"` - verifies ALL-19 case
 
+### 26. Hexagonal Topo-to-Geo Formula Must Match Piece Generation Offset (2025-12-11)
+
+**Context**: Hexagonal fusion strokes were being applied to the wrong geometric edges. User reported "stroke mismatch" when comparing default vs ALL-18 fusion puzzles.
+
+**Problem (Issue #53)**: The topology-to-geometry side mapping formula converts neighbor direction angles to geometric side numbers (0-5). The formula was:
+```r
+geo_side <- round((30 - dir_to_neighbor) / 60) %% 6
+```
+
+This formula assumed a **pointed-top hexagon** with vertices starting at 30° (base_offset = π/6). However, the actual hexagonal piece generation in `hexagonal_edge_generation_fixed.R` uses:
+```r
+base_offset <- 0  # Flat-top hexagon: vertices at 0°, 60°, 120°, 180°, 240°, 300°
+```
+
+**Root Cause Analysis**:
+
+| Direction | Old Formula `(30-dir)/60` | Correct Formula `(dir-30)/60` |
+|-----------|---------------------------|-------------------------------|
+| 30° (NE)  | Side 0 ✓ | Side 0 ✓ |
+| 90° (N)   | **Side 5** ✗ | **Side 1** ✓ |
+| 150° (NW) | **Side 4** ✗ | **Side 2** ✓ |
+| -150° (SW)| Side 3 ✓ | Side 3 ✓ |
+| -90° (S)  | **Side 2** ✗ | **Side 4** ✓ |
+| -30° (SE) | **Side 1** ✗ | **Side 5** ✓ |
+
+The subtraction order was wrong: `(30 - dir)` vs `(dir - 30)`.
+
+**Fix Applied** (`R/unified_piece_generation.R` lines 321-325 and 793-797):
+```r
+# OLD (wrong for flat-top hexagon):
+geo_side <- round((30 - dir_to_neighbor) / 60) %% 6
+
+# NEW (correct for flat-top hexagon with base_offset=0):
+geo_side <- round((dir_to_neighbor - 30) / 60) %% 6
+```
+
+**Flat-Top Hexagon Geometry** (base_offset = 0):
+```
+Vertices at: 0°, 60°, 120°, 180°, 240°, 300°
+
+        Side 1 (90°)
+           ___
+    Side 2/   \Side 0
+   (150°) \___/ (30°)
+    Side 3/   \Side 5
+   (-150°)\___/(-30°)
+        Side 4 (-90°)
+
+Formula: Side N faces direction (30 + N*60)°
+```
+
+**Key Insight**: When implementing coordinate system mappings, **always verify the base offset** of the actual geometry generation code. Comments or formulas inherited from reference implementations may assume different coordinate systems.
+
+**Verification**:
+- Piece 7's edge toward piece 18 (excluded from fusion): `fused_edges[["3"]] = FALSE` ✓
+- All other edges toward pieces in fusion group: `fused_edges = TRUE` ✓
+- All 1374 tests pass
+
+**Files Changed**:
+- `R/unified_piece_generation.R`: Fixed formula in 2 locations
+- `tests/testthat/test-fusion.R`: Updated expected values for flat-top hexagon geometry
+
 ---
 
 ## Development History
