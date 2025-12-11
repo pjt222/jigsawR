@@ -273,20 +273,6 @@ ui <- page_fluid(
             )
           ),
 
-          # Divider before fusion section
-          tags$hr(class = "my-2"),
-          tags$small(class = "text-muted", "Meta Pieces (Fusion)"),
-
-          # Fusion groups input - ONLY applies when Generate is clicked
-          # Supports both PILES notation (1-2-3,4-5) and legacy format (1,2),(3,4,5)
-          tooltip(
-            textInput("fusion_groups",
-                     "Fuse Pieces:",
-                     value = "",
-                     placeholder = "1-2-3,4-5"),
-            "Fuse adjacent pieces using PILES notation. Examples: '1-2' fuses pieces 1 and 2, '1-2-3,4-5' creates two groups. Use ':' for ranges (1:6), or keywords like 'R1' (row 1), 'ring1'. Changes apply when you click Generate."
-          ),
-
           # Divider before action buttons
           tags$hr(class = "my-3"),
 
@@ -412,9 +398,19 @@ ui <- page_fluid(
           ),
 
           tags$hr(class = "my-2"),
-          tags$small(class = "text-muted", "Internal Edges (Fusion)"),
+          tags$small(class = "text-muted", "Fusion"),
 
-          # Fusion style - reactive styling for internal edges (fusion groups defined in Settings)
+          # Fusion groups input - applies when Generate is clicked
+          # Supports both PILES notation (1-2-3,4-5) and legacy format (1,2),(3,4,5)
+          tooltip(
+            textInput("fusion_groups",
+                     "Fuse Pieces:",
+                     value = "",
+                     placeholder = "1-2-3,4-5"),
+            "Fuse adjacent pieces using PILES notation. Examples: '1-2' fuses pieces 1 and 2, '1-2-3,4-5' creates two groups. Use ':' for ranges (1:6), or keywords like 'R1' (row 1), 'ring1'. Changes apply when you click Generate."
+          ),
+
+          # Fusion style - reactive styling for internal edges
           radioButtons("fusion_style", "Internal Edge Style:",
                       choices = list(
                         "Dashed" = "dashed",
@@ -438,7 +434,6 @@ ui <- page_fluid(
               "Transparency of internal edges between fused pieces. 100% = fully visible, 0% = hidden."
             )
           ),
-          tags$small(class = "text-muted fst-italic", "Define fusion groups in Settings panel"),
 
           tags$hr(class = "my-2"),
           tags$small(class = "text-muted", "Stroke"),
