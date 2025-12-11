@@ -623,6 +623,45 @@ result$pieces[[13]]$fused_edges$INNER     # TRUE ✓
 - `R/jigsawR_clean.R` (added `size` and `diameter` to temp_puzzle_result)
 - `tests/testthat/test-segment-fusion.R` (27 new tests)
 
+### 23. Circle Center Shape Implementation (2025-12-11)
+
+**Problem (Issue #39)**: The `center_shape = "circle"` option for concentric puzzles was not producing different output from `center_shape = "hexagon"`. Both produced identical paths for the center piece.
+
+**Root Cause**: The `build_concentric_piece_path()` function in `R/concentric_edge_generation.R` was collecting bezier edges and concatenating them directly for both circle and hexagon centers. Both used the same bezier tab edges calculated from ring 1 pieces' inner edge vertices.
+
+**Expected Behavior**:
+- **Hexagon center**: Straight lines between vertices, with bezier tabs to ring 1 pieces
+- **Circle center**: Curved arcs between tab endpoints following a perfect circle
+
+**Solution**: Updated `build_concentric_piece_path()` to use SVG arc commands (A) between bezier edge segments for circle centers:
+
+```r
+# Previous (incorrect): Just concatenate bezier edges
+path_parts <- c(path_parts, edge$forward)
+
+# New (correct): Add arc between edge endpoints
+path_parts <- c(path_parts, sprintf("A %.2f %.2f 0 0 0 %.2f %.2f",
+                                    r, r, bezier_start[1], bezier_start[2]))
+path_parts <- c(path_parts, bezier_path)
+```
+
+**Key Implementation Details**:
+1. Sort radial edges by angle (counterclockwise from 0)
+2. For each edge: add SVG arc from previous edge endpoint to this edge start
+3. Add the bezier tab edge
+4. Final arc from last edge back to first edge start
+
+**Verification**:
+```r
+hex_path <- result_hex$pieces[[1]]$path   # 725 chars, no arc commands
+circle_path <- result_circle$pieces[[1]]$path  # 921 chars, has A commands
+grepl(" A ", circle_path)  # TRUE ✓
+```
+
+**Files Modified**:
+- `R/concentric_edge_generation.R` (updated `build_concentric_piece_path()`)
+- `tests/testthat/test-core-integration.R` (added 4 center_shape tests)
+
 ---
 
 ## Development History

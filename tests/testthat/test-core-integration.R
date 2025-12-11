@@ -277,3 +277,75 @@ test_that("Shiny app functions exist", {
   skip_if_not(exists("launch_jigsaw_app"), "Shiny app not available")
   expect_true(is.function(launch_jigsaw_app))
 })
+
+# =============================================================================
+# CENTER_SHAPE OPTION (Issue #39)
+# =============================================================================
+
+test_that("concentric center_shape='hexagon' produces straight-line edges", {
+  result <- generate_puzzle(
+    type = "concentric",
+    grid = c(3),
+    size = c(200),
+    seed = 42,
+    center_shape = "hexagon",
+    save_files = FALSE
+  )
+
+  expect_equal(length(result$pieces), 19)
+  expect_equal(result$parameters$center_shape, "hexagon")
+
+  # Center piece (piece 1) should NOT have arc commands
+  center_path <- result$pieces[[1]]$path
+  expect_false(grepl(" A ", center_path))
+})
+
+test_that("concentric center_shape='circle' produces arc commands", {
+  result <- generate_puzzle(
+    type = "concentric",
+    grid = c(3),
+    size = c(200),
+    seed = 42,
+    center_shape = "circle",
+    save_files = FALSE
+  )
+
+  expect_equal(length(result$pieces), 19)
+  expect_equal(result$parameters$center_shape, "circle")
+
+  # Center piece (piece 1) should have arc commands (A)
+  center_path <- result$pieces[[1]]$path
+  expect_true(grepl(" A ", center_path))
+})
+
+test_that("center_shape produces different paths for hexagon vs circle", {
+  result_hex <- generate_puzzle(
+    type = "concentric", grid = c(3), size = c(200), seed = 42,
+    center_shape = "hexagon", save_files = FALSE
+  )
+
+  result_circle <- generate_puzzle(
+    type = "concentric", grid = c(3), size = c(200), seed = 42,
+    center_shape = "circle", save_files = FALSE
+  )
+
+  # Paths should be different
+  hex_path <- result_hex$pieces[[1]]$path
+  circle_path <- result_circle$pieces[[1]]$path
+
+  expect_false(identical(hex_path, circle_path))
+
+  # Circle path should be longer (has arc commands)
+  expect_gt(nchar(circle_path), nchar(hex_path))
+})
+
+test_that("center_shape defaults to hexagon", {
+  result <- generate_puzzle(
+    type = "concentric", grid = c(3), size = c(200), seed = 42,
+    save_files = FALSE
+  )
+
+  # Default should be hexagon (no arc commands in center piece)
+  center_path <- result$pieces[[1]]$path
+  expect_false(grepl(" A ", center_path))
+})

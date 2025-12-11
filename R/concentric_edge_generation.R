@@ -545,38 +545,72 @@ build_concentric_piece_path <- function(piece_id, edge_data) {
   piece_edge_list <- edge_data$piece_edges[[piece_id]]
 
   if (piece_info$type == "circle") {
-    # Circle: collect all the radial edges and build path
+    # Circle center: uses SVG arc commands between bezier tab segments
+    # The bezier tabs connect to ring 1 pieces, but between tabs the boundary
+    # should follow a perfect circular arc (not straight lines like hexagon)
     r <- piece_info$radius
 
-    # Get all edges for this piece in order
+    # Get all radial edges in order
     radial_edges <- piece_edge_list[sapply(piece_edge_list, function(e) e$type == "radial")]
 
     if (length(radial_edges) == 0) {
-      # No edges yet, just draw circle
+      # No edges yet, just draw a pure circle
       return(sprintf("M %.2f 0 A %.2f %.2f 0 1 1 %.2f 0 A %.2f %.2f 0 1 1 %.2f 0 Z",
                      r, r, r, -r, r, r, r))
     }
 
-    # Build path from radial edges (going around the circle)
+    # Build path with arc commands between bezier edge segments
+    # Each radial edge has a start and end point (on the circle's circumference)
+    # After each bezier edge, we need an arc to reach the next edge's start
     path_parts <- c()
 
-    for (i in seq_along(radial_edges)) {
-      edge_info <- radial_edges[[i]]
+    # Sort edges by angle (counterclockwise from 0)
+    edges_with_angles <- lapply(radial_edges, function(edge_info) {
       edge <- edge_data$edge_map[[edge_info$edge_ref]]
+      start_pt <- if (edge_info$is_forward) edge$start else edge$end
+      start_angle <- atan2(start_pt[2], start_pt[1])
+      if (start_angle < 0) start_angle <- start_angle + 2 * pi
+      list(edge_info = edge_info, angle = start_angle)
+    })
+    edges_sorted <- edges_with_angles[order(sapply(edges_with_angles, function(x) x$angle))]
+
+    for (i in seq_along(edges_sorted)) {
+      edge_info <- edges_sorted[[i]]$edge_info
+      edge <- edge_data$edge_map[[edge_info$edge_ref]]
+
+      # Determine start and end points of this bezier edge
+      if (edge_info$is_forward) {
+        bezier_start <- edge$start
+        bezier_end <- edge$end
+        bezier_path <- edge$forward
+      } else {
+        bezier_start <- edge$end
+        bezier_end <- edge$start
+        bezier_path <- edge$reverse
+      }
 
       if (i == 1) {
         # Start at the beginning of first edge
-        start_pt <- if (edge_info$is_forward) edge$start else edge$end
-        path_parts <- c(path_parts, sprintf("M %.2f %.2f", start_pt[1], start_pt[2]))
+        path_parts <- c(path_parts, sprintf("M %.2f %.2f", bezier_start[1], bezier_start[2]))
+      } else {
+        # Arc from previous edge's end to this edge's start
+        # SVG arc: A rx ry x-rotation large-arc-flag sweep-flag x y
+        # For counterclockwise around circle: sweep-flag = 0 (counterclockwise)
+        # large-arc = 0 for small arcs (less than 180 degrees)
+        path_parts <- c(path_parts, sprintf("A %.2f %.2f 0 0 0 %.2f %.2f",
+                                            r, r, bezier_start[1], bezier_start[2]))
       }
 
-      # Add the edge (reverse direction for circle - going inward along neighbor's inner edge)
-      if (edge_info$is_forward) {
-        path_parts <- c(path_parts, edge$forward)
-      } else {
-        path_parts <- c(path_parts, edge$reverse)
-      }
+      # Add the bezier tab edge
+      path_parts <- c(path_parts, bezier_path)
     }
+
+    # Final arc from last edge's end back to first edge's start (completing the circle)
+    first_edge_info <- edges_sorted[[1]]$edge_info
+    first_edge <- edge_data$edge_map[[first_edge_info$edge_ref]]
+    first_start <- if (first_edge_info$is_forward) first_edge$start else first_edge$end
+    path_parts <- c(path_parts, sprintf("A %.2f %.2f 0 0 0 %.2f %.2f",
+                                        r, r, first_start[1], first_start[2]))
 
     path_parts <- c(path_parts, "Z")
     return(paste(path_parts, collapse = " "))

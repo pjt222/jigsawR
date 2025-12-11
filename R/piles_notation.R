@@ -457,7 +457,8 @@ get_ring_pieces <- function(ring_num, puzzle_result = NULL) {
     pieces_info <- puzzle_result$pieces
     ring_pieces <- integer()
     for (i in seq_along(pieces_info)) {
-      if (!is.null(pieces_info[[i]]$ring) && pieces_info[[i]]$ring == ring_num) {
+      piece_ring <- pieces_info[[i]]$ring_pos$ring
+      if (!is.null(piece_ring) && piece_ring == ring_num) {
         ring_pieces <- c(ring_pieces, i)
       }
     }
