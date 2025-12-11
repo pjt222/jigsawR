@@ -8,7 +8,9 @@
 #' Supports solid backgrounds, gradient backgrounds, or no background.
 #'
 #' @param positioned Output from apply_piece_positioning()
-#' @param fill Fill color for pieces ("none" or a color value)
+#' @param fill Fill color for pieces ("none", a color value, or gradient list)
+#' @param fills Vector of per-piece fill colors (optional, overrides fill parameter).
+#'   When provided, each piece gets its own fill color from this vector.
 #' @param stroke_width Line width for piece strokes
 #' @param colors Color palette for piece strokes (NULL = use default)
 #' @param palette Viridis palette name (NULL = use config default)
@@ -23,7 +25,8 @@
 #' @param label_size Font size for labels in mm (default: auto-calculated based on piece size)
 #' @return Complete SVG string
 #' @export
-render_puzzle_svg <- function(positioned, fill = "none", stroke_width = 1.5,
+render_puzzle_svg <- function(positioned, fill = "none", fills = NULL,
+                               stroke_width = 1.5,
                                colors = NULL, palette = NULL, palette_invert = FALSE,
                                background = "white", opacity = 1.0,
                                show_labels = FALSE, label_color = "black",
@@ -32,7 +35,7 @@ render_puzzle_svg <- function(positioned, fill = "none", stroke_width = 1.5,
   # Get number of pieces for color generation
   n_pieces <- length(positioned$pieces)
 
-  # Generate colors if not provided
+  # Generate colors if not provided (used for strokes)
   if (is.null(colors)) {
     colors <- get_puzzle_colors(n_pieces, palette, invert = palette_invert)
   }
@@ -40,6 +43,13 @@ render_puzzle_svg <- function(positioned, fill = "none", stroke_width = 1.5,
   # Ensure we have enough colors (cycle if needed)
   if (length(colors) < n_pieces) {
     colors <- rep_len(colors, n_pieces)
+  }
+
+  # Handle per-piece fills if provided
+  # fills parameter overrides fill for per-piece coloring (e.g., palette fills)
+  use_per_piece_fills <- !is.null(fills) && length(fills) > 0
+  if (use_per_piece_fills && length(fills) < n_pieces) {
+    fills <- rep_len(fills, n_pieces)
   }
 
   # Build SVG components
@@ -52,9 +62,10 @@ render_puzzle_svg <- function(positioned, fill = "none", stroke_width = 1.5,
   bg_element <- render_background(background, positioned$canvas_size, positioned$canvas_offset)
 
   # Handle piece fill gradient - create defs section if needed
+  # Skip gradient handling if using per-piece fills
   piece_fill_defs <- ""
   fill_value <- fill
-  if (is.list(fill) && !is.null(fill$type) && fill$type == "gradient") {
+  if (!use_per_piece_fills && is.list(fill) && !is.null(fill$type) && fill$type == "gradient") {
     # Create piece gradient definition
     piece_fill_defs <- render_piece_fill_gradient_defs(fill)
     fill_value <- "url(#pieceFillGradient)"
@@ -78,16 +89,19 @@ render_puzzle_svg <- function(positioned, fill = "none", stroke_width = 1.5,
     }
 
     # Use styled rendering for all fusion cases
+    # Note: Per-piece fills not currently supported with fusion styling
+    # (would require significant changes to render_pieces_with_fusion_styled)
     piece_elements <- render_pieces_with_fusion_styled(
-      positioned$pieces, colors, fill_value, stroke_width, opacity,
-      fusion_style %||% "none", effective_fusion_opacity
+      positioned$pieces, colors, if (use_per_piece_fills) fills else fill_value,
+      stroke_width, opacity, fusion_style %||% "none", effective_fusion_opacity
     )
   } else {
     # Standard rendering: each piece as single path with fill and stroke
     piece_elements <- sapply(seq_along(positioned$pieces), function(i) {
       piece <- positioned$pieces[[i]]
       color <- colors[i]
-      render_piece(piece, fill_value, color, stroke_width, opacity)
+      piece_fill <- if (use_per_piece_fills) fills[i] else fill_value
+      render_piece(piece, piece_fill, color, stroke_width, opacity)
     })
   }
 
@@ -1101,7 +1115,7 @@ generate_arc_segment_path <- function(radius, start_angle, end_angle, center = c
 #'
 #' @param pieces List of positioned pieces
 #' @param colors Vector of stroke colors
-#' @param fill Fill value for pieces
+#' @param fill Fill value for pieces (single value or vector of per-piece fills)
 #' @param stroke_width Stroke width
 #' @param opacity Piece opacity
 #' @param fusion_style "dashed" or "solid"
@@ -1111,15 +1125,20 @@ generate_arc_segment_path <- function(radius, start_angle, end_angle, center = c
 render_pieces_with_fusion_styled <- function(pieces, colors, fill, stroke_width, opacity,
                                               fusion_style, fusion_opacity) {
   elements <- character()
+  n_pieces <- length(pieces)
+
+  # Check if fill is per-piece (vector) or single value
+  use_per_piece_fills <- length(fill) == n_pieces && n_pieces > 1
 
   # Pass 1: Draw fills only (no stroke)
   opacity_attr <- if (opacity < 1.0) sprintf(' opacity="%.2f"', opacity) else ""
 
   for (i in seq_along(pieces)) {
     piece <- pieces[[i]]
+    piece_fill <- if (use_per_piece_fills) fill[i] else fill[1]
     fill_element <- sprintf(
       '<path d="%s" fill="%s" stroke="none"%s/>',
-      piece$path, fill, opacity_attr
+      piece$path, piece_fill, opacity_attr
     )
     elements <- c(elements, fill_element)
   }

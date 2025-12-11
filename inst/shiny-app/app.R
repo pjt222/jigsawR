@@ -350,6 +350,7 @@ ui <- page_fluid(
                       choices = list(
                         "None (Outline only)" = "none",
                         "Solid Color" = "solid",
+                        "Use Palette" = "palette",
                         "Gradient" = "gradient"
                       ),
                       selected = cfg_style$fill_type,
@@ -1016,17 +1017,28 @@ server <- function(input, output, session) {
     log_info("rendered_svg() triggered - re-rendering SVG")
 
     # Styling options (these trigger re-render, not regeneration)
-    fill_color_value <- switch(input$fill_type,
-      "none" = "none",
-      "solid" = input$fill_color,
-      "gradient" = list(
+    n_pieces <- length(pos$pieces)
+
+    # Handle fill based on fill_type
+    fill_color_value <- "none"
+    fill_colors_value <- NULL  # For per-piece fills (palette mode)
+
+    if (input$fill_type == "none") {
+      fill_color_value <- "none"
+    } else if (input$fill_type == "solid") {
+      fill_color_value <- input$fill_color
+    } else if (input$fill_type == "palette") {
+      # Generate per-piece fill colors from the selected palette
+      fill_colors_value <- get_puzzle_colors(n_pieces, input$color_palette,
+                                              invert = isTRUE(input$palette_invert))
+    } else if (input$fill_type == "gradient") {
+      fill_color_value <- list(
         type = "gradient",
         center = input$piece_gradient_center,
         middle = input$piece_gradient_middle,
         edge = input$piece_gradient_edge
-      ),
-      "none"  # default
-    )
+      )
+    }
 
     background_value <- switch(input$background_type,
       "none" = "none",
@@ -1056,7 +1068,6 @@ server <- function(input, output, session) {
       stroke_width_value <- 0
     } else if (stroke_color_type_val == "solid") {
       # Solid color - use single color for all pieces
-      n_pieces <- length(pos$pieces)
       stroke_colors_value <- rep(input$stroke_color, n_pieces)
       stroke_palette_value <- NULL
     }
@@ -1066,6 +1077,7 @@ server <- function(input, output, session) {
     svg <- render_puzzle_svg(
       pos,
       fill = fill_color_value,
+      fills = fill_colors_value,
       stroke_width = stroke_width_value,
       colors = stroke_colors_value,
       palette = stroke_palette_value,
@@ -1233,18 +1245,26 @@ server <- function(input, output, session) {
       data <- puzzle_data()
       if (is.null(data)) return()
 
-      # Determine fill color value (supports none, solid, gradient)
-      fill_color_value <- switch(input$fill_type,
-        "none" = "none",
-        "solid" = input$fill_color,
-        "gradient" = list(
+      # Determine fill color value (supports none, solid, palette, gradient)
+      fill_color_dl <- "none"
+      fills_dl <- NULL
+
+      if (input$fill_type == "none") {
+        fill_color_dl <- "none"
+      } else if (input$fill_type == "solid") {
+        fill_color_dl <- input$fill_color
+      } else if (input$fill_type == "palette") {
+        # Generate per-piece fill colors from the selected palette
+        fills_dl <- get_puzzle_colors(data$total_pieces, input$color_palette,
+                                       invert = isTRUE(input$palette_invert))
+      } else if (input$fill_type == "gradient") {
+        fill_color_dl <- list(
           type = "gradient",
           center = input$piece_gradient_center,
           middle = input$piece_gradient_middle,
           edge = input$piece_gradient_edge
-        ),
-        "none"  # default
-      )
+        )
+      }
 
       # Determine background value (supports none, solid, gradient)
       background_value <- switch(input$background_type,
@@ -1323,7 +1343,8 @@ server <- function(input, output, session) {
         tabsize = input$tabsize,
         jitter = input$jitter,
         offset = 0,  # Always complete for this download
-        fill_color = fill_color_value,
+        fill_color = fill_color_dl,
+        fills = fills_dl,
         stroke_width = stroke_width_dl,
         colors = stroke_colors_dl,
         palette = stroke_palette_dl,

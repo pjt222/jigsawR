@@ -33,7 +33,7 @@ default:
     stroke_color_type: "palette"  # none, solid, or palette
     stroke_color: "#000000"  # used when stroke_color_type = "solid"
     opacity: 100
-    fill_type: "solid"  # none, solid, or gradient
+    fill_type: "solid"  # none, solid, gradient, or palette
     fill_color: "#a1a1a1"
     # Piece gradient colors (only used when fill_type = "gradient")
     piece_gradient:

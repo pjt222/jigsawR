@@ -18,6 +18,7 @@
 #' @param jitter Jitter as percentage (0-15)
 #' @param offset Separation offset (0 = complete puzzle, >0 = separated pieces)
 #' @param fill_color Fill color for pieces ("none" for unfilled)
+#' @param fills Vector of per-piece fill colors (optional, overrides fill_color for palette fills)
 #' @param stroke_width SVG stroke width (default: 1.5)
 #' @param colors Vector of colors for pieces (optional, overrides palette)
 #' @param palette Viridis palette name (NULL = use config default)
@@ -49,6 +50,7 @@ generate_puzzle <- function(type = "rectangular",
                             jitter = 4,
                             offset = 0,
                             fill_color = "none",
+                            fills = NULL,
                             stroke_width = 1.5,
                             colors = NULL,
                             palette = NULL,
@@ -178,6 +180,7 @@ generate_puzzle <- function(type = "rectangular",
   svg_content <- render_puzzle_svg(
     positioned,
     fill = fill_color,
+    fills = fills,
     stroke_width = stroke_width,
     colors = colors,
     palette = palette,
