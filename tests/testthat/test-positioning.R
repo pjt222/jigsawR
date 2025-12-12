@@ -311,3 +311,135 @@ test_that("extract_segment_coords handles different segment types", {
   expect_true(length(coords$y) > 0)
   expect_equal(length(coords$x), length(coords$y))
 })
+
+# =============================================================================
+# Canvas Bounds Calculation Tests (Insight #28 - Clipping Fix)
+# =============================================================================
+
+test_that("rectangular canvas bounds include bezier tab protrusions", {
+  # Generate puzzle with offset to expose potential clipping
+  result <- generate_puzzle(
+    type = "rectangular",
+    grid = c(3, 3),
+    size = c(150, 150),
+    seed = 42,
+    offset = 10,
+    tabsize = 15,  # Larger tabs to make protrusions more obvious
+    layout = "grid",
+    save_files = FALSE
+  )
+
+  # Get canvas dimensions
+  canvas_size <- result$canvas_size
+
+  # Find actual piece bounds
+  all_x <- c()
+  all_y <- c()
+  for (piece in result$pieces) {
+    segments <- parse_svg_path(piece$path)
+    for (seg in segments) {
+      if (seg$type %in% c("M", "L")) {
+        all_x <- c(all_x, seg$x)
+        all_y <- c(all_y, seg$y)
+      } else if (seg$type == "C") {
+        all_x <- c(all_x, seg$cp1x, seg$cp2x, seg$x)
+        all_y <- c(all_y, seg$cp1y, seg$cp2y, seg$y)
+      }
+    }
+  }
+
+  actual_min_x <- min(all_x)
+  actual_max_x <- max(all_x)
+  actual_min_y <- min(all_y)
+  actual_max_y <- max(all_y)
+
+  # Canvas must fully contain all piece geometry
+  expect_true(result$canvas_offset[1] <= actual_min_x,
+    info = "Canvas offset X should be <= actual min X")
+  expect_true(result$canvas_offset[2] <= actual_min_y,
+    info = "Canvas offset Y should be <= actual min Y")
+  expect_true(result$canvas_offset[1] + canvas_size[1] >= actual_max_x,
+    info = "Canvas right edge should be >= actual max X")
+  expect_true(result$canvas_offset[2] + canvas_size[2] >= actual_max_y,
+    info = "Canvas bottom edge should be >= actual max Y")
+})
+
+test_that("rectangular canvas bounds handle large offsets without clipping", {
+  # Test with various offset values
+  for (offset_val in c(5, 15, 30)) {
+    result <- generate_puzzle(
+      type = "rectangular",
+      grid = c(2, 2),
+      size = c(100, 100),
+      seed = 42,
+      offset = offset_val,
+      layout = "grid",
+      save_files = FALSE
+    )
+
+    # Parse all piece paths to find actual bounds
+    all_coords <- do.call(rbind, lapply(result$pieces, function(piece) {
+      segments <- parse_svg_path(piece$path)
+      coords <- extract_segment_coords(segments)
+      data.frame(x = coords$x, y = coords$y)
+    }))
+
+    # Canvas must contain all pieces
+    viewBox_left <- result$canvas_offset[1]
+    viewBox_top <- result$canvas_offset[2]
+    viewBox_right <- viewBox_left + result$canvas_size[1]
+    viewBox_bottom <- viewBox_top + result$canvas_size[2]
+
+    expect_true(viewBox_left <= min(all_coords$x),
+      info = paste("Offset", offset_val, "- viewBox left should be <= min X"))
+    expect_true(viewBox_top <= min(all_coords$y),
+      info = paste("Offset", offset_val, "- viewBox top should be <= min Y"))
+    expect_true(viewBox_right >= max(all_coords$x),
+      info = paste("Offset", offset_val, "- viewBox right should be >= max X"))
+    expect_true(viewBox_bottom >= max(all_coords$y),
+      info = paste("Offset", offset_val, "- viewBox bottom should be >= max Y"))
+  }
+})
+
+test_that("all puzzle types use actual bounds for canvas calculation", {
+  # Test consistency across all puzzle types
+  configs <- list(
+    list(type = "rectangular", grid = c(2, 2), size = c(100, 100)),
+    list(type = "hexagonal", grid = c(2), size = c(100)),
+    list(type = "concentric", grid = c(2), size = c(120))
+  )
+
+  for (config in configs) {
+    result <- generate_puzzle(
+      type = config$type,
+      grid = config$grid,
+      size = config$size,
+      seed = 42,
+      offset = 10,
+      layout = "grid",
+      save_files = FALSE
+    )
+
+    # Parse all piece paths
+    all_coords <- do.call(rbind, lapply(result$pieces, function(piece) {
+      segments <- parse_svg_path(piece$path)
+      coords <- extract_segment_coords(segments)
+      data.frame(x = coords$x, y = coords$y)
+    }))
+
+    # Canvas must contain all pieces
+    viewBox_left <- result$canvas_offset[1]
+    viewBox_top <- result$canvas_offset[2]
+    viewBox_right <- viewBox_left + result$canvas_size[1]
+    viewBox_bottom <- viewBox_top + result$canvas_size[2]
+
+    expect_true(viewBox_left <= min(all_coords$x),
+      info = paste(config$type, "- viewBox should contain all X coords"))
+    expect_true(viewBox_top <= min(all_coords$y),
+      info = paste(config$type, "- viewBox should contain all Y coords"))
+    expect_true(viewBox_right >= max(all_coords$x),
+      info = paste(config$type, "- viewBox should contain all X coords"))
+    expect_true(viewBox_bottom >= max(all_coords$y),
+      info = paste(config$type, "- viewBox should contain all Y coords"))
+  }
+})

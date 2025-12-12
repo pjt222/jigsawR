@@ -1165,6 +1165,103 @@ calculate_path_bounding_box_center <- function(path) {
 
 ---
 
+### Insight #28: Canvas Bounds Must Use Actual Path Geometry (2025-12-12)
+
+**Problem**: Rectangular puzzles with separation (offset > 0) and grid layout showed clipped pieces at the edges. The preview cut off bezier tabs and stroke widths.
+
+**Root Cause**: `apply_rect_positioning()` used **formula-based canvas calculations** that computed theoretical bounds from grid positions:
+
+```r
+# OLD (broken) approach - theoretical calculation
+canvas_width <- params$size[1] + (n_gaps_x + 2) * offset
+canvas_height <- params$size[2] + (n_gaps_y + 2) * offset
+```
+
+This calculation assumes pieces are perfect rectangles and doesn't account for:
+1. Bezier tab protrusions extending beyond piece boundaries
+2. Stroke width adding visual size
+3. Actual transformed path geometry
+
+**Solution**: Use `calculate_pieces_bounds()` to measure the **actual transformed SVG paths**, just like hexagonal and concentric puzzles already did:
+
+```r
+# NEW (correct) approach - measure actual geometry
+bounds <- calculate_pieces_bounds(transformed_pieces, fallback_fn = function() {
+  # Fallback to theoretical if parsing fails
+  list(min_x = ..., max_x = ..., min_y = ..., max_y = ...)
+})
+
+# Add margin for stroke and visual clarity
+stroke_margin <- max(piece_width, piece_height) * 0.1 + offset
+canvas_width <- (bounds$max_x + stroke_margin) - (bounds$min_x - stroke_margin)
+canvas_height <- (bounds$max_y + stroke_margin) - (bounds$min_y - stroke_margin)
+```
+
+**Key Insight**: For SVG viewBox calculations, always measure the **rendered geometry** (actual paths with all their curves and protrusions), not the **logical geometry** (theoretical grid positions). This is the same principle as Insight #27 for label centering.
+
+**Pattern**: All three puzzle types now use consistent bounds calculation:
+- `apply_hex_positioning()`: Uses `calculate_pieces_bounds()`
+- `apply_concentric_positioning()`: Uses `calculate_pieces_bounds()`
+- `apply_rect_positioning()`: Now uses `calculate_pieces_bounds()` ✅ (was formula-based)
+
+**Files Involved**:
+- `R/piece_positioning.R`: `apply_rect_positioning()`, `calculate_pieces_bounds()`
+
+---
+
+### Insight #29: Shiny Parameter Scope - Reactive vs Generate-Click (2025-12-12)
+
+**Problem**: When layout controls (grid/repel) were in the Styling panel, changing them triggered immediate reactive updates. The user requested that layout only be computed when "Generate" is clicked, not on every slider change.
+
+**Pattern Identified**: Parameters fall into two categories by when they should take effect:
+
+| Category | When Applied | Storage | Examples |
+|----------|--------------|---------|----------|
+| **Generation Parameters** | On Generate click only | `base_settings()` | puzzle type, grid size, seed, **layout** |
+| **Rendering Parameters** | Immediately (reactive) | `input$*` directly | colors, stroke width, opacity, labels |
+
+**Implementation Pattern**:
+
+1. **Generation Parameters** (stored in `base_settings()` on Generate click):
+```r
+observeEvent(input$generate, {
+  base_settings(list(
+    type = input$puzzle_type,
+    seed = input$seed,
+    layout = input$layout,          # Captured at Generate time
+    repel_margin = input$repel_margin,
+    repel_max_iter = input$repel_max_iter
+  ))
+})
+```
+
+2. **Rendering Parameters** (read directly in reactive observer):
+```r
+observe({
+  # Read generation params from stored settings
+  settings <- base_settings()
+  layout_val <- settings$layout
+
+  # Read rendering params directly (reactive)
+  stroke_color <- input$stroke_color
+  fill_color <- input$fill_color
+
+  # Generate puzzle...
+})
+```
+
+**UI Organization**:
+- **Settings Panel**: Generation parameters (puzzle type, grid, seed, layout)
+- **Styling Panel**: Rendering parameters (colors, stroke, opacity, labels)
+
+**Key Insight**: The distinction between "generation-time" and "render-time" parameters maps directly to whether users expect immediate visual feedback (colors → yes) or expect to control when computation happens (layout algorithm → no, too expensive).
+
+**Files Involved**:
+- `inst/shiny-app/app.R`: UI organization, `base_settings()` handling
+- `inst/config.yml`: Default values for layout parameters
+
+---
+
 ## Development History
 
 ### Completed Work (Archive)
