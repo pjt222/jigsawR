@@ -13,7 +13,7 @@ extract_path_coords(path)
 List with x and y numeric vectors
 }
 \description{
-Uses regex to extract all numeric coordinates from an SVG path.
-Returns a list with x and y coordinate vectors.
+Parses the SVG path and extracts X/Y coordinates from all segment types.
+Handles M, L, C, A, and Z commands correctly.
 }
 \keyword{internal}

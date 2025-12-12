@@ -214,6 +214,42 @@
       "Maintainer": "Dirk Eddelbuettel <edd@debian.org>",
       "Repository": "CRAN"
     },
+    "ambient": {
+      "Package": "ambient",
+      "Version": "1.0.3",
+      "Source": "Repository",
+      "Type": "Package",
+      "Title": "A Generator of Multidimensional Noise",
+      "Authors@R": "c( person(\"Thomas Lin\", \"Pedersen\", , \"thomasp85@gmail.com\", role = c(\"cre\", \"aut\"), comment = c(ORCID = \"0000-0002-5147-4711\")), person(\"Jordan\", \"Peck\", role = \"aut\", comment = \"Developer of FastNoise\") )",
+      "Description": "Generation of natural looking noise has many application within simulation, procedural generation, and art, to name a few. The 'ambient' package provides an interface to the 'FastNoise' C++ library and allows for efficient generation of perlin, simplex, worley, cubic, value, and white noise with optional perturbation in either 2, 3, or 4 (in case of simplex and white noise) dimensions.",
+      "License": "MIT + file LICENSE",
+      "URL": "https://ambient.data-imaginist.com, https://github.com/thomasp85/ambient",
+      "BugReports": "https://github.com/thomasp85/ambient/issues",
+      "Depends": [
+        "R (>= 3.0.2)"
+      ],
+      "Imports": [
+        "cli",
+        "graphics",
+        "grDevices",
+        "rlang (>= 1.1.0)",
+        "stats"
+      ],
+      "Suggests": [
+        "covr"
+      ],
+      "LinkingTo": [
+        "cpp11 (>= 0.4.2)"
+      ],
+      "Config/build/compilation-database": "true",
+      "Config/usethis/last-upkeep": "2025-12-04",
+      "Encoding": "UTF-8",
+      "RoxygenNote": "7.3.3",
+      "NeedsCompilation": "yes",
+      "Author": "Thomas Lin Pedersen [cre, aut] (ORCID: <https://orcid.org/0000-0002-5147-4711>), Jordan Peck [aut] (Developer of FastNoise)",
+      "Maintainer": "Thomas Lin Pedersen <thomasp85@gmail.com>",
+      "Repository": "CRAN"
+    },
     "askpass": {
       "Package": "askpass",
       "Version": "1.2.1",
@@ -2912,6 +2948,23 @@
       "NeedsCompilation": "no",
       "Author": "Hadley Wickham [aut], Winston Chang [aut], Jim Hester [aut], Lionel Henry [aut, cre], Posit Software, PBC [cph, fnd], R Core team [ctb] (Some namespace and vignette code extracted from base R)",
       "Maintainer": "Lionel Henry <lionel@posit.co>",
+      "Repository": "CRAN"
+    },
+    "png": {
+      "Package": "png",
+      "Version": "0.1-8",
+      "Source": "Repository",
+      "Title": "Read and write PNG images",
+      "Author": "Simon Urbanek <Simon.Urbanek@r-project.org>",
+      "Maintainer": "Simon Urbanek <Simon.Urbanek@r-project.org>",
+      "Depends": [
+        "R (>= 2.9.0)"
+      ],
+      "Description": "This package provides an easy and simple way to read, write and display bitmap images stored in the PNG format. It can read and write both files and in-memory raw vectors.",
+      "License": "GPL-2 | GPL-3",
+      "SystemRequirements": "libpng",
+      "URL": "http://www.rforge.net/png/",
+      "NeedsCompilation": "yes",
       "Repository": "CRAN"
     },
     "polyclip": {

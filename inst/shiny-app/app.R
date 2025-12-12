@@ -75,6 +75,23 @@ if (!loaded) {
 cfg <- get_puzzle_config()
 log_info("Loaded configuration from config.yml")
 
+# Check for noise fill dependencies
+noise_available <- tryCatch({
+  ambient_ok <- requireNamespace("ambient", quietly = TRUE)
+  png_ok <- requireNamespace("png", quietly = TRUE)
+  base64enc_ok <- requireNamespace("base64enc", quietly = TRUE)
+  log_info("DEBUG: ambient package available = {ambient_ok}")
+  log_info("DEBUG: png package available = {png_ok}")
+  log_info("DEBUG: base64enc package available = {base64enc_ok}")
+  ambient_ok && png_ok && base64enc_ok
+}, error = function(e) {
+  log_warn("Error checking noise packages: {e$message}")
+  FALSE
+})
+if (!noise_available) {
+  log_warn("Noise fill packages not fully available - noise fills may not work")
+}
+
 # Extract commonly used config values for cleaner UI code
 cfg_rect <- cfg$rectangular
 cfg_hex <- cfg$hexagonal
@@ -389,7 +406,8 @@ ui <- page_fluid(
                         "None" = "none",
                         "Solid" = "solid",
                         "Palette" = "palette",
-                        "Gradient" = "gradient"
+                        "Gradient" = "gradient",
+                        "Noise" = "noise"
                       ),
                       selected = cfg_style$fill_type,
                       inline = TRUE),
@@ -446,6 +464,41 @@ ui <- page_fluid(
               "Edge Color:",
               value = "#808080",
               showColour = "background"
+            )
+          ),
+          # Noise options for piece fill
+          conditionalPanel(
+            condition = "input.fill_type == 'noise'",
+            selectInput("fill_noise_type", "Noise Type:",
+                       choices = list(
+                         "Perlin" = "perlin",
+                         "Simplex" = "simplex",
+                         "Worley (Cellular)" = "worley",
+                         "Cubic" = "cubic",
+                         "Value" = "value"
+                       ),
+                       selected = "simplex"),
+            tooltip(
+              sliderInput("fill_noise_frequency", "Frequency:",
+                         min = 0.005, max = 0.1, value = 0.03, step = 0.005),
+              "Controls the scale of noise features. Lower = larger, smoother patterns."
+            ),
+            colourpicker::colourInput(
+              "fill_noise_color_low",
+              "Dark Color:",
+              value = "#2d2d44",
+              showColour = "background"
+            ),
+            colourpicker::colourInput(
+              "fill_noise_color_high",
+              "Light Color:",
+              value = "#8888aa",
+              showColour = "background"
+            ),
+            tooltip(
+              numericInput("fill_noise_seed", "Noise Seed:",
+                          value = 123, min = 1, max = 99999, step = 1),
+              "Seed for reproducible noise patterns (independent of puzzle seed)."
             )
           ),
 
@@ -585,7 +638,8 @@ ui <- page_fluid(
                     choices = list(
                       "None" = "none",
                       "Solid" = "solid",
-                      "Gradient" = "gradient"
+                      "Gradient" = "gradient",
+                      "Noise" = "noise"
                     ),
                     selected = cfg_bg$type,
                     inline = TRUE),
@@ -621,6 +675,42 @@ ui <- page_fluid(
             "Edge Color (100%):",
             value = cfg_bg$gradient$edge,
             showColour = "background"
+          )
+        ),
+
+        # Noise options (shown when background_type == "noise")
+        conditionalPanel(
+          condition = "input.background_type == 'noise'",
+          selectInput("bg_noise_type", "Noise Type:",
+                     choices = list(
+                       "Perlin" = "perlin",
+                       "Simplex" = "simplex",
+                       "Worley (Cellular)" = "worley",
+                       "Cubic" = "cubic",
+                       "Value" = "value"
+                     ),
+                     selected = "perlin"),
+          tooltip(
+            sliderInput("bg_noise_frequency", "Frequency:",
+                       min = 0.005, max = 0.1, value = 0.02, step = 0.005),
+            "Controls the scale of noise features. Lower = larger, smoother patterns."
+          ),
+          colourpicker::colourInput(
+            "bg_noise_color_low",
+            "Dark Color:",
+            value = "#1a1a2e",
+            showColour = "background"
+          ),
+          colourpicker::colourInput(
+            "bg_noise_color_high",
+            "Light Color:",
+            value = "#4a4a6e",
+            showColour = "background"
+          ),
+          tooltip(
+            numericInput("bg_noise_seed", "Noise Seed:",
+                        value = 42, min = 1, max = 99999, step = 1),
+            "Seed for reproducible noise patterns (independent of puzzle seed)."
           )
         )
         ),
@@ -742,13 +832,28 @@ ui <- page_fluid(
               tags$li(strong("Tab Size:"), " Size of interlocking tabs (15-25% recommended)"),
               tags$li(strong("Jitter:"), " Randomness in piece shapes (2-6% recommended)"),
               tags$li(strong("Piece Separation:"), " Gap between pieces (0 = complete, >0 = separated)"),
+              tags$li(strong("Piece Fill:"), " None, solid, palette, gradient, or noise"),
               tags$li(strong("Internal Edges:"), " Style of edges between fused pieces (hidden/dashed/solid)"),
-              tags$li(strong("Color Palette:"), " Choose from various color schemes"),
+              tags$li(strong("Stroke Color:"), " None, solid color, or palette"),
               tags$li(strong("Line Width:"), " For laser cutting use 0.5mm"),
               tags$li(strong("Opacity:"), " Transparency of puzzle pieces"),
               tags$li(strong("Labels:"), " Show piece ID numbers"),
-              tags$li(strong("Background:"), " None, solid color, or gradient")
+              tags$li(strong("Background:"), " None, solid color, gradient, or noise")
             ),
+            br(),
+            h4("Noise Fills"),
+            p("Create procedural textures for backgrounds and pieces using noise algorithms:"),
+            tags$ul(
+              tags$li(strong("Perlin:"), " Smooth, natural-looking gradients"),
+              tags$li(strong("Simplex:"), " Similar to Perlin but faster and less artifacts"),
+              tags$li(strong("Worley:"), " Cellular/voronoi patterns"),
+              tags$li(strong("Cubic:"), " Smooth interpolated value noise"),
+              tags$li(strong("Value:"), " Basic interpolated random values")
+            ),
+            p(tags$small(class = "text-muted",
+              "Note: Noise fills require the 'ambient' package. Install with: ",
+              code("install.packages('ambient')")
+            )),
             br(),
             h4("Download Options"),
             tags$ul(
@@ -1143,6 +1248,15 @@ server <- function(input, output, session) {
         middle = input$piece_gradient_middle,
         edge = input$piece_gradient_edge
       )
+    } else if (input$fill_type == "noise") {
+      # Noise fill for pieces (requires ambient package)
+      fill_color_value <- noise_fill_spec(
+        noise_type = if (is.null(input$fill_noise_type)) "simplex" else input$fill_noise_type,
+        frequency = if (is.null(input$fill_noise_frequency)) 0.03 else input$fill_noise_frequency,
+        color_low = if (is.null(input$fill_noise_color_low)) "#2d2d44" else input$fill_noise_color_low,
+        color_high = if (is.null(input$fill_noise_color_high)) "#8888aa" else input$fill_noise_color_high,
+        seed = if (is.null(input$fill_noise_seed)) 123 else input$fill_noise_seed
+      )
     }
 
     background_value <- switch(input$background_type,
@@ -1153,8 +1267,29 @@ server <- function(input, output, session) {
         center = input$gradient_center,
         middle = input$gradient_middle,
         edge = input$gradient_edge
+      ),
+      "noise" = noise_fill_spec(
+        noise_type = if (is.null(input$bg_noise_type)) "perlin" else input$bg_noise_type,
+        frequency = if (is.null(input$bg_noise_frequency)) 0.02 else input$bg_noise_frequency,
+        color_low = if (is.null(input$bg_noise_color_low)) "#1a1a2e" else input$bg_noise_color_low,
+        color_high = if (is.null(input$bg_noise_color_high)) "#4a4a6e" else input$bg_noise_color_high,
+        seed = if (is.null(input$bg_noise_seed)) 42 else input$bg_noise_seed
       )
     )
+
+    # DEBUG: Log fill and background types for noise debugging
+    log_info("DEBUG: fill_type = {input$fill_type}")
+    log_info("DEBUG: background_type = {input$background_type}")
+    if (is.list(fill_color_value)) {
+      log_info("DEBUG: fill_color_value is list, type = {fill_color_value$type}")
+    } else {
+      log_info("DEBUG: fill_color_value = {fill_color_value}")
+    }
+    if (is.list(background_value)) {
+      log_info("DEBUG: background_value is list, type = {background_value$type}")
+    } else {
+      log_info("DEBUG: background_value = {background_value}")
+    }
 
     # Get label settings
     show_labels_value <- if (is.null(input$show_labels)) FALSE else input$show_labels
@@ -1180,20 +1315,37 @@ server <- function(input, output, session) {
     # "palette" uses default behavior (colors = NULL, palette used)
 
     # Render SVG with current styling
-    svg <- render_puzzle_svg(
-      pos,
-      fill = fill_color_value,
-      fills = fill_colors_value,
-      stroke_width = stroke_width_value,
-      colors = stroke_colors_value,
-      palette = stroke_palette_value,
-      palette_invert = stroke_palette_invert_val,
-      background = background_value,
-      opacity = input$opacity / 100,
-      show_labels = show_labels_value,
-      label_color = label_color_value,
-      label_size = label_size_value
-    )
+    svg <- tryCatch({
+      result <- render_puzzle_svg(
+        pos,
+        fill = fill_color_value,
+        fills = fill_colors_value,
+        stroke_width = stroke_width_value,
+        colors = stroke_colors_value,
+        palette = stroke_palette_value,
+        palette_invert = stroke_palette_invert_val,
+        background = background_value,
+        opacity = input$opacity / 100,
+        show_labels = show_labels_value,
+        label_color = label_color_value,
+        label_size = label_size_value
+      )
+      # DEBUG: Check SVG output for noise patterns
+      has_bg_noise <- grepl("bgNoisePattern", result)
+      has_piece_noise <- grepl("pieceFillNoisePattern", result)
+      log_info("DEBUG: SVG length = {nchar(result)}")
+      log_info("DEBUG: has bgNoisePattern = {has_bg_noise}")
+      log_info("DEBUG: has pieceFillNoisePattern = {has_piece_noise}")
+      result
+    }, error = function(e) {
+      log_error("ERROR in render_puzzle_svg: {e$message}")
+      # Return a simple error SVG
+      paste0(
+        '<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300">',
+        '<text x="50" y="150" fill="red">Error: ', htmltools::htmlEscape(e$message), '</text>',
+        '</svg>'
+      )
+    })
 
     # Also update the svg_content reactive for downloads
     svg_content(svg)
@@ -1351,7 +1503,7 @@ server <- function(input, output, session) {
       data <- puzzle_data()
       if (is.null(data)) return()
 
-      # Determine fill color value (supports none, solid, palette, gradient)
+      # Determine fill color value (supports none, solid, palette, gradient, noise)
       fill_color_dl <- "none"
       fills_dl <- NULL
 
@@ -1371,9 +1523,17 @@ server <- function(input, output, session) {
           middle = input$piece_gradient_middle,
           edge = input$piece_gradient_edge
         )
+      } else if (input$fill_type == "noise") {
+        fill_color_dl <- noise_fill_spec(
+          noise_type = if (is.null(input$fill_noise_type)) "simplex" else input$fill_noise_type,
+          frequency = if (is.null(input$fill_noise_frequency)) 0.03 else input$fill_noise_frequency,
+          color_low = if (is.null(input$fill_noise_color_low)) "#2d2d44" else input$fill_noise_color_low,
+          color_high = if (is.null(input$fill_noise_color_high)) "#8888aa" else input$fill_noise_color_high,
+          seed = if (is.null(input$fill_noise_seed)) 123 else input$fill_noise_seed
+        )
       }
 
-      # Determine background value (supports none, solid, gradient)
+      # Determine background value (supports none, solid, gradient, noise)
       background_value <- switch(input$background_type,
         "none" = "none",
         "solid" = input$background_color,
@@ -1382,6 +1542,13 @@ server <- function(input, output, session) {
           center = input$gradient_center,
           middle = input$gradient_middle,
           edge = input$gradient_edge
+        ),
+        "noise" = noise_fill_spec(
+          noise_type = if (is.null(input$bg_noise_type)) "perlin" else input$bg_noise_type,
+          frequency = if (is.null(input$bg_noise_frequency)) 0.02 else input$bg_noise_frequency,
+          color_low = if (is.null(input$bg_noise_color_low)) "#1a1a2e" else input$bg_noise_color_low,
+          color_high = if (is.null(input$bg_noise_color_high)) "#4a4a6e" else input$bg_noise_color_high,
+          seed = if (is.null(input$bg_noise_seed)) 42 else input$bg_noise_seed
         )
       )
 
@@ -1618,6 +1785,15 @@ server <- function(input, output, session) {
         middle = input$piece_gradient_middle,
         edge = input$piece_gradient_edge
       )
+    } else if (input$fill_type == "noise") {
+      # Note: Noise fill for individual pieces uses same pattern per piece
+      fill_value <- noise_fill_spec(
+        noise_type = if (is.null(input$fill_noise_type)) "simplex" else input$fill_noise_type,
+        frequency = if (is.null(input$fill_noise_frequency)) 0.03 else input$fill_noise_frequency,
+        color_low = if (is.null(input$fill_noise_color_low)) "#2d2d44" else input$fill_noise_color_low,
+        color_high = if (is.null(input$fill_noise_color_high)) "#8888aa" else input$fill_noise_color_high,
+        seed = if (is.null(input$fill_noise_seed)) 123 else input$fill_noise_seed
+      )
     }
     # Note: For palette fill, we use per-piece colors below
 
@@ -1630,6 +1806,13 @@ server <- function(input, output, session) {
         center = input$gradient_center,
         middle = input$gradient_middle,
         edge = input$gradient_edge
+      ),
+      "noise" = noise_fill_spec(
+        noise_type = if (is.null(input$bg_noise_type)) "perlin" else input$bg_noise_type,
+        frequency = if (is.null(input$bg_noise_frequency)) 0.02 else input$bg_noise_frequency,
+        color_low = if (is.null(input$bg_noise_color_low)) "#1a1a2e" else input$bg_noise_color_low,
+        color_high = if (is.null(input$bg_noise_color_high)) "#4a4a6e" else input$bg_noise_color_high,
+        seed = if (is.null(input$bg_noise_seed)) 42 else input$bg_noise_seed
       )
     )
 

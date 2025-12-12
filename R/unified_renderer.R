@@ -61,14 +61,20 @@ render_puzzle_svg <- function(positioned, fill = "none", fills = NULL,
   # Render background (may include its own defs for background gradient)
   bg_element <- render_background(background, positioned$canvas_size, positioned$canvas_offset)
 
-  # Handle piece fill gradient - create defs section if needed
+  # Handle piece fill gradient/noise - create defs section if needed
   # Skip gradient handling if using per-piece fills
   piece_fill_defs <- ""
   fill_value <- fill
-  if (!use_per_piece_fills && is.list(fill) && !is.null(fill$type) && fill$type == "gradient") {
-    # Create piece gradient definition
-    piece_fill_defs <- render_piece_fill_gradient_defs(fill)
-    fill_value <- "url(#pieceFillGradient)"
+  if (!use_per_piece_fills && is.list(fill) && !is.null(fill$type)) {
+    if (fill$type == "gradient") {
+      # Create piece gradient definition
+      piece_fill_defs <- render_piece_fill_gradient_defs(fill)
+      fill_value <- "url(#pieceFillGradient)"
+    } else if (fill$type == "noise") {
+      # Create piece noise pattern definition
+      piece_fill_defs <- render_noise_piece_fill_defs(fill)
+      fill_value <- "url(#pieceFillNoisePattern)"
+    }
   }
 
   # Check if fusion styling is needed
@@ -203,6 +209,9 @@ render_background <- function(background, canvas_size, canvas_offset = NULL) {
   if (is.list(background) && !is.null(background$type)) {
     if (background$type == "gradient" || background$type == "radial") {
       return(render_gradient_background(background, canvas_size, canvas_offset))
+    }
+    if (background$type == "noise") {
+      return(render_noise_background(background, canvas_size, canvas_offset))
     }
   }
 
@@ -1560,24 +1569,38 @@ render_single_piece_svg <- function(piece,
       '<rect x="%.2f" y="%.2f" width="%.2f" height="%.2f" fill="%s"/>',
       vb_x, vb_y, vb_width, vb_height, background
     )
-  } else if (is.list(background) && !is.null(background$type) && background$type == "gradient") {
-    # Simple radial gradient for background
-    bg_element <- sprintf(
-      '<defs><radialGradient id="bgGrad"><stop offset="0%%" stop-color="%s"/><stop offset="50%%" stop-color="%s"/><stop offset="100%%" stop-color="%s"/></radialGradient></defs><rect x="%.2f" y="%.2f" width="%.2f" height="%.2f" fill="url(#bgGrad)"/>',
-      background$center %||% "#ffffff",
-      background$middle %||% "#e0e0e0",
-      background$edge %||% "#808080",
-      vb_x, vb_y, vb_width, vb_height
-    )
+  } else if (is.list(background) && !is.null(background$type)) {
+    if (background$type == "gradient") {
+      # Simple radial gradient for background
+      bg_element <- sprintf(
+        '<defs><radialGradient id="bgGrad"><stop offset="0%%" stop-color="%s"/><stop offset="50%%" stop-color="%s"/><stop offset="100%%" stop-color="%s"/></radialGradient></defs><rect x="%.2f" y="%.2f" width="%.2f" height="%.2f" fill="url(#bgGrad)"/>',
+        background$center %||% "#ffffff",
+        background$middle %||% "#e0e0e0",
+        background$edge %||% "#808080",
+        vb_x, vb_y, vb_width, vb_height
+      )
+    } else if (background$type == "noise") {
+      # Noise background for single piece
+      bg_element <- render_noise_background(
+        background,
+        canvas_size = c(vb_width, vb_height),
+        canvas_offset = c(vb_x, vb_y)
+      )
+    }
   }
 
-  # Handle fill (including gradient)
+  # Handle fill (including gradient and noise)
   defs_section <- ""
   fill_value <- fill
 
-  if (is.list(fill) && !is.null(fill$type) && fill$type == "gradient") {
-    defs_section <- render_piece_fill_gradient_defs(fill)
-    fill_value <- "url(#pieceFillGradient)"
+  if (is.list(fill) && !is.null(fill$type)) {
+    if (fill$type == "gradient") {
+      defs_section <- render_piece_fill_gradient_defs(fill)
+      fill_value <- "url(#pieceFillGradient)"
+    } else if (fill$type == "noise") {
+      defs_section <- render_noise_piece_fill_defs(fill)
+      fill_value <- "url(#pieceFillNoisePattern)"
+    }
   }
 
   # Render piece path

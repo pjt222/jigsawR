@@ -7,8 +7,8 @@ default:
   rectangular:
     rows: 3
     cols: 4
-    width: 200
-    height: 200
+    width: 400
+    height: 300
 
   # Hexagonal puzzle defaults
   hexagonal:

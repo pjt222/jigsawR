@@ -1262,6 +1262,114 @@ observe({
 
 ---
 
+### Insight #30: Procedural Noise Fills via Embedded PNG Patterns (2025-12-12)
+
+**Problem (Issue #57)**: Users wanted procedural noise textures for piece fills and backgrounds instead of just solid colors or predefined gradients. Noise fills provide organic, natural-looking textures that enhance visual interest.
+
+**Solution**: Implemented noise fill support using the `ambient` package for noise generation, with textures embedded directly in the SVG as base64-encoded PNG images in SVG pattern elements.
+
+**Architecture**:
+```
+noise_fill_spec()                    Create specification list
+       ↓
+generate_noise_texture()             Generate PNG texture via ambient package
+       ↓                             (perlin, simplex, worley, cubic, value, white)
+base64enc::base64encode()            Encode as base64 string
+       ↓
+render_noise_background()            Create SVG with pattern for backgrounds
+render_noise_piece_fill_defs()       Create SVG defs for piece fills
+       ↓
+<pattern> + <image>                  Embedded in SVG
+```
+
+**Key Implementation Details**:
+
+1. **Noise Specification Function** (`R/noise_fills.R`):
+```r
+noise_fill_spec <- function(
+  noise_type = "simplex",     # perlin, simplex, worley, cubic, value, white
+  frequency = 0.03,           # Controls noise scale
+  color_low = "#2d2d44",      # Color at noise value 0
+  color_high = "#8888aa",     # Color at noise value 1
+  seed = NULL,                # For reproducibility
+  octaves = 4,                # Fractal detail layers
+  lacunarity = 2,             # Frequency multiplier per octave
+  gain = 0.5                  # Amplitude multiplier per octave
+)
+# Returns: list(type = "noise", noise_type = ..., ...)
+```
+
+2. **Texture Generation** (`generate_noise_texture()`):
+```r
+# Generate noise grid using ambient package
+noise_grid <- switch(noise_type,
+  "perlin"  = ambient::noise_perlin(c(height, width), ...),
+  "simplex" = ambient::noise_simplex(c(height, width), ...),
+  "worley"  = ambient::noise_worley(c(height, width), ...),
+  ...
+)
+
+# Normalize to [0,1] and map to colors
+noise_normalized <- (noise_grid - min) / (max - min)
+r <- col_low[1] + (col_high[1] - col_low[1]) * noise_normalized
+g <- col_low[2] + (col_high[2] - col_low[2]) * noise_normalized
+b <- col_low[3] + (col_high[3] - col_low[3]) * noise_normalized
+
+# Create PNG and encode as base64
+png::writePNG(array(c(r, g, b), dim = c(height, width, 3)), raw())
+base64enc::base64encode(raw_bytes)
+```
+
+3. **SVG Pattern Structure** (backgrounds use `objectBoundingBox`, piece fills use `userSpaceOnUse`):
+```xml
+<defs>
+  <pattern id="bgNoisePattern" width="1" height="1"
+           patternUnits="objectBoundingBox">
+    <image href="data:image/png;base64,iVBORw0K..."
+           width="400" height="300"
+           preserveAspectRatio="none"/>
+  </pattern>
+</defs>
+<rect width="100%" height="100%" fill="url(#bgNoisePattern)"/>
+```
+
+**Pattern Units**:
+- `objectBoundingBox`: Pattern scales to fill the bounding box (backgrounds)
+- `userSpaceOnUse`: Pattern uses absolute coordinates (piece fills need this for seamless tiles)
+
+**Type Detection** (`is_noise_fill_spec()`):
+```r
+is_noise_fill_spec <- function(spec) {
+  is.list(spec) && !is.null(spec$type) && spec$type == "noise"
+}
+```
+
+**Integration Points**:
+- `render_puzzle_svg()`: Checks for noise specs, calls render functions
+- `render_background()`: Routes noise specs to `render_noise_background()`
+- Shiny app: radioButtons for "noise" fill type, conditionalPanel for noise parameters
+
+**Dependencies**:
+- `ambient`: Noise generation (perlin, simplex, worley, etc.)
+- `png`: Write PNG image data
+- `base64enc`: Encode PNG as base64 string
+- All in Suggests (optional) - functions check availability at runtime
+
+**Testing**:
+- `tests/testthat/test-noise_fills.R`: 20+ tests covering all noise types and integration
+- `inst/debug/user_noise_diagnostic.R`: User-facing diagnostic script
+
+**Key Insight**: Embedding procedural textures as base64 PNGs in SVG patterns avoids browser compatibility issues with SVG filters while providing full control over noise parameters. The tradeoff is larger file sizes (base64 ~33% overhead), but this is acceptable for artistic puzzle outputs.
+
+**Files Created/Modified**:
+- `R/noise_fills.R` (new): All noise fill functions
+- `R/unified_renderer.R`: Integration with rendering pipeline
+- `inst/shiny-app/app.R`: UI controls for noise parameters
+- `inst/config.yml`: Default noise settings
+- `tests/testthat/test-noise_fills.R` (new): Test suite
+
+---
+
 ## Development History
 
 ### Completed Work (Archive)

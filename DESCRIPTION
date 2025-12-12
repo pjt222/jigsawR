@@ -42,5 +42,8 @@ Suggests:
     data.table,
     future,
     furrr,
-    bench
+    bench,
+    ambient,
+    png,
+    base64enc
 VignetteBuilder: knitr
