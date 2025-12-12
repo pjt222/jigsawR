@@ -17,6 +17,11 @@
 #' @param tabsize Tab size as percentage (10-40)
 #' @param jitter Jitter as percentage (0-15)
 #' @param offset Separation offset (0 = complete puzzle, >0 = separated pieces)
+#' @param layout Layout algorithm: "grid" (default) or "repel".
+#'   "grid" uses regular grid-based positioning.
+#'   "repel" uses iterative collision resolution to prevent overlapping.
+#' @param repel_margin Minimum gap between pieces for repel layout (default: 2mm)
+#' @param repel_max_iter Maximum iterations for repel algorithm (default: 100)
 #' @param fill_color Fill color for pieces ("none" for unfilled)
 #' @param fills Vector of per-piece fill colors (optional, overrides fill_color for palette fills)
 #' @param stroke_width SVG stroke width (default: 1.5)
@@ -49,6 +54,9 @@ generate_puzzle <- function(type = "rectangular",
                             tabsize = 20,
                             jitter = 4,
                             offset = 0,
+                            layout = "grid",
+                            repel_margin = 2,
+                            repel_max_iter = 100,
                             fill_color = "none",
                             fills = NULL,
                             stroke_width = 1.5,
@@ -174,7 +182,13 @@ generate_puzzle <- function(type = "rectangular",
   }
 
   # Step 2: Apply positioning
-  positioned <- apply_piece_positioning(pieces_result, offset = offset)
+  positioned <- apply_piece_positioning(
+    pieces_result,
+    offset = offset,
+    layout = layout,
+    repel_margin = repel_margin,
+    repel_max_iter = repel_max_iter
+  )
 
   # Step 3: Render to SVG
   svg_content <- render_puzzle_svg(
