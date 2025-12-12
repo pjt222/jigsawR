@@ -372,6 +372,35 @@ test_that("keyword 'all' works with generate_puzzle", {
   expect_equal(sort(pieces), 1:9)
 })
 
+test_that("keyword 'all' sets fusion_group on each piece (Issue #55)", {
+  # Test rectangular
+  rect <- generate_puzzle(
+    type = "rectangular", grid = c(3, 3), size = c(300, 300),
+    seed = 42, fusion_groups = "all", save_files = FALSE
+  )
+  rect_groups <- sapply(rect$pieces, function(p) p$fusion_group)
+  expect_true(all(!is.na(rect_groups)), info = "All rectangular pieces should have fusion_group set")
+  expect_equal(length(unique(rect_groups)), 1, info = "All rectangular pieces should be in same group")
+
+  # Test hexagonal
+  hex <- generate_puzzle(
+    type = "hexagonal", grid = c(2), size = c(200),
+    seed = 42, fusion_groups = "all", save_files = FALSE
+  )
+  hex_groups <- sapply(hex$pieces, function(p) p$fusion_group)
+  expect_true(all(!is.na(hex_groups)), info = "All hexagonal pieces should have fusion_group set")
+  expect_equal(length(unique(hex_groups)), 1, info = "All hexagonal pieces should be in same group")
+
+  # Test concentric
+  conc <- generate_puzzle(
+    type = "concentric", grid = c(2), size = c(200),
+    seed = 42, fusion_groups = "all", save_files = FALSE
+  )
+  conc_groups <- sapply(conc$pieces, function(p) p$fusion_group)
+  expect_true(all(!is.na(conc_groups)), info = "All concentric pieces should have fusion_group set")
+  expect_equal(length(unique(conc_groups)), 1, info = "All concentric pieces should be in same group")
+})
+
 test_that("row keyword 'R1' works with generate_puzzle", {
   result <- generate_puzzle(
     type = "rectangular",
