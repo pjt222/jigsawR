@@ -114,29 +114,42 @@ apply_rect_positioning <- function(piece_result, offset) {
     )
   })
 
-  # Calculate new canvas size
-  # For fusion: count unique effective positions, not individual pieces
-  # This gives correct gaps when meta-pieces span multiple grid cells
-  unique_eff_xi <- unique(sapply(effective_positions, function(p) p$xi))
-  unique_eff_yi <- unique(sapply(effective_positions, function(p) p$yi))
-  n_gaps_x <- length(unique_eff_xi) - 1
-  n_gaps_y <- length(unique_eff_yi) - 1
+  # Calculate canvas size from actual transformed piece paths
+  # This ensures all bezier tabs and strokes are visible (fixes clipping issue)
+  piece_width <- params$piece_width
+  piece_height <- params$piece_height
 
-  original_width <- params$size[1]
-  original_height <- params$size[2]
+  bounds <- calculate_pieces_bounds(transformed_pieces, fallback_fn = function() {
+    # Fallback to theoretical calculation
+    unique_eff_xi <- unique(sapply(effective_positions, function(p) p$xi))
+    unique_eff_yi <- unique(sapply(effective_positions, function(p) p$yi))
+    n_gaps_x <- length(unique_eff_xi) - 1
+    n_gaps_y <- length(unique_eff_yi) - 1
+    original_width <- params$size[1]
+    original_height <- params$size[2]
+    list(
+      min_x = -offset,
+      max_x = original_width + n_gaps_x * offset + offset,
+      min_y = -offset,
+      max_y = original_height + n_gaps_y * offset + offset
+    )
+  })
 
-  new_width <- original_width + n_gaps_x * offset
-  new_height <- original_height + n_gaps_y * offset
+  # Add margin for stroke width and visual clarity
+  # Use larger of piece dimensions to estimate tab protrusion
+  stroke_margin <- max(piece_width, piece_height) * 0.1 + offset
+  min_x <- bounds$min_x - stroke_margin
+  max_x <- bounds$max_x + stroke_margin
+  min_y <- bounds$min_y - stroke_margin
+  max_y <- bounds$max_y + stroke_margin
 
-  # Add padding for visual clarity
-  padding <- offset
-  canvas_width <- new_width + 2 * padding
-  canvas_height <- new_height + 2 * padding
+  canvas_width <- max_x - min_x
+  canvas_height <- max_y - min_y
 
   return(list(
     pieces = transformed_pieces,
     canvas_size = c(canvas_width, canvas_height),
-    canvas_offset = c(-padding, -padding),
+    canvas_offset = c(min_x, min_y),
     offset = offset,
     type = "rectangular",
     parameters = params,
