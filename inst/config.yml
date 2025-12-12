@@ -29,6 +29,9 @@ default:
     tabsize: 10
     jitter: 2
     offset: 0
+    layout: "grid"        # grid or repel
+    repel_margin: 2       # mm gap for repel layout
+    repel_max_iter: 100   # max iterations for repel
     stroke_width: 1
     stroke_color_type: "solid"  # none, solid, or palette
     stroke_color: "#000000"  # used when stroke_color_type = "solid"
@@ -135,6 +138,12 @@ default:
     offset:
       min: 0
       max: 100
+    repel_margin:
+      min: 0
+      max: 20
+    repel_max_iter:
+      min: 10
+      max: 500
     stroke_width:
       min: 0.5
       max: 10
