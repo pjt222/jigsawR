@@ -401,6 +401,105 @@ test_that("rectangular canvas bounds handle large offsets without clipping", {
   }
 })
 
+test_that("translate_piece updates fused_edge_segments for concentric puzzles", {
+  # This tests the bug fix where repel layout didn't translate fused_edge_segments
+  # causing OUTER edge strokes to be rendered at wrong positions
+
+  # Create a mock piece with fused_edge_segments
+  mock_piece <- list(
+    id = 7,
+    path = "M 100 50 L 150 50 L 150 100 L 100 100 Z",
+    center = c(125, 75),
+    fused_edge_segments = list(
+      OUTER = list(
+        list(
+          path = "M 100 50 C 110 40 140 40 150 50",
+          start_point = c(100, 50),
+          end_point = c(150, 50),
+          neighbor_id = 18,
+          is_fused = FALSE
+        ),
+        list(
+          path = "M 150 50 C 160 60 160 90 150 100",
+          start_point = c(150, 50),
+          end_point = c(150, 100),
+          neighbor_id = 19,
+          is_fused = TRUE
+        )
+      )
+    )
+  )
+
+  # Translate by 20, 30
+  translated <- translate_piece(mock_piece, 20, 30)
+
+  # Check center is translated
+  expect_equal(translated$center, c(145, 105))
+
+  # Check fused_edge_segments are translated
+  seg1 <- translated$fused_edge_segments$OUTER[[1]]
+  seg2 <- translated$fused_edge_segments$OUTER[[2]]
+
+  # Start/end points should be translated
+  expect_equal(seg1$start_point, c(120, 80))
+  expect_equal(seg1$end_point, c(170, 80))
+  expect_equal(seg2$start_point, c(170, 80))
+  expect_equal(seg2$end_point, c(170, 130))
+
+  # Path coordinates should also be translated
+  expect_true(grepl("M 120", seg1$path))
+  expect_true(grepl("M 170", seg2$path))
+})
+
+test_that("repel layout correctly translates concentric OUTER edge segments", {
+  # Integration test: verify that repel layout produces correctly positioned strokes
+  result <- generate_puzzle(
+    type = "concentric",
+    grid = c(3),
+    size = c(360),
+    seed = 1234,
+    offset = 30,
+    layout = "repel",
+    fusion_groups = "all-18",
+    save_files = FALSE
+  )
+
+  # Check that piece 7's fused_edge_segments (if present) have coordinates
+
+  # consistent with its center position
+  p7 <- result$pieces[[7]]
+
+  if (!is.null(p7$fused_edge_segments) && !is.null(p7$fused_edge_segments$OUTER)) {
+    # Get bounding box of piece path
+    seg7 <- parse_svg_path(p7$path)
+    xs <- c()
+    ys <- c()
+    for (seg in seg7) {
+      if (seg$type %in% c("M", "L", "C", "A")) {
+        xs <- c(xs, seg$x)
+        ys <- c(ys, seg$y)
+      }
+    }
+    piece_min_y <- min(ys)
+    piece_max_y <- max(ys)
+
+    # Check that OUTER segment paths are within reasonable range of piece
+    for (outer_seg in p7$fused_edge_segments$OUTER) {
+      if (!is.null(outer_seg$path)) {
+        outer_segments <- parse_svg_path(outer_seg$path)
+        for (seg in outer_segments) {
+          if (seg$type %in% c("M", "L", "C", "A")) {
+            # Y coordinate should be within extended range of piece
+            expect_true(seg$y >= piece_min_y - 50 && seg$y <= piece_max_y + 50,
+              info = paste("OUTER segment Y coord", seg$y,
+                           "should be near piece range [", piece_min_y, ",", piece_max_y, "]"))
+          }
+        }
+      }
+    }
+  }
+})
+
 test_that("all puzzle types use actual bounds for canvas calculation", {
   # Test consistency across all puzzle types
   configs <- list(

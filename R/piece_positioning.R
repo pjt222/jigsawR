@@ -992,6 +992,29 @@ translate_piece <- function(piece, dx, dy) {
     piece$parsed_segments <- translate_segments(piece$parsed_segments, dx, dy)
   }
 
+  # Update fused_edge_segments if present (critical for concentric OUTER edges)
+  if (!is.null(piece$fused_edge_segments)) {
+    for (edge_name in names(piece$fused_edge_segments)) {
+      segments <- piece$fused_edge_segments[[edge_name]]
+      if (!is.null(segments)) {
+        for (seg_idx in seq_along(segments)) {
+          seg <- segments[[seg_idx]]
+          # Translate start_point and end_point
+          if (!is.null(seg$start_point)) {
+            piece$fused_edge_segments[[edge_name]][[seg_idx]]$start_point <- seg$start_point + c(dx, dy)
+          }
+          if (!is.null(seg$end_point)) {
+            piece$fused_edge_segments[[edge_name]][[seg_idx]]$end_point <- seg$end_point + c(dx, dy)
+          }
+          # Translate the bezier path
+          if (!is.null(seg$path)) {
+            piece$fused_edge_segments[[edge_name]][[seg_idx]]$path <- translate_svg_path(seg$path, dx, dy)
+          }
+        }
+      }
+    }
+  }
+
   piece
 }
 
