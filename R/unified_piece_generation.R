@@ -186,9 +186,11 @@ generate_rect_pieces_internal <- function(seed, grid, size, tabsize, jitter,
       }
 
       # Create standardized piece object
+      # Cache parsed_segments to avoid re-parsing during rendering (Phase 2 optimization)
       pieces[[piece_idx]] <- list(
         id = piece_idx,  # Store as integer for deduplication
         path = piece_path,
+        parsed_segments = parse_svg_path(piece_path),  # Cached for O(1) access during rendering
         center = c(center_x, center_y),
         grid_pos = c(xi = xi, yi = yi),
         type = "rectangular",
@@ -353,9 +355,11 @@ generate_hex_pieces_internal <- function(seed, rings, diameter, tabsize, jitter,
       fusion_group <- get_piece_fusion_group(piece_id, fused_edge_data)
     }
 
+    # Cache parsed_segments to avoid re-parsing during rendering (Phase 2 optimization)
     list(
       id = piece_id,  # Store as integer for deduplication
       path = hp$path,
+      parsed_segments = parse_svg_path(hp$path),  # Cached for O(1) access during rendering
       center = c(hp$center_x, hp$center_y),
       ring_pos = list(ring = hp$ring, position = hp$position_in_ring),
       type = "hexagonal",
@@ -370,39 +374,22 @@ generate_hex_pieces_internal <- function(seed, rings, diameter, tabsize, jitter,
 
   # Calculate canvas size from actual piece path bounds
   # This is critical when warp/trunc are enabled, as pieces extend beyond centers
-  all_path_x <- c()
-  all_path_y <- c()
-
-  for (piece in pieces) {
-    # Extract all coordinates from the path
-    path <- piece$path
-    numbers <- as.numeric(unlist(regmatches(path, gregexpr("-?[0-9]+\\.?[0-9]*", path))))
-    numbers <- numbers[!is.na(numbers)]
-
-    if (length(numbers) >= 2) {
-      # Coordinates alternate: x, y, x, y, ...
-      x_coords <- numbers[seq(1, length(numbers), by = 2)]
-      y_coords <- numbers[seq(2, length(numbers), by = 2)]
-      all_path_x <- c(all_path_x, x_coords)
-      all_path_y <- c(all_path_y, y_coords)
-    }
-  }
-
-  # Calculate bounds from actual path coordinates
-  if (length(all_path_x) > 0 && length(all_path_y) > 0) {
-    path_min_x <- min(all_path_x)
-    path_max_x <- max(all_path_x)
-    path_min_y <- min(all_path_y)
-    path_max_y <- max(all_path_y)
-  } else {
+  # Uses optimized O(n) extraction instead of grow-on-append O(n²)
+  bounds <- calculate_pieces_bounds(pieces, fallback_fn = function() {
     # Fallback to center-based calculation
     all_x <- sapply(pieces, function(p) p$center[1])
     all_y <- sapply(pieces, function(p) p$center[2])
-    path_min_x <- min(all_x) - piece_radius
-    path_max_x <- max(all_x) + piece_radius
-    path_min_y <- min(all_y) - piece_radius
-    path_max_y <- max(all_y) + piece_radius
-  }
+    list(
+      min_x = min(all_x) - piece_radius,
+      max_x = max(all_x) + piece_radius,
+      min_y = min(all_y) - piece_radius,
+      max_y = max(all_y) + piece_radius
+    )
+  })
+  path_min_x <- bounds$min_x
+  path_max_x <- bounds$max_x
+  path_min_y <- bounds$min_y
+  path_max_y <- bounds$max_y
 
   # Add a small margin for stroke width and visual padding
   stroke_margin <- piece_radius * 0.15
@@ -560,9 +547,11 @@ generate_concentric_pieces_internal <- function(seed, rings, diameter, tabsize, 
       fusion_group <- get_piece_fusion_group(piece_id, fused_edge_data)
     }
 
+    # Cache parsed_segments to avoid re-parsing during rendering (Phase 2 optimization)
     list(
       id = piece_id,  # Store as integer for deduplication
       path = cp$path,
+      parsed_segments = parse_svg_path(cp$path),  # Cached for O(1) access during rendering
       center = c(cp$center_x, cp$center_y),
       ring_pos = list(ring = cp$ring, position = cp$position),
       type = "concentric",
@@ -576,35 +565,20 @@ generate_concentric_pieces_internal <- function(seed, rings, diameter, tabsize, 
   piece_height <- get_concentric_piece_height(diameter, rings)
 
   # Calculate canvas size from actual piece path bounds
-  all_path_x <- c()
-  all_path_y <- c()
-
-  for (piece in pieces) {
-    path <- piece$path
-    numbers <- as.numeric(unlist(regmatches(path, gregexpr("-?[0-9]+\\.?[0-9]*", path))))
-    numbers <- numbers[!is.na(numbers)]
-
-    if (length(numbers) >= 2) {
-      x_coords <- numbers[seq(1, length(numbers), by = 2)]
-      y_coords <- numbers[seq(2, length(numbers), by = 2)]
-      all_path_x <- c(all_path_x, x_coords)
-      all_path_y <- c(all_path_y, y_coords)
-    }
-  }
-
-  # Calculate bounds from actual path coordinates
-  if (length(all_path_x) > 0 && length(all_path_y) > 0) {
-    path_min_x <- min(all_path_x)
-    path_max_x <- max(all_path_x)
-    path_min_y <- min(all_path_y)
-    path_max_y <- max(all_path_y)
-  } else {
+  # Uses optimized O(n) extraction instead of grow-on-append O(n²)
+  bounds <- calculate_pieces_bounds(pieces, fallback_fn = function() {
     # Fallback to diameter-based calculation
-    path_min_x <- -diameter / 2
-    path_max_x <- diameter / 2
-    path_min_y <- -diameter / 2
-    path_max_y <- diameter / 2
-  }
+    list(
+      min_x = -diameter / 2,
+      max_x = diameter / 2,
+      min_y = -diameter / 2,
+      max_y = diameter / 2
+    )
+  })
+  path_min_x <- bounds$min_x
+  path_max_x <- bounds$max_x
+  path_min_y <- bounds$min_y
+  path_max_y <- bounds$max_y
 
   # Add a small margin for stroke width
   stroke_margin <- piece_height * 0.15
@@ -754,6 +728,10 @@ apply_fusion_to_pieces <- function(pieces_result, fusion_groups, puzzle_result) 
   for (i in seq_along(pieces)) {
     piece <- pieces[[i]]
     piece_id <- piece$id %||% i
+
+    # Set fusion_group from piece_to_group mapping
+    group_id <- fused_edge_data$piece_to_group[[as.character(piece_id)]]
+    piece$fusion_group <- if (!is.null(group_id)) group_id else NA
 
     # Initialize fused_edges if not present
     if (is.null(piece$fused_edges)) {
