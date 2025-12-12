@@ -285,6 +285,46 @@ ui <- page_fluid(
             )
           ),
 
+          # Layout Algorithm (affects piece positioning - computed on Generate)
+          tags$small(class = "text-muted", "Layout Algorithm"),
+          tooltip(
+            radioButtons("layout", NULL,
+                        choices = list(
+                          "Grid (Regular Spacing)" = "grid",
+                          "Repel (Anti-Overlap)" = "repel"
+                        ),
+                        selected = cfg_style$layout,
+                        inline = FALSE),
+            "Grid: Regular spacing based on offset. Repel: Iteratively pushes pieces apart to prevent overlapping (useful for fused meta-pieces)."
+          ),
+
+          # Repel-specific options (only shown when layout == "repel")
+          conditionalPanel(
+            condition = "input.layout == 'repel'",
+            fluidRow(
+              column(6,
+                tooltip(
+                  numericInput("repel_margin", "Margin:",
+                              value = cfg_style$repel_margin,
+                              min = cfg_const$repel_margin$min,
+                              max = cfg_const$repel_margin$max,
+                              step = 1),
+                  "Minimum gap (mm) between pieces after repelling."
+                )
+              ),
+              column(6,
+                tooltip(
+                  numericInput("repel_max_iter", "Iterations:",
+                              value = cfg_style$repel_max_iter,
+                              min = cfg_const$repel_max_iter$min,
+                              max = cfg_const$repel_max_iter$max,
+                              step = 10),
+                  "Max iterations for collision resolution."
+                )
+              )
+            )
+          ),
+
           # Divider before action buttons
           tags$hr(class = "my-3"),
 
@@ -341,50 +381,6 @@ ui <- page_fluid(
                        post = " mm",
                        sep = ""),
             "Gap between pieces. 0mm = complete puzzle (pieces touching), >0mm = separated pieces for laser cutting"
-          ),
-
-          # Layout options (only visible when offset > 0)
-          conditionalPanel(
-            condition = "input.offset > 0",
-
-            # Layout algorithm selector
-            tooltip(
-              radioButtons("layout", "Layout Algorithm:",
-                          choices = list(
-                            "Grid" = "grid",
-                            "Repel (Anti-Overlap)" = "repel"
-                          ),
-                          selected = cfg_style$layout,
-                          inline = TRUE),
-              "Grid: Regular spacing based on offset. Repel: Iteratively pushes pieces apart to prevent overlapping (useful for fused meta-pieces)."
-            ),
-
-            # Repel-specific options (only shown when layout == "repel")
-            conditionalPanel(
-              condition = "input.layout == 'repel'",
-              fluidRow(
-                column(6,
-                  tooltip(
-                    numericInput("repel_margin", "Margin (mm):",
-                                value = cfg_style$repel_margin,
-                                min = cfg_const$repel_margin$min,
-                                max = cfg_const$repel_margin$max,
-                                step = 1),
-                    "Minimum gap between pieces after repelling. Higher values = more space."
-                  )
-                ),
-                column(6,
-                  tooltip(
-                    numericInput("repel_max_iter", "Max Iterations:",
-                                value = cfg_style$repel_max_iter,
-                                min = cfg_const$repel_max_iter$min,
-                                max = cfg_const$repel_max_iter$max,
-                                step = 10),
-                    "Maximum iterations for collision resolution. Increase if pieces still overlap."
-                  )
-                )
-              )
-            )
           ),
 
           # Piece fill options (always visible)
@@ -716,7 +712,8 @@ ui <- page_fluid(
               tags$li(strong("Puzzle Type:"), " Choose Rectangular, Hexagonal, or Concentric"),
               tags$li(strong("Grid/Rings:"), " Controls piece count"),
               tags$li(strong("Size/Diameter:"), " Physical dimensions in millimeters"),
-              tags$li(strong("Fuse Pieces:"), " Create meta-pieces using PILES notation (see below)")
+              tags$li(strong("Fuse Pieces:"), " Create meta-pieces using PILES notation (see below)"),
+              tags$li(strong("Layout Algorithm:"), " Grid (regular spacing) or Repel (prevents overlap for fused pieces)")
             ),
             br(),
             h4("PILES Notation (Fusion Groups)"),
@@ -745,7 +742,6 @@ ui <- page_fluid(
               tags$li(strong("Tab Size:"), " Size of interlocking tabs (15-25% recommended)"),
               tags$li(strong("Jitter:"), " Randomness in piece shapes (2-6% recommended)"),
               tags$li(strong("Piece Separation:"), " Gap between pieces (0 = complete, >0 = separated)"),
-              tags$li(strong("Layout Algorithm:"), " Grid (regular spacing) or Repel (prevents overlap for fused pieces)"),
               tags$li(strong("Internal Edges:"), " Style of edges between fused pieces (hidden/dashed/solid)"),
               tags$li(strong("Color Palette:"), " Choose from various color schemes"),
               tags$li(strong("Line Width:"), " For laser cutting use 0.5mm"),
@@ -928,6 +924,11 @@ server <- function(input, output, session) {
 
       # Store base settings - these trigger piece regeneration
       # fusion_groups is stored as STRING and parsed by generate_puzzle() with context
+      # layout parameters are also stored here (computed on Generate, not reactively)
+      layout_val <- if (is.null(input$layout)) "grid" else input$layout
+      repel_margin_val <- if (is.null(input$repel_margin)) 2 else input$repel_margin
+      repel_max_iter_val <- if (is.null(input$repel_max_iter)) 100 else input$repel_max_iter
+
       base_settings(list(
         type = puzzle_type,
         seed = input$seed,
@@ -936,7 +937,10 @@ server <- function(input, output, session) {
         boundary_params = boundary_params,
         conc_boundary_params = conc_boundary_params,
         center_shape = center_shape_value,
-        fusion_groups = fusion_groups_str  # Store STRING, not parsed - generate_puzzle() handles parsing
+        fusion_groups = fusion_groups_str,  # Store STRING, not parsed - generate_puzzle() handles parsing
+        layout = layout_val,
+        repel_margin = repel_margin_val,
+        repel_max_iter = repel_max_iter_val
       ))
 
       # Store puzzle metadata for display and downloads
@@ -998,12 +1002,9 @@ server <- function(input, output, session) {
     tabsize_val <- input$tabsize
     jitter_val <- input$jitter
     offset_val <- input$offset
-    # Layout parameters (only apply when offset > 0)
-    layout_val <- if (is.null(input$layout) || offset_val == 0) "grid" else input$layout
-    repel_margin_val <- if (is.null(input$repel_margin)) 2 else input$repel_margin
-    repel_max_iter_val <- if (is.null(input$repel_max_iter)) 100 else input$repel_max_iter
+    # NOTE: layout is NOT read here - it's stored in base_settings on Generate click
     # NOTE: fusion_groups input is NOT read here - it's stored in base_settings on Generate click
-    # This prevents slow reactive re-computation when fusion text changes
+    # This prevents slow reactive re-computation when these change
     fusion_style_val <- if (is.null(input$fusion_style)) "none" else input$fusion_style
     fusion_opacity_val <- if (is.null(input$fusion_opacity)) 30 else input$fusion_opacity / 100
 
@@ -1011,10 +1012,13 @@ server <- function(input, output, session) {
     settings <- base_settings()
     if (is.null(settings)) return()
 
-    # Use fusion_groups STRING from base_settings (stored on Generate click)
-    # generate_puzzle() will parse it with proper puzzle context for keyword resolution
+    # Use values from base_settings (stored on Generate click)
     fusion_groups_str <- settings$fusion_groups
     has_fusion <- !is.null(fusion_groups_str) && nchar(trimws(fusion_groups_str)) > 0
+    # Layout parameters from base_settings (only apply when offset > 0)
+    layout_val <- if (is.null(settings$layout) || offset_val == 0) "grid" else settings$layout
+    repel_margin_val <- if (is.null(settings$repel_margin)) 2 else settings$repel_margin
+    repel_max_iter_val <- if (is.null(settings$repel_max_iter)) 100 else settings$repel_max_iter
 
     log_info("Regenerating puzzle (tabsize={tabsize_val}, jitter={jitter_val}, offset={offset_val}mm, layout={layout_val})")
     if (has_fusion) {
