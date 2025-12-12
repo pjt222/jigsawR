@@ -4,10 +4,12 @@
 \alias{calculate_piece_bounds}
 \title{Calculate bounding box from SVG path}
 \usage{
-calculate_piece_bounds(path)
+calculate_piece_bounds(path, piece = NULL)
 }
 \arguments{
 \item{path}{SVG path d attribute string}
+
+\item{piece}{Optional piece object with cached parsed_segments (Phase 2 optimization)}
 }
 \value{
 List with min_x, max_x, min_y, max_y, width, height

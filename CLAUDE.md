@@ -119,7 +119,8 @@ devtools::check()             # Full check
 result <- generate_puzzle(
   type = "rectangular", seed = 42,
   grid = c(3, 4), size = c(400, 300),
-  offset = 0  # 0=complete, >0=separated
+  offset = 0,  # 0=complete, >0=separated
+  layout = "grid"  # "grid" (default) or "repel"
 )
 
 # Hexagonal

@@ -4,10 +4,12 @@
 \alias{calculate_path_bounding_box_center}
 \title{Calculate bounding box center from SVG path}
 \usage{
-calculate_path_bounding_box_center(path)
+calculate_path_bounding_box_center(path, piece = NULL)
 }
 \arguments{
 \item{path}{SVG path d attribute string}
+
+\item{piece}{Optional piece object with cached parsed_segments (Phase 2 optimization)}
 }
 \value{
 Named vector with x and y center coordinates

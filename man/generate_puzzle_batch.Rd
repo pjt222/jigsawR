@@ -4,16 +4,45 @@
 \alias{generate_puzzle_batch}
 \title{Generate batch of puzzle variations}
 \usage{
-generate_puzzle_batch(variations, base_dir = "output/batch")
+generate_puzzle_batch(
+  variations,
+  base_dir = "output/batch",
+  parallel = FALSE,
+  workers = NULL
+)
 }
 \arguments{
 \item{variations}{List of parameter sets, each containing seed, grid, size, offset, etc.}
 
 \item{base_dir}{Base directory for output}
+
+\item{parallel}{Logical. If TRUE and furrr package is available, generate puzzles
+in parallel. Default is FALSE.}
+
+\item{workers}{Number of parallel workers. Default is `parallel::detectCores() - 1`.
+Only used when `parallel = TRUE`.}
 }
 \value{
 List of results from each puzzle generation
 }
 \description{
 Generate multiple puzzles with different parameters for testing or production.
+Supports parallel execution using the furrr package for significant speedup
+on multi-core systems.
+}
+\examples{
+\dontrun{
+# Define variations
+variations <- list(
+  list(name = "small", seed = 1, grid = c(3, 3), size = c(300, 300)),
+  list(name = "medium", seed = 2, grid = c(5, 5), size = c(500, 500)),
+  list(name = "large", seed = 3, grid = c(8, 8), size = c(800, 800))
+)
+
+# Sequential generation
+results <- generate_puzzle_batch(variations)
+
+# Parallel generation (requires furrr package)
+results <- generate_puzzle_batch(variations, parallel = TRUE, workers = 4)
+}
 }

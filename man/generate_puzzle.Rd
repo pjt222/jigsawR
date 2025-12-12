@@ -12,6 +12,9 @@ generate_puzzle(
   tabsize = 20,
   jitter = 4,
   offset = 0,
+  layout = "grid",
+  repel_margin = 2,
+  repel_max_iter = 100,
   fill_color = "none",
   fills = NULL,
   stroke_width = 1.5,
@@ -51,6 +54,14 @@ generate_puzzle(
 \item{jitter}{Jitter as percentage (0-15)}
 
 \item{offset}{Separation offset (0 = complete puzzle, >0 = separated pieces)}
+
+\item{layout}{Layout algorithm: "grid" (default) or "repel".
+"grid" uses regular grid-based positioning.
+"repel" uses iterative collision resolution to prevent overlapping.}
+
+\item{repel_margin}{Minimum gap between pieces for repel layout (default: 2mm)}
+
+\item{repel_max_iter}{Maximum iterations for repel algorithm (default: 100)}
 
 \item{fill_color}{Fill color for pieces ("none" for unfilled)}
 

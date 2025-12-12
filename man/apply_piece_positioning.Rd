@@ -4,12 +4,26 @@
 \alias{apply_piece_positioning}
 \title{Apply offset/separation to piece positions}
 \usage{
-apply_piece_positioning(piece_result, offset = 0)
+apply_piece_positioning(
+  piece_result,
+  offset = 0,
+  layout = "grid",
+  repel_margin = 2,
+  repel_max_iter = 100
+)
 }
 \arguments{
 \item{piece_result}{Output from generate_pieces_internal()}
 
 \item{offset}{Separation distance (0 = no change, >0 = separated)}
+
+\item{layout}{Layout algorithm: "grid" (default) or "repel".
+"grid" uses regular grid-based positioning.
+"repel" uses iterative collision resolution to prevent overlapping.}
+
+\item{repel_margin}{Minimum gap between pieces for repel layout (default: 2)}
+
+\item{repel_max_iter}{Maximum iterations for repel algorithm (default: 100)}
 }
 \value{
 List with:
