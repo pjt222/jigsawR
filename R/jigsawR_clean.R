@@ -383,18 +383,40 @@ generate_background <- function(background, size, output_dir, filename_prefix) {
 #' Generate batch of puzzle variations
 #'
 #' Generate multiple puzzles with different parameters for testing or production.
+#' Supports parallel execution using the furrr package for significant speedup
+#' on multi-core systems.
 #'
 #' @param variations List of parameter sets, each containing seed, grid, size, offset, etc.
 #' @param base_dir Base directory for output
+#' @param parallel Logical. If TRUE and furrr package is available, generate puzzles
+#'   in parallel. Default is FALSE.
+#' @param workers Number of parallel workers. Default is `parallel::detectCores() - 1`.
+#'   Only used when `parallel = TRUE`.
 #' @return List of results from each puzzle generation
 #' @export
-generate_puzzle_batch <- function(variations, base_dir = "output/batch") {
+#'
+#' @examples
+#' \dontrun{
+#' # Define variations
+#' variations <- list(
+#'   list(name = "small", seed = 1, grid = c(3, 3), size = c(300, 300)),
+#'   list(name = "medium", seed = 2, grid = c(5, 5), size = c(500, 500)),
+#'   list(name = "large", seed = 3, grid = c(8, 8), size = c(800, 800))
+#' )
+#'
+#' # Sequential generation
+#' results <- generate_puzzle_batch(variations)
+#'
+#' # Parallel generation (requires furrr package)
+#' results <- generate_puzzle_batch(variations, parallel = TRUE, workers = 4)
+#' }
+generate_puzzle_batch <- function(variations, base_dir = "output/batch",
+                                   parallel = FALSE, workers = NULL) {
 
-  results <- list()
+  n_variations <- length(variations)
 
-  for (i in seq_along(variations)) {
-    var <- variations[[i]]
-
+ # Helper function to generate a single puzzle with defaults
+  generate_one <- function(var, idx, total, base_dir) {
     # Set defaults for missing parameters
     if (is.null(var$type)) var$type <- "rectangular"
     if (is.null(var$grid)) var$grid <- c(2, 2)
@@ -409,11 +431,8 @@ generate_puzzle_batch <- function(variations, base_dir = "output/batch") {
     if (is.null(var$do_warp)) var$do_warp <- FALSE
     if (is.null(var$do_trunc)) var$do_trunc <- FALSE
 
-    log_subheader("Generating puzzle {i} of {length(variations)}")
-    log_info("Seed: {var$seed}, Grid: {paste(var$grid, collapse='x')}, Offset: {var$offset}")
-
-    # Generate puzzle using unified pipeline
-    result <- generate_puzzle(
+    # Generate puzzle using unified pipeline (suppress messages in parallel)
+    result <- suppressMessages(generate_puzzle(
       type = var$type,
       grid = var$grid,
       size = var$size,
@@ -432,9 +451,100 @@ generate_puzzle_batch <- function(variations, base_dir = "output/batch") {
       filename_prefix = var$name,
       do_warp = var$do_warp,
       do_trunc = var$do_trunc
+    ))
+
+    result
+  }
+
+  # Check if parallel execution is requested and possible
+  use_parallel <- parallel && requireNamespace("furrr", quietly = TRUE) &&
+                  requireNamespace("future", quietly = TRUE)
+
+  # Check if package is installed (required for parallel workers)
+  if (use_parallel && !requireNamespace("jigsawR", quietly = TRUE)) {
+    log_warn("Parallel execution requires jigsawR to be installed. Using sequential.")
+    log_info("Install with: devtools::install() or R CMD INSTALL")
+    use_parallel <- FALSE
+  }
+
+  if (parallel && !use_parallel && requireNamespace("furrr", quietly = TRUE)) {
+    # furrr available but jigsawR not installed - already warned above
+  } else if (parallel && !use_parallel) {
+    log_warn("Parallel execution requested but furrr/future not available. Using sequential.")
+  }
+
+  if (use_parallel) {
+    # Set up parallel backend
+    if (is.null(workers)) {
+      workers <- max(1, parallel::detectCores() - 1)
+    }
+
+    log_info("Starting parallel batch generation with {workers} workers...")
+    log_info("Generating {n_variations} puzzles in parallel")
+
+    # Set up future plan
+    old_plan <- future::plan()
+    on.exit(future::plan(old_plan), add = TRUE)
+    future::plan(future::multisession, workers = workers)
+
+    # Generate puzzles in parallel
+    # Use packages option to ensure jigsawR is loaded in workers
+    results <- furrr::future_map(
+      seq_along(variations),
+      function(i) {
+        generate_one(variations[[i]], i, n_variations, base_dir)
+      },
+      .options = furrr::furrr_options(seed = TRUE, packages = "jigsawR")
     )
 
-    results[[i]] <- result
+  } else {
+    # Sequential execution with progress logging
+    results <- list()
+
+    for (i in seq_along(variations)) {
+      var <- variations[[i]]
+
+      # Set defaults for missing parameters
+      if (is.null(var$type)) var$type <- "rectangular"
+      if (is.null(var$grid)) var$grid <- c(2, 2)
+      if (is.null(var$size)) var$size <- c(200, 200)
+      if (is.null(var$tabsize)) var$tabsize <- 20
+      if (is.null(var$jitter)) var$jitter <- 4
+      if (is.null(var$offset)) var$offset <- 0
+      if (is.null(var$background)) var$background <- "white"
+      if (is.null(var$opacity)) var$opacity <- 1.0
+      if (is.null(var$stroke_width)) var$stroke_width <- 1.5
+      if (is.null(var$fill_color)) var$fill_color <- "none"
+      if (is.null(var$do_warp)) var$do_warp <- FALSE
+      if (is.null(var$do_trunc)) var$do_trunc <- FALSE
+
+      log_subheader("Generating puzzle {i} of {n_variations}")
+      log_info("Seed: {var$seed}, Grid: {paste(var$grid, collapse='x')}, Offset: {var$offset}")
+
+      # Generate puzzle using unified pipeline
+      result <- generate_puzzle(
+        type = var$type,
+        grid = var$grid,
+        size = var$size,
+        seed = var$seed,
+        tabsize = var$tabsize,
+        jitter = var$jitter,
+        offset = var$offset,
+        fill_color = var$fill_color,
+        stroke_width = var$stroke_width,
+        colors = var$colors,
+        palette = var$palette,
+        background = var$background,
+        opacity = var$opacity,
+        save_files = TRUE,
+        output_dir = base_dir,
+        filename_prefix = var$name,
+        do_warp = var$do_warp,
+        do_trunc = var$do_trunc
+      )
+
+      results[[i]] <- result
+    }
   }
 
   log_success("Batch generation complete. Generated {length(results)} puzzles")
