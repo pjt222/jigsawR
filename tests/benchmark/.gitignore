@@ -1,0 +1,5 @@
+# Benchmark output files
+results/
+*.rds
+*.csv
+*.html
