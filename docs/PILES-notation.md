@@ -94,17 +94,42 @@ Square brackets can specify connection directions for validation:
 
 ## Special Keywords
 
-PILES supports special keywords that expand to groups of pieces based on puzzle structure:
+PILES supports special keywords that expand to groups of pieces based on puzzle structure.
+
+> **Note:** All keywords are **case-insensitive**. `all`, `ALL`, and `All` are equivalent.
 
 ### Universal Keywords
 | Keyword | Meaning |
 |---------|---------|
-| `all` | All pieces in the puzzle |
+| `all` | All pieces in the puzzle (creates a single meta piece) |
 | `boundary` | All boundary/edge pieces |
 | `border` | Same as `boundary` |
 | `edge` | Same as `boundary` |
 | `inner` | All non-boundary pieces |
 | `center` | Center piece (hexagonal/concentric) |
+
+### The `all` Keyword - Single Meta Piece
+
+The `all` keyword fuses every piece in the puzzle into a single "meta piece". This is useful for:
+- Creating a puzzle where all internal edges are styled differently (dashed/hidden)
+- Generating a single connected piece with complex internal structure
+- Testing fusion rendering across all edges
+
+```r
+# Create a puzzle where all pieces are fused into one
+result <- generate_puzzle(
+  type = "rectangular",
+  grid = c(3, 3),
+  size = c(300, 300),
+  fusion_groups = "all",       # Fuse ALL pieces
+  fusion_style = "dashed",     # Show internal edges as dashed
+  save_files = FALSE
+)
+
+# All 9 pieces will have the same fusion_group
+# All internal edges will be rendered with dashed style
+# Only the outer boundary remains solid
+```
 
 ### Hexagonal & Concentric Keywords
 | Keyword | Meaning |
