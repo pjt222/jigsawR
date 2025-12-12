@@ -166,24 +166,45 @@ extract_vertical_segment <- function(full_path, start_y, end_y) {
 
 #' Extract all coordinates from an SVG path string (optimized)
 #'
-#' Uses regex to extract all numeric coordinates from an SVG path.
-#' Returns a list with x and y coordinate vectors.
+#' Parses the SVG path and extracts X/Y coordinates from all segment types.
+#' Handles M, L, C, A, and Z commands correctly.
 #'
 #' @param path SVG path d attribute string
 #' @return List with x and y numeric vectors
 #' @keywords internal
 extract_path_coords <- function(path) {
-  numbers <- as.numeric(unlist(regmatches(path, gregexpr("-?[0-9]+\\.?[0-9]*", path))))
-  numbers <- numbers[!is.na(numbers)]
+  # Use parse_svg_path to correctly handle all SVG commands
+  # (especially Arc which has 7 parameters, not 2)
+  segments <- tryCatch(
+    parse_svg_path(path),
+    error = function(e) NULL
+  )
 
-  if (length(numbers) >= 2) {
-    list(
-      x = numbers[seq(1, length(numbers), by = 2)],
-      y = numbers[seq(2, length(numbers), by = 2)]
-    )
-  } else {
-    list(x = numeric(0), y = numeric(0))
+  if (is.null(segments) || length(segments) == 0) {
+    return(list(x = numeric(0), y = numeric(0)))
   }
+
+  x_coords <- c()
+  y_coords <- c()
+
+  for (seg in segments) {
+    if (seg$type %in% c("M", "L")) {
+      x_coords <- c(x_coords, seg$x)
+      y_coords <- c(y_coords, seg$y)
+    } else if (seg$type == "C") {
+      # Bezier: include control points for bounds accuracy
+      x_coords <- c(x_coords, seg$cp1x, seg$cp2x, seg$x)
+      y_coords <- c(y_coords, seg$cp1y, seg$cp2y, seg$y)
+    } else if (seg$type == "A") {
+      # Arc: only the endpoint is a coordinate
+      # (rx, ry, rotation, flags are not coordinates)
+      x_coords <- c(x_coords, seg$x)
+      y_coords <- c(y_coords, seg$y)
+    }
+    # Z (close path) has no coordinates
+  }
+
+  list(x = x_coords, y = y_coords)
 }
 
 
