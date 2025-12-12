@@ -367,9 +367,10 @@ render_piece <- function(piece, fill, stroke_color, stroke_width, opacity) {
 #' This matches how SVG objectBoundingBox gradients center themselves.
 #'
 #' @param path SVG path d attribute string
+#' @param piece Optional piece object with cached parsed_segments (Phase 2 optimization)
 #' @return Named vector with x and y center coordinates
 #' @keywords internal
-calculate_path_bounding_box_center <- function(path) {
+calculate_path_bounding_box_center <- function(path, piece = NULL) {
   # Extract all coordinate points from the path
   # Pattern matches: M x y, L x y, C x1 y1 x2 y2 x y, A rx ry rot large sweep x y
 
@@ -384,8 +385,12 @@ calculate_path_bounding_box_center <- function(path) {
   }
 
   # Extract x,y pairs - we need to parse more carefully for different commands
-  # Use parse_svg_path for accurate parsing
-  segments <- parse_svg_path(path)
+  # Use cached parsed_segments if available (Phase 2 optimization)
+  segments <- if (!is.null(piece) && !is.null(piece$parsed_segments)) {
+    piece$parsed_segments
+  } else {
+    parse_svg_path(path)
+  }
 
   xs <- c()
   ys <- c()
@@ -431,7 +436,7 @@ calculate_path_bounding_box_center <- function(path) {
 render_piece_label <- function(piece, index, color, font_size) {
   # Calculate geometric center from actual path
   # This matches SVG objectBoundingBox gradient centering
-  bbox_center <- calculate_path_bounding_box_center(piece$path)
+  bbox_center <- calculate_path_bounding_box_center(piece$path, piece)
   cx <- bbox_center["x"]
   cy <- bbox_center["y"]
 
@@ -523,7 +528,12 @@ build_path_string_fast <- function(segs, start_point) {
 #' @return List with N, E, S, W edge path strings (each starting with M)
 #' @keywords internal
 split_rect_path_into_edges <- function(path, piece = NULL) {
-  segments <- parse_svg_path(path)
+  # Use cached parsed_segments if available (Phase 2 optimization)
+  segments <- if (!is.null(piece) && !is.null(piece$parsed_segments)) {
+    piece$parsed_segments
+  } else {
+    parse_svg_path(path)
+  }
 
   # Find the corners by tracking endpoints
   # First segment should be M (move to top-left)
@@ -616,7 +626,12 @@ split_rect_path_into_edges <- function(path, piece = NULL) {
 #' @return List with edge path strings keyed by edge name
 #' @keywords internal
 split_concentric_path_into_edges <- function(path, piece = NULL) {
-  segments <- parse_svg_path(path)
+  # Use cached parsed_segments if available (Phase 2 optimization)
+  segments <- if (!is.null(piece) && !is.null(piece$parsed_segments)) {
+    piece$parsed_segments
+  } else {
+    parse_svg_path(path)
+  }
 
   if (length(segments) == 0 || segments[[1]]$type != "M") {
     if (!is.null(piece) && !is.null(piece$ring_pos) && piece$ring_pos$ring == 0) {
@@ -923,7 +938,12 @@ assign_segments_to_edges <- function(segments, vertex_indices, edge_names) {
 #' @return List with edge path strings keyed by side number ("0" through "5")
 #' @keywords internal
 split_hex_path_into_edges <- function(path, piece = NULL) {
-  segments <- parse_svg_path(path)
+  # Use cached parsed_segments if available (Phase 2 optimization)
+  segments <- if (!is.null(piece) && !is.null(piece$parsed_segments)) {
+    piece$parsed_segments
+  } else {
+    parse_svg_path(path)
+  }
 
   if (length(segments) == 0 || segments[[1]]$type != "M") {
     return(list(`0` = "", `1` = "", `2` = "", `3` = "", `4` = "", `5` = ""))
@@ -1127,6 +1147,19 @@ render_pieces_with_fusion_styled <- function(pieces, colors, fill, stroke_width,
   elements <- character()
   n_pieces <- length(pieces)
 
+  # Build piece_id lookup hash map for O(1) neighbor lookup (instead of O(n) loops)
+  piece_lookup <- new.env(hash = TRUE, parent = emptyenv())
+  for (i in seq_along(pieces)) {
+    p_id <- pieces[[i]]$id %||% i
+    piece_lookup[[as.character(p_id)]] <- i
+  }
+
+  # Helper function for O(1) piece lookup by ID
+  get_piece_by_id <- function(target_id) {
+    idx <- piece_lookup[[as.character(target_id)]]
+    if (!is.null(idx)) pieces[[idx]] else NULL
+  }
+
   # Check if fill is per-piece (vector) or single value
   use_per_piece_fills <- length(fill) == n_pieces && n_pieces > 1
 
@@ -1221,18 +1254,9 @@ render_pieces_with_fusion_styled <- function(pieces, colors, fill, stroke_width,
       if (edge_name == "INNER") {
         neighbor_id <- piece$fused_neighbor_ids[[edge_name]]
         if (!is.null(neighbor_id)) {
-          # Find the neighbor piece and check if it has mixed segments
-          skip_this_edge <- FALSE
-          for (np in pieces) {
-            np_id <- np$id %||% which(sapply(pieces, function(p) identical(p$path, np$path)))
-            if (!is.null(np_id) && np_id == neighbor_id) {
-              if (isTRUE(np$outer_segments_mixed)) {
-                skip_this_edge <- TRUE
-              }
-              break
-            }
-          }
-          if (skip_this_edge) {
+          # O(1) lookup via hash map (instead of O(n) loop)
+          np <- get_piece_by_id(neighbor_id)
+          if (!is.null(np) && isTRUE(np$outer_segments_mixed)) {
             next  # Skip - will be handled in Pass 3.5
           }
         }
@@ -1292,15 +1316,8 @@ render_pieces_with_fusion_styled <- function(pieces, colors, fill, stroke_width,
 
         if (!is.null(neighbor_ids) && length(neighbor_ids) > 0) {
           for (neighbor_id in neighbor_ids) {
-            # Find the neighbor piece and check which of their fused edges point to us
-            neighbor_piece <- NULL
-            for (np in pieces) {
-              np_id <- np$id %||% which(sapply(pieces, function(p) identical(p$path, np$path)))
-              if (!is.null(np_id) && np_id == neighbor_id) {
-                neighbor_piece <- np
-                break
-              }
-            }
+            # O(1) lookup via hash map (instead of O(n) loop)
+            neighbor_piece <- get_piece_by_id(neighbor_id)
 
             if (!is.null(neighbor_piece) && !is.null(neighbor_piece$fused_neighbor_ids)) {
               # Mark all neighbor edges that point back to this piece as drawn
@@ -1518,8 +1535,8 @@ render_single_piece_svg <- function(piece,
     stop("Piece object must have a non-empty 'path' field")
   }
 
-  # Calculate bounding box from path
-  bounds <- calculate_piece_bounds(piece$path)
+  # Calculate bounding box from path (uses cached parsed_segments if available)
+  bounds <- calculate_piece_bounds(piece$path, piece)
 
   # Add padding
   pad_x <- bounds$width * padding
@@ -1573,7 +1590,7 @@ render_single_piece_svg <- function(piece,
   # Render label if requested
   label_element <- ""
   if (show_label) {
-    bbox_center <- calculate_path_bounding_box_center(piece$path)
+    bbox_center <- calculate_path_bounding_box_center(piece$path, piece)
 
     # Auto-calculate label size
     if (is.null(label_size)) {
@@ -1607,27 +1624,33 @@ render_single_piece_svg <- function(piece,
 #' Parses an SVG path and extracts all coordinates to compute bounds.
 #'
 #' @param path SVG path d attribute string
+#' @param piece Optional piece object with cached parsed_segments (Phase 2 optimization)
 #' @return List with min_x, max_x, min_y, max_y, width, height
 #' @keywords internal
-calculate_piece_bounds <- function(path) {
-  segments <- parse_svg_path(path)
+calculate_piece_bounds <- function(path, piece = NULL) {
+  # Use cached parsed_segments if available (Phase 2 optimization)
+  segments <- if (!is.null(piece) && !is.null(piece$parsed_segments)) {
+    piece$parsed_segments
+  } else {
+    parse_svg_path(path)
+  }
 
-  xs <- c()
-  ys <- c()
-
-  for (seg in segments) {
+  # Extract coordinates using O(n) list+unlist pattern instead of O(n²) grow-on-append
+  coord_lists <- lapply(segments, function(seg) {
     if (seg$type %in% c("M", "L")) {
-      xs <- c(xs, seg$x)
-      ys <- c(ys, seg$y)
+      list(x = seg$x, y = seg$y)
     } else if (seg$type == "C") {
       # Include control points for accurate bezier bounds
-      xs <- c(xs, seg$cp1x, seg$cp2x, seg$x)
-      ys <- c(ys, seg$cp1y, seg$cp2y, seg$y)
+      list(x = c(seg$cp1x, seg$cp2x, seg$x), y = c(seg$cp1y, seg$cp2y, seg$y))
     } else if (seg$type == "A") {
-      xs <- c(xs, seg$x)
-      ys <- c(ys, seg$y)
+      list(x = seg$x, y = seg$y)
+    } else {
+      list(x = NULL, y = NULL)
     }
-  }
+  })
+
+  xs <- unlist(lapply(coord_lists, `[[`, "x"), use.names = FALSE)
+  ys <- unlist(lapply(coord_lists, `[[`, "y"), use.names = FALSE)
 
   if (length(xs) == 0 || length(ys) == 0) {
     return(list(min_x = 0, max_x = 100, min_y = 0, max_y = 100,

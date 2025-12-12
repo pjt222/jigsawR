@@ -164,10 +164,79 @@ extract_vertical_segment <- function(full_path, start_y, end_y) {
   return(extracted)
 }
 
+#' Extract all coordinates from an SVG path string (optimized)
+#'
+#' Uses regex to extract all numeric coordinates from an SVG path.
+#' Returns a list with x and y coordinate vectors.
+#'
+#' @param path SVG path d attribute string
+#' @return List with x and y numeric vectors
+#' @keywords internal
+extract_path_coords <- function(path) {
+  numbers <- as.numeric(unlist(regmatches(path, gregexpr("-?[0-9]+\\.?[0-9]*", path))))
+  numbers <- numbers[!is.na(numbers)]
+
+  if (length(numbers) >= 2) {
+    list(
+      x = numbers[seq(1, length(numbers), by = 2)],
+      y = numbers[seq(2, length(numbers), by = 2)]
+    )
+  } else {
+    list(x = numeric(0), y = numeric(0))
+  }
+}
+
+
+#' Extract all coordinates from multiple pieces efficiently (O(n) instead of O(n²))
+#'
+#' Uses the list + unlist pattern to avoid grow-on-append O(n²) behavior.
+#'
+#' @param pieces List of piece objects with $path fields
+#' @return List with all_x and all_y numeric vectors
+#' @keywords internal
+extract_all_piece_coords <- function(pieces) {
+  # Extract coords from each piece into a list (O(n))
+  coords_list <- lapply(pieces, function(piece) extract_path_coords(piece$path))
+
+  # Combine all coordinates with single unlist call (O(n))
+  list(
+    all_x = unlist(lapply(coords_list, `[[`, "x"), use.names = FALSE),
+    all_y = unlist(lapply(coords_list, `[[`, "y"), use.names = FALSE)
+  )
+}
+
+
+#' Calculate bounding box from pieces efficiently
+#'
+#' Extracts coordinates from all pieces and calculates min/max bounds.
+#' Uses optimized O(n) extraction instead of grow-on-append.
+#'
+#' @param pieces List of piece objects with $path fields
+#' @param fallback_fn Function to call if no coordinates found, returns list(min_x, max_x, min_y, max_y)
+#' @return List with min_x, max_x, min_y, max_y
+#' @keywords internal
+calculate_pieces_bounds <- function(pieces, fallback_fn = NULL) {
+  coords <- extract_all_piece_coords(pieces)
+
+  if (length(coords$all_x) > 0 && length(coords$all_y) > 0) {
+    list(
+      min_x = min(coords$all_x),
+      max_x = max(coords$all_x),
+      min_y = min(coords$all_y),
+      max_y = max(coords$all_y)
+    )
+  } else if (!is.null(fallback_fn)) {
+    fallback_fn()
+  } else {
+    list(min_x = 0, max_x = 100, min_y = 0, max_y = 100)
+  }
+}
+
+
 #' Create complementary edge for adjacent puzzle piece
-#' 
+#'
 #' Takes an edge and creates its complement for the adjacent piece
-#' 
+#'
 #' @param edge_segments Parsed edge segments
 #' @param direction "horizontal" or "vertical"
 #' @param reverse Whether to reverse the path direction

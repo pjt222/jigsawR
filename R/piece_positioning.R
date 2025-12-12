@@ -284,35 +284,21 @@ apply_concentric_positioning <- function(piece_result, offset) {
   })
 
   # Calculate canvas size from actual transformed piece paths
-  all_path_x <- c()
-  all_path_y <- c()
-
-  for (piece in transformed_pieces) {
-    path <- piece$path
-    numbers <- as.numeric(unlist(regmatches(path, gregexpr("-?[0-9]+\\.?[0-9]*", path))))
-    numbers <- numbers[!is.na(numbers)]
-
-    if (length(numbers) >= 2) {
-      x_coords <- numbers[seq(1, length(numbers), by = 2)]
-      y_coords <- numbers[seq(2, length(numbers), by = 2)]
-      all_path_x <- c(all_path_x, x_coords)
-      all_path_y <- c(all_path_y, y_coords)
-    }
-  }
-
-  if (length(all_path_x) > 0 && length(all_path_y) > 0) {
-    path_min_x <- min(all_path_x)
-    path_max_x <- max(all_path_x)
-    path_min_y <- min(all_path_y)
-    path_max_y <- max(all_path_y)
-  } else {
+  # Uses optimized O(n) extraction instead of grow-on-append O(n²)
+  bounds <- calculate_pieces_bounds(transformed_pieces, fallback_fn = function() {
     all_x <- sapply(transformed_pieces, function(p) p$center[1])
     all_y <- sapply(transformed_pieces, function(p) p$center[2])
-    path_min_x <- min(all_x) - piece_size
-    path_max_x <- max(all_x) + piece_size
-    path_min_y <- min(all_y) - piece_size
-    path_max_y <- max(all_y) + piece_size
-  }
+    list(
+      min_x = min(all_x) - piece_size,
+      max_x = max(all_x) + piece_size,
+      min_y = min(all_y) - piece_size,
+      max_y = max(all_y) + piece_size
+    )
+  })
+  path_min_x <- bounds$min_x
+  path_max_x <- bounds$max_x
+  path_min_y <- bounds$min_y
+  path_max_y <- bounds$max_y
 
   stroke_margin <- piece_size * 0.15 + offset
   min_x <- path_min_x - stroke_margin
@@ -505,36 +491,22 @@ apply_hex_positioning <- function(piece_result, offset) {
 
   # Calculate canvas size from actual transformed piece paths
   # This is critical when warp/trunc are enabled
-  all_path_x <- c()
-  all_path_y <- c()
-
-  for (piece in transformed_pieces) {
-    path <- piece$path
-    numbers <- as.numeric(unlist(regmatches(path, gregexpr("-?[0-9]+\\.?[0-9]*", path))))
-    numbers <- numbers[!is.na(numbers)]
-
-    if (length(numbers) >= 2) {
-      x_coords <- numbers[seq(1, length(numbers), by = 2)]
-      y_coords <- numbers[seq(2, length(numbers), by = 2)]
-      all_path_x <- c(all_path_x, x_coords)
-      all_path_y <- c(all_path_y, y_coords)
-    }
-  }
-
-  if (length(all_path_x) > 0 && length(all_path_y) > 0) {
-    path_min_x <- min(all_path_x)
-    path_max_x <- max(all_path_x)
-    path_min_y <- min(all_path_y)
-    path_max_y <- max(all_path_y)
-  } else {
+  # Uses optimized O(n) extraction instead of grow-on-append O(n²)
+  bounds <- calculate_pieces_bounds(transformed_pieces, fallback_fn = function() {
     # Fallback to center-based calculation
     all_x <- sapply(transformed_pieces, function(p) p$center[1])
     all_y <- sapply(transformed_pieces, function(p) p$center[2])
-    path_min_x <- min(all_x) - piece_size
-    path_max_x <- max(all_x) + piece_size
-    path_min_y <- min(all_y) - piece_size
-    path_max_y <- max(all_y) + piece_size
-  }
+    list(
+      min_x = min(all_x) - piece_size,
+      max_x = max(all_x) + piece_size,
+      min_y = min(all_y) - piece_size,
+      max_y = max(all_y) + piece_size
+    )
+  })
+  path_min_x <- bounds$min_x
+  path_max_x <- bounds$max_x
+  path_min_y <- bounds$min_y
+  path_max_y <- bounds$max_y
 
   # Add margin for stroke width and offset
   stroke_margin <- piece_size * 0.15 + offset
