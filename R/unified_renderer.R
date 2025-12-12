@@ -166,7 +166,7 @@ build_svg_header <- function(canvas_size, canvas_offset = NULL) {
 
   paste0(
     '<?xml version="1.0" encoding="UTF-8"?>\n',
-    '<svg xmlns="http://www.w3.org/2000/svg" version="1.1" ',
+    '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" ',
     'width="', sprintf("%.2f", width), '" ',
     'height="', sprintf("%.2f", height), '" ',
     'viewBox="', sprintf("%.2f %.2f %.2f %.2f", vb_x, vb_y, width, height), '">'

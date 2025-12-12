@@ -236,14 +236,16 @@ create_noise_pattern_defs <- function(noise_data_uri,
 
   if (pattern_units == "objectBoundingBox") {
     # For objectBoundingBox, use relative coordinates
+    # Use xlink:href for browser compatibility (especially in HTML contexts)
     pattern_def <- sprintf(
-      '<defs>\n  <pattern id="%s" patternUnits="objectBoundingBox" width="1" height="1">\n    <image href="%s" x="0" y="0" width="1" height="1" preserveAspectRatio="none"/>\n  </pattern>\n</defs>',
+      '<defs>\n  <pattern id="%s" patternUnits="objectBoundingBox" width="1" height="1">\n    <image xlink:href="%s" x="0" y="0" width="1" height="1" preserveAspectRatio="none"/>\n  </pattern>\n</defs>',
       pattern_id, noise_data_uri
     )
   } else {
     # For userSpaceOnUse, use absolute pixel coordinates
+    # Use xlink:href for browser compatibility (especially in HTML contexts)
     pattern_def <- sprintf(
-      '<defs>\n  <pattern id="%s" patternUnits="userSpaceOnUse" x="0" y="0" width="%d" height="%d">\n    <image href="%s" x="0" y="0" width="%d" height="%d"/>\n  </pattern>\n</defs>',
+      '<defs>\n  <pattern id="%s" patternUnits="userSpaceOnUse" x="0" y="0" width="%d" height="%d">\n    <image xlink:href="%s" x="0" y="0" width="%d" height="%d"/>\n  </pattern>\n</defs>',
       pattern_id, width, height, noise_data_uri, width, height
     )
   }
