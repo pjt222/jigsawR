@@ -89,7 +89,29 @@ noise_available <- tryCatch({
   FALSE
 })
 if (!noise_available) {
-  log_warn("Noise fill packages not fully available - noise fills may not work")
+  log_warn("Noise fill packages not fully available - noise fills will be disabled")
+  log_warn("Install with: install.packages(c('ambient', 'png', 'base64enc'))")
+}
+
+# Build fill type choices based on package availability
+fill_type_choices <- list(
+  "None" = "none",
+  "Solid" = "solid",
+  "Palette" = "palette",
+  "Gradient" = "gradient"
+)
+if (noise_available) {
+  fill_type_choices[["Noise"]] <- "noise"
+}
+
+# Build background type choices based on package availability
+background_type_choices <- list(
+  "None" = "none",
+  "Solid" = "solid",
+  "Gradient" = "gradient"
+)
+if (noise_available) {
+  background_type_choices[["Noise"]] <- "noise"
 }
 
 # Extract commonly used config values for cleaner UI code
@@ -402,13 +424,7 @@ ui <- page_fluid(
 
           # Piece fill options (always visible)
           radioButtons("fill_type", "Piece Fill:",
-                      choices = list(
-                        "None" = "none",
-                        "Solid" = "solid",
-                        "Palette" = "palette",
-                        "Gradient" = "gradient",
-                        "Noise" = "noise"
-                      ),
+                      choices = fill_type_choices,
                       selected = cfg_style$fill_type,
                       inline = TRUE),
           conditionalPanel(
@@ -635,12 +651,7 @@ ui <- page_fluid(
 
         # Background type selector
         radioButtons("background_type", "Background:",
-                    choices = list(
-                      "None" = "none",
-                      "Solid" = "solid",
-                      "Gradient" = "gradient",
-                      "Noise" = "noise"
-                    ),
+                    choices = background_type_choices,
                     selected = cfg_bg$type,
                     inline = TRUE),
 
@@ -850,10 +861,17 @@ ui <- page_fluid(
               tags$li(strong("Cubic:"), " Smooth interpolated value noise"),
               tags$li(strong("Value:"), " Basic interpolated random values")
             ),
-            p(tags$small(class = "text-muted",
-              "Note: Noise fills require the 'ambient' package. Install with: ",
-              code("install.packages('ambient')")
-            )),
+            if (noise_available) {
+              p(tags$small(class = "text-success",
+                icon("check-circle"), " Noise fills available"
+              ))
+            } else {
+              p(tags$small(class = "text-warning",
+                icon("exclamation-triangle"),
+                " Noise fills require additional packages. Install with: ",
+                code("install.packages(c('ambient', 'png', 'base64enc'))")
+              ))
+            },
             br(),
             h4("Download Options"),
             tags$ul(
@@ -1250,32 +1268,47 @@ server <- function(input, output, session) {
       )
     } else if (input$fill_type == "noise") {
       # Noise fill for pieces (requires ambient package)
-      fill_color_value <- noise_fill_spec(
-        noise_type = if (is.null(input$fill_noise_type)) "simplex" else input$fill_noise_type,
-        frequency = if (is.null(input$fill_noise_frequency)) 0.03 else input$fill_noise_frequency,
-        color_low = if (is.null(input$fill_noise_color_low)) "#2d2d44" else input$fill_noise_color_low,
-        color_high = if (is.null(input$fill_noise_color_high)) "#8888aa" else input$fill_noise_color_high,
-        seed = if (is.null(input$fill_noise_seed)) 123 else input$fill_noise_seed
-      )
+      if (noise_available) {
+        fill_color_value <- noise_fill_spec(
+          noise_type = if (is.null(input$fill_noise_type)) "simplex" else input$fill_noise_type,
+          frequency = if (is.null(input$fill_noise_frequency)) 0.03 else input$fill_noise_frequency,
+          color_low = if (is.null(input$fill_noise_color_low)) "#2d2d44" else input$fill_noise_color_low,
+          color_high = if (is.null(input$fill_noise_color_high)) "#8888aa" else input$fill_noise_color_high,
+          seed = if (is.null(input$fill_noise_seed)) 123 else input$fill_noise_seed
+        )
+      } else {
+        log_warn("Noise fill requested but packages not available - using solid gray")
+        fill_color_value <- "#a1a1a1"
+      }
     }
 
-    background_value <- switch(input$background_type,
-      "none" = "none",
-      "solid" = input$background_color,
-      "gradient" = list(
+    background_value <- if (input$background_type == "none") {
+      "none"
+    } else if (input$background_type == "solid") {
+      input$background_color
+    } else if (input$background_type == "gradient") {
+      list(
         type = "gradient",
         center = input$gradient_center,
         middle = input$gradient_middle,
         edge = input$gradient_edge
-      ),
-      "noise" = noise_fill_spec(
-        noise_type = if (is.null(input$bg_noise_type)) "perlin" else input$bg_noise_type,
-        frequency = if (is.null(input$bg_noise_frequency)) 0.02 else input$bg_noise_frequency,
-        color_low = if (is.null(input$bg_noise_color_low)) "#1a1a2e" else input$bg_noise_color_low,
-        color_high = if (is.null(input$bg_noise_color_high)) "#4a4a6e" else input$bg_noise_color_high,
-        seed = if (is.null(input$bg_noise_seed)) 42 else input$bg_noise_seed
       )
-    )
+    } else if (input$background_type == "noise") {
+      if (noise_available) {
+        noise_fill_spec(
+          noise_type = if (is.null(input$bg_noise_type)) "perlin" else input$bg_noise_type,
+          frequency = if (is.null(input$bg_noise_frequency)) 0.02 else input$bg_noise_frequency,
+          color_low = if (is.null(input$bg_noise_color_low)) "#1a1a2e" else input$bg_noise_color_low,
+          color_high = if (is.null(input$bg_noise_color_high)) "#4a4a6e" else input$bg_noise_color_high,
+          seed = if (is.null(input$bg_noise_seed)) 42 else input$bg_noise_seed
+        )
+      } else {
+        log_warn("Noise background requested but packages not available - using white")
+        "#ffffff"
+      }
+    } else {
+      "none"
+    }
 
     # DEBUG: Log fill and background types for noise debugging
     log_info("DEBUG: fill_type = {input$fill_type}")
@@ -1524,33 +1557,42 @@ server <- function(input, output, session) {
           edge = input$piece_gradient_edge
         )
       } else if (input$fill_type == "noise") {
-        fill_color_dl <- noise_fill_spec(
-          noise_type = if (is.null(input$fill_noise_type)) "simplex" else input$fill_noise_type,
-          frequency = if (is.null(input$fill_noise_frequency)) 0.03 else input$fill_noise_frequency,
-          color_low = if (is.null(input$fill_noise_color_low)) "#2d2d44" else input$fill_noise_color_low,
-          color_high = if (is.null(input$fill_noise_color_high)) "#8888aa" else input$fill_noise_color_high,
-          seed = if (is.null(input$fill_noise_seed)) 123 else input$fill_noise_seed
-        )
+        if (noise_available) {
+          fill_color_dl <- noise_fill_spec(
+            noise_type = if (is.null(input$fill_noise_type)) "simplex" else input$fill_noise_type,
+            frequency = if (is.null(input$fill_noise_frequency)) 0.03 else input$fill_noise_frequency,
+            color_low = if (is.null(input$fill_noise_color_low)) "#2d2d44" else input$fill_noise_color_low,
+            color_high = if (is.null(input$fill_noise_color_high)) "#8888aa" else input$fill_noise_color_high,
+            seed = if (is.null(input$fill_noise_seed)) 123 else input$fill_noise_seed
+          )
+        } else {
+          fill_color_dl <- "#a1a1a1"
+        }
       }
 
       # Determine background value (supports none, solid, gradient, noise)
-      background_value <- switch(input$background_type,
-        "none" = "none",
-        "solid" = input$background_color,
-        "gradient" = list(
+      background_value <- if (input$background_type == "none") {
+        "none"
+      } else if (input$background_type == "solid") {
+        input$background_color
+      } else if (input$background_type == "gradient") {
+        list(
           type = "gradient",
           center = input$gradient_center,
           middle = input$gradient_middle,
           edge = input$gradient_edge
-        ),
-        "noise" = noise_fill_spec(
+        )
+      } else if (input$background_type == "noise" && noise_available) {
+        noise_fill_spec(
           noise_type = if (is.null(input$bg_noise_type)) "perlin" else input$bg_noise_type,
           frequency = if (is.null(input$bg_noise_frequency)) 0.02 else input$bg_noise_frequency,
           color_low = if (is.null(input$bg_noise_color_low)) "#1a1a2e" else input$bg_noise_color_low,
           color_high = if (is.null(input$bg_noise_color_high)) "#4a4a6e" else input$bg_noise_color_high,
           seed = if (is.null(input$bg_noise_seed)) 42 else input$bg_noise_seed
         )
-      )
+      } else {
+        "none"
+      }
 
       # Build parameters based on puzzle type
       if (data$type == "hexagonal") {
@@ -1787,34 +1829,43 @@ server <- function(input, output, session) {
       )
     } else if (input$fill_type == "noise") {
       # Note: Noise fill for individual pieces uses same pattern per piece
-      fill_value <- noise_fill_spec(
-        noise_type = if (is.null(input$fill_noise_type)) "simplex" else input$fill_noise_type,
-        frequency = if (is.null(input$fill_noise_frequency)) 0.03 else input$fill_noise_frequency,
-        color_low = if (is.null(input$fill_noise_color_low)) "#2d2d44" else input$fill_noise_color_low,
-        color_high = if (is.null(input$fill_noise_color_high)) "#8888aa" else input$fill_noise_color_high,
-        seed = if (is.null(input$fill_noise_seed)) 123 else input$fill_noise_seed
-      )
+      if (noise_available) {
+        fill_value <- noise_fill_spec(
+          noise_type = if (is.null(input$fill_noise_type)) "simplex" else input$fill_noise_type,
+          frequency = if (is.null(input$fill_noise_frequency)) 0.03 else input$fill_noise_frequency,
+          color_low = if (is.null(input$fill_noise_color_low)) "#2d2d44" else input$fill_noise_color_low,
+          color_high = if (is.null(input$fill_noise_color_high)) "#8888aa" else input$fill_noise_color_high,
+          seed = if (is.null(input$fill_noise_seed)) 123 else input$fill_noise_seed
+        )
+      } else {
+        fill_value <- "#a1a1a1"
+      }
     }
     # Note: For palette fill, we use per-piece colors below
 
     # Determine background value
-    background_value <- switch(input$background_type,
-      "none" = "none",
-      "solid" = input$background_color,
-      "gradient" = list(
+    background_value <- if (input$background_type == "none") {
+      "none"
+    } else if (input$background_type == "solid") {
+      input$background_color
+    } else if (input$background_type == "gradient") {
+      list(
         type = "gradient",
         center = input$gradient_center,
         middle = input$gradient_middle,
         edge = input$gradient_edge
-      ),
-      "noise" = noise_fill_spec(
+      )
+    } else if (input$background_type == "noise" && noise_available) {
+      noise_fill_spec(
         noise_type = if (is.null(input$bg_noise_type)) "perlin" else input$bg_noise_type,
         frequency = if (is.null(input$bg_noise_frequency)) 0.02 else input$bg_noise_frequency,
         color_low = if (is.null(input$bg_noise_color_low)) "#1a1a2e" else input$bg_noise_color_low,
         color_high = if (is.null(input$bg_noise_color_high)) "#4a4a6e" else input$bg_noise_color_high,
         seed = if (is.null(input$bg_noise_seed)) 42 else input$bg_noise_seed
       )
-    )
+    } else {
+      "none"
+    }
 
     # Handle stroke color based on stroke_color_type
     stroke_color_type_val <- if (is.null(input$stroke_color_type)) "solid" else input$stroke_color_type
