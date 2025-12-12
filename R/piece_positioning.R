@@ -9,13 +9,19 @@
 #'
 #' @param piece_result Output from generate_pieces_internal()
 #' @param offset Separation distance (0 = no change, >0 = separated)
+#' @param layout Layout algorithm: "grid" (default) or "repel".
+#'   "grid" uses regular grid-based positioning.
+#'   "repel" uses iterative collision resolution to prevent overlapping.
+#' @param repel_margin Minimum gap between pieces for repel layout (default: 2)
+#' @param repel_max_iter Maximum iterations for repel algorithm (default: 100)
 #' @return List with:
 #'   - pieces: Transformed piece objects
 #'   - canvas_size: c(width, height) for the new layout
 #'   - canvas_offset: c(x, y) viewBox offset
 #'   - offset: The offset value used
 #' @export
-apply_piece_positioning <- function(piece_result, offset = 0) {
+apply_piece_positioning <- function(piece_result, offset = 0, layout = "grid",
+                                     repel_margin = 2, repel_max_iter = 100) {
 
   if (offset == 0) {
     # No transformation needed - return as-is with consistent structure
@@ -35,12 +41,23 @@ apply_piece_positioning <- function(piece_result, offset = 0) {
 
   # Apply type-specific positioning
   if (piece_result$type == "concentric") {
-    return(apply_concentric_positioning(piece_result, offset))
+    positioned <- apply_concentric_positioning(piece_result, offset)
   } else if (piece_result$type == "hexagonal") {
-    return(apply_hex_positioning(piece_result, offset))
+    positioned <- apply_hex_positioning(piece_result, offset)
   } else {
-    return(apply_rect_positioning(piece_result, offset))
+    positioned <- apply_rect_positioning(piece_result, offset)
   }
+
+  # Apply repel layout if requested
+  if (layout == "repel") {
+    positioned <- apply_repel_layout(
+      positioned,
+      margin = repel_margin,
+      max_iterations = repel_max_iter
+    )
+  }
+
+  positioned
 }
 
 
@@ -650,4 +667,377 @@ calculate_compact_canvas <- function(piece_result) {
 #' @keywords internal
 calculate_separated_canvas <- function(positioned) {
   positioned$canvas_size
+}
+
+
+# =============================================================================
+# Repel Layout Algorithm (Issue #53)
+# =============================================================================
+
+#' Apply repel layout to prevent piece overlapping
+#'
+#' Iteratively pushes overlapping pieces apart until no collisions remain.
+#' Works with individual pieces and fused meta-pieces.
+#'
+#' @param positioned Output from apply_piece_positioning() with offset > 0
+#' @param margin Minimum gap between pieces in mm (default: 2)
+#' @param max_iterations Maximum iterations before giving up (default: 100)
+#' @param step_size How far to push pieces apart per iteration (default: 1.0)
+#' @param compact If TRUE, pull pieces toward center after repelling (default: FALSE
+#' @return Updated positioned result with non-overlapping pieces
+#' @export
+apply_repel_layout <- function(positioned, margin = 2, max_iterations = 100,
+                                step_size = 1.0, compact = FALSE) {
+
+  pieces <- positioned$pieces
+  n_pieces <- length(pieces)
+
+  if (n_pieces <= 1) {
+    return(positioned)
+  }
+
+  # Group pieces by fusion_group for collision detection
+  # Each group is treated as a single unit
+  groups <- build_collision_groups(pieces)
+
+  # Get initial bounding boxes for each group
+  group_bboxes <- lapply(groups, function(g) {
+    compute_group_bbox(pieces[g$piece_indices])
+  })
+
+  # Iterative repulsion
+ iteration <- 0
+  has_overlap <- TRUE
+
+  while (has_overlap && iteration < max_iterations) {
+    has_overlap <- FALSE
+    iteration <- iteration + 1
+
+    # Check all pairs of groups for overlap
+    for (i in seq_along(groups)) {
+      for (j in seq_along(groups)) {
+        if (i >= j) next  # Skip self and already-checked pairs
+
+        bbox_i <- group_bboxes[[i]]
+        bbox_j <- group_bboxes[[j]]
+
+        overlap <- compute_bbox_overlap(bbox_i, bbox_j, margin)
+
+        if (overlap$overlaps) {
+          has_overlap <- TRUE
+
+          # Compute repulsion direction (from i to j)
+          repel_vec <- compute_repulsion_vector(bbox_i, bbox_j, overlap, step_size)
+
+          # Apply half the repulsion to each group (push apart equally)
+          # Update pieces in group i (move in negative direction)
+          for (idx in groups[[i]]$piece_indices) {
+            pieces[[idx]] <- translate_piece(pieces[[idx]], -repel_vec[1] / 2, -repel_vec[2] / 2)
+          }
+          # Update pieces in group j (move in positive direction)
+          for (idx in groups[[j]]$piece_indices) {
+            pieces[[idx]] <- translate_piece(pieces[[idx]], repel_vec[1] / 2, repel_vec[2] / 2)
+          }
+
+          # Update bounding boxes
+          group_bboxes[[i]] <- compute_group_bbox(pieces[groups[[i]]$piece_indices])
+          group_bboxes[[j]] <- compute_group_bbox(pieces[groups[[j]]$piece_indices])
+        }
+      }
+    }
+  }
+
+  # Optional compaction: pull pieces toward center
+  if (compact && iteration > 0) {
+    pieces <- apply_compaction(pieces, groups, group_bboxes, margin)
+  }
+
+  # Recalculate canvas size based on new positions
+  bounds <- calculate_pieces_bounds(pieces, fallback_fn = function() {
+    all_x <- sapply(pieces, function(p) p$center[1])
+    all_y <- sapply(pieces, function(p) p$center[2])
+    list(min_x = min(all_x) - 50, max_x = max(all_x) + 50,
+         min_y = min(all_y) - 50, max_y = max(all_y) + 50)
+  })
+
+  padding <- margin * 2
+  canvas_width <- bounds$max_x - bounds$min_x + 2 * padding
+  canvas_height <- bounds$max_y - bounds$min_y + 2 * padding
+  canvas_offset <- c(bounds$min_x - padding, bounds$min_y - padding)
+
+  # Return updated result
+  list(
+    pieces = pieces,
+    canvas_size = c(canvas_width, canvas_height),
+    canvas_offset = canvas_offset,
+    offset = positioned$offset,
+    type = positioned$type,
+    parameters = positioned$parameters,
+    fusion_data = positioned$fusion_data,
+    repel_iterations = iteration
+  )
+}
+
+
+#' Build collision groups from pieces
+#'
+#' Groups pieces by their fusion_group. Non-fused pieces are each their own group.
+#'
+#' @param pieces List of piece objects
+#' @return List of groups, each with piece_indices
+#' @keywords internal
+build_collision_groups <- function(pieces) {
+  groups <- list()
+  group_map <- list()  # fusion_group_id -> group index
+
+  for (i in seq_along(pieces)) {
+    piece <- pieces[[i]]
+    fg <- piece$fusion_group
+
+    if (is.na(fg) || is.null(fg)) {
+      # Non-fused piece: its own group
+      groups[[length(groups) + 1]] <- list(
+        fusion_group = NA,
+        piece_indices = i
+      )
+    } else {
+      # Fused piece: add to existing group or create new
+      key <- as.character(fg)
+      if (is.null(group_map[[key]])) {
+        group_map[[key]] <- length(groups) + 1
+        groups[[group_map[[key]]]] <- list(
+          fusion_group = fg,
+          piece_indices = c()
+        )
+      }
+      idx <- group_map[[key]]
+      groups[[idx]]$piece_indices <- c(groups[[idx]]$piece_indices, i)
+    }
+  }
+
+  groups
+}
+
+
+#' Compute bounding box for a group of pieces
+#'
+#' @param pieces List of piece objects
+#' @return List with min_x, max_x, min_y, max_y, center_x, center_y
+#' @keywords internal
+compute_group_bbox <- function(pieces) {
+  if (length(pieces) == 0) {
+    return(list(min_x = 0, max_x = 0, min_y = 0, max_y = 0, center_x = 0, center_y = 0))
+  }
+
+  # Use parsed_segments if available, otherwise use center estimate
+  all_x <- c()
+  all_y <- c()
+
+  for (piece in pieces) {
+    if (!is.null(piece$parsed_segments)) {
+      coords <- extract_segment_coords(piece$parsed_segments)
+      all_x <- c(all_x, coords$x)
+      all_y <- c(all_y, coords$y)
+    } else {
+      # Fallback: use center with estimated size
+      cx <- piece$center[1]
+      cy <- piece$center[2]
+      est_size <- 30  # Rough estimate
+      all_x <- c(all_x, cx - est_size, cx + est_size)
+      all_y <- c(all_y, cy - est_size, cy + est_size)
+    }
+  }
+
+  list(
+    min_x = min(all_x),
+    max_x = max(all_x),
+    min_y = min(all_y),
+    max_y = max(all_y),
+    center_x = (min(all_x) + max(all_x)) / 2,
+    center_y = (min(all_y) + max(all_y)) / 2
+  )
+}
+
+
+#' Extract coordinates from parsed segments
+#'
+#' @param segments List of parsed SVG segments
+#' @return List with x and y coordinate vectors
+#' @keywords internal
+extract_segment_coords <- function(segments) {
+  x_coords <- c()
+  y_coords <- c()
+
+  for (seg in segments) {
+    if (seg$type %in% c("M", "L")) {
+      x_coords <- c(x_coords, seg$x)
+      y_coords <- c(y_coords, seg$y)
+    } else if (seg$type == "C") {
+      x_coords <- c(x_coords, seg$cp1x, seg$cp2x, seg$x)
+      y_coords <- c(y_coords, seg$cp1y, seg$cp2y, seg$y)
+    } else if (seg$type == "A") {
+      x_coords <- c(x_coords, seg$x)
+      y_coords <- c(y_coords, seg$y)
+    }
+  }
+
+  list(x = x_coords, y = y_coords)
+}
+
+
+#' Compute overlap between two bounding boxes
+#'
+#' @param bbox1 First bounding box
+#' @param bbox2 Second bounding box
+#' @param margin Required gap between boxes
+#' @return List with overlaps (boolean), overlap_x, overlap_y
+#' @keywords internal
+compute_bbox_overlap <- function(bbox1, bbox2, margin = 0) {
+  # Expand boxes by margin
+  b1_min_x <- bbox1$min_x - margin
+  b1_max_x <- bbox1$max_x + margin
+  b1_min_y <- bbox1$min_y - margin
+  b1_max_y <- bbox1$max_y + margin
+
+  b2_min_x <- bbox2$min_x - margin
+  b2_max_x <- bbox2$max_x + margin
+  b2_min_y <- bbox2$min_y - margin
+  b2_max_y <- bbox2$max_y + margin
+
+  # Check for overlap
+  overlap_x <- min(b1_max_x, b2_max_x) - max(b1_min_x, b2_min_x)
+  overlap_y <- min(b1_max_y, b2_max_y) - max(b1_min_y, b2_min_y)
+
+  overlaps <- overlap_x > 0 && overlap_y > 0
+
+  list(
+    overlaps = overlaps,
+    overlap_x = if (overlaps) overlap_x else 0,
+    overlap_y = if (overlaps) overlap_y else 0
+  )
+}
+
+
+#' Compute repulsion vector between two overlapping boxes
+#'
+#' @param bbox1 First bounding box
+#' @param bbox2 Second bounding box
+#' @param overlap Overlap info from compute_bbox_overlap
+#' @param step_size Multiplier for repulsion distance
+#' @return c(dx, dy) repulsion vector (from bbox1 to bbox2)
+#' @keywords internal
+compute_repulsion_vector <- function(bbox1, bbox2, overlap, step_size = 1.0) {
+  # Direction from center of bbox1 to center of bbox2
+  dx <- bbox2$center_x - bbox1$center_x
+  dy <- bbox2$center_y - bbox1$center_y
+
+  # Normalize direction
+  dist <- sqrt(dx^2 + dy^2)
+  if (dist < 0.001) {
+    # Centers are the same - push in arbitrary direction
+    dx <- 1
+    dy <- 0
+    dist <- 1
+  }
+
+  dx <- dx / dist
+  dy <- dy / dist
+
+  # Push apart by the minimum overlap distance (push along axis of least overlap)
+  if (overlap$overlap_x < overlap$overlap_y) {
+    # Push horizontally
+    push_dist <- overlap$overlap_x * step_size
+    c(sign(dx) * push_dist, 0)
+  } else {
+    # Push vertically
+    push_dist <- overlap$overlap_y * step_size
+    c(0, sign(dy) * push_dist)
+  }
+}
+
+
+#' Translate a piece by dx, dy
+#'
+#' @param piece Piece object
+#' @param dx X translation
+#' @param dy Y translation
+#' @return Translated piece
+#' @keywords internal
+translate_piece <- function(piece, dx, dy) {
+  if (abs(dx) < 0.001 && abs(dy) < 0.001) {
+    return(piece)
+  }
+
+  # Update path
+  piece$path <- translate_svg_path(piece$path, dx, dy)
+
+  # Update center
+  piece$center <- piece$center + c(dx, dy)
+
+  # Update parsed_segments if present
+  if (!is.null(piece$parsed_segments)) {
+    piece$parsed_segments <- translate_segments(piece$parsed_segments, dx, dy)
+  }
+
+  piece
+}
+
+
+#' Translate parsed segments by dx, dy
+#'
+#' @param segments List of parsed SVG segments
+#' @param dx X translation
+#' @param dy Y translation
+#' @return Translated segments
+#' @keywords internal
+translate_segments <- function(segments, dx, dy) {
+  lapply(segments, function(seg) {
+    if (seg$type %in% c("M", "L")) {
+      seg$x <- seg$x + dx
+      seg$y <- seg$y + dy
+    } else if (seg$type == "C") {
+      seg$cp1x <- seg$cp1x + dx
+      seg$cp1y <- seg$cp1y + dy
+      seg$cp2x <- seg$cp2x + dx
+      seg$cp2y <- seg$cp2y + dy
+      seg$x <- seg$x + dx
+      seg$y <- seg$y + dy
+    } else if (seg$type == "A") {
+      seg$x <- seg$x + dx
+      seg$y <- seg$y + dy
+    }
+    seg
+  })
+}
+
+
+#' Apply compaction to pull pieces toward center
+#'
+#' @param pieces List of piece objects
+#' @param groups Collision groups
+#' @param group_bboxes Bounding boxes for each group
+#' @param margin Minimum margin to maintain
+#' @return Updated pieces
+#' @keywords internal
+apply_compaction <- function(pieces, groups, group_bboxes, margin) {
+  # Find overall center
+  all_cx <- sapply(group_bboxes, function(b) b$center_x)
+  all_cy <- sapply(group_bboxes, function(b) b$center_y)
+  overall_cx <- mean(all_cx)
+  overall_cy <- mean(all_cy)
+
+  # Pull each group slightly toward center (10% of distance)
+  attraction <- 0.1
+
+  for (i in seq_along(groups)) {
+    bbox <- group_bboxes[[i]]
+    dx <- (overall_cx - bbox$center_x) * attraction
+    dy <- (overall_cy - bbox$center_y) * attraction
+
+    for (idx in groups[[i]]$piece_indices) {
+      pieces[[idx]] <- translate_piece(pieces[[idx]], dx, dy)
+    }
+  }
+
+  pieces
 }
