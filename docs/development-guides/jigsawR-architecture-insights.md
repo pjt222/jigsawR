@@ -1491,9 +1491,156 @@ is_noise_fill_spec <- function(spec) {
 
 ---
 
+### Insight #31: Tessellation-Based Puzzle Types Architecture (2025-12-15, Issues #41, #42)
+
+**Context**: Added two new puzzle types based on computational geometry tessellations:
+- **Voronoi Puzzles** (Issue #42): Fermat spiral point distribution → Voronoi tessellation
+- **Random Shape Puzzles** (Issue #41): Constrained Delaunay triangulation with arbitrary boundary polygons
+
+**Architecture Pattern**: Both types share a common tessellation edge generation layer:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    generate_puzzle(type="voronoi"|"random")     │
+└───────────────────────────────┬─────────────────────────────────┘
+                                │
+┌───────────────────────────────▼─────────────────────────────────┐
+│              generate_pieces_internal() dispatcher              │
+│  ├─ type="voronoi" → generate_voronoi_pieces_internal()        │
+│  └─ type="random"  → generate_random_pieces_internal()         │
+└───────────────────────────────┬─────────────────────────────────┘
+                                │
+┌───────────────────────────────▼─────────────────────────────────┐
+│            Shared: tessellation_edge_generation.R               │
+│  - generate_bezier_edge_for_polygon(): 9-point Bezier tabs     │
+│  - Edge map pattern for storing shared edges between cells     │
+│  - Cell adjacency detection via shared vertices                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+**Key Implementation Details**:
+
+1. **Voronoi Puzzle** (`R/voronoi_puzzle.R`):
+   - Uses `deldir` package for Voronoi tessellation
+   - Point distributions: `fermat` (spiral), `uniform` (random), `jittered` (grid + noise)
+   - Fermat spiral formula: `r = c * sqrt(i)`, `θ = i * golden_angle`
+   - Cells are arbitrary convex polygons with 3-8+ sides
+
+2. **Random Shape Puzzle** (`R/random_puzzle.R`):
+   - Uses `RCDT` package for constrained Delaunay triangulation
+   - Base polygon with `n_corner` vertices (3=triangle, 4=rect, 5=pentagon, etc.)
+   - Interior points randomly distributed
+   - Piece count formula: `~2 * n_interior + n_corner - 2`
+
+3. **RCDT API Details** (Critical for future maintenance):
+   ```r
+   tri <- RCDT::delaunay(
+     vertices,           # n x 2 matrix of point coordinates
+     edges = constraint_edges  # Note: parameter is "edges", NOT "constraints"
+   )
+   # Triangles are in tri$mesh$it (3 x n_triangles), need transposition:
+   triangles <- t(tri$mesh$it)  # Now n_triangles x 3
+   ```
+
+4. **Edge Map Pattern** (shared between both types):
+   ```r
+   edge_map <- new.env(hash = TRUE)
+   # Key: sorted vertex indices "min_idx,max_idx"
+   # Value: list of cell IDs sharing this edge
+
+   for (cell_id in seq_along(cells)) {
+     for (edge in cell_edges) {
+       key <- make_edge_key(edge$v1, edge$v2)
+       if (exists(key, edge_map)) {
+         # Shared edge - add Bezier tab
+         edge_map[[key]]$cells <- c(edge_map[[key]]$cells, cell_id)
+       } else {
+         # New edge - boundary (no tab) or first occurrence
+         edge_map[[key]] <- list(cells = cell_id, ...)
+       }
+     }
+   }
+   ```
+
+**Bezier Tab Generation for Arbitrary Polygons**:
+- 9 control points defining 3 cubic Bezier curves
+- Tab direction alternates based on edge key hash (deterministic)
+- Tab size scaled relative to edge length
+- Works for any polygon edge, not just rectangular grid
+
+**Shiny App Integration**:
+- New radio button choices: "Voronoi", "Random"
+- Conditional panels for type-specific parameters
+- Value boxes display type-specific info (cells, distribution, base shape)
+- Package availability checks with user-friendly warnings
+
+**Dependencies** (in DESCRIPTION Suggests):
+- `deldir`: Voronoi tessellation
+- `RCDT`: Constrained Delaunay triangulation
+
+**Files Created/Modified**:
+- `R/voronoi_puzzle.R` (new): Voronoi puzzle implementation
+- `R/random_puzzle.R` (new): Random shape puzzle implementation
+- `R/tessellation_edge_generation.R` (new): Shared edge generation utilities
+- `R/unified_piece_generation.R`: Dispatcher for new types
+- `R/jigsawR_clean.R`: Added `point_distribution`, `n_corner` parameters
+- `inst/shiny-app/app.R`: UI panels and server logic for new types
+- `DESCRIPTION`: Added deldir, RCDT to Suggests
+
+---
+
+### Insight #32: Defensive NULL Checks in Shiny Reactive Chains (2025-12-15)
+
+**Problem**: The Shiny app crashed when generating Voronoi or Random puzzles. Debug showed the app sourced correctly, but failed during reactive execution.
+
+**Root Cause**: Settings stored in `base_settings()` reactive value might not contain all fields when:
+1. User generates a puzzle before new parameters were added to the code
+2. Certain fields are only relevant for specific puzzle types
+3. Settings object is partially populated due to reactive timing
+
+**Symptom**: Accessing `settings$point_distribution` when settings exists but the field is NULL causes:
+```r
+# This can evaluate to NULL even when type is "voronoi"
+if (settings$type == "voronoi") settings$point_distribution else "fermat"
+# Because: TRUE && NULL → NULL, not "fermat"
+```
+
+**Solution**: Use compound NULL checks:
+```r
+# WRONG: May return NULL if point_distribution is NULL
+point_distribution = if (settings$type == "voronoi") settings$point_distribution else "fermat"
+
+# CORRECT: Explicit NULL check
+point_distribution = if (settings$type == "voronoi" && !is.null(settings$point_distribution)) {
+  settings$point_distribution
+} else {
+  "fermat"
+}
+```
+
+**Apply this pattern to**:
+- `generate_puzzle()` calls in reactive observers
+- Download handlers that regenerate puzzles
+- Value boxes that display type-specific data
+
+**Key Insight**: In Shiny apps with multiple puzzle types, every type-specific parameter access needs defensive NULL checking. The pattern `if (type == X) value else default` is NOT safe when `value` might be NULL.
+
+**Files Modified**:
+- `inst/shiny-app/app.R`: Added NULL checks in 4 locations (reactive observer, download handlers, value boxes)
+
+---
+
 ## Development History
 
 ### Completed Work (Archive)
+
+✅ **Voronoi and Random Shape Puzzle Types** (2025-12-15, Issues #41, #42)
+  - Added two new tessellation-based puzzle types
+  - Voronoi: Fermat spiral point distribution, deldir package
+  - Random: Constrained Delaunay triangulation, RCDT package
+  - Shared edge generation utilities for arbitrary polygons
+  - Shiny app integration with type-specific UI panels
+  - Files: `R/voronoi_puzzle.R`, `R/random_puzzle.R`, `R/tessellation_edge_generation.R`
 
 ✅ **Concentric as Top-Level Type** (2025-12-04)
   - Elevated "concentric" from a sub-mode of hexagonal to a proper top-level puzzle type
