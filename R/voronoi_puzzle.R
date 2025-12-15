@@ -448,21 +448,14 @@ find_edge_for_segment <- function(edge_map, cell_id, v1, v2, adjacency) {
         return(NULL)
       }
 
-      # Determine if we need forward or reverse path
+      # Determine if we need forward or reverse path based on traversal direction
+      # The path direction is purely geometric - independent of cell ID
       if (dist_forward < tolerance) {
-        # Forward direction
-        if (cell_id <= other_cell || other_cell < 0) {
-          return(edge$forward)
-        } else {
-          return(edge$reverse)
-        }
+        # Traversing in same direction as stored edge (v1 → v2)
+        return(edge$forward)
       } else {
-        # Reverse direction
-        if (cell_id <= other_cell || other_cell < 0) {
-          return(edge$reverse)
-        } else {
-          return(edge$forward)
-        }
+        # Traversing in opposite direction (v2 → v1)
+        return(edge$reverse)
       }
     }
   }
