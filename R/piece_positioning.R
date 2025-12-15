@@ -44,6 +44,10 @@ apply_piece_positioning <- function(piece_result, offset = 0, layout = "grid",
     positioned <- apply_concentric_positioning(piece_result, offset)
   } else if (piece_result$type == "hexagonal") {
     positioned <- apply_hex_positioning(piece_result, offset)
+  } else if (piece_result$type == "voronoi") {
+    positioned <- apply_voronoi_positioning(piece_result, offset)
+  } else if (piece_result$type == "random") {
+    positioned <- apply_random_positioning(piece_result, offset)
   } else {
     positioned <- apply_rect_positioning(piece_result, offset)
   }

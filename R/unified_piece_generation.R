@@ -21,6 +21,7 @@
 #' @param fusion_groups List of piece ID vectors to fuse together (optional)
 #' @param fusion_style Style for fused internal edges: "none" (invisible), "dashed", "solid"
 #' @param fusion_opacity Opacity for fused edges when style != "none" (0.0 to 1.0)
+#' @param point_distribution Point distribution method for voronoi puzzles: "fermat", "uniform", or "jittered"
 #' @return List with:
 #'   - pieces: List of piece objects with id, path, center, grid_pos/ring_pos
 #'   - canvas_size: c(width, height) for compact (offset=0) layout
@@ -41,7 +42,10 @@ generate_pieces_internal <- function(type = "rectangular",
                                      boundary_facing = "outward",
                                      fusion_groups = NULL,
                                      fusion_style = "none",
-                                     fusion_opacity = 0.3) {
+                                     fusion_opacity = 0.3,
+                                     point_distribution = "fermat",
+                                     n_corner = 4,
+                                     min_piece_size = NULL) {
 
   # Generate seed if not provided
   if (is.null(seed)) {
@@ -73,6 +77,31 @@ generate_pieces_internal <- function(type = "rectangular",
       do_warp = do_warp,
       do_trunc = do_trunc,
       do_circular_border = do_circular_border,
+      fusion_groups = fusion_groups,
+      fusion_style = fusion_style,
+      fusion_opacity = fusion_opacity
+    )
+  } else if (type == "voronoi") {
+    result <- generate_voronoi_pieces_internal(
+      seed = seed,
+      grid = grid,
+      size = if (length(size) == 1) c(size, size) else size,
+      tabsize = tabsize,
+      jitter = jitter,
+      point_distribution = point_distribution,
+      fusion_groups = fusion_groups,
+      fusion_style = fusion_style,
+      fusion_opacity = fusion_opacity
+    )
+  } else if (type == "random") {
+    result <- generate_random_pieces_internal(
+      seed = seed,
+      grid = grid,
+      size = if (length(size) == 1) c(size, size) else size,
+      tabsize = tabsize,
+      jitter = jitter,
+      n_corner = n_corner,
+      min_piece_size = min_piece_size,
       fusion_groups = fusion_groups,
       fusion_style = fusion_style,
       fusion_opacity = fusion_opacity

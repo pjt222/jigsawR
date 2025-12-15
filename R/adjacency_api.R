@@ -51,6 +51,10 @@ get_piece_neighbors <- function(piece_id, puzzle_result, include_boundary = TRUE
     return(get_hex_neighbors_unified(piece_id, puzzle_result, include_boundary))
   } else if (type == "concentric") {
     return(get_concentric_neighbors_unified(piece_id, puzzle_result, include_boundary))
+  } else if (type == "voronoi") {
+    return(get_voronoi_neighbors(piece_id, puzzle_result, include_boundary))
+  } else if (type == "random") {
+    return(get_random_neighbors(piece_id, puzzle_result, include_boundary))
   } else {
     stop(sprintf("Unknown puzzle type: %s", type))
   }

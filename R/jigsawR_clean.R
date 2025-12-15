@@ -44,6 +44,9 @@
 #' @param fusion_groups List of piece ID vectors to fuse, or string like "(1,2),(7,8,9)"
 #' @param fusion_style Style for fused internal edges: "none" (invisible), "dashed", "solid"
 #' @param fusion_opacity Opacity for fused edges when style != "none" (0.0 to 1.0)
+#' @param point_distribution Point distribution method for voronoi puzzles: "fermat", "uniform", or "jittered"
+#' @param n_corner Number of corners for base polygon in random shape puzzles (default: 4 for rectangle)
+#' @param min_piece_size Minimum piece size constraint for random shape puzzles (default: NULL for auto)
 #' @param output DEPRECATED: Use offset parameter instead
 #' @return List with svg_content, pieces, canvas_size, parameters, and fusion_data (if applicable)
 #' @export
@@ -79,6 +82,9 @@ generate_puzzle <- function(type = "rectangular",
                             fusion_groups = NULL,
                             fusion_style = "none",
                             fusion_opacity = 0.3,
+                            point_distribution = "fermat",
+                            n_corner = 4,
+                            min_piece_size = NULL,
                             output = NULL) {
 
   # Handle deprecated 'output' parameter
@@ -105,9 +111,23 @@ generate_puzzle <- function(type = "rectangular",
   }
 
   # Validate type parameter
-  valid_types <- c("rectangular", "hexagonal", "concentric")
+  valid_types <- c("rectangular", "hexagonal", "concentric", "voronoi", "random")
   if (!type %in% valid_types) {
     stop(sprintf("Invalid type '%s'. Must be one of: %s", type, paste(valid_types, collapse = ", ")))
+  }
+
+  # Check dependencies for tessellation-based types
+  if (type == "voronoi" && !has_deldir()) {
+    cli::cli_abort(c(
+      "Package {.pkg deldir} is required for Voronoi puzzles.",
+      "i" = "Install with: {.code install.packages('deldir')}"
+    ))
+  }
+  if (type == "random" && !has_rcdt()) {
+    cli::cli_abort(c(
+      "Package {.pkg RCDT} is required for random shape puzzles.",
+      "i" = "Install with: {.code install.packages('RCDT')}"
+    ))
   }
 
   # Generate filename prefix if not provided
@@ -118,6 +138,12 @@ generate_puzzle <- function(type = "rectangular",
     } else if (type == "concentric") {
       rings <- if (length(grid) == 1) grid else grid[1]
       filename_prefix <- sprintf("puzzle_conc%d_seed%d", rings, seed)
+    } else if (type == "voronoi") {
+      n_cells <- if (length(grid) == 1) grid[1] else grid[1] * grid[2]
+      filename_prefix <- sprintf("puzzle_vor%d_seed%d", n_cells, seed)
+    } else if (type == "random") {
+      n_pieces <- if (length(grid) == 1) grid[1] else grid[1]
+      filename_prefix <- sprintf("puzzle_rnd%d_seed%d", n_pieces, seed)
     } else {
       filename_prefix <- sprintf("puzzle_%dx%d_seed%d", grid[1], grid[2], seed)
     }
@@ -146,7 +172,10 @@ generate_puzzle <- function(type = "rectangular",
     boundary_facing = boundary_facing,
     fusion_groups = NULL,  # Will apply fusion after keyword resolution
     fusion_style = fusion_style,
-    fusion_opacity = fusion_opacity
+    fusion_opacity = fusion_opacity,
+    point_distribution = point_distribution,
+    n_corner = n_corner,
+    min_piece_size = min_piece_size
   )
 
   # Step 1.5: Parse and apply fusion groups with full puzzle context
