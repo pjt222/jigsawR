@@ -223,3 +223,55 @@ test_that("is_noise_fill_spec correctly identifies noise specs", {
   expect_false(is_noise_fill_spec(list(type = "gradient")))
   expect_false(is_noise_fill_spec(list(color = "blue")))
 })
+
+# Tests for inline HTML embedding (Issue #58)
+test_that("render_puzzle_svg inline parameter controls XML declaration", {
+  pieces <- generate_pieces_internal("rectangular", 42, c(3, 4), c(200, 150))
+  positioned <- apply_piece_positioning(pieces, offset = 10)
+
+  # Default (inline = FALSE) should have XML declaration
+  svg_default <- render_puzzle_svg(positioned, inline = FALSE)
+  expect_true(startsWith(svg_default, '<?xml version="1.0"'))
+
+  # Inline mode should NOT have XML declaration
+  svg_inline <- render_puzzle_svg(positioned, inline = TRUE)
+  expect_false(startsWith(svg_inline, '<?xml'))
+  expect_true(startsWith(svg_inline, '<svg xmlns='))
+})
+
+test_that("render_puzzle_svg inline mode preserves namespaces", {
+  pieces <- generate_pieces_internal("rectangular", 42, c(2, 2), c(100, 100))
+  positioned <- apply_piece_positioning(pieces, offset = 0)
+
+  svg_inline <- render_puzzle_svg(positioned, inline = TRUE)
+
+  # Should have both namespaces even in inline mode
+  expect_match(svg_inline, 'xmlns="http://www.w3.org/2000/svg"')
+  expect_match(svg_inline, 'xmlns:xlink="http://www.w3.org/1999/xlink"')
+})
+
+test_that("noise fills render correctly in inline mode", {
+  pieces <- generate_pieces_internal("rectangular", 42, c(2, 2), c(100, 100))
+  positioned <- apply_piece_positioning(pieces, offset = 0)
+
+  noise_bg <- noise_fill_spec(noise_type = "perlin", seed = 42)
+  noise_fill <- noise_fill_spec(noise_type = "simplex", seed = 123)
+
+  svg_inline <- render_puzzle_svg(
+    positioned,
+    fill = noise_fill,
+    background = noise_bg,
+    inline = TRUE
+  )
+
+  # Should NOT start with XML declaration
+  expect_false(startsWith(svg_inline, '<?xml'))
+
+  # Should still have noise patterns
+  expect_match(svg_inline, "bgNoisePattern")
+  expect_match(svg_inline, "pieceFillNoisePattern")
+
+  # Should have xlink namespace (required for xlink:href in patterns)
+  expect_match(svg_inline, 'xmlns:xlink')
+  expect_match(svg_inline, 'xlink:href="data:image/png;base64,')
+})

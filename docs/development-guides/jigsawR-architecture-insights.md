@@ -803,6 +803,127 @@ Formula: Side N faces direction (30 + N*60)°
 - `R/unified_piece_generation.R`: Fixed formula in 2 locations
 - `tests/testthat/test-fusion.R`: Updated expected values for flat-top hexagon geometry
 
+### 27. SVG Inline HTML Embedding - XML Declaration Issue (2025-12-14, Issue #58)
+
+**Context**: Noise fills (procedural noise textures) rendered correctly when SVG files were opened directly in a browser, but failed to render in the Shiny app preview.
+
+**Problem**: The SVG header included `<?xml version="1.0" encoding="UTF-8"?>` at the start. This XML declaration is problematic when embedding SVG inline in HTML5:
+
+```xml
+<!-- WRONG for inline HTML -->
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" ...>
+
+<!-- CORRECT for inline HTML -->
+<svg xmlns="http://www.w3.org/2000/svg" ...>
+```
+
+**Root Cause**: HTML5 parsers do not understand XML processing instructions. When Shiny's `HTML()` function embeds SVG inline, the `<?xml?>` declaration can cause:
+- The browser to treat content as text rather than parsed markup
+- Silent stripping of the declaration, potentially breaking pattern rendering
+- Quirks mode behavior in some browsers
+
+**Evidence**:
+- W3C SVG in HTML spec: "XML processing instructions are not supported in HTML"
+- Standalone SVG files (with XML declaration) rendered correctly
+- Same SVG embedded via `HTML()` in Shiny failed to render noise patterns
+
+**Solution**: Added `inline` parameter to control XML declaration:
+
+```r
+# build_svg_header() now accepts inline parameter
+build_svg_header <- function(canvas_size, canvas_offset = NULL, inline = FALSE) {
+  # XML declaration only for standalone files, not inline HTML
+  xml_declaration <- if (inline) "" else '<?xml version="1.0" encoding="UTF-8"?>\n'
+  # ...
+}
+
+# render_puzzle_svg() propagates inline parameter
+render_puzzle_svg <- function(..., inline = FALSE) {
+  svg_header <- build_svg_header(..., inline = inline)
+}
+```
+
+**Implementation Details**:
+
+| Context | `inline` Value | Has XML Declaration |
+|---------|----------------|---------------------|
+| Shiny preview | `TRUE` | No |
+| File downloads | `FALSE` (default) | Yes |
+| `generate_puzzle()` | `FALSE` (default) | Yes |
+
+**Key Insight**: SVG has two valid rendering contexts with different requirements:
+1. **Standalone files** (`.svg`): XML declaration is valid and recommended
+2. **Inline HTML5**: XML declaration must be omitted
+
+The same SVG content requires different headers depending on how it will be consumed. Design APIs with a parameter to handle both cases.
+
+**Secondary Fix**: WYSIWYG download handler now prepends XML declaration:
+```r
+# SVG was generated with inline=TRUE for preview, add declaration for file
+svg_standalone <- paste0('<?xml version="1.0" encoding="UTF-8"?>\n', svg_content())
+```
+
+**Namespaces Preserved**: Both modes retain required namespaces:
+- `xmlns="http://www.w3.org/2000/svg"` - Required for SVG rendering
+- `xmlns:xlink="http://www.w3.org/1999/xlink"` - Required for `xlink:href` in noise pattern images
+
+**Files Changed**:
+- `R/unified_renderer.R`: Added `inline` parameter to `build_svg_header()` and `render_puzzle_svg()`
+- `inst/shiny-app/app.R`: Use `inline = TRUE` for preview, add XML declaration for downloads
+- `tests/testthat/test-noise_fills.R`: Added 10 tests for inline parameter
+
+**References**:
+- [W3C SVG in HTML](https://www.w3.org/Graphics/SVG/WG/wiki/SVG_in_HTML)
+- [CSS-Tricks: 6 Common SVG Fails](https://css-tricks.com/6-common-svg-fails-and-how-to-fix-them/)
+
+### 28. SVG Pattern Content Units - Browser Rendering (2025-12-15)
+
+**Context**: After fixing the XML declaration issue (Insight #27), noise backgrounds were still rendering as blank in browsers (Chrome and Edge), even though the SVG structure appeared correct.
+
+**Problem**: The noise pattern used `patternUnits="objectBoundingBox"` with `width="1" height="1"`, which correctly means "100% of the bounding box". However, the `<image>` element inside the pattern also had `width="1" height="1"`, which was being interpreted as **1 pixel** because `patternContentUnits` defaults to `userSpaceOnUse`.
+
+```xml
+<!-- BROKEN: Image renders as 1x1 pixel -->
+<pattern id="bgNoisePattern" patternUnits="objectBoundingBox" width="1" height="1">
+  <image xlink:href="data:image/png;base64,..." width="1" height="1"/>
+</pattern>
+
+<!-- FIXED: Image fills entire pattern -->
+<pattern id="bgNoisePattern" patternUnits="objectBoundingBox"
+         patternContentUnits="objectBoundingBox" width="1" height="1">
+  <image xlink:href="data:image/png;base64,..." width="1" height="1"/>
+</pattern>
+```
+
+**Root Cause**: SVG patterns have TWO separate coordinate systems:
+
+| Attribute | Default Value | Controls |
+|-----------|---------------|----------|
+| `patternUnits` | `objectBoundingBox` | Pattern tile dimensions (width/height on `<pattern>`) |
+| `patternContentUnits` | `userSpaceOnUse` | Content dimensions (width/height on children) |
+
+When `patternUnits="objectBoundingBox"`:
+- Pattern's `width="1"` = 100% of bounding box ✓
+- But image's `width="1"` = 1 pixel (userSpaceOnUse default) ✗
+
+**Solution**: Explicitly set `patternContentUnits="objectBoundingBox"` so that the image's `width="1" height="1"` is also interpreted as 100% of the bounding box.
+
+**Key Insight**: SVG pattern coordinate systems are independently configurable. When using relative coordinates (`objectBoundingBox`) for the pattern, you likely want relative coordinates for the content too. Always explicitly set both attributes to avoid browser defaults causing unexpected behavior.
+
+**Debugging Approach**:
+1. Tests passed (they checked SVG structure, not browser rendering)
+2. User confirmed: "background is blank (tested in chrome and edge)"
+3. Inspected browser DevTools - pattern existed but image was 1x1 pixel
+4. Traced to `patternContentUnits` default behavior
+
+**Files Changed**:
+- `R/noise_fills.R`: Added `patternContentUnits="objectBoundingBox"` to pattern definition
+
+**References**:
+- [MDN: patternContentUnits](https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/patternContentUnits)
+- [SVG 1.1 Spec: Patterns](https://www.w3.org/TR/SVG11/pservers.html#PatternElementPatternContentUnitsAttribute)
+
 ---
 
 ### Insight #22: Independent UI Controls for Related Options (2025-12-11)

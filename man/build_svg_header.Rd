@@ -4,12 +4,14 @@
 \alias{build_svg_header}
 \title{Build SVG header with proper viewBox}
 \usage{
-build_svg_header(canvas_size, canvas_offset = NULL)
+build_svg_header(canvas_size, canvas_offset = NULL, inline = FALSE)
 }
 \arguments{
 \item{canvas_size}{c(width, height) of the canvas}
 
 \item{canvas_offset}{c(x, y) offset for viewBox (default: c(0, 0))}
+
+\item{inline}{Logical; if TRUE, omit XML declaration for inline HTML embedding (default: FALSE)}
 }
 \value{
 SVG header string

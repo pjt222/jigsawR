@@ -18,5 +18,6 @@ SVG defs + rect elements string
 }
 \description{
 Creates SVG elements for a noise-textured background.
+Uses objectBoundingBox so noise scales smoothly with canvas size.
 }
 \keyword{internal}

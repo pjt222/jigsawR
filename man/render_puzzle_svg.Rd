@@ -16,7 +16,8 @@ render_puzzle_svg(
   opacity = 1,
   show_labels = FALSE,
   label_color = "black",
-  label_size = NULL
+  label_size = NULL,
+  inline = FALSE
 )
 }
 \arguments{
@@ -47,6 +48,9 @@ When provided, each piece gets its own fill color from this vector.}
 \item{label_color}{Color for piece labels (default: "black")}
 
 \item{label_size}{Font size for labels in mm (default: auto-calculated based on piece size)}
+
+\item{inline}{Logical; if TRUE, omit XML declaration for inline HTML embedding.
+Use TRUE when embedding SVG in HTML (e.g., Shiny apps). Default: FALSE.}
 }
 \value{
 Complete SVG string

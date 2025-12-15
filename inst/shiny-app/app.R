@@ -1361,7 +1361,8 @@ server <- function(input, output, session) {
         opacity = input$opacity / 100,
         show_labels = show_labels_value,
         label_color = label_color_value,
-        label_size = label_size_value
+        label_size = label_size_value,
+        inline = TRUE  # Omit XML declaration for inline HTML embedding
       )
       # DEBUG: Check SVG output for noise patterns
       has_bg_noise <- grepl("bgNoisePattern", result)
@@ -1694,7 +1695,9 @@ server <- function(input, output, session) {
     },
     content = function(file) {
       if (!is.null(svg_content())) {
-        writeLines(svg_content(), file)
+        # Add XML declaration for standalone SVG file (removed for inline HTML)
+        svg_standalone <- paste0('<?xml version="1.0" encoding="UTF-8"?>\n', svg_content())
+        writeLines(svg_standalone, file)
       }
     },
     contentType = "image/svg+xml"

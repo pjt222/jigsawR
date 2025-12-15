@@ -235,10 +235,14 @@ create_noise_pattern_defs <- function(noise_data_uri,
                                        pattern_units = "userSpaceOnUse") {
 
   if (pattern_units == "objectBoundingBox") {
-    # For objectBoundingBox, use relative coordinates
+    # For objectBoundingBox, use relative coordinates for pattern bounds
+    # IMPORTANT: patternContentUnits defaults to userSpaceOnUse, so image dimensions
+    # would be interpreted as pixels (width="1" = 1 pixel, not 100%)
+    # Solution: Use patternContentUnits="objectBoundingBox" so image width/height
+    # are also relative (0-1 range = 0-100% of bounding box)
     # Use xlink:href for browser compatibility (especially in HTML contexts)
     pattern_def <- sprintf(
-      '<defs>\n  <pattern id="%s" patternUnits="objectBoundingBox" width="1" height="1">\n    <image xlink:href="%s" x="0" y="0" width="1" height="1" preserveAspectRatio="none"/>\n  </pattern>\n</defs>',
+      '<defs>\n  <pattern id="%s" patternUnits="objectBoundingBox" patternContentUnits="objectBoundingBox" width="1" height="1">\n    <image xlink:href="%s" x="0" y="0" width="1" height="1" preserveAspectRatio="none"/>\n  </pattern>\n</defs>',
       pattern_id, noise_data_uri
     )
   } else {

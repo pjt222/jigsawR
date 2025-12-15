@@ -23,6 +23,8 @@
 #' @param show_labels Logical; if TRUE, display piece ID labels at piece centers
 #' @param label_color Color for piece labels (default: "black")
 #' @param label_size Font size for labels in mm (default: auto-calculated based on piece size)
+#' @param inline Logical; if TRUE, omit XML declaration for inline HTML embedding.
+#'   Use TRUE when embedding SVG in HTML (e.g., Shiny apps). Default: FALSE.
 #' @return Complete SVG string
 #' @export
 render_puzzle_svg <- function(positioned, fill = "none", fills = NULL,
@@ -30,7 +32,7 @@ render_puzzle_svg <- function(positioned, fill = "none", fills = NULL,
                                colors = NULL, palette = NULL, palette_invert = FALSE,
                                background = "white", opacity = 1.0,
                                show_labels = FALSE, label_color = "black",
-                               label_size = NULL) {
+                               label_size = NULL, inline = FALSE) {
 
   # Get number of pieces for color generation
   n_pieces <- length(positioned$pieces)
@@ -55,7 +57,8 @@ render_puzzle_svg <- function(positioned, fill = "none", fills = NULL,
   # Build SVG components
   svg_header <- build_svg_header(
     positioned$canvas_size,
-    positioned$canvas_offset
+    positioned$canvas_offset,
+    inline = inline
   )
 
   # Render background (may include its own defs for background gradient)
@@ -150,9 +153,10 @@ render_puzzle_svg <- function(positioned, fill = "none", fills = NULL,
 #'
 #' @param canvas_size c(width, height) of the canvas
 #' @param canvas_offset c(x, y) offset for viewBox (default: c(0, 0))
+#' @param inline Logical; if TRUE, omit XML declaration for inline HTML embedding (default: FALSE)
 #' @return SVG header string
 #' @keywords internal
-build_svg_header <- function(canvas_size, canvas_offset = NULL) {
+build_svg_header <- function(canvas_size, canvas_offset = NULL, inline = FALSE) {
 
   width <- canvas_size[1]
   height <- canvas_size[2]
@@ -164,8 +168,12 @@ build_svg_header <- function(canvas_size, canvas_offset = NULL) {
   vb_x <- canvas_offset[1]
   vb_y <- canvas_offset[2]
 
+  # XML declaration is only valid for standalone SVG files, not inline HTML
+  # See: https://www.w3.org/Graphics/SVG/WG/wiki/SVG_in_HTML
+  xml_declaration <- if (inline) "" else '<?xml version="1.0" encoding="UTF-8"?>\n'
+
   paste0(
-    '<?xml version="1.0" encoding="UTF-8"?>\n',
+    xml_declaration,
     '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" ',
     'width="', sprintf("%.2f", width), '" ',
     'height="', sprintf("%.2f", height), '" ',
