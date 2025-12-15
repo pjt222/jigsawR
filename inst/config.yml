@@ -32,6 +32,8 @@ default:
     layout: "grid"        # grid or repel
     repel_margin: 2       # mm gap for repel layout
     repel_max_iter: 100   # max iterations for repel
+    min_tab_size: null    # minimum absolute tab size (voronoi/random only)
+    max_tab_size: null    # maximum absolute tab size (voronoi/random only)
     stroke_width: 1
     stroke_color_type: "solid"  # none, solid, or palette
     stroke_color: "#000000"  # used when stroke_color_type = "solid"
@@ -156,6 +158,12 @@ default:
     label_size:
       min: 0  # 0 = auto-size
       max: 30
+    min_tab_size:
+      min: 0   # 0 = no constraint
+      max: 50
+    max_tab_size:
+      min: 5
+      max: 100
 
   # Conversion constants
   constants:

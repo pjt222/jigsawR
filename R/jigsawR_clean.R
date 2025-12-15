@@ -136,6 +136,20 @@ generate_puzzle <- function(type = "rectangular",
     ))
   }
 
+  # Validate tab size constraints (voronoi/random only)
+  if (!is.null(min_tab_size) && min_tab_size < 0) {
+    cli::cli_abort("min_tab_size must be non-negative, got {min_tab_size}")
+  }
+  if (!is.null(max_tab_size) && max_tab_size < 0) {
+    cli::cli_abort("max_tab_size must be non-negative, got {max_tab_size}")
+  }
+  if (!is.null(min_tab_size) && !is.null(max_tab_size) && min_tab_size > max_tab_size) {
+    cli::cli_abort(c(
+      "Invalid tab size constraints:",
+      "x" = "min_tab_size ({min_tab_size}) cannot be greater than max_tab_size ({max_tab_size})"
+    ))
+  }
+
   # Generate filename prefix if not provided
   if (is.null(filename_prefix)) {
     if (type == "hexagonal") {
@@ -274,7 +288,9 @@ generate_puzzle <- function(type = "rectangular",
       label_size = label_size,
       fusion_groups = parsed_fusion_groups,
       fusion_style = fusion_style,
-      fusion_opacity = fusion_opacity
+      fusion_opacity = fusion_opacity,
+      min_tab_size = if (type %in% c("voronoi", "random")) min_tab_size else NULL,
+      max_tab_size = if (type %in% c("voronoi", "random")) max_tab_size else NULL
     ),
     files = list(),
     fusion_data = if (!is.null(parsed_fusion_groups)) pieces_result$fusion_data else NULL
