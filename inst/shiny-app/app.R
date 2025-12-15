@@ -93,6 +93,34 @@ if (!noise_available) {
   log_warn("Install with: install.packages(c('ambient', 'png', 'base64enc'))")
 }
 
+# Check for Voronoi puzzle dependencies (deldir)
+voronoi_available <- tryCatch({
+  deldir_ok <- requireNamespace("deldir", quietly = TRUE)
+  log_info("DEBUG: deldir package available = {deldir_ok}")
+  deldir_ok
+}, error = function(e) {
+  log_warn("Error checking deldir package: {e$message}")
+  FALSE
+})
+if (!voronoi_available) {
+  log_warn("Voronoi puzzle type requires 'deldir' package")
+  log_warn("Install with: install.packages('deldir')")
+}
+
+# Check for Random puzzle dependencies (RCDT)
+random_available <- tryCatch({
+  rcdt_ok <- requireNamespace("RCDT", quietly = TRUE)
+  log_info("DEBUG: RCDT package available = {rcdt_ok}")
+  rcdt_ok
+}, error = function(e) {
+  log_warn("Error checking RCDT package: {e$message}")
+  FALSE
+})
+if (!random_available) {
+  log_warn("Random puzzle type requires 'RCDT' package")
+  log_warn("Install with: install.packages('RCDT')")
+}
+
 # Build fill type choices based on package availability
 fill_type_choices <- list(
   "None" = "none",
@@ -190,7 +218,9 @@ ui <- page_fluid(
           radioButtons("puzzle_type", "Puzzle Type:",
                       choices = list("Rectangular" = "rectangular",
                                     "Hexagonal" = "hexagonal",
-                                    "Concentric" = "concentric"),
+                                    "Concentric" = "concentric",
+                                    "Voronoi" = "voronoi",
+                                    "Random" = "random"),
                       selected = "rectangular",
                       inline = TRUE),
 
@@ -293,6 +323,75 @@ ui <- page_fluid(
                           ),
                           selected = if (!is.null(cfg_conc$boundary_facing)) cfg_conc$boundary_facing else "outward",
                           inline = TRUE)
+            )
+          ),
+
+          # Voronoi puzzle type panel
+          conditionalPanel(
+            condition = "input.puzzle_type == 'voronoi'",
+            # Number of cells
+            numericInput("n_cells", "Number of Cells:",
+                        value = 20,
+                        min = 5,
+                        max = 100),
+
+            # Size for voronoi
+            fluidRow(
+              column(6,
+                numericInput("vor_width", "Width (mm):",
+                            value = 200,
+                            min = 50,
+                            max = 1000, step = 10)
+              ),
+              column(6,
+                numericInput("vor_height", "Height (mm):",
+                            value = 200,
+                            min = 50,
+                            max = 1000, step = 10)
+              )
+            ),
+
+            # Point distribution
+            radioButtons("point_distribution", "Point Distribution:",
+                        choices = list(
+                          "Fermat Spiral" = "fermat",
+                          "Uniform Random" = "uniform",
+                          "Jittered Grid" = "jittered"
+                        ),
+                        selected = "fermat")
+          ),
+
+          # Random shape puzzle type panel
+          conditionalPanel(
+            condition = "input.puzzle_type == 'random'",
+            # Number of interior points
+            numericInput("n_interior", "Interior Points:",
+                        value = 10,
+                        min = 3,
+                        max = 50),
+
+            # Size for random
+            fluidRow(
+              column(6,
+                numericInput("rnd_width", "Width (mm):",
+                            value = 200,
+                            min = 50,
+                            max = 1000, step = 10)
+              ),
+              column(6,
+                numericInput("rnd_height", "Height (mm):",
+                            value = 200,
+                            min = 50,
+                            max = 1000, step = 10)
+              )
+            ),
+
+            # Base polygon corners
+            sliderInput("n_corner", "Base Polygon Corners:",
+                       min = 3, max = 8, value = 4, step = 1,
+                       ticks = TRUE),
+            tags$small(class = "text-muted",
+              "3=Triangle, 4=Rectangle, 5=Pentagon, 6=Hexagon..."
             )
           ),
 
@@ -1023,6 +1122,12 @@ server <- function(input, output, session) {
       } else if (puzzle_type == "concentric") {
         grid_param <- c(input$rings_conc)
         size_param <- c(input$diameter_conc)
+      } else if (puzzle_type == "voronoi") {
+        grid_param <- c(input$n_cells)
+        size_param <- c(input$vor_width, input$vor_height)
+      } else if (puzzle_type == "random") {
+        grid_param <- c(input$n_interior)
+        size_param <- c(input$rnd_width, input$rnd_height)
       } else {
         grid_param <- c(input$rows, input$cols)
         size_param <- c(input$width, input$height)
@@ -1052,6 +1157,12 @@ server <- function(input, output, session) {
       repel_margin_val <- if (is.null(input$repel_margin)) 2 else input$repel_margin
       repel_max_iter_val <- if (is.null(input$repel_max_iter)) 100 else input$repel_max_iter
 
+      # Get Voronoi-specific parameters
+      point_distribution_val <- if (is.null(input$point_distribution)) "fermat" else input$point_distribution
+
+      # Get Random-specific parameters
+      n_corner_val <- if (is.null(input$n_corner)) 4 else input$n_corner
+
       base_settings(list(
         type = puzzle_type,
         seed = input$seed,
@@ -1063,7 +1174,11 @@ server <- function(input, output, session) {
         fusion_groups = fusion_groups_str,  # Store STRING, not parsed - generate_puzzle() handles parsing
         layout = layout_val,
         repel_margin = repel_margin_val,
-        repel_max_iter = repel_max_iter_val
+        repel_max_iter = repel_max_iter_val,
+        # Voronoi-specific
+        point_distribution = point_distribution_val,
+        # Random-specific
+        n_corner = n_corner_val
       ))
 
       # Store puzzle metadata for display and downloads
@@ -1084,6 +1199,32 @@ server <- function(input, output, session) {
           rings = input$rings_conc,
           diameter = input$diameter_conc,
           center_shape = center_shape_value,
+          seed = input$seed,
+          total_pieces = num_pieces,
+          offset = input$offset
+        ))
+      } else if (puzzle_type == "voronoi") {
+        # Voronoi piece count = n_cells (each cell becomes a piece)
+        puzzle_data(list(
+          type = "voronoi",
+          n_cells = input$n_cells,
+          width = input$vor_width,
+          height = input$vor_height,
+          point_distribution = point_distribution_val,
+          seed = input$seed,
+          total_pieces = input$n_cells,
+          offset = input$offset
+        ))
+      } else if (puzzle_type == "random") {
+        # Random piece count: approximately 2*n_interior + n_corner - 2 (Delaunay triangulation)
+        n_corner_val <- if (is.null(input$n_corner)) 4 else input$n_corner
+        num_pieces <- 2 * input$n_interior + n_corner_val - 2
+        puzzle_data(list(
+          type = "random",
+          n_interior = input$n_interior,
+          width = input$rnd_width,
+          height = input$rnd_height,
+          n_corner = n_corner_val,
           seed = input$seed,
           total_pieces = num_pieces,
           offset = input$offset
@@ -1189,6 +1330,18 @@ server <- function(input, output, session) {
         fusion_groups = if (has_fusion) fusion_groups_str else NULL,
         fusion_style = fusion_style_val,
         fusion_opacity = fusion_opacity_val,
+        # Voronoi-specific parameters (with defensive NULL check)
+        point_distribution = if (settings$type == "voronoi" && !is.null(settings$point_distribution)) {
+          settings$point_distribution
+        } else {
+          "fermat"
+        },
+        # Random-specific parameters (with defensive NULL check)
+        n_corner = if (settings$type == "random" && !is.null(settings$n_corner)) {
+          settings$n_corner
+        } else {
+          4
+        },
         save_files = FALSE  # Don't auto-save in Shiny app
       )
 
@@ -1465,6 +1618,74 @@ server <- function(input, output, session) {
             theme = "warning"
           )
         )
+      } else if (data$type == "voronoi") {
+        # Voronoi puzzle value boxes (with defensive NULL checks)
+        n_cells_val <- if (!is.null(data$n_cells)) data$n_cells else "?"
+        width_val <- if (!is.null(data$width)) data$width else 200
+        height_val <- if (!is.null(data$height)) data$height else 200
+        dist_val <- if (!is.null(data$point_distribution)) tools::toTitleCase(data$point_distribution) else "Fermat"
+
+        layout_column_wrap(
+          width = 1/4,
+          value_box(
+            title = "Type",
+            value = "Voronoi",
+            showcase = bsicons::bs_icon("diagram-3"),
+            theme = "primary"
+          ),
+          value_box(
+            title = "Cells",
+            value = n_cells_val,
+            showcase = bsicons::bs_icon("grid"),
+            theme = "info"
+          ),
+          value_box(
+            title = "Size",
+            value = sprintf("%.0f × %.0f mm", width_val, height_val),
+            showcase = bsicons::bs_icon("arrows-expand"),
+            theme = "success"
+          ),
+          value_box(
+            title = "Distribution",
+            value = dist_val,
+            showcase = bsicons::bs_icon("distribute-vertical"),
+            theme = "warning"
+          )
+        )
+      } else if (data$type == "random") {
+        # Random shape puzzle value boxes (with defensive NULL checks)
+        pieces_val <- if (!is.null(data$total_pieces)) data$total_pieces else "?"
+        width_val <- if (!is.null(data$width)) data$width else 200
+        height_val <- if (!is.null(data$height)) data$height else 200
+        n_corner_val <- if (!is.null(data$n_corner)) data$n_corner else 4
+
+        layout_column_wrap(
+          width = 1/4,
+          value_box(
+            title = "Type",
+            value = "Random",
+            showcase = bsicons::bs_icon("shuffle"),
+            theme = "primary"
+          ),
+          value_box(
+            title = "Pieces",
+            value = pieces_val,
+            showcase = bsicons::bs_icon("puzzle"),
+            theme = "success"
+          ),
+          value_box(
+            title = "Size",
+            value = sprintf("%.0f × %.0f mm", width_val, height_val),
+            showcase = bsicons::bs_icon("arrows-expand"),
+            theme = "info"
+          ),
+          value_box(
+            title = "Base Shape",
+            value = sprintf("%d-gon", n_corner_val),
+            showcase = bsicons::bs_icon("pentagon"),
+            theme = "warning"
+          )
+        )
       } else {
         # Rectangular puzzle value boxes
         effective_width <- input$width
@@ -1523,6 +1744,10 @@ server <- function(input, output, session) {
       sprintf("hexagonal_%drings_seed%d", data$rings, data$seed)
     } else if (data$type == "concentric") {
       sprintf("concentric_%drings_seed%d", data$rings, data$seed)
+    } else if (data$type == "voronoi") {
+      sprintf("voronoi_%dcells_seed%d", data$n_cells, data$seed)
+    } else if (data$type == "random") {
+      sprintf("random_%dpieces_seed%d", data$total_pieces, data$seed)
     } else {
       sprintf("puzzle_%dx%d_seed%d", data$rows, data$cols, data$seed)
     }
@@ -1602,10 +1827,20 @@ server <- function(input, output, session) {
       } else if (data$type == "concentric") {
         grid_param <- c(input$rings_conc)
         size_param <- c(input$diameter_conc)
+      } else if (data$type == "voronoi") {
+        grid_param <- c(input$n_cells)
+        size_param <- c(input$vor_width, input$vor_height)
+      } else if (data$type == "random") {
+        grid_param <- c(input$n_interior)
+        size_param <- c(input$rnd_width, input$rnd_height)
       } else {
         grid_param <- c(input$rows, input$cols)
         size_param <- c(input$width, input$height)
       }
+
+      # Get voronoi and random specific parameters
+      point_distribution_dl <- if (is.null(input$point_distribution)) "fermat" else input$point_distribution
+      n_corner_dl <- if (is.null(input$n_corner)) 4 else input$n_corner
 
       # Generate complete puzzle (offset=0)
       # Get boundary parameters from radio button selection (hexagonal only)
@@ -1677,7 +1912,19 @@ server <- function(input, output, session) {
         boundary_facing = boundary_facing_val,
         fusion_groups = if (has_fusion) fusion_groups_str else NULL,
         fusion_style = if (is.null(input$fusion_style)) "none" else input$fusion_style,
-        fusion_opacity = if (is.null(input$fusion_opacity)) 0.3 else input$fusion_opacity / 100
+        fusion_opacity = if (is.null(input$fusion_opacity)) 0.3 else input$fusion_opacity / 100,
+        # Voronoi-specific parameters (with defensive NULL check)
+        point_distribution = if (data$type == "voronoi" && !is.null(point_distribution_dl)) {
+          point_distribution_dl
+        } else {
+          "fermat"
+        },
+        # Random-specific parameters (with defensive NULL check)
+        n_corner = if (data$type == "random" && !is.null(n_corner_dl)) {
+          n_corner_dl
+        } else {
+          4
+        }
       )
 
       writeLines(result$svg_content, file)
@@ -1902,6 +2149,8 @@ server <- function(input, output, session) {
     file_prefix <- switch(data$type,
       "hexagonal" = "hex_piece",
       "concentric" = "concentric_piece",
+      "voronoi" = "voronoi_piece",
+      "random" = "random_piece",
       "piece"  # rectangular default
     )
 
