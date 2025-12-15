@@ -1589,7 +1589,83 @@ is_noise_fill_spec <- function(spec) {
 
 ---
 
-### Insight #32: Defensive NULL Checks in Shiny Reactive Chains (2025-12-15)
+### Insight #32: Min/Max Tab Size Constraints for Variable-Length Edges (2025-12-15)
+
+**Context**: Tessellation puzzles (Voronoi, Random) have edges of highly variable lengths, unlike rectangular/hexagonal puzzles with uniform edge lengths. This creates visual problems:
+- Short edges: Tabs become proportionally too small to see/cut
+- Long edges: Tabs become proportionally too large and may overlap
+
+**Problem**: The tab size is calculated as a fraction of edge length (`tabsize / 100`). For a 10mm edge with `tabsize=20`, the tab height is ~6mm (appropriate). For a 100mm edge, it's ~60mm (potentially too large). For a 3mm edge, it's ~0.9mm (too small to cut).
+
+**Solution**: Added `min_tab_size` and `max_tab_size` parameters that clamp absolute tab dimensions:
+
+```r
+generate_tessellation_edge <- function(v1, v2, seed, edge_id,
+                                        tabsize = 20, jitter = 4,
+                                        tab_direction = 1,
+                                        min_tab_size = NULL,   # NEW
+                                        max_tab_size = NULL) { # NEW
+  # Tab height is approximately 3 * t * edge_length
+  tab_height <- 3.0 * t * edge_length
+
+  # Clamp up to minimum
+  if (!is.null(min_tab_size) && tab_height < min_tab_size) {
+    t <- min_tab_size / (3.0 * edge_length)
+
+    # Check if this would make tab too wide for edge
+    if (4.0 * t > 0.7) {
+      # Edge too short - fall back to straight line
+      return(list(forward = sprintf("L %.4f %.4f", v2[1], v2[2]),
+                  reverse = sprintf("L %.4f %.4f", v1[1], v1[2]),
+                  type = "straight_constrained"))
+    }
+  }
+
+  # Clamp down to maximum
+  if (!is.null(max_tab_size) && tab_height > max_tab_size) {
+    t <- max_tab_size / (3.0 * edge_length)
+  }
+  # ... bezier generation continues
+}
+```
+
+**Key Design Decisions**:
+
+1. **Proportional fallback**: When a short edge can't fit even a minimum tab (would make tab width > 70% of edge), use a straight line instead of a deformed tab
+
+2. **Parameter propagation**: The constraints flow through the entire pipeline:
+   ```
+   generate_puzzle(min_tab_size, max_tab_size)
+     → generate_pieces_internal()
+       → generate_voronoi_pieces_internal() / generate_random_pieces_internal()
+         → build_voronoi_edge_map() / build_random_edge_map()
+           → generate_tessellation_edge()
+   ```
+
+3. **Type-specific application**: Only Voronoi and Random types support these parameters (rectangular/hexagonal have uniform edges)
+
+**Tab Geometry Reference**:
+```
+Tab fraction t = tabsize / 100 (e.g., 0.2 for tabsize=20)
+Tab height ≈ 3 * t * edge_length
+Tab width  ≈ 4 * t * edge_length (from 0.5-2t to 0.5+2t on normalized edge)
+```
+
+**Recommended Values**:
+- Physical puzzles: `min_tab_size = 5` (5mm minimum for cuttability)
+- Large puzzles: `max_tab_size = 30` (30mm maximum to prevent overlap)
+- Digital only: Leave as NULL (no constraints)
+
+**Files Modified**:
+- `R/tessellation_edge_generation.R`: Core constraint logic
+- `R/voronoi_puzzle.R`: Parameter propagation
+- `R/random_puzzle.R`: Parameter propagation
+- `R/unified_piece_generation.R`: Dispatcher
+- `R/jigsawR_clean.R`: Main API
+
+---
+
+### Insight #33: Defensive NULL Checks in Shiny Reactive Chains (2025-12-15)
 
 **Problem**: The Shiny app crashed when generating Voronoi or Random puzzles. Debug showed the app sourced correctly, but failed during reactive execution.
 
