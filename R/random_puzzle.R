@@ -42,6 +42,8 @@
 #' @keywords internal
 generate_random_pieces_internal <- function(seed, grid, size, tabsize, jitter,
                                              n_corner = 4, min_piece_size = NULL,
+                                             min_tab_size = NULL,
+                                             max_tab_size = NULL,
                                              fusion_groups = NULL,
                                              fusion_style = "none",
                                              fusion_opacity = 1.0) {
@@ -83,7 +85,9 @@ generate_random_pieces_internal <- function(seed, grid, size, tabsize, jitter,
   adjacency <- extract_random_adjacency(triangulation, all_vertices, n_corner)
 
   # Generate edge map with tabs
-  edge_map <- build_random_edge_map(triangulation, adjacency, seed, tabsize, jitter)
+  edge_map <- build_random_edge_map(triangulation, adjacency, seed, tabsize, jitter,
+                                     min_tab_size = min_tab_size,
+                                     max_tab_size = max_tab_size)
 
   # Assemble pieces from triangles
   pieces <- assemble_random_pieces(triangulation, edge_map, adjacency,
@@ -99,7 +103,9 @@ generate_random_pieces_internal <- function(seed, grid, size, tabsize, jitter,
     n_interior = n_interior,
     n_corner = n_corner,
     n_pieces = length(pieces),
-    min_piece_size = min_piece_size
+    min_piece_size = min_piece_size,
+    min_tab_size = min_tab_size,
+    max_tab_size = max_tab_size
   )
 
   # Handle fusion groups if specified
@@ -277,10 +283,13 @@ extract_random_adjacency <- function(tri, vertices, n_corner) {
 #' @param seed Random seed
 #' @param tabsize Tab size percentage
 #' @param jitter Jitter percentage
+#' @param min_tab_size Minimum absolute tab size (optional)
+#' @param max_tab_size Maximum absolute tab size (optional)
 #' @return Named list of edge paths
 #'
 #' @keywords internal
-build_random_edge_map <- function(tri, adjacency, seed, tabsize, jitter) {
+build_random_edge_map <- function(tri, adjacency, seed, tabsize, jitter,
+                                   min_tab_size = NULL, max_tab_size = NULL) {
   edge_map <- list()
 
   for (i in seq_len(nrow(adjacency))) {
@@ -318,7 +327,9 @@ build_random_edge_map <- function(tri, adjacency, seed, tabsize, jitter) {
         v1, v2, seed, edge_id,
         tabsize = tabsize,
         jitter = jitter,
-        tab_direction = 1
+        tab_direction = 1,
+        min_tab_size = min_tab_size,
+        max_tab_size = max_tab_size
       )
       edge_map[[edge_key]]$cell_a <- min(cell_a, cell_b)
       edge_map[[edge_key]]$cell_b <- max(cell_a, cell_b)

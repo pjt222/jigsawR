@@ -27,6 +27,10 @@
 #' @param jitter Jitter percentage (default: 4)
 #' @param tab_direction 1 for tab pointing "left" of edge direction,
 #'   -1 for "right" (default: 1)
+#' @param min_tab_size Minimum absolute tab size in units (default: NULL for no limit).
+#'   Prevents tabs from becoming too small on short edges.
+#' @param max_tab_size Maximum absolute tab size in units (default: NULL for no limit).
+#'   Prevents tabs from becoming too large on long edges and overlapping.
 #' @return List with forward and reverse SVG paths, plus metadata
 #'
 #' @details
@@ -40,18 +44,29 @@
 #' - Cell B uses the `reverse` path
 #' The paths are mathematical inverses, creating perfect interlocking.
 #'
+#' Tab Size Constraints:
+#' The actual tab height is approximately `3 * t * edge_length` where t is
+#' the tab fraction. With min/max constraints:
+#' - If computed tab would be smaller than min_tab_size, it's clamped up
+#' - If computed tab would be larger than max_tab_size, it's clamped down
+#' - Very short edges (where even min_tab_size would cause overlap) get
+#'   straight lines instead of tabs
+#'
 #' @examples
 #' # Horizontal edge
 #' edge <- generate_tessellation_edge(c(0, 0), c(100, 0), seed = 42, edge_id = 1)
 #' cat(edge$forward)
 #'
-#' # Diagonal edge
-#' edge <- generate_tessellation_edge(c(0, 0), c(70, 70), seed = 42, edge_id = 2)
+#' # Diagonal edge with tab size constraints
+#' edge <- generate_tessellation_edge(c(0, 0), c(70, 70), seed = 42, edge_id = 2,
+#'                                     min_tab_size = 10, max_tab_size = 30)
 #'
 #' @export
 generate_tessellation_edge <- function(v1, v2, seed, edge_id,
                                         tabsize = 20, jitter = 4,
-                                        tab_direction = 1) {
+                                        tab_direction = 1,
+                                        min_tab_size = NULL,
+                                        max_tab_size = NULL) {
 
   # Calculate edge vector and length
   dx <- v2[1] - v1[1]
@@ -89,6 +104,36 @@ generate_tessellation_edge <- function(v1, v2, seed, edge_id,
   c_val <- j * (runif(1) - 0.5)          # Tab offset jitter
   d <- j * (runif(1) - 0.5)              # Tab width jitter
   e <- j * (runif(1) - 0.5)              # End jitter
+
+  # Apply min/max tab size constraints
+
+  # The tab height is approximately 3 * t * edge_length
+  # The tab width spans approximately 4 * t * edge_length (from 0.5-2t to 0.5+2t)
+  tab_height <- 3.0 * t * edge_length
+
+  if (!is.null(min_tab_size) && tab_height < min_tab_size) {
+    # Tab would be too small - scale up
+    t <- min_tab_size / (3.0 * edge_length)
+
+    # Check if this would make the tab too wide for the edge
+    # Tab spans from 0.5 - 2t to 0.5 + 2t, so total width is 4t
+    # It should fit within roughly 0.1 to 0.9 of the edge (leaving margins)
+    if (4.0 * t > 0.7) {
+      # Edge is too short for even a minimum tab - use straight line
+      return(list(
+        forward = sprintf("L %.4f %.4f", v2[1], v2[2]),
+        reverse = sprintf("L %.4f %.4f", v1[1], v1[2]),
+        start = v1,
+        end = v2,
+        type = "straight_constrained"
+      ))
+    }
+  }
+
+  if (!is.null(max_tab_size) && tab_height > max_tab_size) {
+    # Tab would be too large - scale down
+    t <- max_tab_size / (3.0 * edge_length)
+  }
 
   # Helper function: position along edge (0 to 1)
   l <- function(frac) {

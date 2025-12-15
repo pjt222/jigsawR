@@ -36,6 +36,8 @@
 generate_voronoi_pieces_internal <- function(seed, grid, size, tabsize, jitter,
                                               boundary = "rectangular",
                                               point_distribution = "fermat",
+                                              min_tab_size = NULL,
+                                              max_tab_size = NULL,
                                               fusion_groups = NULL,
                                               fusion_style = "none",
                                               fusion_opacity = 1.0) {
@@ -78,7 +80,9 @@ generate_voronoi_pieces_internal <- function(seed, grid, size, tabsize, jitter,
   adjacency <- extract_voronoi_adjacency(vor, tiles)
 
   # Generate edge map with tabs
-  edge_map <- build_voronoi_edge_map(tiles, adjacency, vor, seed, tabsize, jitter)
+  edge_map <- build_voronoi_edge_map(tiles, adjacency, vor, seed, tabsize, jitter,
+                                      min_tab_size = min_tab_size,
+                                      max_tab_size = max_tab_size)
 
   # Assemble pieces from tiles
   pieces <- assemble_voronoi_pieces(tiles, edge_map, adjacency, boundary, size)
@@ -92,7 +96,9 @@ generate_voronoi_pieces_internal <- function(seed, grid, size, tabsize, jitter,
     jitter = jitter,
     n_cells = n_cells,
     boundary = boundary,
-    point_distribution = point_distribution
+    point_distribution = point_distribution,
+    min_tab_size = min_tab_size,
+    max_tab_size = max_tab_size
   )
 
   # Handle fusion groups if specified
@@ -265,10 +271,13 @@ find_shared_voronoi_edge <- function(tiles, cell_a, cell_b) {
 #' @param seed Random seed
 #' @param tabsize Tab size percentage
 #' @param jitter Jitter percentage
+#' @param min_tab_size Minimum absolute tab size (optional)
+#' @param max_tab_size Maximum absolute tab size (optional)
 #' @return Named list of edge paths
 #'
 #' @keywords internal
-build_voronoi_edge_map <- function(tiles, adjacency, vor, seed, tabsize, jitter) {
+build_voronoi_edge_map <- function(tiles, adjacency, vor, seed, tabsize, jitter,
+                                    min_tab_size = NULL, max_tab_size = NULL) {
   edge_map <- list()
 
   for (i in seq_len(nrow(adjacency))) {
@@ -308,7 +317,9 @@ build_voronoi_edge_map <- function(tiles, adjacency, vor, seed, tabsize, jitter)
         v1, v2, seed, edge_id,
         tabsize = tabsize,
         jitter = jitter,
-        tab_direction = 1
+        tab_direction = 1,
+        min_tab_size = min_tab_size,
+        max_tab_size = max_tab_size
       )
       edge_map[[edge_key]]$cell_a <- min(cell_a, cell_b)
       edge_map[[edge_key]]$cell_b <- max(cell_a, cell_b)

@@ -45,7 +45,9 @@ generate_pieces_internal <- function(type = "rectangular",
                                      fusion_opacity = 0.3,
                                      point_distribution = "fermat",
                                      n_corner = 4,
-                                     min_piece_size = NULL) {
+                                     min_piece_size = NULL,
+                                     min_tab_size = NULL,
+                                     max_tab_size = NULL) {
 
   # Generate seed if not provided
   if (is.null(seed)) {
@@ -89,6 +91,8 @@ generate_pieces_internal <- function(type = "rectangular",
       tabsize = tabsize,
       jitter = jitter,
       point_distribution = point_distribution,
+      min_tab_size = min_tab_size,
+      max_tab_size = max_tab_size,
       fusion_groups = fusion_groups,
       fusion_style = fusion_style,
       fusion_opacity = fusion_opacity
@@ -102,6 +106,8 @@ generate_pieces_internal <- function(type = "rectangular",
       jitter = jitter,
       n_corner = n_corner,
       min_piece_size = min_piece_size,
+      min_tab_size = min_tab_size,
+      max_tab_size = max_tab_size,
       fusion_groups = fusion_groups,
       fusion_style = fusion_style,
       fusion_opacity = fusion_opacity
