@@ -38,7 +38,7 @@ generate_puzzle() → generate_pieces_internal() → apply_piece_positioning() �
 
 **Key Functions:**
 - `generate_puzzle()`: **THE main entry point** - handles all puzzle types
-  - Types: `"rectangular"`, `"hexagonal"`, `"concentric"`
+  - Types: `"rectangular"`, `"hexagonal"`, `"concentric"`, `"voronoi"`, `"random"`
   - Returns: `$svg_content`, `$pieces`, `$canvas_size`, `$files`
 
 ### PILES Notation (Fusion Groups)
@@ -196,12 +196,18 @@ For complex debugging, spawn multiple subagents in parallel to investigate diffe
 ## Current Status
 
 - **Main API**: ✅ `generate_puzzle()` - single entry point for all types
-- **Puzzle Types**: Rectangular, Hexagonal, Concentric
-- **Shiny App**: ✅ Three puzzle types, offset slider, download buttons
-- **Test Suites**: 796+ passing tests
+- **Puzzle Types**: Rectangular, Hexagonal, Concentric, Voronoi, Random
+- **Shiny App**: ✅ All puzzle types, offset slider, SVG/PNG downloads, noise fills
+- **Test Suites**: 1065+ passing tests
+
+### Recently Completed
+- ✅ **#25**: PNG download capability
+- ✅ **#41/#42**: Voronoi and Random puzzle types with tessellation
+- ✅ **#53**: Repel layout algorithm
+- ✅ **#57**: Procedural noise fill support
 
 ### Next Phase
-📋 **Enhancement #25**: Add PNG download capability to Shiny app
+📋 **Enhancement #40**: Meta Pieces (fusion) - see `docs/issue-40-implementation-plan.md`
 
 # important-instruction-reminders
 Do what has been asked; nothing more, nothing less.
