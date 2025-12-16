@@ -1706,6 +1706,154 @@ point_distribution = if (settings$type == "voronoi" && !is.null(settings$point_d
 
 ---
 
+### Insight #34: ggplot2 Extension Patterns for Custom Geoms (2025-12-16, Issue #54)
+
+**Context**: Implemented `geom_puzzle_rect()` as a ggplot2 extension to enable puzzle pieces as data visualization layers. This required understanding ggplot2's ggproto system for creating custom Stat and Geom objects.
+
+**Architecture**:
+```
+ggplot(data, aes(fill = value)) +
+  geom_puzzle_rect(rows = 3, cols = 3, seed = 42)
+        │
+        └─→ layer(stat = StatPuzzle, geom = GeomPuzzle, ...)
+                    │                       │
+                    ▼                       ▼
+            compute_panel()          draw_panel()
+            - generate_puzzle()      - coord$transform()
+            - svg_path_to_polygon()  - grid::polygonGrob()
+            - data-to-piece mapping  - split by piece_id
+```
+
+**Key Implementation Details**:
+
+1. **StatPuzzle** (`R/stat_puzzle.R`):
+   - CRITICAL: Use `required_aes = character()` NOT `required_aes = c()`
+   - The latter causes `strsplit()` error: "non-character argument"
+   ```r
+   StatPuzzle <- ggplot2::ggproto("StatPuzzle", ggplot2::Stat,
+     required_aes = character(),  # NOT c()!
+     compute_panel = function(data, scales, puzzle_type, rows, cols, ...) {
+       # Generate puzzle and convert paths to polygons
+       result <- generate_puzzle(type = puzzle_type, grid = c(rows, cols), ...)
+       pieces_df <- do.call(rbind, lapply(seq_along(result$pieces), function(i) {
+         poly <- svg_path_to_polygon(result$pieces[[i]]$path)
+         poly$piece_id <- i
+         poly
+       }))
+       # Map data to pieces with recycling
+       data_idx <- rep_len(seq_len(nrow(data)), n_pieces)
+       # ... merge data columns
+     }
+   )
+   ```
+
+2. **GeomPuzzle** (`R/geom_puzzle.R`):
+   ```r
+   GeomPuzzle <- ggplot2::ggproto("GeomPuzzle", ggplot2::Geom,
+     required_aes = c("x", "y"),
+     default_aes = ggplot2::aes(fill = "grey80", colour = "black", ...),
+     draw_key = ggplot2::draw_key_polygon,
+     draw_panel = function(data, panel_params, coord) {
+       coords <- coord$transform(data, panel_params)
+       pieces <- split(coords, coords$piece_id)
+       grobs <- lapply(pieces, function(piece) {
+         grid::polygonGrob(x = piece$x, y = piece$y, ...)
+       })
+       do.call(grid::grobTree, grobs)
+     }
+   )
+   ```
+
+3. **Bezier-to-Polygon Conversion** (`R/bezier_utils.R`):
+   ```r
+   # De Casteljau's algorithm for Bezier curve approximation
+   bezier_to_points <- function(p0, cp1, cp2, p1, n_points = 20) {
+     t <- seq(0, 1, length.out = n_points)
+     # B(t) = (1-t)³P₀ + 3(1-t)²tCP₁ + 3(1-t)t²CP₂ + t³P₁
+     x <- (1-t)^3 * p0[1] + 3*(1-t)^2*t * cp1[1] + ...
+     y <- (1-t)^3 * p0[2] + 3*(1-t)^2*t * cp1[2] + ...
+     data.frame(x = x, y = y)
+   }
+   ```
+
+**Data-to-Piece Mapping**:
+- When `nrow(data) < n_pieces`: Recycle data rows with `rep_len()`
+- When `nrow(data) >= n_pieces`: Each row maps to one piece
+- Data values are replicated to all polygon points in each piece
+
+**Key Insight**: ggplot2 extensions work by:
+1. **Stat** transforms data (our case: generates puzzle geometry from parameters)
+2. **Geom** renders transformed data (our case: draws polygons from coordinates)
+3. `coord$transform()` converts data coordinates to panel coordinates (0-1 range)
+4. grid graphics (`polygonGrob`) does actual rendering
+
+**Common Pitfalls**:
+- `required_aes = c()` vs `required_aes = character()` - the former breaks strsplit
+- Data recycling must replicate values for ALL polygon points, not just piece_id
+- Single-piece puzzles (1x1) may not work - use minimum 2x2
+
+**Files Created**:
+- `R/stat_puzzle.R`: StatPuzzle ggproto object
+- `R/geom_puzzle.R`: GeomPuzzle and `geom_puzzle_rect()`
+- `R/bezier_utils.R`: Added `bezier_to_points()`, `svg_path_to_polygon()`
+- `tests/testthat/test-ggpuzzle.R`: 32 comprehensive tests
+
+**PR**: #61 - https://github.com/pjt222/jigsawR/pull/61
+
+---
+
+### Insight #35: Fallback Config Must Mirror Primary Config (2025-12-16)
+
+**Problem**: Shiny app crashed on shinyapps.io with error:
+```
+Error in if (!is.na(min)) inputTag$attribs$min = min :
+  argument is of length zero
+```
+
+**Root Cause**: The shinyapps.io environment couldn't find `inst/config.yml`, triggering the fallback config in `get_fallback_config()`. The fallback was **missing constraints** that the Shiny UI expected:
+
+```r
+# app.R references these:
+numericInput("min_tab_size", ...,
+  min = cfg_const$min_tab_size$min,  # Returns NULL from fallback!
+  max = cfg_const$min_tab_size$max)
+```
+
+When `cfg_const$min_tab_size$min` returns `NULL`, Shiny's `numericInput()` passes it to the HTML builder, which expects a numeric value for the `if (!is.na(min))` check.
+
+**Diagnostic Clue**: The shinyapps.io log showed:
+```
+! Config file not found in any location, using hardcoded defaults
+```
+
+This indicated the fallback path was being used.
+
+**Solution**: Added missing constraints to `get_fallback_config()`:
+```r
+constraints = list(
+  # ... existing constraints ...
+  repel_margin = list(min = 0, max = 20),      # Was missing
+  repel_max_iter = list(min = 10, max = 500),  # Was missing
+  min_tab_size = list(min = 0, max = 50),      # Was missing (Issue #41, #42)
+  max_tab_size = list(min = 5, max = 100)      # Was missing (Issue #41, #42)
+)
+```
+
+**Key Insight**: When adding new configuration values to `config.yml`, **always update `get_fallback_config()` simultaneously**. The fallback serves as:
+1. Deployment failsafe (config file not found)
+2. Testing default values
+3. Documentation of expected structure
+
+**Pattern**: After adding ANY config value:
+1. Add to `inst/config.yml`
+2. Add SAME structure to `get_fallback_config()`
+3. Test with `jigsawR:::get_fallback_config()` to verify
+
+**Files Modified**:
+- `R/config_utils.R`: Added missing constraints to fallback
+
+---
+
 ## Development History
 
 ### Completed Work (Archive)
