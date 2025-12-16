@@ -168,11 +168,15 @@ get_fallback_config <- function() {
       diameter = list(min = 100, max = 500),
       tabsize = list(min = 0, max = 100),
       jitter = list(min = 0, max = 100),
-      offset = list(min = 0, max = 50),
+      offset = list(min = 0, max = 100),
+      repel_margin = list(min = 0, max = 20),
+      repel_max_iter = list(min = 10, max = 500),
       stroke_width = list(min = 0.5, max = 10),
       opacity = list(min = 0, max = 100),
       seed = list(min = 1, max = 99999),
-      label_size = list(min = 0, max = 30)  # 0 = auto-size
+      label_size = list(min = 0, max = 30),  # 0 = auto-size
+      min_tab_size = list(min = 0, max = 50),  # 0 = no constraint
+      max_tab_size = list(min = 5, max = 100)
     ),
     constants = list(
       dpi_to_mm = 25.4,
