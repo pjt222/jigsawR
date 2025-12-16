@@ -6,6 +6,12 @@ on:
       - main
   workflow_dispatch:  # Allow manual triggering
 
+# CRITICAL: Prevent concurrent deployments to shinyapps.io
+# Without this, rapid commits cause HTTP 409 errors ("tasks already in progress")
+concurrency:
+  group: shinyapps-deployment
+  cancel-in-progress: false  # Queue deployments instead of canceling
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -37,10 +43,23 @@ jobs:
           extra-packages: |
             any::rsconnect
 
+      # Deploy with automatic retry for transient errors (HTTP 409, timeouts)
       - name: Deploy to shinyapps.io
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 90
+          max_attempts: 3
+          retry_wait_seconds: 300  # 5 min wait between retries
+          warning_on_retry: true
+          command: Rscript inst/shiny-app/deploy.R
         env:
           SHINYAPPS_ACCOUNT: ${{ secrets.SHINYAPPS_ACCOUNT }}
           SHINYAPPS_TOKEN: ${{ secrets.SHINYAPPS_TOKEN }}
           SHINYAPPS_SECRET: ${{ secrets.SHINYAPPS_SECRET }}
+
+      # Wait for shinyapps.io to finalize deployment before allowing next run
+      - name: Post-deployment stabilization
+        if: success()
         run: |
-          Rscript inst/shiny-app/deploy.R
+          echo "Waiting for shinyapps.io to finalize deployment..."
+          sleep 30
