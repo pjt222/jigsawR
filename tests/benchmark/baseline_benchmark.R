@@ -47,6 +47,20 @@ concentric_configs <- list(
   large = list(grid = c(5), size = c(500), label = "5 rings")
 )
 
+# Voronoi puzzle configurations (requires deldir package)
+voronoi_configs <- list(
+  small = list(grid = c(10), size = c(200, 200), label = "vor_10cells"),
+  medium = list(grid = c(25), size = c(300, 300), label = "vor_25cells"),
+  large = list(grid = c(50), size = c(400, 400), label = "vor_50cells")
+)
+
+# Random shape puzzle configurations (requires RCDT package)
+random_configs <- list(
+  small = list(grid = c(10), size = c(200, 200), label = "rnd_10pts"),
+  medium = list(grid = c(25), size = c(300, 300), label = "rnd_25pts"),
+  large = list(grid = c(50), size = c(400, 400), label = "rnd_50pts")
+)
+
 # Fixed seed for reproducibility
 SEED <- 42
 
@@ -131,8 +145,34 @@ conc_results <- lapply(names(concentric_configs), function(name) {
 })
 conc_df <- do.call(rbind, conc_results)
 
+# Voronoi benchmarks (if deldir available)
+vor_df <- NULL
+if (requireNamespace("deldir", quietly = TRUE)) {
+  log_info("Running Voronoi puzzle benchmarks")
+  vor_results <- lapply(names(voronoi_configs), function(name) {
+    config <- voronoi_configs[[name]]
+    run_single_benchmark("voronoi", config, config$label)
+  })
+  vor_df <- do.call(rbind, vor_results)
+} else {
+  log_warn("Skipping Voronoi benchmarks - deldir package not available")
+}
+
+# Random shape benchmarks (if RCDT available)
+rnd_df <- NULL
+if (requireNamespace("RCDT", quietly = TRUE)) {
+  log_info("Running Random shape puzzle benchmarks")
+  rnd_results <- lapply(names(random_configs), function(name) {
+    config <- random_configs[[name]]
+    run_single_benchmark("random", config, config$label)
+  })
+  rnd_df <- do.call(rbind, rnd_results)
+} else {
+  log_warn("Skipping Random shape benchmarks - RCDT package not available")
+}
+
 # Combine all results
-all_results <- rbind(rect_df, hex_df, conc_df)
+all_results <- rbind(rect_df, hex_df, conc_df, vor_df, rnd_df)
 
 # Print Results -----------------------------------------------------------
 
@@ -199,6 +239,42 @@ prof_conc_file <- file.path(benchmark_dir, paste0("profile_conc_3rings_", timest
 htmlwidgets::saveWidget(prof_conc, prof_conc_file)
 log_success("Concentric profile saved to: {prof_conc_file}")
 
+# Profile Voronoi 25 cells (if available)
+prof_vor_file <- NULL
+if (!is.null(vor_df)) {
+  log_info("Profiling Voronoi 25 cells")
+  prof_vor <- profvis::profvis({
+    generate_puzzle(
+      type = "voronoi",
+      seed = SEED,
+      grid = c(25),
+      size = c(300, 300),
+      offset = 0
+    )
+  })
+  prof_vor_file <- file.path(benchmark_dir, paste0("profile_vor_25cells_", timestamp, ".html"))
+  htmlwidgets::saveWidget(prof_vor, prof_vor_file)
+  log_success("Voronoi profile saved to: {prof_vor_file}")
+}
+
+# Profile Random 25 points (if available)
+prof_rnd_file <- NULL
+if (!is.null(rnd_df)) {
+  log_info("Profiling Random 25 points")
+  prof_rnd <- profvis::profvis({
+    generate_puzzle(
+      type = "random",
+      seed = SEED,
+      grid = c(25),
+      size = c(300, 300),
+      offset = 0
+    )
+  })
+  prof_rnd_file <- file.path(benchmark_dir, paste0("profile_rnd_25pts_", timestamp, ".html"))
+  htmlwidgets::saveWidget(prof_rnd, prof_rnd_file)
+  log_success("Random profile saved to: {prof_rnd_file}")
+}
+
 # Comparative Analysis ----------------------------------------------------
 
 log_info("Generating comparative analysis")
@@ -209,36 +285,63 @@ cat("Comparative Analysis: Medium-Sized Puzzles\n")
 cat("=" , rep("=", 70), "\n", sep = "")
 cat("\n")
 
-medium_results <- all_results[all_results$label %in% c("5x5", "3 rings"), ]
+medium_results <- all_results[all_results$label %in% c("5x5", "3 rings", "vor_25cells", "rnd_25pts"), ]
 
 rect_medium <- medium_results[medium_results$type == "rectangular", ]
 hex_medium <- medium_results[medium_results$type == "hexagonal", ]
 conc_medium <- medium_results[medium_results$type == "concentric", ]
+vor_medium <- medium_results[medium_results$type == "voronoi", ]
+rnd_medium <- medium_results[medium_results$type == "random", ]
 
-rect_time <- as.numeric(rect_medium$median)
-hex_time <- as.numeric(hex_medium$median)
-conc_time <- as.numeric(conc_medium$median)
+# Build comparison vectors (handle missing types)
+type_names <- c("Rectangular", "Hexagonal", "Concentric")
+type_times <- c(
+  as.numeric(rect_medium$median),
+  as.numeric(hex_medium$median),
+  as.numeric(conc_medium$median)
+)
+type_mems <- c(
+  as.numeric(rect_medium$mem_alloc),
+  as.numeric(hex_medium$mem_alloc),
+  as.numeric(conc_medium$mem_alloc)
+)
 
-cat(sprintf("Rectangular (5x5):  %s\n", format(rect_medium$median)))
-cat(sprintf("Hexagonal (3 rings): %s\n", format(hex_medium$median)))
-cat(sprintf("Concentric (3 rings): %s\n", format(conc_medium$median)))
+cat(sprintf("Rectangular (5x5):     %s\n", format(rect_medium$median)))
+cat(sprintf("Hexagonal (3 rings):   %s\n", format(hex_medium$median)))
+cat(sprintf("Concentric (3 rings):  %s\n", format(conc_medium$median)))
+
+# Include tessellation types if available
+if (nrow(vor_medium) > 0) {
+  type_names <- c(type_names, "Voronoi")
+  type_times <- c(type_times, as.numeric(vor_medium$median))
+  type_mems <- c(type_mems, as.numeric(vor_medium$mem_alloc))
+  cat(sprintf("Voronoi (25 cells):    %s\n", format(vor_medium$median)))
+}
+if (nrow(rnd_medium) > 0) {
+  type_names <- c(type_names, "Random")
+  type_times <- c(type_times, as.numeric(rnd_medium$median))
+  type_mems <- c(type_mems, as.numeric(rnd_medium$mem_alloc))
+  cat(sprintf("Random (25 points):    %s\n", format(rnd_medium$median)))
+}
 cat("\n")
 
-fastest_type <- c("Rectangular", "Hexagonal", "Concentric")[which.min(c(rect_time, hex_time, conc_time))]
+fastest_type <- type_names[which.min(type_times)]
 cat(sprintf("Fastest type (medium): %s\n", fastest_type))
 cat("\n")
 
 # Memory comparison
-rect_mem <- as.numeric(rect_medium$mem_alloc)
-hex_mem <- as.numeric(hex_medium$mem_alloc)
-conc_mem <- as.numeric(conc_medium$mem_alloc)
-
 cat(sprintf("Memory - Rectangular:  %s\n", format(rect_medium$mem_alloc)))
 cat(sprintf("Memory - Hexagonal:    %s\n", format(hex_medium$mem_alloc)))
 cat(sprintf("Memory - Concentric:   %s\n", format(conc_medium$mem_alloc)))
+if (nrow(vor_medium) > 0) {
+  cat(sprintf("Memory - Voronoi:      %s\n", format(vor_medium$mem_alloc)))
+}
+if (nrow(rnd_medium) > 0) {
+  cat(sprintf("Memory - Random:       %s\n", format(rnd_medium$mem_alloc)))
+}
 cat("\n")
 
-most_efficient <- c("Rectangular", "Hexagonal", "Concentric")[which.min(c(rect_mem, hex_mem, conc_mem))]
+most_efficient <- type_names[which.min(type_mems)]
 cat(sprintf("Most memory efficient: %s\n", most_efficient))
 cat("\n")
 
@@ -288,6 +391,32 @@ cat(sprintf("  3 rings (13 pieces):  %s (%.2fx)\n", format(conc_results[[2]]$med
 cat(sprintf("  5 rings (25 pieces):  %s (%.2fx)\n", format(conc_results[[3]]$median), conc_large / conc_small))
 cat("\n")
 
+# Voronoi scaling (if available)
+if (!is.null(vor_df) && length(vor_results) >= 3) {
+  vor_small <- as.numeric(vor_results[[1]]$median)
+  vor_medium_time <- as.numeric(vor_results[[2]]$median)
+  vor_large <- as.numeric(vor_results[[3]]$median)
+
+  cat("Voronoi Scaling:\n")
+  cat(sprintf("  10 cells:  %s\n", format(vor_results[[1]]$median)))
+  cat(sprintf("  25 cells:  %s (%.2fx)\n", format(vor_results[[2]]$median), vor_medium_time / vor_small))
+  cat(sprintf("  50 cells:  %s (%.2fx)\n", format(vor_results[[3]]$median), vor_large / vor_small))
+  cat("\n")
+}
+
+# Random scaling (if available)
+if (!is.null(rnd_df) && length(rnd_results) >= 3) {
+  rnd_small <- as.numeric(rnd_results[[1]]$median)
+  rnd_medium_time <- as.numeric(rnd_results[[2]]$median)
+  rnd_large <- as.numeric(rnd_results[[3]]$median)
+
+  cat("Random Scaling:\n")
+  cat(sprintf("  10 points:  %s\n", format(rnd_results[[1]]$median)))
+  cat(sprintf("  25 points:  %s (%.2fx)\n", format(rnd_results[[2]]$median), rnd_medium_time / rnd_small))
+  cat(sprintf("  50 points:  %s (%.2fx)\n", format(rnd_results[[3]]$median), rnd_large / rnd_small))
+  cat("\n")
+}
+
 cat("=" , rep("=", 70), "\n", sep = "")
 cat("\n")
 
@@ -304,10 +433,22 @@ cat(sprintf("  - %s\n", summary_file))
 cat(sprintf("  - %s\n", prof_rect_file))
 cat(sprintf("  - %s\n", prof_hex_file))
 cat(sprintf("  - %s\n", prof_conc_file))
+if (!is.null(prof_vor_file)) {
+  cat(sprintf("  - %s\n", prof_vor_file))
+}
+if (!is.null(prof_rnd_file)) {
+  cat(sprintf("  - %s\n", prof_rnd_file))
+}
 cat("\n")
 
 log_info("To view profiling results:")
 cat("  browseURL('", prof_rect_file, "')\n", sep = "")
 cat("  browseURL('", prof_hex_file, "')\n", sep = "")
 cat("  browseURL('", prof_conc_file, "')\n", sep = "")
+if (!is.null(prof_vor_file)) {
+  cat("  browseURL('", prof_vor_file, "')\n", sep = "")
+}
+if (!is.null(prof_rnd_file)) {
+  cat("  browseURL('", prof_rnd_file, "')\n", sep = "")
+}
 cat("\n")
