@@ -18,7 +18,12 @@ generate_pieces_internal(
   boundary_facing = "outward",
   fusion_groups = NULL,
   fusion_style = "none",
-  fusion_opacity = 0.3
+  fusion_opacity = 0.3,
+  point_distribution = "fermat",
+  n_corner = 4,
+  min_piece_size = NULL,
+  min_tab_size = NULL,
+  max_tab_size = NULL
 )
 }
 \arguments{
@@ -49,6 +54,8 @@ generate_pieces_internal(
 \item{fusion_style}{Style for fused internal edges: "none" (invisible), "dashed", "solid"}
 
 \item{fusion_opacity}{Opacity for fused edges when style != "none" (0.0 to 1.0)}
+
+\item{point_distribution}{Point distribution method for voronoi puzzles: "fermat", "uniform", or "jittered"}
 }
 \value{
 List with:

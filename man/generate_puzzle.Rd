@@ -37,6 +37,11 @@ generate_puzzle(
   fusion_groups = NULL,
   fusion_style = "none",
   fusion_opacity = 0.3,
+  point_distribution = "fermat",
+  n_corner = 4,
+  min_piece_size = NULL,
+  min_tab_size = NULL,
+  max_tab_size = NULL,
   output = NULL
 )
 }
@@ -106,6 +111,18 @@ generate_puzzle(
 \item{fusion_style}{Style for fused internal edges: "none" (invisible), "dashed", "solid"}
 
 \item{fusion_opacity}{Opacity for fused edges when style != "none" (0.0 to 1.0)}
+
+\item{point_distribution}{Point distribution method for voronoi puzzles: "fermat", "uniform", or "jittered"}
+
+\item{n_corner}{Number of corners for base polygon in random shape puzzles (default: 4 for rectangle)}
+
+\item{min_piece_size}{Minimum piece size constraint for random shape puzzles (default: NULL for auto)}
+
+\item{min_tab_size}{Minimum absolute tab size in units (default: NULL for no limit).
+Prevents tabs from becoming too small on short edges. Only applies to voronoi/random types.}
+
+\item{max_tab_size}{Maximum absolute tab size in units (default: NULL for no limit).
+Prevents tabs from becoming too large on long edges. Only applies to voronoi/random types.}
 
 \item{output}{DEPRECATED: Use offset parameter instead}
 }
