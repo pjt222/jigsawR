@@ -57,7 +57,6 @@ test_that("uniform_batch matches single-call RNG", {
   count <- 5
 
   # Generate batch
-
   batch <- uniform_batch(seed = seed, count = count)
 
   # Generate one-by-one using same algorithm
@@ -189,8 +188,9 @@ test_that("svg_translate matches original translate_svg_path", {
 
   # Parse both results and compare numerically
   # (string comparison may fail due to whitespace differences)
-  original_nums <- as.numeric(unlist(regmatches(original, gregexpr("-?[0-9]+\\.?[0-9]*", original))))
-  optimized_nums <- as.numeric(unlist(regmatches(optimized, gregexpr("-?[0-9]+\\.?[0-9]*", optimized))))
+  number_pattern <- "-?[0-9]+\\.?[0-9]*"
+  original_nums <- as.numeric(unlist(regmatches(original, gregexpr(number_pattern, original))))
+  optimized_nums <- as.numeric(unlist(regmatches(optimized, gregexpr(number_pattern, optimized))))
 
   expect_equal(optimized_nums, original_nums, tolerance = 0.01)
 })

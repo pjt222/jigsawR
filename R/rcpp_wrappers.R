@@ -160,8 +160,8 @@ bezier_batch <- function(p0, cp1, cp2, p1, n_points = 20) {
     return(path_string)
   }
 
-  # Use the existing translate_svg_path implementation
-  # This delegates to the piece_positioning.R function
+  # Inline implementation matching translate_svg_path
+  # (avoids circular dependency and keeps fallback self-contained)
   tokens <- unlist(strsplit(path_string, "(?<=\\s)|(?=\\s)|(?<=[MLCAZ])|(?=[MLCAZ])",
                             perl = TRUE))
   tokens <- tokens[tokens != "" & tokens != " "]
