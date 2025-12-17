@@ -318,7 +318,6 @@ create_complementary_edge <- function(edge_segments, direction = "horizontal", r
 bezier_to_points <- function(p0, cp1, cp2, p1, n_points = 20) {
   t <- seq(0, 1, length.out = n_points)
 
-
   # Cubic Bezier formula: B(t) = (1-t)³P₀ + 3(1-t)²tCP₁ + 3(1-t)t²CP₂ + t³P₁
   one_minus_t <- 1 - t
   one_minus_t_sq <- one_minus_t^2
