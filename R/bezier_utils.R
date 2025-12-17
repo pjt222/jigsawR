@@ -293,3 +293,118 @@ create_complementary_edge <- function(edge_segments, direction = "horizontal", r
   
   return(flipped)
 }
+
+
+# =============================================================================
+# ggpuzzle Support Functions (for ggplot2 integration)
+# =============================================================================
+
+#' Convert cubic Bezier curve to line segments
+#'
+#' Uses De Casteljau's algorithm to approximate a cubic Bezier curve
+#' as a series of line segments suitable for polygon rendering.
+#'
+#' @param p0 Start point as c(x, y)
+#' @param cp1 First control point as c(x, y)
+#' @param cp2 Second control point as c(x, y)
+#' @param p1 End point as c(x, y)
+#' @param n_points Number of points to generate (default 20)
+#' @return Data frame with x and y columns
+#' @export
+#' @examples
+#' # Simple S-curve
+#' pts <- bezier_to_points(c(0, 0), c(0, 1), c(1, 0), c(1, 1))
+#' plot(pts$x, pts$y, type = "l")
+bezier_to_points <- function(p0, cp1, cp2, p1, n_points = 20) {
+  t <- seq(0, 1, length.out = n_points)
+
+  # Cubic Bezier formula: B(t) = (1-t)³P₀ + 3(1-t)²tCP₁ + 3(1-t)t²CP₂ + t³P₁
+  one_minus_t <- 1 - t
+  one_minus_t_sq <- one_minus_t^2
+  one_minus_t_cu <- one_minus_t^3
+  t_sq <- t^2
+  t_cu <- t^3
+
+  x <- one_minus_t_cu * p0[1] +
+       3 * one_minus_t_sq * t * cp1[1] +
+       3 * one_minus_t * t_sq * cp2[1] +
+       t_cu * p1[1]
+
+  y <- one_minus_t_cu * p0[2] +
+       3 * one_minus_t_sq * t * cp1[2] +
+       3 * one_minus_t * t_sq * cp2[2] +
+       t_cu * p1[2]
+
+  data.frame(x = x, y = y)
+}
+
+
+#' Convert SVG path to polygon coordinates
+#'
+#' Parses an SVG path string and converts it to x/y coordinates suitable
+#' for rendering with ggplot2's geom_polygon or grid's polygonGrob.
+#' Bezier curves are approximated as line segments.
+#'
+#' @param path SVG path string (d attribute)
+#' @param bezier_resolution Number of points per Bezier curve (default 20)
+#' @return Data frame with x and y columns
+#' @export
+#' @examples
+#' # Simple rectangle
+#' path <- "M 0 0 L 100 0 L 100 100 L 0 100 Z"
+#' poly <- svg_path_to_polygon(path)
+#' plot(poly$x, poly$y, type = "l")
+svg_path_to_polygon <- function(path, bezier_resolution = 20) {
+  segments <- parse_svg_path(path)
+
+  if (length(segments) == 0) {
+    return(data.frame(x = numeric(0), y = numeric(0)))
+  }
+
+  coords <- list()
+  current_x <- 0
+  current_y <- 0
+
+  for (seg in segments) {
+    if (seg$type == "M") {
+      # Move to - start point
+      coords[[length(coords) + 1]] <- data.frame(x = seg$x, y = seg$y)
+      current_x <- seg$x
+      current_y <- seg$y
+
+    } else if (seg$type == "L") {
+      # Line to
+      coords[[length(coords) + 1]] <- data.frame(x = seg$x, y = seg$y)
+      current_x <- seg$x
+      current_y <- seg$y
+
+    } else if (seg$type == "C") {
+      # Cubic Bezier curve - approximate as line segments
+      bez_pts <- bezier_to_points(
+        c(current_x, current_y),
+        c(seg$cp1x, seg$cp1y),
+        c(seg$cp2x, seg$cp2y),
+        c(seg$x, seg$y),
+        bezier_resolution
+      )
+      # Skip first point (duplicate of current position)
+      coords[[length(coords) + 1]] <- bez_pts[-1, , drop = FALSE]
+      current_x <- seg$x
+      current_y <- seg$y
+
+    } else if (seg$type == "A") {
+      # Arc - for simplicity, just add endpoint
+      # (full arc approximation could be added later)
+      coords[[length(coords) + 1]] <- data.frame(x = seg$x, y = seg$y)
+      current_x <- seg$x
+      current_y <- seg$y
+    }
+    # Z (close path) - no coordinates needed, polygon auto-closes
+  }
+
+  if (length(coords) == 0) {
+    return(data.frame(x = numeric(0), y = numeric(0)))
+  }
+
+  do.call(rbind, coords)
+}
