@@ -19,7 +19,9 @@ BugReports: https://github.com/pjt222/jigsawR/issues
 Encoding: UTF-8
 LazyData: true
 RoxygenNote: 7.3.2
+LinkingTo: Rcpp
 Imports:
+    Rcpp,
     ggplot2,
     ggforce,
     ggfx,
@@ -50,6 +52,7 @@ Suggests:
     RCDT
 VignetteBuilder: knitr
 Collate: 
+    'RcppExports.R'
     'adjacency_api.R'
     'bezier_utils.R'
     'concentric_edge_generation.R'
@@ -82,6 +85,7 @@ Collate:
     'puzzle_core_clean.R'
     'puzzle_separation.R'
     'random_puzzle.R'
+    'rcpp_wrappers.R'
     'rectangular_puzzle.R'
     'svg_utils.R'
     'tessellation_edge_generation.R'
