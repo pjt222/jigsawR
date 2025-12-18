@@ -938,6 +938,16 @@ translate_piece <- function(piece, dx, dy) {
     }
   }
 
+  # Update edge_segments if present (critical for voronoi/random puzzles)
+  if (!is.null(piece$edge_segments)) {
+    for (edge_name in names(piece$edge_segments)) {
+      seg <- piece$edge_segments[[edge_name]]
+      if (!is.null(seg) && !is.null(seg$path)) {
+        piece$edge_segments[[edge_name]]$path <- translate_svg_path(seg$path, dx, dy)
+      }
+    }
+  }
+
   piece
 }
 
