@@ -1529,6 +1529,13 @@ server <- function(input, output, session) {
     }
     # "palette" uses default behavior (colors = NULL, palette used)
 
+    # Update fusion styling from current inputs (allows changing without regeneration)
+    # These are read from pos$parameters by render_puzzle_svg()
+    fusion_style_current <- if (is.null(input$fusion_style)) "none" else input$fusion_style
+    fusion_opacity_current <- if (is.null(input$fusion_opacity)) 0.3 else input$fusion_opacity / 100
+    pos$parameters$fusion_style <- fusion_style_current
+    pos$parameters$fusion_opacity <- fusion_opacity_current
+
     # Render SVG with current styling
     svg <- tryCatch({
       result <- render_puzzle_svg(
