@@ -105,7 +105,9 @@ generate_random_pieces_internal <- function(seed, grid, size, tabsize, jitter,
     n_pieces = length(pieces),
     min_piece_size = min_piece_size,
     min_tab_size = min_tab_size,
-    max_tab_size = max_tab_size
+    max_tab_size = max_tab_size,
+    fusion_style = fusion_style,
+    fusion_opacity = fusion_opacity
   )
 
   # Handle fusion groups if specified
@@ -374,19 +376,93 @@ assemble_random_pieces <- function(tri, edge_map, adjacency, vertices,
                 mean(c(v1[2], v2[2], v3[2])))
 
     # Build SVG path by traversing edges
+    # Also track edge_segments for edge-level fusion rendering
     path <- sprintf("M %.4f %.4f ", v1[1], v1[2])
+    edge_segments <- list()  # Map neighbor_id -> path segment
 
     # Edge 1: v1 -> v2
-    edge_path_1 <- find_random_edge_for_segment(edge_map, tri_id, v1, v2, adjacency)
-    path <- paste0(path, if (!is.null(edge_path_1)) edge_path_1 else sprintf("L %.4f %.4f", v2[1], v2[2]), " ")
+    edge_result_1 <- find_random_edge_for_segment(edge_map, tri_id, v1, v2, adjacency)
+    if (!is.null(edge_result_1)) {
+      path <- paste0(path, edge_result_1$path, " ")
+      # IMPORTANT: For boundary edges (neighbor_id < 0), use unique key "boundary_1"
+      # to avoid overwrites when a piece has multiple boundary edges
+      if (edge_result_1$neighbor_id < 0) {
+        neighbor_key <- "boundary_1"
+      } else {
+        neighbor_key <- as.character(edge_result_1$neighbor_id)
+      }
+      # Include start point to create valid SVG path with "M" command
+      edge_segments[[neighbor_key]] <- list(
+        path = sprintf("M %.4f %.4f %s", v1[1], v1[2], edge_result_1$path),
+        neighbor_id = edge_result_1$neighbor_id,
+        is_boundary = edge_result_1$neighbor_id < 0
+      )
+    } else {
+      fallback_path <- sprintf("L %.4f %.4f", v2[1], v2[2])
+      path <- paste0(path, fallback_path, " ")
+      # Store fallback boundary edge
+      edge_segments[["boundary_1"]] <- list(
+        path = sprintf("M %.4f %.4f %s", v1[1], v1[2], fallback_path),
+        neighbor_id = -1,
+        is_boundary = TRUE
+      )
+    }
 
     # Edge 2: v2 -> v3
-    edge_path_2 <- find_random_edge_for_segment(edge_map, tri_id, v2, v3, adjacency)
-    path <- paste0(path, if (!is.null(edge_path_2)) edge_path_2 else sprintf("L %.4f %.4f", v3[1], v3[2]), " ")
+    edge_result_2 <- find_random_edge_for_segment(edge_map, tri_id, v2, v3, adjacency)
+    if (!is.null(edge_result_2)) {
+      path <- paste0(path, edge_result_2$path, " ")
+      # IMPORTANT: For boundary edges (neighbor_id < 0), use unique key "boundary_2"
+      # to avoid overwrites when a piece has multiple boundary edges
+      if (edge_result_2$neighbor_id < 0) {
+        neighbor_key <- "boundary_2"
+      } else {
+        neighbor_key <- as.character(edge_result_2$neighbor_id)
+      }
+      # Include start point to create valid SVG path with "M" command
+      edge_segments[[neighbor_key]] <- list(
+        path = sprintf("M %.4f %.4f %s", v2[1], v2[2], edge_result_2$path),
+        neighbor_id = edge_result_2$neighbor_id,
+        is_boundary = edge_result_2$neighbor_id < 0
+      )
+    } else {
+      fallback_path <- sprintf("L %.4f %.4f", v3[1], v3[2])
+      path <- paste0(path, fallback_path, " ")
+      # Store fallback boundary edge
+      edge_segments[["boundary_2"]] <- list(
+        path = sprintf("M %.4f %.4f %s", v2[1], v2[2], fallback_path),
+        neighbor_id = -1,
+        is_boundary = TRUE
+      )
+    }
 
     # Edge 3: v3 -> v1
-    edge_path_3 <- find_random_edge_for_segment(edge_map, tri_id, v3, v1, adjacency)
-    path <- paste0(path, if (!is.null(edge_path_3)) edge_path_3 else sprintf("L %.4f %.4f", v1[1], v1[2]), " ")
+    edge_result_3 <- find_random_edge_for_segment(edge_map, tri_id, v3, v1, adjacency)
+    if (!is.null(edge_result_3)) {
+      path <- paste0(path, edge_result_3$path, " ")
+      # IMPORTANT: For boundary edges (neighbor_id < 0), use unique key "boundary_3"
+      # to avoid overwrites when a piece has multiple boundary edges
+      if (edge_result_3$neighbor_id < 0) {
+        neighbor_key <- "boundary_3"
+      } else {
+        neighbor_key <- as.character(edge_result_3$neighbor_id)
+      }
+      # Include start point to create valid SVG path with "M" command
+      edge_segments[[neighbor_key]] <- list(
+        path = sprintf("M %.4f %.4f %s", v3[1], v3[2], edge_result_3$path),
+        neighbor_id = edge_result_3$neighbor_id,
+        is_boundary = edge_result_3$neighbor_id < 0
+      )
+    } else {
+      fallback_path <- sprintf("L %.4f %.4f", v1[1], v1[2])
+      path <- paste0(path, fallback_path, " ")
+      # Store fallback boundary edge
+      edge_segments[["boundary_3"]] <- list(
+        path = sprintf("M %.4f %.4f %s", v3[1], v3[2], fallback_path),
+        neighbor_id = -1,
+        is_boundary = TRUE
+      )
+    }
 
     path <- paste0(path, "Z")
 
@@ -403,6 +479,7 @@ assemble_random_pieces <- function(tri, edge_map, adjacency, vertices,
       id = tri_id,
       path = path,
       parsed_segments = parsed_segments,
+      edge_segments = edge_segments,  # Neighbor-keyed edge paths for fusion
       center = center,
       random_pos = list(
         vertices = list(v1, v2, v3),
@@ -433,6 +510,7 @@ assemble_random_pieces <- function(tri, edge_map, adjacency, vertices,
 #'
 #' @keywords internal
 find_random_edge_for_segment <- function(edge_map, tri_id, v1, v2, adjacency) {
+  # Returns list(path, neighbor_id) for edge-level fusion support
   tolerance <- 1e-4
 
   for (i in seq_len(nrow(adjacency))) {
@@ -469,12 +547,13 @@ find_random_edge_for_segment <- function(edge_map, tri_id, v1, v2, adjacency) {
 
       # Determine if we need forward or reverse path based on traversal direction
       # The path direction is purely geometric - independent of triangle ID
+      # Return BOTH path and neighbor_id for edge-level fusion support
       if (dist_forward < tolerance) {
         # Traversing in same direction as stored edge (v1 → v2)
-        return(edge$forward)
+        return(list(path = edge$forward, neighbor_id = other_cell))
       } else {
         # Traversing in opposite direction (v2 → v1)
-        return(edge$reverse)
+        return(list(path = edge$reverse, neighbor_id = other_cell))
       }
     }
   }
@@ -504,14 +583,26 @@ apply_random_positioning <- function(piece_result, offset) {
     return(piece_result)
   }
 
-  # Calculate piece positions based on their centroids
-  center <- size / 2
+  # Build effective centers for fusion groups
+  # Fused pieces share the same effective center (group centroid)
+  # This ensures fused pieces move together as a unit
+  effective_centers <- build_effective_centers_radial(
+    pieces,
+    piece_result$fusion_data
+  )
 
-  transformed_pieces <- lapply(pieces, function(piece) {
-    piece_center <- piece$center
+  # Calculate piece positions based on effective centers
+  canvas_center <- size / 2
 
-    # Calculate displacement direction from canvas center
-    dir <- piece_center - center
+  transformed_pieces <- lapply(seq_along(pieces), function(i) {
+    piece <- pieces[[i]]
+
+    # Use EFFECTIVE center for offset calculation (handles fusion)
+    # All pieces in a fusion group share the same effective center
+    eff_center <- effective_centers[[i]]
+
+    # Calculate displacement direction from canvas center using effective center
+    dir <- eff_center - canvas_center
     dist <- sqrt(sum(dir^2))
 
     if (dist < 0.001) {
@@ -527,10 +618,20 @@ apply_random_positioning <- function(piece_result, offset) {
     # Translate path
     translated_path <- translate_svg_path(piece$path, dx, dy)
 
+    # Translate edge_segments as well for fusion rendering
+    translated_edge_segments <- lapply(piece$edge_segments, function(seg) {
+      list(
+        path = translate_svg_path(seg$path, dx, dy),
+        neighbor_id = seg$neighbor_id,
+        is_boundary = seg$is_boundary
+      )
+    })
+
     list(
       id = piece$id,
       path = translated_path,
       parsed_segments = tryCatch(parse_svg_path(translated_path), error = function(e) NULL),
+      edge_segments = translated_edge_segments,
       center = piece$center + c(dx, dy),
       random_pos = piece$random_pos,
       type = piece$type,
