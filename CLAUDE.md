@@ -114,6 +114,13 @@ devtools::test()              # Run tests
 devtools::check()             # Full check
 ```
 
+### Quick Development Entry Point
+```r
+# Start Shiny app with clean workspace (from RStudio):
+source("inst/dev.R")
+```
+**IMPORTANT**: `inst/dev.R` is a critical development file - DO NOT DELETE.
+
 ### Generate Puzzles
 ```r
 # Rectangular
