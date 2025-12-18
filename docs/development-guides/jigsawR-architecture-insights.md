@@ -1854,6 +1854,167 @@ constraints = list(
 
 ---
 
+### Insight #36: Edge Segments Must Be Complete SVG Paths (2025-12-18)
+
+**Problem**: Voronoi and random puzzle piece strokes were completely invisible in the Shiny app preview, despite debug logging showing that:
+- `edge_segments` was correctly populated
+- `has_fusion = TRUE` was detected
+- SVG contained stroke-dasharray for fused edges
+
+**Root Cause**: The `edge_segments` stored in piece data contained **invalid SVG paths**. They stored only the curve/line commands (e.g., `L 0 44` or `C ...`) **without** the required starting `M` (moveto) command.
+
+Before fix (invalid SVG):
+```xml
+<path d="L 0.0000 44.8405" fill="none" stroke="#000000".../>
+```
+
+SVG paths **must** start with "M" (moveto) to establish the drawing position. Browsers silently fail to render paths that start with "L" or "C".
+
+**Solution**: Modified edge segment storage to prepend the starting point:
+
+```r
+# voronoi_puzzle.R and random_puzzle.R
+# Before (invalid):
+edge_segments[[neighbor_key]] <- list(
+  path = edge_result$path,  # Just "C ..." or "L ..."
+  ...
+)
+
+# After (valid):
+edge_segments[[neighbor_key]] <- list(
+  path = sprintf("M %.4f %.4f %s", v1[1], v1[2], edge_result$path),
+  ...
+)
+```
+
+**Key Insight**: When storing SVG path fragments for later rendering, always include the complete path specification including the starting "M" command. Path fragments without "M" are invalid SVG and will silently fail to render.
+
+**Diagnostic Approach**: Created debug script that:
+1. Generated puzzle through same code path as Shiny
+2. Inspected actual SVG output character-by-character
+3. Found edge paths starting with "L" instead of "M"
+
+**Files Modified**:
+- `R/voronoi_puzzle.R`: Lines 376-397 - edge segment storage with M command
+- `R/random_puzzle.R`: Lines 383-447 - edge segment storage with M command
+
+**Related**: This is similar to Insight #28 (Canvas Bounds Must Use Actual Path Geometry) - both involve ensuring SVG path data is complete and valid.
+
+---
+
+### Insight #37: Fusion Positioning Requires Effective Centers (2025-12-18)
+
+**Problem**: Voronoi and random puzzles with fusion groups did not move together when offset > 0. Fused pieces would separate because each piece calculated its own displacement independently.
+
+**Root Cause**: The `apply_voronoi_positioning()` and `apply_random_positioning()` functions were missing fusion-aware positioning logic. Each piece calculated `dx`/`dy` based on its own center:
+
+```r
+# WRONG: Each piece uses its own center
+transformed_pieces <- lapply(pieces, function(piece) {
+  piece_center <- piece$center  # Individual piece center
+  dir <- piece_center - canvas_center
+  # ... each fused piece gets DIFFERENT dx/dy
+})
+```
+
+Meanwhile, rectangular, hexagonal, and concentric puzzles correctly use `build_effective_centers_radial()` to ensure fused pieces share the same displacement.
+
+**Solution**: Apply the same pattern to voronoi/random positioning:
+
+```r
+# CORRECT: Use effective centers for fusion groups
+effective_centers <- build_effective_centers_radial(
+  pieces,
+  piece_result$fusion_data
+)
+
+transformed_pieces <- lapply(seq_along(pieces), function(i) {
+  piece <- pieces[[i]]
+  eff_center <- effective_centers[[i]]  # Group centroid for fused pieces
+  dir <- eff_center - canvas_center
+  # ... all fused pieces get SAME dx/dy
+})
+```
+
+**Key Insight**: For fusion positioning to work correctly:
+1. Compute **effective centers** for all pieces (fused pieces share group centroid)
+2. Calculate displacement using **effective center**, not individual piece center
+3. All pieces in a fusion group receive **identical translation** (dx/dy)
+4. Relative positions within the group are preserved
+
+**Verification Test**:
+```
+Distance between pieces 1-2: 104.60
+Distance without offset: 104.60
+Distance change: 0.0000 (should be ~0 for fused pieces)
+PASS: Fused pieces maintained relative position
+```
+
+**Files Modified**:
+- `R/voronoi_puzzle.R`: `apply_voronoi_positioning()` - added effective center calculation
+- `R/random_puzzle.R`: `apply_random_positioning()` - added effective center calculation
+
+**Architectural Pattern**: The positioning architecture correctly separates:
+- **Central dispatcher** (`piece_positioning.R:apply_piece_positioning()`) - routes to type-specific handlers
+- **Type-specific handlers** - implement positioning strategy appropriate for puzzle geometry
+- **Shared helper** (`build_effective_centers_radial()`) - reused across radial puzzle types
+
+When adding new puzzle types, always ensure the positioning function handles fusion groups by using effective centers.
+
+### Insight #38: Boundary Edge Keys Must Be Unique (2025-12-18)
+
+**Problem**: Some boundary pieces in voronoi and random puzzles were missing border strokes (outlines). This was visible when pieces were separated (offset > 0) - corner pieces with multiple boundary edges would only show some of their borders.
+
+**Root Cause**: In `assemble_voronoi_pieces()` and `assemble_random_pieces()`, boundary edges were being stored in `edge_segments` using the neighbor_id as the key:
+
+```r
+# WRONG: All boundary edges get key "-1" (neighbor_id < 0 for boundaries)
+neighbor_key <- as.character(edge_result$neighbor_id)  # Always "-1" for boundaries
+edge_segments[[neighbor_key]] <- list(...)  # OVERWRITES previous boundary edge!
+```
+
+When a piece has multiple boundary edges (e.g., corner pieces have 2 boundaries), they all get key `"-1"` and overwrite each other. Only the **last** boundary edge survives.
+
+**Example**: Piece 1 (corner) has 2 boundary edges:
+- Bottom edge: (41.37, 245.95) → (-44.57, 245.95) **OVERWRITTEN**
+- Left edge: (-44.57, 245.95) → (-44.57, 200.76) **KEPT**
+
+Result: Bottom boundary stroke is missing from the SVG.
+
+**Solution**: Use unique keys for boundary edges by including the vertex index:
+
+```r
+# CORRECT: Each boundary edge gets a unique key
+if (edge_result$neighbor_id < 0) {
+  neighbor_key <- sprintf("boundary_%d", j)  # j = vertex index
+} else {
+  neighbor_key <- as.character(edge_result$neighbor_id)
+}
+edge_segments[[neighbor_key]] <- list(...)
+```
+
+**Key Insight**: When storing edge segments in a map/list:
+1. Internal edges can use neighbor_id as key (each neighbor is unique)
+2. Boundary edges CANNOT use neighbor_id (all are -1)
+3. Use unique keys like `"boundary_1"`, `"boundary_2"`, etc. for boundary edges
+4. The fallback path (lines 391-396) already used this pattern correctly
+
+**Verification**:
+```
+BEFORE: Piece 1: 4 segments (1 boundary, 3 internal) - wrong!
+AFTER:  Piece 1: 5 segments (2 boundary, 3 internal) - correct!
+
+Total stroke elements increased from 19 to 23 (the missing boundary edges)
+```
+
+**Files Modified**:
+- `R/voronoi_puzzle.R`: `assemble_voronoi_pieces()` - use `"boundary_%d"` keys for boundary edges
+- `R/random_puzzle.R`: `assemble_random_pieces()` - use `"boundary_N"` keys for boundary edges
+
+**Testing**: All 82 tessellation tests + 462 fusion/positioning tests pass.
+
+---
+
 ## Development History
 
 ### Completed Work (Archive)
