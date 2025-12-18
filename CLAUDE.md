@@ -107,6 +107,7 @@ R_EXE="/mnt/c/Program Files/R/R-4.5.0/bin/Rscript.exe"
 ### Package Development
 ```r
 renv::restore()               # First time setup
+renv::install("package_name") # Install missing packages into renv
 devtools::load_all()          # Load package
 devtools::document()          # Update docs
 devtools::test()              # Run tests

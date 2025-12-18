@@ -2013,6 +2013,61 @@ Total stroke elements increased from 19 to 23 (the missing boundary edges)
 
 **Testing**: All 82 tessellation tests + 462 fusion/positioning tests pass.
 
+### Insight #39: Voronoi/Random Fusion Requires Neighbor-ID Keyed Edge Segments (2025-12-18)
+
+**Problem**: Fusion styling (dashed lines, opacity) was not rendering for voronoi and random puzzles, even though the fusion data was correctly computed and stored.
+
+**Root Cause**: A key mismatch between how edges are named in different parts of the system:
+
+1. **Rectangular/Hex/Concentric puzzles**: Edges are named by direction (`"TOP"`, `"RIGHT"`, `"BOTTOM"`, `"LEFT"`, `"OUTER"`, etc.)
+2. **Voronoi/Random puzzles**: Edges are keyed by `neighbor_id` (e.g., `"2"`, `"5"`, `"boundary_1"`)
+
+The fusion system was storing `fused_edges` with neighbor_id keys, but the renderer's `get_piece_edge_names()` was returning directional names. This mismatch caused the renderer to never find matching fused edges.
+
+**Diagnostic Pattern** (from debug scripts):
+```r
+# Check if fused_edges keys match edge_segment keys
+edge_names <- get_piece_edge_names(piece)
+fused_keys <- names(piece$fused_edges)
+cat("Edge names:", paste(edge_names, collapse = ", "), "\n")
+cat("Fused keys:", paste(fused_keys, collapse = ", "), "\n")
+# If these don't match, fusion rendering fails silently!
+```
+
+**Solution**: Extended `get_piece_edge_paths()` and `get_piece_edge_names()` in `unified_renderer.R` to handle voronoi/random pieces differently:
+
+```r
+get_piece_edge_names <- function(piece) {
+  piece_type <- piece$type %||% "rectangular"
+
+  if (piece_type %in% c("voronoi", "random")) {
+    # Use neighbor_id keys from edge_segments
+    if (is.null(piece$edge_segments)) return(character())
+    return(names(piece$edge_segments))
+  }
+  # ... directional names for other types
+}
+```
+
+**Key Insights from Debug Scripts**:
+
+1. **Edge Key Consistency**: For fusion to work, `fused_edges` keys MUST match `edge_segments` keys exactly
+2. **SVG Verification**: Check for `stroke-dasharray` and `opacity` attributes to verify fusion styling
+3. **Validation UX**: When fusion fails validation, showing actual neighbors helps users fix their PILES notation
+4. **Adjacency Data**: The puzzle result must include `adjacency` data for fusion validation to provide helpful hints
+
+**Files Modified**:
+- `R/unified_renderer.R`: Type-aware edge path/name retrieval
+- `R/unified_piece_generation.R`: Neighbor-ID keyed fusion application for voronoi/random
+- `R/adjacency_api.R`: Enhanced validation with neighbor hints
+
+**Debugging Checklist for Fusion Issues**:
+1. ✓ Is `fused_edges` populated on the pieces?
+2. ✓ Do `fused_edges` keys match `edge_segments` keys?
+3. ✓ Does SVG contain `stroke-dasharray` for dashed style?
+4. ✓ Does SVG contain `opacity` for fused edges?
+5. ✓ Is `has_fusion` correctly detected in renderer?
+
 ---
 
 ## Development History

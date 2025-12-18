@@ -80,9 +80,6 @@ noise_available <- tryCatch({
   ambient_ok <- requireNamespace("ambient", quietly = TRUE)
   png_ok <- requireNamespace("png", quietly = TRUE)
   base64enc_ok <- requireNamespace("base64enc", quietly = TRUE)
-  log_info("DEBUG: ambient package available = {ambient_ok}")
-  log_info("DEBUG: png package available = {png_ok}")
-  log_info("DEBUG: base64enc package available = {base64enc_ok}")
   ambient_ok && png_ok && base64enc_ok
 }, error = function(e) {
   log_warn("Error checking noise packages: {e$message}")
@@ -96,7 +93,6 @@ if (!noise_available) {
 # Check for Voronoi puzzle dependencies (deldir)
 voronoi_available <- tryCatch({
   deldir_ok <- requireNamespace("deldir", quietly = TRUE)
-  log_info("DEBUG: deldir package available = {deldir_ok}")
   deldir_ok
 }, error = function(e) {
   log_warn("Error checking deldir package: {e$message}")
@@ -110,7 +106,6 @@ if (!voronoi_available) {
 # Check for Random puzzle dependencies (RCDT)
 random_available <- tryCatch({
   rcdt_ok <- requireNamespace("RCDT", quietly = TRUE)
-  log_info("DEBUG: RCDT package available = {rcdt_ok}")
   rcdt_ok
 }, error = function(e) {
   log_warn("Error checking RCDT package: {e$message}")
@@ -1492,20 +1487,6 @@ server <- function(input, output, session) {
       "none"
     }
 
-    # DEBUG: Log fill and background types for noise debugging
-    log_info("DEBUG: fill_type = {input$fill_type}")
-    log_info("DEBUG: background_type = {input$background_type}")
-    if (is.list(fill_color_value)) {
-      log_info("DEBUG: fill_color_value is list, type = {fill_color_value$type}")
-    } else {
-      log_info("DEBUG: fill_color_value = {fill_color_value}")
-    }
-    if (is.list(background_value)) {
-      log_info("DEBUG: background_value is list, type = {background_value$type}")
-    } else {
-      log_info("DEBUG: background_value = {background_value}")
-    }
-
     # Get label settings
     show_labels_value <- if (is.null(input$show_labels)) FALSE else input$show_labels
     label_color_value <- if (is.null(input$label_color)) "#000000" else input$label_color
@@ -1553,12 +1534,6 @@ server <- function(input, output, session) {
         label_size = label_size_value,
         inline = TRUE  # Omit XML declaration for inline HTML embedding
       )
-      # DEBUG: Check SVG output for noise patterns
-      has_bg_noise <- grepl("bgNoisePattern", result)
-      has_piece_noise <- grepl("pieceFillNoisePattern", result)
-      log_info("DEBUG: SVG length = {nchar(result)}")
-      log_info("DEBUG: has bgNoisePattern = {has_bg_noise}")
-      log_info("DEBUG: has pieceFillNoisePattern = {has_piece_noise}")
       result
     }, error = function(e) {
       log_error("ERROR in render_puzzle_svg: {e$message}")
