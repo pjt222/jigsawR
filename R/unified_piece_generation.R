@@ -752,10 +752,13 @@ apply_fusion_to_pieces <- function(pieces_result, fusion_groups, puzzle_result) 
   }
 
   # Get edge names based on puzzle type
+  # For voronoi/random, edges are keyed by neighbor_id, not named directions
   edge_names <- switch(type,
     "rectangular" = c("N", "E", "S", "W"),
     "hexagonal" = as.character(0:5),
     "concentric" = c("INNER", "RIGHT", "OUTER", "LEFT"),
+    "voronoi" = NULL,  # Uses neighbor IDs as keys
+    "random" = NULL,   # Uses neighbor IDs as keys
     c("N", "E", "S", "W")
   )
 
@@ -769,8 +772,13 @@ apply_fusion_to_pieces <- function(pieces_result, fusion_groups, puzzle_result) 
     piece$fusion_group <- if (!is.null(group_id)) group_id else NA
 
     # Initialize fused_edges if not present
+    # For voronoi/random, leave as empty list (edges keyed by neighbor_id)
     if (is.null(piece$fused_edges)) {
-      piece$fused_edges <- setNames(as.list(rep(FALSE, length(edge_names))), edge_names)
+      if (!is.null(edge_names)) {
+        piece$fused_edges <- setNames(as.list(rep(FALSE, length(edge_names))), edge_names)
+      } else {
+        piece$fused_edges <- list()  # Voronoi/random use neighbor_id keys
+      }
     }
     if (is.null(piece$fused_neighbor_ids)) {
       piece$fused_neighbor_ids <- list()
@@ -908,6 +916,22 @@ apply_fusion_to_pieces <- function(pieces_result, fusion_groups, puzzle_result) 
             piece$fused_edges[["OUTER"]] <- TRUE
             piece$fused_neighbor_ids[["OUTER"]] <- outer_neighbor_id
           }
+        }
+      }
+    } else if (type %in% c("voronoi", "random")) {
+      # For voronoi/random puzzles, use neighbor_id as edge key
+      # This matches the edge_segments structure which is also keyed by neighbor_id
+      for (j in seq_len(nrow(neighbors))) {
+        dir <- neighbors$direction[j]
+        neighbor_id <- neighbors$neighbor_id[j]
+
+        if (is.na(neighbor_id)) next
+
+        if (is_edge_fused(piece_id, dir, fused_edge_data)) {
+          # Use neighbor_id as the edge key (as string)
+          neighbor_key <- as.character(neighbor_id)
+          piece$fused_edges[[neighbor_key]] <- TRUE
+          piece$fused_neighbor_ids[[neighbor_key]] <- neighbor_id
         }
       }
     } else {

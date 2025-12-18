@@ -214,7 +214,9 @@ generate_puzzle <- function(type = "rectangular",
         size = size,  # Needed for segment-level fusion radius calculations
         rings = if (type != "rectangular") grid[1] else NULL,
         diameter = if (type == "concentric") size[1] else NULL
-      )
+      ),
+      # Include adjacency for random/voronoi puzzles (needed for fusion validation)
+      adjacency = pieces_result$adjacency
     )
 
     # parse_fusion() handles:

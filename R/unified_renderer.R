@@ -87,8 +87,13 @@ render_puzzle_svg <- function(positioned, fill = "none", fills = NULL,
     !is.null(p$fused_edges) && any(unlist(p$fused_edges))
   }))
 
+  # Check if we have voronoi/random pieces that need edge-by-edge rendering
+  puzzle_type <- positioned$type %||% "rectangular"
+  needs_edge_rendering <- puzzle_type %in% c("voronoi", "random")
+
   # Render pieces (with or without fusion styling)
-  if (has_fusion) {
+  # For voronoi/random, always use edge-by-edge rendering for consistent strokes
+  if (has_fusion || needs_edge_rendering) {
     # For "none" mode: use opacity=0 to hide fused edges
     # For other modes: use user-specified opacity
     effective_fusion_opacity <- if (!is.null(fusion_style) && fusion_style == "none") {
@@ -1084,6 +1089,15 @@ get_piece_edge_paths <- function(piece) {
     return(split_concentric_path_into_edges(piece$path, piece))
   } else if (piece_type == "hexagonal") {
     return(split_hex_path_into_edges(piece$path, piece))
+  } else if (piece_type %in% c("voronoi", "random")) {
+    # For voronoi/random, use edge_segments keyed by neighbor_id
+    # Returns list with neighbor_id keys -> path values
+    if (is.null(piece$edge_segments) || length(piece$edge_segments) == 0) {
+      return(list())
+    }
+    # Extract just the path from each segment
+    edge_paths <- lapply(piece$edge_segments, function(seg) seg$path)
+    return(edge_paths)
   } else {
     return(split_rect_path_into_edges(piece$path, piece))
   }
@@ -1108,6 +1122,12 @@ get_piece_edge_names <- function(piece) {
     return(c("INNER", "RIGHT", "OUTER", "LEFT"))
   } else if (piece_type == "hexagonal") {
     return(as.character(0:5))
+  } else if (piece_type %in% c("voronoi", "random")) {
+    # For voronoi/random, edge names are neighbor IDs (as strings)
+    if (is.null(piece$edge_segments) || length(piece$edge_segments) == 0) {
+      return(character())
+    }
+    return(names(piece$edge_segments))
   } else {
     return(c("N", "E", "S", "W"))
   }
@@ -1197,9 +1217,15 @@ render_pieces_with_fusion_styled <- function(pieces, colors, fill, stroke_width,
   for (i in seq_along(pieces)) {
     piece <- pieces[[i]]
     color <- colors[i]
+    piece_type <- piece$type %||% "rectangular"
 
-    if (is.null(piece$fused_edges)) {
-      # Draw full outline if no fusion data
+    # Use type-aware path splitting (for all types including voronoi/random)
+    # For voronoi/random, edge_segments are keyed by neighbor_id
+    edge_paths <- get_piece_edge_paths(piece)
+    edge_names <- get_piece_edge_names(piece)
+
+    # Fallback: if no edge paths available, draw full outline
+    if (length(edge_paths) == 0 || length(edge_names) == 0) {
       edge_element <- sprintf(
         '<path d="%s" fill="none" stroke="%s" stroke-width="%.2f" stroke-linecap="round" stroke-linejoin="round"/>',
         piece$path, color, stroke_width
@@ -1207,10 +1233,6 @@ render_pieces_with_fusion_styled <- function(pieces, colors, fill, stroke_width,
       elements <- c(elements, edge_element)
       next
     }
-
-    # Use type-aware path splitting
-    edge_paths <- get_piece_edge_paths(piece)
-    edge_names <- get_piece_edge_names(piece)
 
     for (edge_name in edge_names) {
       # Check for segment-level fusion (many-to-one OUTER edges)
@@ -1251,12 +1273,14 @@ render_pieces_with_fusion_styled <- function(pieces, colors, fill, stroke_width,
     piece <- pieces[[i]]
     color <- colors[i]
     piece_id <- piece$id %||% i
+    piece_type <- piece$type %||% "rectangular"
 
-    if (is.null(piece$fused_edges)) {
+    if (is.null(piece$fused_edges) || length(piece$fused_edges) == 0) {
       next
     }
 
-    # Use type-aware path splitting
+    # Use type-aware path splitting (for all types including voronoi/random)
+    # For voronoi/random, edge_segments are keyed by neighbor_id
     edge_paths <- get_piece_edge_paths(piece)
     edge_names <- get_piece_edge_names(piece)
 

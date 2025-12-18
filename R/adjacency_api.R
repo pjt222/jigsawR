@@ -147,11 +147,42 @@ validate_fusion_group <- function(piece_ids, puzzle_result) {
     return(list(valid = TRUE, message = "Group is connected"))
   } else {
     unvisited <- ids[!visited]
+
+    # For random/voronoi puzzles, provide helpful info about actual neighbors
+    puzzle_type <- puzzle_result$parameters$type
+    neighbor_hints <- NULL
+
+    if (puzzle_type %in% c("random", "voronoi") && length(unvisited) <= 3) {
+      # Get actual neighbors for disconnected pieces to help the user
+      hints <- lapply(unvisited, function(piece_id) {
+        tryCatch({
+          neighbors <- get_piece_neighbors(piece_id, puzzle_result, include_boundary = FALSE)
+          if (nrow(neighbors) > 0) {
+            neighbor_ids <- sort(neighbors$neighbor_id)
+            sprintf("Piece %d neighbors: %s", piece_id, paste(neighbor_ids, collapse = ", "))
+          } else {
+            NULL
+          }
+        }, error = function(e) NULL)
+      })
+      neighbor_hints <- unlist(hints[!sapply(hints, is.null)])
+    }
+
+    # Build message with hints
+    base_msg <- sprintf("Pieces %s are not connected to the rest of the group",
+                        paste(unvisited, collapse = ", "))
+
+    if (!is.null(neighbor_hints) && length(neighbor_hints) > 0) {
+      full_msg <- paste0(base_msg, ". ", paste(neighbor_hints, collapse = ". "))
+    } else {
+      full_msg <- base_msg
+    }
+
     return(list(
       valid = FALSE,
-      message = sprintf("Pieces %s are not connected to the rest of the group",
-                        paste(unvisited, collapse = ", ")),
-      disconnected = unvisited
+      message = full_msg,
+      disconnected = unvisited,
+      neighbor_hints = neighbor_hints
     ))
   }
 }
