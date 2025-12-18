@@ -2068,11 +2068,78 @@ get_piece_edge_names <- function(piece) {
 4. ✓ Does SVG contain `opacity` for fused edges?
 5. ✓ Is `has_fusion` correctly detected in renderer?
 
+### Insight #40: RNG Batch Optimization via Pre-Generated Values (2025-12-18, Issue #65)
+
+**Problem**: The rectangular and hexagonal puzzle generators used per-call RNG (random number generation), calling `sin(seed) * 10000` for each random value needed. For large puzzles, this meant thousands of individual function calls with environment variable updates.
+
+**Background**: Issue #65 identified that the `uniform_batch()` C++ function existed (added in PR #64) but wasn't integrated into the puzzle generators. Benchmarks showed ~27x speedup potential:
+- C++ batch (10K values): 0.003s
+- R per-call (10K values): 0.069s
+
+**Solution**: Created an RNG Iterator pattern that pre-generates all random values needed:
+
+1. **RNG Count Calculation** (`R/rng_iterator.R`):
+   ```r
+   # Rectangular: count exact RNG calls needed
+   calc_rect_rng_count <- function(xn, yn) {
+     horizontal <- (yn - 1) * (6 + xn * 5)  # first() + next_tab() per edge
+     vertical <- (xn - 1) * (6 + yn * 5)
+     horizontal + vertical
+   }
+   ```
+
+2. **Iterator Interface** (`R/rng_iterator.R`):
+   ```r
+   create_rng_iterator <- function(seed, count) {
+     values <- uniform_batch(seed, count)  # Single batch call
+     idx <- 0L
+     list(
+       next_val = function() { idx <<- idx + 1L; values[idx] },
+       uniform = function(min, max) { idx <<- idx + 1L; min + values[idx] * (max - min) },
+       rbool = function() { idx <<- idx + 1L; values[idx] > 0.5 }
+     )
+   }
+   ```
+
+3. **Integration** (`R/rectangular_puzzle.R`, `R/hexagonal_puzzle.R`):
+   - `init_jigsaw()` / `init_hex_jigsaw()` now creates the iterator
+   - `random()` / `hex_random()` delegates to `rng$next_val()`
+   - All other code unchanged - same interface, same results
+
+**Key Design Decisions**:
+- **Same interface**: Existing `random()`, `uniform()`, `rbool()` functions work identically
+- **Deterministic**: Same seed produces identical output (verified by 1780+ tests)
+- **Graceful fallback**: Uses R implementation when C++ unavailable
+- **Pre-calculation**: RNG count calculated from grid/ring parameters before generation
+
+**RNG Call Patterns**:
+- `first()`: 1 call (e) + 5 calls (next_tab) = 6 calls
+- `next_tab()`: 5 calls (flip, b, c, d, e)
+- `hex_next()`: 6 calls (flip, a, b, c, d, e)
+
+**Files Modified**:
+- `R/rng_iterator.R` (NEW): Iterator and count calculation functions
+- `R/rectangular_puzzle.R`: Use iterator in `init_jigsaw()`
+- `R/hexagonal_puzzle.R`: Use iterator in `init_hex_jigsaw()`
+- `tests/testthat/test-rng-batch.R` (NEW): 32 tests for batch optimization
+
+**Scope Notes**:
+- Only affects rectangular and hexagonal puzzles (sine-based RNG)
+- Voronoi/random puzzles use R's built-in `set.seed()` / `runif()` - not affected
+- Concentric puzzles delegate to hexagonal - inherits optimization
+
 ---
 
 ## Development History
 
 ### Completed Work (Archive)
+
+✅ **RNG Batch Optimization** (2025-12-18, Issue #65)
+  - Integrated `uniform_batch()` C++ function into puzzle generators
+  - Created RNG iterator pattern for pre-generated batch values
+  - ~27x speedup for RNG operations (C++ vs R per-call)
+  - Files: `R/rng_iterator.R`, `R/rectangular_puzzle.R`, `R/hexagonal_puzzle.R`
+  - Tests: `tests/testthat/test-rng-batch.R` (32 tests)
 
 ✅ **Voronoi and Random Shape Puzzle Types** (2025-12-15, Issues #41, #42)
   - Added two new tessellation-based puzzle types

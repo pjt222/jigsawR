@@ -1,6 +1,9 @@
 # Direct R Translation of Draradech's Hexagonal JavaScript Jigsaw Puzzle Generator
 # Original source: https://draradech.github.io/jigsaw/jigsaw-hex.html
 # License: CC0 (Public Domain)
+#
+# Optimized with batch RNG generation using C++ uniform_batch() when available.
+# See R/rng_iterator.R for the batch optimization implementation.
 
 # Global variables for hexagonal puzzle (matching JS implementation exactly)
 .hex_jigsaw_env <- new.env()
@@ -38,22 +41,25 @@ init_hex_jigsaw <- function(seed = NULL, tabsize = 27, jitter = 5,
   # Set radius and offset for display/generation
   .hex_jigsaw_env$radius <- diameter / 2.0
   .hex_jigsaw_env$offset <- .hex_jigsaw_env$radius * 0.2
+
+  # Create RNG iterator with pre-generated batch values for performance
+  # This uses C++ uniform_batch() when available (~27x speedup)
+  rng_count <- calc_hex_rng_count(rings)
+  .hex_jigsaw_env$rng <- create_rng_iterator(seed, rng_count)
 }
 
-# Random number generator (exact JS translation)
+# Random number generator - uses pre-generated batch values
+# (Original JS translation used per-call sine-based RNG)
 hex_random <- function() {
-  x <- sin(.hex_jigsaw_env$seed) * 10000
-  .hex_jigsaw_env$seed <- .hex_jigsaw_env$seed + 1
-  return(x - floor(x))
+  .hex_jigsaw_env$rng$next_val()
 }
 
 hex_uniform <- function(min_val, max_val) {
-  r <- hex_random()
-  return(min_val + r * (max_val - min_val))
+  .hex_jigsaw_env$rng$uniform(min_val, max_val)
 }
 
 hex_rbool <- function() {
-  return(hex_random() > 0.5)
+  .hex_jigsaw_env$rng$rbool()
 }
 
 # Tab generation functions (exact JS translation)

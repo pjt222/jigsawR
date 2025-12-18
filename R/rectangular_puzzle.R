@@ -1,6 +1,9 @@
 # Direct R Translation of Draradech's JavaScript Jigsaw Puzzle Generator
 # Original source: https://gist.github.com/Draradech/35d36347312ca6d0887aa7d55f366e30
 # License: CC0 (Public Domain)
+#
+# Optimized with batch RNG generation using C++ uniform_batch() when available.
+# See R/rng_iterator.R for the batch optimization implementation.
 
 # Global variables (matching JS implementation exactly)
 .jigsaw_env <- new.env()
@@ -17,7 +20,7 @@
 #' @param xn Number of columns (default: 15)
 #' @param yn Number of rows (default: 10)
 init_jigsaw <- function(seed = NULL, tabsize = 20, jitter = 4,
-                        width = 300, height = 200, 
+                        width = 300, height = 200,
                         unit = "mm", dpi = 96, radius = 2.0,
                         xn = 15, yn = 10) {
 
@@ -42,22 +45,25 @@ init_jigsaw <- function(seed = NULL, tabsize = 20, jitter = 4,
   # Parse input (equivalent to parse_input() in JS)
   .jigsaw_env$t <- tabsize / 200.0
   .jigsaw_env$j <- jitter / 100.0
+
+  # Create RNG iterator with pre-generated batch values for performance
+  # This uses C++ uniform_batch() when available (~27x speedup)
+  rng_count <- calc_rect_rng_count(xn, yn)
+  .jigsaw_env$rng <- create_rng_iterator(seed, rng_count)
 }
 
-# Random number generator (exact JS translation)
+# Random number generator - uses pre-generated batch values
+# (Original JS translation used per-call sine-based RNG)
 random <- function() {
-  x <- sin(.jigsaw_env$seed) * 10000
-  .jigsaw_env$seed <- .jigsaw_env$seed + 1
-  return(x - floor(x))
+  .jigsaw_env$rng$next_val()
 }
 
 uniform <- function(min_val, max_val) {
-  r <- random()
-  return(min_val + r * (max_val - min_val))
+  .jigsaw_env$rng$uniform(min_val, max_val)
 }
 
 rbool <- function() {
-  return(random() > 0.5)
+  .jigsaw_env$rng$rbool()
 }
 
 # Tab generation functions (exact JS translation)
