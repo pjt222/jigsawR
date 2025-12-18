@@ -162,5 +162,318 @@ geom_puzzle_rect <- function(mapping = NULL,
 }
 
 
-# Future: geom_puzzle_hex() and geom_puzzle_concentric()
-# Will be implemented in follow-up PRs after rectangular is validated
+#' Add hexagonal puzzle layer to a ggplot
+#'
+#' Creates a hexagonal puzzle visualization where each puzzle piece represents
+#' a data point. The puzzle has a honeycomb-like structure with configurable
+#' number of rings.
+#'
+#' @param mapping Set of aesthetic mappings. Usually includes `fill`.
+#' @param data The data to visualize. Each row maps to a puzzle piece.
+#' @param stat The statistical transformation to use (default: "puzzle").
+#' @param position Position adjustment (default: "identity").
+#' @param rings Number of rings in the hexagonal puzzle (minimum 2).
+#'   Piece count formula: 3 * rings * (rings - 1) + 1.
+#'   Example: 3 rings = 19 pieces.
+#' @param tabsize Size of the puzzle tabs (default: 20).
+#' @param jitter Random variation in tab positions (default: 4).
+#' @param seed Random seed for reproducible puzzle shapes.
+#' @param bezier_resolution Points per Bezier curve (default: 20).
+#' @param do_warp Apply circular warping transformation (default: TRUE).
+#' @param do_trunc Truncate edge pieces at boundary (default: TRUE).
+#' @param do_circular_border Use perfect circular arc borders (default: FALSE).
+#' @param na.rm Remove NA values? (default: FALSE).
+#' @param show.legend Include this layer in the legend? (default: NA).
+#' @param inherit.aes Inherit aesthetics from the plot? (default: TRUE).
+#' @param ... Other arguments passed to layer().
+#'
+#' @return A ggplot2 layer.
+#'
+#' @examples
+#' \dontrun{
+#' library(ggplot2)
+#'
+#' # Hexagonal puzzle with 3 rings (19 pieces)
+#' df <- data.frame(value = 1:19)
+#' ggplot(df, aes(fill = value)) +
+#'   geom_puzzle_hex(rings = 3, seed = 42) +
+#'   scale_fill_viridis_c() +
+#'   theme_void() +
+#'   coord_fixed()
+#' }
+#'
+#' @export
+geom_puzzle_hex <- function(mapping = NULL,
+                            data = NULL,
+                            stat = "puzzle",
+                            position = "identity",
+                            rings = 3,
+                            tabsize = 20,
+                            jitter = 4,
+                            seed = NULL,
+                            bezier_resolution = 20,
+                            do_warp = TRUE,
+                            do_trunc = TRUE,
+                            do_circular_border = FALSE,
+                            ...,
+                            na.rm = FALSE,
+                            show.legend = NA,
+                            inherit.aes = TRUE) {
+
+  ggplot2::layer(
+    data = data,
+    mapping = mapping,
+    stat = StatPuzzle,
+    geom = GeomPuzzle,
+    position = position,
+    show.legend = show.legend,
+    inherit.aes = inherit.aes,
+    params = list(
+      puzzle_type = "hexagonal",
+      rings = rings,
+      tabsize = tabsize,
+      jitter = jitter,
+      seed = seed,
+      bezier_resolution = bezier_resolution,
+      do_warp = do_warp,
+      do_trunc = do_trunc,
+      do_circular_border = do_circular_border,
+      na.rm = na.rm,
+      ...
+    )
+  )
+}
+
+
+#' Add concentric puzzle layer to a ggplot
+#'
+#' Creates a concentric ring puzzle visualization where each puzzle piece
+#' represents a data point. The puzzle has a central piece surrounded by
+#' concentric rings of pieces.
+#'
+#' @param mapping Set of aesthetic mappings. Usually includes `fill`.
+#' @param data The data to visualize. Each row maps to a puzzle piece.
+#' @param stat The statistical transformation to use (default: "puzzle").
+#' @param position Position adjustment (default: "identity").
+#' @param rings Number of rings in the puzzle (minimum 1).
+#'   Piece count formula: rings * 6 + 1.
+#'   Example: 3 rings = 19 pieces (1 center + 6 + 6 + 6).
+#' @param tabsize Size of the puzzle tabs (default: 20).
+#' @param jitter Random variation in tab positions (default: 4).
+#' @param seed Random seed for reproducible puzzle shapes.
+#' @param bezier_resolution Points per Bezier curve (default: 20).
+#' @param center_shape Shape of the center piece: "hexagon" or "circle".
+#' @param do_circular_border Use perfect circular arc borders (default: FALSE).
+#' @param na.rm Remove NA values? (default: FALSE).
+#' @param show.legend Include this layer in the legend? (default: NA).
+#' @param inherit.aes Inherit aesthetics from the plot? (default: TRUE).
+#' @param ... Other arguments passed to layer().
+#'
+#' @return A ggplot2 layer.
+#'
+#' @examples
+#' \dontrun{
+#' library(ggplot2)
+#'
+#' # Concentric puzzle with 3 rings (19 pieces)
+#' df <- data.frame(value = 1:19)
+#' ggplot(df, aes(fill = value)) +
+#'   geom_puzzle_conc(rings = 3, seed = 42) +
+#'   scale_fill_viridis_c() +
+#'   theme_void() +
+#'   coord_fixed()
+#' }
+#'
+#' @export
+geom_puzzle_conc <- function(mapping = NULL,
+                             data = NULL,
+                             stat = "puzzle",
+                             position = "identity",
+                             rings = 3,
+                             tabsize = 20,
+                             jitter = 4,
+                             seed = NULL,
+                             bezier_resolution = 20,
+                             center_shape = "hexagon",
+                             do_circular_border = FALSE,
+                             ...,
+                             na.rm = FALSE,
+                             show.legend = NA,
+                             inherit.aes = TRUE) {
+
+  ggplot2::layer(
+    data = data,
+    mapping = mapping,
+    stat = StatPuzzle,
+    geom = GeomPuzzle,
+    position = position,
+    show.legend = show.legend,
+    inherit.aes = inherit.aes,
+    params = list(
+      puzzle_type = "concentric",
+      rings = rings,
+      tabsize = tabsize,
+      jitter = jitter,
+      seed = seed,
+      bezier_resolution = bezier_resolution,
+      center_shape = center_shape,
+      do_circular_border = do_circular_border,
+      na.rm = na.rm,
+      ...
+    )
+  )
+}
+
+
+#' Add Voronoi puzzle layer to a ggplot
+#'
+#' Creates a Voronoi tessellation puzzle visualization where each puzzle
+#' piece represents a data point. The puzzle pieces have organic, irregular
+#' shapes based on Voronoi cells.
+#'
+#' @param mapping Set of aesthetic mappings. Usually includes `fill`.
+#' @param data The data to visualize. Each row maps to a puzzle piece.
+#' @param stat The statistical transformation to use (default: "puzzle").
+#' @param position Position adjustment (default: "identity").
+#' @param n_cells Number of Voronoi cells (pieces) in the puzzle.
+#' @param tabsize Size of the puzzle tabs (default: 20).
+#' @param jitter Random variation in tab positions (default: 4).
+#' @param seed Random seed for reproducible puzzle shapes.
+#' @param bezier_resolution Points per Bezier curve (default: 20).
+#' @param point_distribution How to distribute seed points:
+#'   "fermat" (default, golden angle spiral), "uniform" (random), or "jittered" (grid with noise).
+#' @param na.rm Remove NA values? (default: FALSE).
+#' @param show.legend Include this layer in the legend? (default: NA).
+#' @param inherit.aes Inherit aesthetics from the plot? (default: TRUE).
+#' @param ... Other arguments passed to layer().
+#'
+#' @return A ggplot2 layer.
+#'
+#' @note Requires the 'deldir' package to be installed.
+#'
+#' @examples
+#' \dontrun{
+#' library(ggplot2)
+#'
+#' # Voronoi puzzle with 12 cells
+#' df <- data.frame(value = 1:12)
+#' ggplot(df, aes(fill = value)) +
+#'   geom_puzzle_voronoi(n_cells = 12, seed = 42) +
+#'   scale_fill_viridis_c() +
+#'   theme_void()
+#' }
+#'
+#' @export
+geom_puzzle_voronoi <- function(mapping = NULL,
+                                data = NULL,
+                                stat = "puzzle",
+                                position = "identity",
+                                n_cells = 12,
+                                tabsize = 20,
+                                jitter = 4,
+                                seed = NULL,
+                                bezier_resolution = 20,
+                                point_distribution = "fermat",
+                                ...,
+                                na.rm = FALSE,
+                                show.legend = NA,
+                                inherit.aes = TRUE) {
+
+  ggplot2::layer(
+    data = data,
+    mapping = mapping,
+    stat = StatPuzzle,
+    geom = GeomPuzzle,
+    position = position,
+    show.legend = show.legend,
+    inherit.aes = inherit.aes,
+    params = list(
+      puzzle_type = "voronoi",
+      n_cells = n_cells,
+      tabsize = tabsize,
+      jitter = jitter,
+      seed = seed,
+      bezier_resolution = bezier_resolution,
+      point_distribution = point_distribution,
+      na.rm = na.rm,
+      ...
+    )
+  )
+}
+
+
+#' Add random shape puzzle layer to a ggplot
+#'
+#' Creates a puzzle visualization with randomly-shaped pieces based on
+#' Delaunay triangulation. Each puzzle piece represents a data point.
+#' The pieces have irregular, organic shapes.
+#'
+#' @param mapping Set of aesthetic mappings. Usually includes `fill`.
+#' @param data The data to visualize. Each row maps to a puzzle piece.
+#' @param stat The statistical transformation to use (default: "puzzle").
+#' @param position Position adjustment (default: "identity").
+#' @param n_pieces Number of interior points that influence piece count.
+#'   Actual piece count depends on triangulation.
+#' @param tabsize Size of the puzzle tabs (default: 20).
+#' @param jitter Random variation in tab positions (default: 4).
+#' @param seed Random seed for reproducible puzzle shapes.
+#' @param bezier_resolution Points per Bezier curve (default: 20).
+#' @param n_corner Number of corners for the base polygon (default: 4 for rectangle).
+#' @param na.rm Remove NA values? (default: FALSE).
+#' @param show.legend Include this layer in the legend? (default: NA).
+#' @param inherit.aes Inherit aesthetics from the plot? (default: TRUE).
+#' @param ... Other arguments passed to layer().
+#'
+#' @return A ggplot2 layer.
+#'
+#' @note Requires the 'RCDT' package to be installed.
+#'
+#' @examples
+#' \dontrun{
+#' library(ggplot2)
+#'
+#' # Random shape puzzle with ~12 pieces
+#' df <- data.frame(value = 1:12)
+#' ggplot(df, aes(fill = value)) +
+#'   geom_puzzle_random(n_pieces = 12, seed = 42) +
+#'   scale_fill_viridis_c() +
+#'   theme_void()
+#' }
+#'
+#' @export
+geom_puzzle_random <- function(mapping = NULL,
+                               data = NULL,
+                               stat = "puzzle",
+                               position = "identity",
+                               n_pieces = 12,
+                               tabsize = 20,
+                               jitter = 4,
+                               seed = NULL,
+                               bezier_resolution = 20,
+                               n_corner = 4,
+                               ...,
+                               na.rm = FALSE,
+                               show.legend = NA,
+                               inherit.aes = TRUE) {
+
+  ggplot2::layer(
+    data = data,
+    mapping = mapping,
+    stat = StatPuzzle,
+    geom = GeomPuzzle,
+    position = position,
+    show.legend = show.legend,
+    inherit.aes = inherit.aes,
+    params = list(
+      puzzle_type = "random",
+      n_pieces = n_pieces,
+      tabsize = tabsize,
+      jitter = jitter,
+      seed = seed,
+      bezier_resolution = bezier_resolution,
+      n_corner = n_corner,
+      na.rm = na.rm,
+      ...
+    )
+  )
+}

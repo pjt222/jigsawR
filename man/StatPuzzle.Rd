@@ -11,13 +11,17 @@ An object of class \code{StatPuzzle} (inherits from \code{Stat}, \code{ggproto},
 StatPuzzle
 }
 \arguments{
-\item{puzzle_type}{Type of puzzle ("rectangular", "hexagonal", "concentric")}
+\item{puzzle_type}{Type of puzzle ("rectangular", "hexagonal", "concentric", "voronoi", "random")}
 
 \item{rows}{Number of rows (rectangular only)}
 
 \item{cols}{Number of columns (rectangular only)}
 
 \item{rings}{Number of rings (hexagonal/concentric only)}
+
+\item{n_cells}{Number of cells (voronoi only)}
+
+\item{n_pieces}{Number of interior points (random only)}
 
 \item{tabsize}{Tab size parameter}
 
@@ -26,6 +30,18 @@ StatPuzzle
 \item{seed}{Random seed for reproducibility}
 
 \item{bezier_resolution}{Points per Bezier curve approximation}
+
+\item{do_warp}{Apply circular warping (hexagonal only)}
+
+\item{do_trunc}{Truncate edge pieces (hexagonal only)}
+
+\item{do_circular_border}{Use perfect circular arc borders (hexagonal/concentric)}
+
+\item{center_shape}{Center piece shape for concentric: "hexagon" or "circle"}
+
+\item{point_distribution}{Point distribution for voronoi: "fermat", "uniform", "jittered"}
+
+\item{n_corner}{Number of corners for base polygon (random only)}
 }
 \description{
 This stat generates puzzle piece polygon coordinates from input data.

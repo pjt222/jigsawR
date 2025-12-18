@@ -214,3 +214,444 @@ test_that("geom_puzzle_rect handles larger puzzles", {
 
   expect_error(ggplot2::ggplot_build(p), NA)
 })
+
+# =============================================================================
+# Hexagonal puzzle tests (geom_puzzle_hex)
+# =============================================================================
+
+test_that("StatPuzzle computes hexagonal piece geometry", {
+  # 3 rings = 19 pieces
+  df <- data.frame(value = 1:19)
+
+  stat <- StatPuzzle$compute_panel(
+    data = df,
+    scales = list(),
+    puzzle_type = "hexagonal",
+    rings = 3,
+    seed = 42
+  )
+
+  expect_true("x" %in% names(stat))
+  expect_true("y" %in% names(stat))
+  expect_true("piece_id" %in% names(stat))
+
+  # Should have 19 unique pieces for 3 rings
+  expect_equal(length(unique(stat$piece_id)), 19)
+})
+
+test_that("geom_puzzle_hex creates valid ggplot layer", {
+  df <- data.frame(value = 1:19)
+
+  p <- ggplot2::ggplot(df, ggplot2::aes(fill = value)) +
+    geom_puzzle_hex(rings = 3, seed = 42)
+
+  expect_s3_class(p, "ggplot")
+  expect_equal(length(p$layers), 1)
+})
+
+test_that("geom_puzzle_hex builds without error", {
+  df <- data.frame(value = 1:7)
+
+  p <- ggplot2::ggplot(df, ggplot2::aes(fill = value)) +
+    geom_puzzle_hex(rings = 2, seed = 42)
+
+  expect_error(ggplot2::ggplot_build(p), NA)
+})
+
+test_that("geom_puzzle_hex respects seed for reproducibility", {
+  df <- data.frame(value = 1:7)
+
+  p1 <- ggplot2::ggplot(df, ggplot2::aes(fill = value)) +
+    geom_puzzle_hex(rings = 2, seed = 42)
+
+  p2 <- ggplot2::ggplot(df, ggplot2::aes(fill = value)) +
+    geom_puzzle_hex(rings = 2, seed = 42)
+
+  built1 <- ggplot2::ggplot_build(p1)
+  built2 <- ggplot2::ggplot_build(p2)
+
+  expect_equal(built1$data[[1]]$x, built2$data[[1]]$x)
+  expect_equal(built1$data[[1]]$y, built2$data[[1]]$y)
+})
+
+test_that("geom_puzzle_hex handles warp parameters", {
+  df <- data.frame(value = 1:7)
+
+  # With warp disabled
+  p <- ggplot2::ggplot(df, ggplot2::aes(fill = value)) +
+    geom_puzzle_hex(rings = 2, seed = 42, do_warp = FALSE, do_trunc = FALSE)
+
+  expect_error(ggplot2::ggplot_build(p), NA)
+})
+
+test_that("geom_puzzle_hex maps fill aesthetic correctly", {
+  df <- data.frame(value = 1:7)
+
+  p <- ggplot2::ggplot(df, ggplot2::aes(fill = value)) +
+    geom_puzzle_hex(rings = 2, seed = 42)
+
+  built <- ggplot2::ggplot_build(p)
+  fills <- unique(built$data[[1]]$fill)
+  expect_true(length(fills) > 1)
+})
+
+# =============================================================================
+# Concentric puzzle tests (geom_puzzle_conc)
+# =============================================================================
+
+test_that("StatPuzzle computes concentric piece geometry", {
+  # 3 rings = 19 pieces (1 center + 6 + 6 + 6)
+  df <- data.frame(value = 1:19)
+
+  stat <- StatPuzzle$compute_panel(
+    data = df,
+    scales = list(),
+    puzzle_type = "concentric",
+    rings = 3,
+    seed = 42
+  )
+
+  expect_true("x" %in% names(stat))
+  expect_true("y" %in% names(stat))
+  expect_true("piece_id" %in% names(stat))
+
+  # Should have 19 unique pieces
+  expect_equal(length(unique(stat$piece_id)), 19)
+})
+
+test_that("geom_puzzle_conc creates valid ggplot layer", {
+  # 2 rings = 13 pieces (1 center + 6 + 6)
+  df <- data.frame(value = 1:13)
+
+  p <- ggplot2::ggplot(df, ggplot2::aes(fill = value)) +
+    geom_puzzle_conc(rings = 2, seed = 42)
+
+  expect_s3_class(p, "ggplot")
+  expect_equal(length(p$layers), 1)
+})
+
+test_that("geom_puzzle_conc builds without error", {
+  df <- data.frame(value = 1:13)
+
+  p <- ggplot2::ggplot(df, ggplot2::aes(fill = value)) +
+    geom_puzzle_conc(rings = 2, seed = 42)
+
+  expect_error(ggplot2::ggplot_build(p), NA)
+})
+
+test_that("geom_puzzle_conc respects seed for reproducibility", {
+  df <- data.frame(value = 1:13)
+
+  p1 <- ggplot2::ggplot(df, ggplot2::aes(fill = value)) +
+    geom_puzzle_conc(rings = 2, seed = 42)
+
+  p2 <- ggplot2::ggplot(df, ggplot2::aes(fill = value)) +
+    geom_puzzle_conc(rings = 2, seed = 42)
+
+  built1 <- ggplot2::ggplot_build(p1)
+  built2 <- ggplot2::ggplot_build(p2)
+
+  expect_equal(built1$data[[1]]$x, built2$data[[1]]$x)
+  expect_equal(built1$data[[1]]$y, built2$data[[1]]$y)
+})
+
+test_that("geom_puzzle_conc handles center_shape parameter", {
+  df <- data.frame(value = 1:13)
+
+  # With circle center shape
+  p <- ggplot2::ggplot(df, ggplot2::aes(fill = value)) +
+    geom_puzzle_conc(rings = 2, seed = 42, center_shape = "circle")
+
+  expect_error(ggplot2::ggplot_build(p), NA)
+})
+
+test_that("geom_puzzle_conc maps fill aesthetic correctly", {
+  df <- data.frame(value = 1:13)
+
+  p <- ggplot2::ggplot(df, ggplot2::aes(fill = value)) +
+    geom_puzzle_conc(rings = 2, seed = 42)
+
+  built <- ggplot2::ggplot_build(p)
+  fills <- unique(built$data[[1]]$fill)
+  expect_true(length(fills) > 1)
+})
+
+# =============================================================================
+# Voronoi puzzle tests (geom_puzzle_voronoi)
+# =============================================================================
+
+test_that("StatPuzzle computes voronoi piece geometry", {
+  skip_if_not_installed("deldir")
+
+  df <- data.frame(value = 1:12)
+
+  stat <- StatPuzzle$compute_panel(
+    data = df,
+    scales = list(),
+    puzzle_type = "voronoi",
+    n_cells = 12,
+    seed = 42
+  )
+
+  expect_true("x" %in% names(stat))
+  expect_true("y" %in% names(stat))
+  expect_true("piece_id" %in% names(stat))
+
+  # Should have 12 unique pieces
+  expect_equal(length(unique(stat$piece_id)), 12)
+})
+
+test_that("geom_puzzle_voronoi creates valid ggplot layer", {
+  skip_if_not_installed("deldir")
+
+  df <- data.frame(value = 1:8)
+
+  p <- ggplot2::ggplot(df, ggplot2::aes(fill = value)) +
+    geom_puzzle_voronoi(n_cells = 8, seed = 42)
+
+  expect_s3_class(p, "ggplot")
+  expect_equal(length(p$layers), 1)
+})
+
+test_that("geom_puzzle_voronoi builds without error", {
+  skip_if_not_installed("deldir")
+
+  df <- data.frame(value = 1:10)
+
+  p <- ggplot2::ggplot(df, ggplot2::aes(fill = value)) +
+    geom_puzzle_voronoi(n_cells = 10, seed = 42)
+
+  expect_error(ggplot2::ggplot_build(p), NA)
+})
+
+test_that("geom_puzzle_voronoi respects seed for reproducibility", {
+  skip_if_not_installed("deldir")
+
+  df <- data.frame(value = 1:8)
+
+  p1 <- ggplot2::ggplot(df, ggplot2::aes(fill = value)) +
+    geom_puzzle_voronoi(n_cells = 8, seed = 42)
+
+  p2 <- ggplot2::ggplot(df, ggplot2::aes(fill = value)) +
+    geom_puzzle_voronoi(n_cells = 8, seed = 42)
+
+  built1 <- ggplot2::ggplot_build(p1)
+  built2 <- ggplot2::ggplot_build(p2)
+
+  expect_equal(built1$data[[1]]$x, built2$data[[1]]$x)
+  expect_equal(built1$data[[1]]$y, built2$data[[1]]$y)
+})
+
+test_that("geom_puzzle_voronoi handles point_distribution parameter", {
+  skip_if_not_installed("deldir")
+
+  df <- data.frame(value = 1:8)
+
+  # With uniform distribution
+  p <- ggplot2::ggplot(df, ggplot2::aes(fill = value)) +
+    geom_puzzle_voronoi(n_cells = 8, seed = 42, point_distribution = "uniform")
+
+  expect_error(ggplot2::ggplot_build(p), NA)
+})
+
+test_that("geom_puzzle_voronoi maps fill aesthetic correctly", {
+  skip_if_not_installed("deldir")
+
+  df <- data.frame(value = 1:8)
+
+  p <- ggplot2::ggplot(df, ggplot2::aes(fill = value)) +
+    geom_puzzle_voronoi(n_cells = 8, seed = 42)
+
+  built <- ggplot2::ggplot_build(p)
+  fills <- unique(built$data[[1]]$fill)
+  expect_true(length(fills) > 1)
+})
+
+# =============================================================================
+# Random puzzle tests (geom_puzzle_random)
+# =============================================================================
+
+test_that("StatPuzzle computes random piece geometry", {
+  skip_if_not_installed("RCDT")
+
+  df <- data.frame(value = 1:10)
+
+  stat <- StatPuzzle$compute_panel(
+    data = df,
+    scales = list(),
+    puzzle_type = "random",
+    n_pieces = 10,
+    seed = 42
+  )
+
+  expect_true("x" %in% names(stat))
+  expect_true("y" %in% names(stat))
+  expect_true("piece_id" %in% names(stat))
+
+  # Should have at least some pieces (exact count depends on triangulation)
+  expect_true(length(unique(stat$piece_id)) > 0)
+})
+
+test_that("geom_puzzle_random creates valid ggplot layer", {
+  skip_if_not_installed("RCDT")
+
+  df <- data.frame(value = 1:8)
+
+  p <- ggplot2::ggplot(df, ggplot2::aes(fill = value)) +
+    geom_puzzle_random(n_pieces = 8, seed = 42)
+
+  expect_s3_class(p, "ggplot")
+  expect_equal(length(p$layers), 1)
+})
+
+test_that("geom_puzzle_random builds without error", {
+  skip_if_not_installed("RCDT")
+
+  df <- data.frame(value = 1:10)
+
+  p <- ggplot2::ggplot(df, ggplot2::aes(fill = value)) +
+    geom_puzzle_random(n_pieces = 10, seed = 42)
+
+  expect_error(ggplot2::ggplot_build(p), NA)
+})
+
+test_that("geom_puzzle_random respects seed for reproducibility", {
+  skip_if_not_installed("RCDT")
+
+  df <- data.frame(value = 1:8)
+
+  p1 <- ggplot2::ggplot(df, ggplot2::aes(fill = value)) +
+    geom_puzzle_random(n_pieces = 8, seed = 42)
+
+  p2 <- ggplot2::ggplot(df, ggplot2::aes(fill = value)) +
+    geom_puzzle_random(n_pieces = 8, seed = 42)
+
+  built1 <- ggplot2::ggplot_build(p1)
+  built2 <- ggplot2::ggplot_build(p2)
+
+  expect_equal(built1$data[[1]]$x, built2$data[[1]]$x)
+  expect_equal(built1$data[[1]]$y, built2$data[[1]]$y)
+})
+
+test_that("geom_puzzle_random handles n_corner parameter", {
+  skip_if_not_installed("RCDT")
+
+  df <- data.frame(value = 1:8)
+
+  # With hexagonal base (6 corners)
+  p <- ggplot2::ggplot(df, ggplot2::aes(fill = value)) +
+    geom_puzzle_random(n_pieces = 8, seed = 42, n_corner = 6)
+
+  expect_error(ggplot2::ggplot_build(p), NA)
+})
+
+test_that("geom_puzzle_random maps fill aesthetic correctly", {
+  skip_if_not_installed("RCDT")
+
+  df <- data.frame(value = 1:8)
+
+  p <- ggplot2::ggplot(df, ggplot2::aes(fill = value)) +
+    geom_puzzle_random(n_pieces = 8, seed = 42)
+
+  built <- ggplot2::ggplot_build(p)
+  fills <- unique(built$data[[1]]$fill)
+  expect_true(length(fills) > 1)
+})
+
+# =============================================================================
+# Integration tests - all types with common patterns
+# =============================================================================
+
+test_that("all puzzle types work with theme_void", {
+  skip_if_not_installed("deldir")
+  skip_if_not_installed("RCDT")
+
+  df <- data.frame(value = 1:8)
+
+  # Rectangular
+  p_rect <- ggplot2::ggplot(df, ggplot2::aes(fill = value)) +
+    geom_puzzle_rect(rows = 2, cols = 4, seed = 42) +
+    ggplot2::theme_void()
+  expect_error(ggplot2::ggplot_build(p_rect), NA)
+
+  # Hexagonal (2 rings = 7 pieces)
+  df_hex <- data.frame(value = 1:7)
+  p_hex <- ggplot2::ggplot(df_hex, ggplot2::aes(fill = value)) +
+    geom_puzzle_hex(rings = 2, seed = 42) +
+    ggplot2::theme_void()
+  expect_error(ggplot2::ggplot_build(p_hex), NA)
+
+  # Concentric (2 rings = 13 pieces)
+  df_conc <- data.frame(value = 1:13)
+  p_conc <- ggplot2::ggplot(df_conc, ggplot2::aes(fill = value)) +
+    geom_puzzle_conc(rings = 2, seed = 42) +
+    ggplot2::theme_void()
+  expect_error(ggplot2::ggplot_build(p_conc), NA)
+
+  # Voronoi
+  p_vor <- ggplot2::ggplot(df, ggplot2::aes(fill = value)) +
+    geom_puzzle_voronoi(n_cells = 8, seed = 42) +
+    ggplot2::theme_void()
+  expect_error(ggplot2::ggplot_build(p_vor), NA)
+
+  # Random
+  p_rnd <- ggplot2::ggplot(df, ggplot2::aes(fill = value)) +
+    geom_puzzle_random(n_pieces = 8, seed = 42) +
+    ggplot2::theme_void()
+  expect_error(ggplot2::ggplot_build(p_rnd), NA)
+})
+
+test_that("all puzzle types work with viridis scale", {
+  skip_if_not_installed("viridis")
+  skip_if_not_installed("deldir")
+  skip_if_not_installed("RCDT")
+
+  df <- data.frame(value = 1:8)
+
+  # Test each type with viridis
+  types <- list(
+    rect = geom_puzzle_rect(rows = 2, cols = 4, seed = 42),
+    vor = geom_puzzle_voronoi(n_cells = 8, seed = 42),
+    rnd = geom_puzzle_random(n_pieces = 8, seed = 42)
+  )
+
+  for (geom in types) {
+    p <- ggplot2::ggplot(df, ggplot2::aes(fill = value)) +
+      geom +
+      ggplot2::scale_fill_viridis_c()
+    expect_error(ggplot2::ggplot_build(p), NA)
+  }
+})
+
+test_that("all puzzle types handle data recycling", {
+  skip_if_not_installed("deldir")
+  skip_if_not_installed("RCDT")
+
+  # Only 2 data points for puzzles with more pieces
+  df <- data.frame(value = c(1, 2))
+
+  # Rectangular (4 pieces, 2 data points)
+  p_rect <- ggplot2::ggplot(df, ggplot2::aes(fill = value)) +
+    geom_puzzle_rect(rows = 2, cols = 2, seed = 42)
+  expect_error(ggplot2::ggplot_build(p_rect), NA)
+
+  # Hexagonal (7 pieces for 2 rings)
+  p_hex <- ggplot2::ggplot(df, ggplot2::aes(fill = value)) +
+    geom_puzzle_hex(rings = 2, seed = 42)
+  expect_error(ggplot2::ggplot_build(p_hex), NA)
+
+  # Concentric (13 pieces for 2 rings)
+  p_conc <- ggplot2::ggplot(df, ggplot2::aes(fill = value)) +
+    geom_puzzle_conc(rings = 2, seed = 42)
+  expect_error(ggplot2::ggplot_build(p_conc), NA)
+
+  # Voronoi (8 pieces)
+  p_vor <- ggplot2::ggplot(df, ggplot2::aes(fill = value)) +
+    geom_puzzle_voronoi(n_cells = 8, seed = 42)
+  expect_error(ggplot2::ggplot_build(p_vor), NA)
+
+  # Random (variable pieces)
+  p_rnd <- ggplot2::ggplot(df, ggplot2::aes(fill = value)) +
+    geom_puzzle_random(n_pieces = 8, seed = 42)
+  expect_error(ggplot2::ggplot_build(p_rnd), NA)
+})

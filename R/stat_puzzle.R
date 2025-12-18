@@ -10,14 +10,22 @@ NULL
 #' Each row in the input data is mapped to a puzzle piece, with recycling
 #' if there are fewer data rows than puzzle pieces.
 #'
-#' @param puzzle_type Type of puzzle ("rectangular", "hexagonal", "concentric")
+#' @param puzzle_type Type of puzzle ("rectangular", "hexagonal", "concentric", "voronoi", "random")
 #' @param rows Number of rows (rectangular only)
 #' @param cols Number of columns (rectangular only)
 #' @param rings Number of rings (hexagonal/concentric only)
+#' @param n_cells Number of cells (voronoi only)
+#' @param n_pieces Number of interior points (random only)
 #' @param tabsize Tab size parameter
 #' @param jitter Tab jitter parameter
 #' @param seed Random seed for reproducibility
 #' @param bezier_resolution Points per Bezier curve approximation
+#' @param do_warp Apply circular warping (hexagonal only)
+#' @param do_trunc Truncate edge pieces (hexagonal only)
+#' @param do_circular_border Use perfect circular arc borders (hexagonal/concentric)
+#' @param center_shape Center piece shape for concentric: "hexagon" or "circle"
+#' @param point_distribution Point distribution for voronoi: "fermat", "uniform", "jittered"
+#' @param n_corner Number of corners for base polygon (random only)
 #' @export
 StatPuzzle <- ggplot2::ggproto("StatPuzzle", ggplot2::Stat,
 
@@ -36,35 +44,61 @@ StatPuzzle <- ggplot2::ggproto("StatPuzzle", ggplot2::Stat,
     params$rows <- params$rows %||% 3
     params$cols <- params$cols %||% 3
     params$rings <- params$rings %||% 3
+    params$n_cells <- params$n_cells %||% 12
+    params$n_pieces <- params$n_pieces %||% 12
     params$tabsize <- params$tabsize %||% 20
     params$jitter <- params$jitter %||% 4
     params$bezier_resolution <- params$bezier_resolution %||% 20
+    # Hexagonal parameters
+    params$do_warp <- params$do_warp %||% TRUE
+    params$do_trunc <- params$do_trunc %||% TRUE
+    params$do_circular_border <- params$do_circular_border %||% FALSE
+    # Concentric parameters
+    params$center_shape <- params$center_shape %||% "hexagon"
+    # Voronoi parameters
+    params$point_distribution <- params$point_distribution %||% "fermat"
+    # Random parameters
+    params$n_corner <- params$n_corner %||% 4
     params
   },
 
   compute_panel = function(data, scales, puzzle_type = "rectangular",
                            rows = 3, cols = 3, rings = 3,
+                           n_cells = 12, n_pieces = 12,
                            tabsize = 20, jitter = 4, seed = NULL,
-                           bezier_resolution = 20) {
+                           bezier_resolution = 20,
+                           do_warp = TRUE, do_trunc = TRUE, do_circular_border = FALSE,
+                           center_shape = "hexagon",
+                           point_distribution = "fermat",
+                           n_corner = 4) {
 
     # Determine grid configuration and piece count
     if (puzzle_type == "rectangular") {
       grid <- c(rows, cols)
-      n_pieces <- rows * cols
+      expected_pieces <- rows * cols
       size <- c(100, 100)  # Normalized coordinates
     } else if (puzzle_type == "hexagonal") {
       grid <- c(rings)
-      n_pieces <- 3 * rings * (rings - 1) + 1
+      expected_pieces <- 3 * rings * (rings - 1) + 1
       size <- c(100)  # Diameter
     } else if (puzzle_type == "concentric") {
       grid <- c(rings)
-      n_pieces <- rings * 6 + 1  # Center + 6 per ring
+      expected_pieces <- rings * 6 + 1  # Center + 6 per ring
       size <- c(100)
+    } else if (puzzle_type == "voronoi") {
+      grid <- c(n_cells)
+      expected_pieces <- n_cells
+      size <- c(100, 100)
+    } else if (puzzle_type == "random") {
+      grid <- c(n_pieces)
+      # Random puzzle piece count is approximate (depends on triangulation)
+      expected_pieces <- n_pieces * 2  # Upper bound estimate
+      size <- c(100, 100)
     } else {
       stop("Unknown puzzle type: ", puzzle_type, call. = FALSE)
     }
 
-    # Generate the puzzle
+    # Generate the puzzle with type-specific parameters
     result <- generate_puzzle(
       type = puzzle_type,
       grid = grid,
@@ -73,8 +107,21 @@ StatPuzzle <- ggplot2::ggproto("StatPuzzle", ggplot2::Stat,
       tabsize = tabsize,
       jitter = jitter,
       offset = 0,
-      save_files = FALSE
+      save_files = FALSE,
+      # Hexagonal parameters
+      do_warp = do_warp,
+      do_trunc = do_trunc,
+      do_circular_border = do_circular_border,
+      # Concentric parameters
+      center_shape = center_shape,
+      # Voronoi parameters
+      point_distribution = point_distribution,
+      # Random parameters
+      n_corner = n_corner
     )
+
+    # Get actual piece count from result
+    actual_pieces <- length(result$pieces)
 
     # Convert each piece path to polygon coordinates
     piece_data_list <- lapply(seq_along(result$pieces), function(i) {
@@ -102,7 +149,7 @@ StatPuzzle <- ggplot2::ggproto("StatPuzzle", ggplot2::Stat,
     # Map input data rows to pieces (1:1 with recycling)
     if (nrow(data) > 0) {
       # Create mapping from piece_id to data row index (with recycling)
-      data_idx <- rep_len(seq_len(nrow(data)), n_pieces)
+      data_idx <- rep_len(seq_len(nrow(data)), actual_pieces)
 
       # Get unique piece IDs from geometry
       unique_pieces <- unique(pieces_df$piece_id)
