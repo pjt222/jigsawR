@@ -25,6 +25,12 @@ renv/staging/
 .Rd2pdf*
 .Rbuildignore
 
+# Compiled code (C++/Rcpp)
+src/*.o
+src/*.so
+src/*.dll
+src/symbols.rds
+
 # Generated output files (generated dynamically)
 output/
 

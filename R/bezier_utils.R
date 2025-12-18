@@ -316,26 +316,8 @@ create_complementary_edge <- function(edge_segments, direction = "horizontal", r
 #' pts <- bezier_to_points(c(0, 0), c(0, 1), c(1, 0), c(1, 1))
 #' plot(pts$x, pts$y, type = "l")
 bezier_to_points <- function(p0, cp1, cp2, p1, n_points = 20) {
-  t <- seq(0, 1, length.out = n_points)
-
-  # Cubic Bezier formula: B(t) = (1-t)³P₀ + 3(1-t)²tCP₁ + 3(1-t)t²CP₂ + t³P₁
-  one_minus_t <- 1 - t
-  one_minus_t_sq <- one_minus_t^2
-  one_minus_t_cu <- one_minus_t^3
-  t_sq <- t^2
-  t_cu <- t^3
-
-  x <- one_minus_t_cu * p0[1] +
-       3 * one_minus_t_sq * t * cp1[1] +
-       3 * one_minus_t * t_sq * cp2[1] +
-       t_cu * p1[1]
-
-  y <- one_minus_t_cu * p0[2] +
-       3 * one_minus_t_sq * t * cp1[2] +
-       3 * one_minus_t * t_sq * cp2[2] +
-       t_cu * p1[2]
-
-  data.frame(x = x, y = y)
+  # Delegate to bezier_batch which uses C++ when available
+  bezier_batch(p0, cp1, cp2, p1, n_points)
 }
 
 
