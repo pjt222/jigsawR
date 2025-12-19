@@ -29,8 +29,8 @@ test_that("create_gradient_circle_png creates output", {
 
   result <- create_gradient_circle_png(size = 200)
 
-  # Function may return list or character depending on implementation
-  expect_true(is.list(result) || is.character(result))
+  # Function returns a ggplot object (S7 in ggplot2 4.0+, list-based before)
+  expect_true(inherits(result, "gg") || is.list(result) || is.character(result))
 })
 
 # =============================================================================
