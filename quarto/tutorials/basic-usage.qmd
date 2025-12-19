@@ -4,6 +4,7 @@ subtitle: "Step-by-step guide to creating your first puzzles"
 ---
 
 ```{r}
+#| label: setup
 #| include: false
 source("quarto/_setup.R")
 ```
@@ -15,6 +16,7 @@ This tutorial walks you through creating puzzles with jigsawR, from simple examp
 ## Step 1: Installation
 
 ```{r}
+#| label: installation
 #| eval: false
 # Install from GitHub
 devtools::install_github("pjt222/jigsawR")
@@ -28,6 +30,7 @@ library(jigsawR)
 Let's create a simple rectangular puzzle:
 
 ```{r}
+#| label: first-puzzle
 # Generate a 4x3 rectangular puzzle
 result <- generate_puzzle(
   type = "rectangular",
@@ -44,6 +47,7 @@ cat("Canvas size:", result$canvas_size[1], "x", result$canvas_size[2], "mm\n")
 ## Step 3: Visualize with ggplot2
 
 ```{r}
+#| label: visualize-ggplot2
 #| fig-align: center
 library(ggplot2)
 library(viridis)
@@ -64,6 +68,7 @@ ggplot() +
 ## Step 4: Save Your Puzzle
 
 ```{r}
+#| label: save-puzzle
 #| eval: false
 # Save as SVG
 writeLines(result$svg_content, "my_puzzle.svg")
@@ -87,6 +92,7 @@ ggsave("my_puzzle.png", p, width = 8, height = 6, dpi = 300)
 ### Hexagonal
 
 ```{r}
+#| label: type-hexagonal
 #| fig-align: center
 ggplot() +
   geom_puzzle_hex(
@@ -103,6 +109,7 @@ ggplot() +
 ### Concentric
 
 ```{r}
+#| label: type-concentric
 #| fig-align: center
 ggplot() +
   geom_puzzle_conc(
@@ -119,6 +126,7 @@ ggplot() +
 ### Voronoi
 
 ```{r}
+#| label: type-voronoi
 #| fig-align: center
 ggplot() +
   geom_puzzle_voronoi(
@@ -138,6 +146,7 @@ ggplot() +
 ### Change Separation
 
 ```{r}
+#| label: separation-modes
 #| fig-align: center
 library(patchwork)
 
@@ -161,6 +170,7 @@ make_offset_plot(0) + make_offset_plot(10) + make_offset_plot(20)
 ### Change Colors
 
 ```{r}
+#| label: color-palettes
 #| layout-ncol: 2
 #| fig-cap:
 #|   - "Plasma palette"
@@ -190,6 +200,7 @@ ggplot() +
 The `seed` parameter ensures you get the same puzzle every time:
 
 ```{r}
+#| label: reproducibility
 # Same seed = same puzzle
 p1 <- generate_puzzle(type = "hexagonal", grid = c(2), size = c(100), seed = 42)
 p2 <- generate_puzzle(type = "hexagonal", grid = c(2), size = c(100), seed = 42)

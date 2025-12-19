@@ -4,6 +4,7 @@ subtitle: "Colors, themes, and advanced styling options"
 ---
 
 ```{r}
+#| label: setup
 #| include: false
 source("quarto/_setup.R")
 ```
@@ -15,6 +16,7 @@ jigsawR works seamlessly with all viridis color palettes.
 ### Viridis Options
 
 ```{r}
+#| label: viridis-palettes
 #| fig-align: center
 #| fig-height: 6
 library(patchwork)
@@ -40,6 +42,7 @@ make_palette_demo <- function(pal) {
 Use any ggplot2 color scale:
 
 ```{r}
+#| label: custom-colors
 #| layout-ncol: 2
 #| fig-cap:
 #|   - "Gradient Blue to Red"
@@ -79,6 +82,7 @@ ggplot() +
 ### Minimal Themes
 
 ```{r}
+#| label: minimal-themes
 #| layout-ncol: 2
 #| fig-cap:
 #|   - "theme_void()"
@@ -108,6 +112,7 @@ ggplot() +
 ### Dark Themes
 
 ```{r}
+#| label: dark-theme
 #| fig-align: center
 ggplot() +
   geom_puzzle_hex(
@@ -130,6 +135,7 @@ ggplot() +
 ### Custom Themes
 
 ```{r}
+#| label: custom-theme
 #| fig-align: center
 # Create a custom theme
 theme_puzzle <- function() {
@@ -173,6 +179,7 @@ ggplot() +
 ### Legend Position
 
 ```{r}
+#| label: legend-position
 #| layout-ncol: 2
 #| fig-cap:
 #|   - "Legend bottom"
@@ -211,6 +218,7 @@ ggplot() +
 ### Custom Legend Labels
 
 ```{r}
+#| label: custom-legend-labels
 #| fig-align: center
 ggplot() +
   geom_puzzle_conc(
@@ -233,6 +241,7 @@ ggplot() +
 ### Add Text
 
 ```{r}
+#| label: annotation-text
 #| fig-align: center
 ggplot() +
   geom_puzzle_hex(
@@ -255,6 +264,7 @@ ggplot() +
 ### Add Labels with geom_text
 
 ```{r}
+#| label: annotation-labels
 #| fig-align: center
 # Get piece data
 puzzle <- generate_puzzle(
@@ -280,6 +290,7 @@ ggplot() +
 ### Add Borders
 
 ```{r}
+#| label: borders-basic
 #| fig-align: center
 ggplot() +
   geom_puzzle_rect(
@@ -298,6 +309,7 @@ ggplot() +
 ### Thick Borders for Emphasis
 
 ```{r}
+#| label: borders-thick
 #| fig-align: center
 
 make_border_demo <- function(lw, label) {
@@ -320,6 +332,7 @@ make_border_demo(0.25, "Thin borders") + make_border_demo(1.5, "Thick borders")
 ## Alpha Transparency
 
 ```{r}
+#| label: alpha-transparency
 #| fig-align: center
 
 make_alpha_demo <- function(a, label) {
@@ -344,6 +357,7 @@ make_alpha_demo(1.0, "alpha = 1.0 (opaque)") + make_alpha_demo(0.5, "alpha = 0.5
 ### PNG (Raster)
 
 ```{r}
+#| label: save-png
 #| eval: false
 p <- ggplot() +
   geom_puzzle_hex(
@@ -367,6 +381,7 @@ ggsave("puzzle_print.png", p, width = 12, height = 12, dpi = 600)
 ### SVG (Vector)
 
 ```{r}
+#| label: save-svg
 #| eval: false
 # Vector format - infinite scalability
 ggsave("puzzle.svg", p, width = 8, height = 8)
@@ -375,6 +390,7 @@ ggsave("puzzle.svg", p, width = 8, height = 8)
 ### PDF (Vector, Print-ready)
 
 ```{r}
+#| label: save-pdf
 #| eval: false
 ggsave("puzzle.pdf", p, width = 8, height = 8)
 ```

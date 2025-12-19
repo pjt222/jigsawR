@@ -4,6 +4,7 @@ subtitle: "Merge puzzle pieces with PILES notation"
 ---
 
 ```{r}
+#| label: setup
 #| include: false
 source("quarto/_setup.R")
 ```
@@ -33,6 +34,7 @@ PILES (Puzzle Input Line Entry System) uses a simple syntax:
 ### Without Fusion
 
 ```{r}
+#| label: no-fusion
 #| fig-align: center
 ggplot() +
   geom_puzzle_rect(
@@ -50,6 +52,7 @@ ggplot() +
 ### With Fusion
 
 ```{r}
+#| label: with-fusion
 #| fig-align: center
 #| eval: false
 ggplot() +
@@ -84,6 +87,7 @@ Pieces are numbered left-to-right, top-to-bottom:
 ```
 
 ```{r}
+#| label: rect-numbering
 #| fig-align: center
 #| fig-height: 4
 # Show piece numbers visually
@@ -105,6 +109,7 @@ ggplot() +
 Center is 1, then outward in rings:
 
 ```{r}
+#| label: hex-numbering
 #| fig-align: center
 ggplot() +
   geom_puzzle_hex(
@@ -122,6 +127,7 @@ ggplot() +
 ### Fuse Adjacent Pairs
 
 ```{r}
+#| label: fusion-pairs
 #| fig-align: center
 #| eval: false
 ggplot() +
@@ -141,6 +147,7 @@ ggplot() +
 ### Fuse Rows
 
 ```{r}
+#| label: fusion-rows
 #| fig-align: center
 #| eval: false
 ggplot() +
@@ -160,6 +167,7 @@ ggplot() +
 ### Using Row Keywords
 
 ```{r}
+#| label: fusion-row-keywords
 #| fig-align: center
 #| eval: false
 # R1, R2, R3 keywords for rows
@@ -184,6 +192,7 @@ Special keywords for hexagonal puzzles:
 ### Center + Ring1
 
 ```{r}
+#| label: hex-center-ring1
 #| fig-align: center
 #| eval: false
 ggplot() +
@@ -201,6 +210,7 @@ ggplot() +
 ### Ring2 Only
 
 ```{r}
+#| label: hex-ring2
 #| fig-align: center
 #| eval: false
 ggplot() +
@@ -218,6 +228,7 @@ ggplot() +
 ### Multiple Ring Keywords
 
 ```{r}
+#| label: hex-multi-ring
 #| fig-align: center
 #| eval: false
 ggplot() +
@@ -259,6 +270,7 @@ ggplot() +
 You can mix numeric IDs, ranges, and keywords:
 
 ```{r}
+#| label: mixed-notation
 #| fig-align: center
 #| eval: false
 # Mix of IDs and ranges
@@ -284,6 +296,7 @@ ggplot() +
 Always validate your PILES strings:
 
 ```{r}
+#| label: validation
 # Valid syntax
 validate_piles_syntax("1-2-3,4-5")
 validate_piles_syntax("1:10,20-21")
@@ -297,6 +310,7 @@ validate_piles_syntax("1-2(-3)")  # FALSE
 ### Parse PILES to List
 
 ```{r}
+#| label: parse-piles
 groups <- parse_piles("1-2-3,4-5,6:8")
 print(groups)
 ```
@@ -304,6 +318,7 @@ print(groups)
 ### Convert List to PILES
 
 ```{r}
+#| label: to-piles
 my_groups <- list(c(1, 2, 3), c(4, 5), c(10, 11, 12))
 notation <- to_piles(my_groups)
 print(notation)
@@ -314,6 +329,7 @@ print(notation)
 ### Highlight a Region
 
 ```{r}
+#| label: highlight-region
 #| fig-align: center
 #| eval: false
 # Fuse center area to highlight it
@@ -334,6 +350,7 @@ ggplot() +
 ### Create Difficulty Levels
 
 ```{r}
+#| label: difficulty-levels
 #| layout-ncol: 3
 #| fig-cap:
 #|   - "Easy (fused)"

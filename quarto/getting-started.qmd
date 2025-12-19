@@ -4,6 +4,7 @@ subtitle: "Install jigsawR and create your first puzzle"
 ---
 
 ```{r}
+#| label: setup
 #| include: false
 source("quarto/_setup.R")
 ```
@@ -40,6 +41,7 @@ Optional dependencies:
 The simplest way to create a puzzle:
 
 ```{r}
+#| label: first-puzzle
 #| message: false
 library(jigsawR)
 
@@ -59,6 +61,7 @@ cat("Canvas size:", result$canvas_size[1], "x", result$canvas_size[2], "mm\n")
 ### Visualize with ggplot2
 
 ```{r}
+#| label: visualize-ggplot2
 #| fig-align: center
 library(ggplot2)
 library(viridis)
@@ -77,6 +80,7 @@ ggplot() +
 ### Save Your Puzzle
 
 ```{r}
+#| label: save-puzzle
 #| eval: false
 # Save as SVG
 writeLines(result$svg_content, "my_puzzle.svg")
@@ -98,6 +102,7 @@ if (requireNamespace("rsvg", quietly = TRUE)) {
 Classic jigsaw with interlocking tabs on all sides.
 
 ```{r}
+#| label: type-rectangular
 #| fig-align: center
 ggplot() +
   geom_puzzle_rect(
@@ -116,6 +121,7 @@ ggplot() +
 Honeycomb pattern with beautiful curved tabs.
 
 ```{r}
+#| label: type-hexagonal
 #| fig-align: center
 ggplot() +
   geom_puzzle_hex(
@@ -134,6 +140,7 @@ ggplot() +
 Rings of pieces radiating from a central shape.
 
 ```{r}
+#| label: type-concentric
 #| fig-align: center
 ggplot() +
   geom_puzzle_conc(
@@ -153,6 +160,7 @@ ggplot() +
 Organic, natural-looking pieces based on Voronoi tessellation.
 
 ```{r}
+#| label: type-voronoi
 #| fig-align: center
 ggplot() +
   geom_puzzle_voronoi(
@@ -171,6 +179,7 @@ ggplot() +
 Unique random shapes with configurable corners.
 
 ```{r}
+#| label: type-random
 #| fig-align: center
 ggplot() +
   geom_puzzle_random(
@@ -224,6 +233,7 @@ ggplot() +
 Control how pieces are positioned:
 
 ```{r}
+#| label: separation-modes
 #| fig-align: center
 library(patchwork)
 

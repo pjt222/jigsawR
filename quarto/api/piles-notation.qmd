@@ -4,6 +4,7 @@ subtitle: "Puzzle Input Line Entry System for piece fusion"
 ---
 
 ```{r}
+#| label: setup
 #| include: false
 source("quarto/_setup.R")
 ```
@@ -43,6 +44,7 @@ Use colon for consecutive ranges:
 ### Rectangular Grid
 
 ```{r}
+#| label: rect-fusion-example
 #| layout-ncol: 2
 #| fig-cap:
 #|   - "No fusion"
@@ -78,6 +80,7 @@ ggplot() +
 ### Hexagonal Keywords
 
 ```{r}
+#| label: hex-fusion-example
 #| layout-ncol: 2
 #| fig-cap:
 #|   - "fusion_groups = 'center-ring1'"
@@ -138,6 +141,7 @@ ggplot() +
 Parse a PILES string into a list of piece ID vectors:
 
 ```{r}
+#| label: parse-piles-demo
 # Basic parsing
 result <- parse_piles("1-2-3,4-5")
 print(result)
@@ -148,6 +152,7 @@ print(result)
 Auto-detect format and parse (requires puzzle result for keywords):
 
 ```{r}
+#| label: parse-fusion-demo
 #| eval: false
 # With puzzle result for keyword expansion
 puzzle <- generate_puzzle(
@@ -165,6 +170,7 @@ groups <- parse_fusion("center-ring1", puzzle)
 Convert a list of groups back to PILES notation:
 
 ```{r}
+#| label: to-piles-demo
 groups <- list(c(1, 2, 3), c(4, 5))
 notation <- to_piles(groups)
 print(notation)
@@ -175,6 +181,7 @@ print(notation)
 Check if a PILES string is syntactically valid:
 
 ```{r}
+#| label: validate-syntax
 validate_piles_syntax("1-2-3,4-5")      # TRUE
 validate_piles_syntax("1-2(-3)")        # FALSE (invalid)
 ```
@@ -184,6 +191,7 @@ validate_piles_syntax("1-2(-3)")        # FALSE (invalid)
 ### Row Fusion
 
 ```{r}
+#| label: row-fusion
 #| fig-align: center
 #| eval: false
 # Fuse each row
@@ -207,6 +215,7 @@ ggplot() +
 ### Column Fusion
 
 ```{r}
+#| label: column-fusion
 #| fig-align: center
 #| eval: false
 # Fuse each column
@@ -232,6 +241,7 @@ ggplot() +
 Combine different notations in one string:
 
 ```{r}
+#| label: mixed-notation
 # Numeric IDs + ranges
 "1-2,5:8,10-11-12"
 
@@ -248,6 +258,7 @@ Combine different notations in one string:
 ### Error Handling
 
 ```{r}
+#| label: error-handling
 #| error: true
 # Invalid syntax
 tryCatch(
@@ -274,6 +285,7 @@ tryCatch(
 Convert between formats:
 
 ```{r}
+#| label: format-conversion
 # PILES to list
 groups <- parse_piles("1-2-3,4-5")
 print(groups)

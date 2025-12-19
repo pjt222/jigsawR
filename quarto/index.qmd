@@ -12,11 +12,13 @@ Five puzzle types, infinite possibilities. {.hero-subtitle}
 :::
 
 ```{r}
+#| label: setup
 #| include: false
 source("quarto/_setup.R")
 ```
 
 ```{r}
+#| label: hero-puzzle
 #| echo: false
 #| fig-align: center
 #| out-width: "100%"
@@ -113,6 +115,7 @@ Interactive web app for puzzle creation and download
 ## Quick Start
 
 ```{r}
+#| label: quick-start
 #| eval: false
 library(jigsawR)
 
@@ -133,6 +136,7 @@ writeLines(result$svg_content, "my_puzzle.svg")
 ::: {.puzzle-gallery}
 
 ```{r}
+#| label: gallery-preview
 #| echo: false
 #| message: false
 #| warning: false
@@ -193,6 +197,7 @@ p1 + p2 + p3 + p4
 Map data to puzzle pieces for creative data visualization:
 
 ```{r}
+#| label: ggplot2-integration
 #| fig-align: center
 #| out-width: "60%"
 
@@ -225,6 +230,7 @@ ggplot(data) +
 Powerful piece fusion with intuitive syntax:
 
 ```{r}
+#| label: piles-demo
 #| eval: false
 
 # Merge center with ring 1

@@ -4,6 +4,7 @@ subtitle: "The main entry point for creating puzzles"
 ---
 
 ```{r}
+#| label: setup
 #| include: false
 source("quarto/_setup.R")
 ```
@@ -125,6 +126,7 @@ piece <- list(
 ### Basic Usage
 
 ```{r}
+#| label: basic-rectangular
 # Rectangular puzzle
 rect <- generate_puzzle(
   type = "rectangular",
@@ -138,6 +140,7 @@ cat("Generated", length(rect$pieces), "pieces\n")
 ### Hexagonal Puzzle
 
 ```{r}
+#| label: basic-hexagonal
 hex <- generate_puzzle(
   type = "hexagonal",
   grid = c(3),
@@ -152,6 +155,7 @@ cat("Generated", length(hex$pieces), "hexagonal pieces\n")
 ### With Fusion Groups
 
 ```{r}
+#| label: with-fusion
 fused <- generate_puzzle(
   type = "rectangular",
   grid = c(4, 3),
@@ -165,6 +169,7 @@ fused <- generate_puzzle(
 ### With Offset
 
 ```{r}
+#| label: with-offset
 separated <- generate_puzzle(
   type = "hexagonal",
   grid = c(3),
@@ -177,6 +182,7 @@ separated <- generate_puzzle(
 ### Saving Files
 
 ```{r}
+#| label: saving-files
 #| eval: false
 result <- generate_puzzle(
   type = "rectangular",
@@ -194,6 +200,7 @@ cat("Saved to:", result$files$svg, "\n")
 The result can be visualized using ggpuzzle:
 
 ```{r}
+#| label: visualize-ggpuzzle
 #| fig-align: center
 
 ggplot() +
@@ -211,6 +218,7 @@ ggplot() +
 Or by writing the SVG:
 
 ```{r}
+#| label: save-svg
 #| eval: false
 result <- generate_puzzle(
   type = "hexagonal",

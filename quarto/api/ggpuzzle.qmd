@@ -4,6 +4,7 @@ subtitle: "Native ggplot2 integration for puzzle visualization"
 ---
 
 ```{r}
+#| label: setup
 #| include: false
 source("quarto/_setup.R")
 ```
@@ -27,6 +28,7 @@ jigsawR provides native ggplot2 geoms for each puzzle type, enabling seamless in
 ### geom_puzzle_rect()
 
 ```{r}
+#| label: geom-rect
 #| fig-align: center
 ggplot() +
   geom_puzzle_rect(
@@ -42,6 +44,7 @@ ggplot() +
 ### geom_puzzle_hex()
 
 ```{r}
+#| label: geom-hex
 #| fig-align: center
 ggplot() +
   geom_puzzle_hex(
@@ -57,6 +60,7 @@ ggplot() +
 ### geom_puzzle_conc()
 
 ```{r}
+#| label: geom-conc
 #| fig-align: center
 ggplot() +
   geom_puzzle_conc(
@@ -73,6 +77,7 @@ ggplot() +
 ### geom_puzzle_voronoi()
 
 ```{r}
+#| label: geom-voronoi
 #| fig-align: center
 ggplot() +
   geom_puzzle_voronoi(
@@ -88,6 +93,7 @@ ggplot() +
 ### geom_puzzle_random()
 
 ```{r}
+#| label: geom-random
 #| fig-align: center
 ggplot() +
   geom_puzzle_random(
@@ -118,6 +124,7 @@ All geoms compute these variables that can be mapped to aesthetics:
 ### Example: Mapping Data
 
 ```{r}
+#| label: mapping-data
 #| fig-align: center
 # Create some data
 data <- data.frame(
@@ -204,6 +211,7 @@ ggplot(data) +
 ggpuzzle geoms work seamlessly with other ggplot2 elements:
 
 ```{r}
+#| label: combine-geoms
 #| fig-align: center
 ggplot() +
   # Puzzle as background
@@ -232,6 +240,7 @@ ggplot() +
 Use faceting to show variations:
 
 ```{r}
+#| label: faceting
 #| fig-align: center
 #| fig-width: 10
 #| fig-height: 4
@@ -260,6 +269,7 @@ ggplot(variations) +
 Apply any ggplot2 theme:
 
 ```{r}
+#| label: theming
 #| layout-ncol: 2
 #| fig-cap:
 #|   - "theme_minimal()"
@@ -295,6 +305,7 @@ ggplot() +
 ## Saving Plots
 
 ```{r}
+#| label: saving-plots
 #| eval: false
 # Create plot
 p <- ggplot() +
