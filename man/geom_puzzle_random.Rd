@@ -15,6 +15,9 @@ geom_puzzle_random(
   seed = NULL,
   bezier_resolution = 20,
   n_corner = 4,
+  fusion_groups = NULL,
+  fusion_style = "none",
+  fusion_opacity = 0.3,
   ...,
   na.rm = FALSE,
   show.legend = NA,
@@ -42,6 +45,13 @@ Actual piece count depends on triangulation.}
 \item{bezier_resolution}{Points per Bezier curve (default: 20).}
 
 \item{n_corner}{Number of corners for the base polygon (default: 4 for rectangle).}
+
+\item{fusion_groups}{Piece fusion specification: PILES notation string (e.g., "1-2-3,4-5"),
+list of integer vectors, or NULL for no fusion.}
+
+\item{fusion_style}{Style for fused internal edges: "none" (invisible), "dashed", "solid".}
+
+\item{fusion_opacity}{Opacity for fused edges when style != "none" (0.0 to 1.0).}
 
 \item{...}{Other arguments passed to layer().}
 

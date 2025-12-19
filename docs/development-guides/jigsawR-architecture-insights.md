@@ -2128,11 +2128,225 @@ get_piece_edge_names <- function(piece) {
 - Voronoi/random puzzles use R's built-in `set.seed()` / `runif()` - not affected
 - Concentric puzzles delegate to hexagonal - inherits optimization
 
+### Insight #41: Repel Layout and Parameter Naming Edge Cases (2025-12-18)
+
+**Problem 1 - Parameter Naming Mismatch**: The `apply_hex_positioning()` and `apply_concentric_positioning()` functions looked for `params$rings` and `params$diameter`, but `generate_puzzle()` stored these as `params$grid` and `params$size`. This caused `piece_size` to be `NA`, leading to `NaN` values when calculating separation factors:
+
+```r
+# BEFORE (broken):
+rings <- params$rings        # Returns NULL
+diameter <- params$diameter  # Returns NULL
+piece_size <- diameter / (4 * rings - 2)  # NaN!
+separation_factor <- 1.0 + (offset / piece_size)  # NaN!
+```
+
+**Problem 2 - Repel Zero Vector**: When two bounding boxes have centers at exactly the same position (e.g., center piece at origin and ring 1's centroid at origin), the repulsion direction fallback sets `dx=1, dy=0`. But when `overlap_x >= overlap_y`, the code tried to push vertically using `sign(dy)`, which returned 0:
+
+```r
+# BEFORE (broken):
+if (dist < 0.001) { dx <- 1; dy <- 0 }  # Fallback direction
+# ...
+if (overlap_x < overlap_y) {
+  c(sign(dx) * push_dist, 0)  # Horizontal push
+} else {
+  c(0, sign(dy) * push_dist)  # sign(0) = 0 → zero vector!
+}
+```
+
+**Solutions**:
+
+1. **Handle both parameter naming conventions** (`R/piece_positioning.R:441-452`):
+   ```r
+   rings <- params$rings %||% params$grid[1]
+   diameter <- params$diameter %||% params$size[1]
+   ```
+
+2. **Prefer horizontal push when dy is zero** (`R/piece_positioning.R:922-928`):
+   ```r
+   if (overlap$overlap_x < overlap$overlap_y || abs(dy) < 0.001) {
+     dir_x <- if (abs(dx) < 0.001) 1 else sign(dx)
+     c(dir_x * push_dist, 0)  # Always non-zero
+   }
+   ```
+
+**Key Insight**: When a fused group (like ring 1) is radially symmetric around the origin, its centroid is at `(0, 0)` - the same as the center piece. This means:
+- **Grid layout**: Neither center nor ring 1 move (0 * factor = 0)
+- **Repel layout**: Must push them apart using bbox collision detection
+
+The repel algorithm correctly detects the overlap, but the repulsion vector must be non-zero to actually move them apart. The fix ensures that when the fallback horizontal direction `(1, 0)` is used, we always push horizontally rather than trying to push vertically with `sign(0)`.
+
+**Files Modified**:
+- `R/piece_positioning.R`: Parameter naming fix in `apply_hex_positioning()` and `apply_concentric_positioning()`, repulsion vector fix in `compute_repulsion_vector()`
+
+---
+
+### Insight #42: Geometry Processing Optimization via Cached Parsed Segments (2025-12-18, Issue #67)
+
+**Problem**: Geometry processing for a 61-piece hexagonal puzzle took ~963ms, with `calculate_pieces_bounds()` accounting for ~428ms due to redundant SVG path re-parsing.
+
+**Root Cause Analysis**:
+
+The piece generation flow was:
+1. **Geometry loop** (line 397): `parse_svg_path(hp$path)` → stored in `piece$parsed_segments`
+2. **Bounds calculation** (line 413): `calculate_pieces_bounds(pieces)` → calls `extract_path_coords(piece$path)` → **re-parses ALL paths**
+
+Each `parse_svg_path()` call takes ~7ms. For 61 pieces:
+- First parse (cached): 61 × 7ms = 427ms
+- Second parse (bounds): 61 × 7ms = 428ms (redundant!)
+
+**Solution**: Modified `extract_all_piece_coords()` to use cached `parsed_segments` if available:
+
+```r
+# R/bezier_utils.R - extract_all_piece_coords()
+coords_list <- lapply(pieces, function(piece) {
+  if (!is.null(piece$parsed_segments)) {
+    extract_coords_from_segments(piece$parsed_segments)  # ~40x faster
+  } else {
+    extract_path_coords(piece$path)  # Fallback
+  }
+})
+```
+
+Added new helper function `extract_coords_from_segments()` that extracts coordinates from pre-parsed segment objects without re-parsing.
+
+**Performance Impact**:
+
+| Metric | Before | After | Improvement |
+|--------|--------|-------|-------------|
+| `calculate_pieces_bounds()` | 428ms | 6ms | **71x faster** |
+| Processing piece geometry | 963ms | 335ms | **65% faster** |
+| Total puzzle generation | 2.36s | 1.45s | **38.6% faster** |
+
+**Key Insight**: When caching expensive parse results, ensure ALL consumers of that data use the cache. It's easy to miss secondary call sites that re-compute the same information.
+
+**Files Modified**:
+- `R/bezier_utils.R`: Added `extract_coords_from_segments()`, modified `extract_all_piece_coords()` to use cached segments
+
+---
+
+### Insight #43: Failed Optimization - Geometry vs Topology Side Mismatch (2025-12-18, Issue #66)
+
+**Problem**: Attempted to optimize edge generation by replacing O(n²) brute-force neighbor search with O(1) adjacency matrix lookups. The optimization broke piece rendering due to incorrect geo-topo mapping.
+
+**The Failed Optimization**:
+
+```r
+# WRONG: Assumed topology sides = geometry sides
+adj_matrix <- get_hex_adjacency_matrix(rings)
+neighbor_id <- adj_matrix[piece_id, side + 1]  # Uses side as topology
+neighbor_side <- (side + 3) %% 6              # Wrong assumption!
+```
+
+**Why It Failed**:
+
+The adjacency matrix uses **topology sides** (based on axial coordinate directions):
+- Side 0 = E (0°), Side 1 = NE (60°), Side 2 = NW (120°), etc.
+
+Edge generation iterates over **geometry sides** (based on vertex indices):
+- Side 0 faces 30°, Side 1 faces 90°, Side 2 faces 150°, etc.
+
+**These are NOT aligned!** The relationship requires calculating the actual geometric direction using `atan2()`:
+
+```r
+# CORRECT: Calculate actual direction to neighbor
+dir_to_neighbor <- atan2(neighbor_cy - piece_cy, neighbor_cx - piece_cx) * 180 / pi
+geo_side <- round((dir_to_neighbor - 30) / 60) %% 6  # Convert to geometry side
+```
+
+**Previous Fix History**:
+- Commit `83e9317`: fix(hexagonal): Correct topo-to-geo formula for flat-top hexagon (Issue #53)
+- Commit `277c45f`: fix: Correct hexagonal topology-to-geometry side mapping formula
+
+**Resolution**: Reverted to original brute-force vertex matching. The 520ms → 217ms speedup wasn't worth the geo-topo complexity.
+
+**Key Lessons**:
+1. **Topology ≠ Geometry**: Axial coordinate directions don't match vertex-based edge ordering
+2. **The adjacency matrix is for topology-based operations** (like fusion group detection)
+3. **Edge generation needs geometry-based matching** because vertex positions are transformed (warp/trunc)
+4. **Previous fixes exist for a reason** - always check git history before "optimizing"
+
+**Files**: No changes (optimization reverted)
+
+### Insight #44: ggplot2 Layer Parameter Passthrough Pattern (2025-12-19, Issue #68)
+
+**Problem**: The ggplot2 geom functions (`geom_puzzle_rect()`, etc.) did not support the `fusion_groups` parameter, even though `generate_puzzle()` did. Users could not fuse pieces when using the ggplot2 API.
+
+**Solution**: Implement proper ggplot2 layer parameter passthrough following the established pattern:
+
+**1. StatPuzzle setup_params() - Set Defaults**:
+```r
+setup_params = function(data, params) {
+  # ... existing params ...
+  params$fusion_groups <- params$fusion_groups %||% NULL
+  params$fusion_style <- params$fusion_style %||% "none"
+  params$fusion_opacity <- params$fusion_opacity %||% 0.3
+  params
+}
+```
+
+**2. StatPuzzle compute_panel() - Accept Parameters**:
+```r
+compute_panel = function(data, scales, ...,
+                         fusion_groups = NULL,
+                         fusion_style = "none",
+                         fusion_opacity = 0.3) {
+  # Pass to generate_puzzle()
+  result <- generate_puzzle(
+    ...,
+    fusion_groups = fusion_groups,
+    fusion_style = fusion_style,
+    fusion_opacity = fusion_opacity
+  )
+}
+```
+
+**3. geom_puzzle_*() - Expose to Users**:
+```r
+geom_puzzle_rect <- function(...,
+                              fusion_groups = NULL,
+                              fusion_style = "none",
+                              fusion_opacity = 0.3,
+                              ...) {
+  ggplot2::layer(
+    params = list(
+      ...,
+      fusion_groups = fusion_groups,
+      fusion_style = fusion_style,
+      fusion_opacity = fusion_opacity
+    )
+  )
+}
+```
+
+**Key Insights**:
+1. **Three-layer passthrough**: Parameters flow from geom → layer params → setup_params → compute_panel → generate_puzzle
+2. **Null coalescing**: Use `%||%` operator for clean default handling in setup_params
+3. **Consistent defaults**: Same defaults must appear in setup_params, compute_panel signature, and geom function signature
+4. **Documentation**: roxygen2 `@param` tags needed in geom functions for user-facing API docs
+
+**Result**: All 5 geom functions now accept fusion parameters:
+```r
+ggplot(df, aes(fill = value)) +
+  geom_puzzle_rect(rows = 3, cols = 3, seed = 42,
+                   fusion_groups = "1-2-3,7-8-9",
+                   fusion_style = "dashed",
+                   fusion_opacity = 0.5)
+```
+
+**Files Changed**: `R/stat_puzzle.R`, `R/geom_puzzle.R`
+**Tests Added**: 12 new tests in `tests/testthat/test-ggpuzzle.R`
+
 ---
 
 ## Development History
 
 ### Completed Work (Archive)
+
+✅ **ggpuzzle Fusion Groups Support** (2025-12-19, Issue #68)
+  - Added `fusion_groups`, `fusion_style`, `fusion_opacity` parameters to all 5 geom functions
+  - Proper ggplot2 layer parameter passthrough pattern
+  - 12 new tests covering all puzzle types with fusion
+  - Files: `R/stat_puzzle.R`, `R/geom_puzzle.R`, `tests/testthat/test-ggpuzzle.R`
 
 ✅ **RNG Batch Optimization** (2025-12-18, Issue #65)
   - Integrated `uniform_batch()` C++ function into puzzle generators

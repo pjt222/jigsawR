@@ -17,6 +17,9 @@ geom_puzzle_hex(
   do_warp = TRUE,
   do_trunc = TRUE,
   do_circular_border = FALSE,
+  fusion_groups = NULL,
+  fusion_style = "none",
+  fusion_opacity = 0.3,
   ...,
   na.rm = FALSE,
   show.legend = NA,
@@ -49,6 +52,13 @@ Example: 3 rings = 19 pieces.}
 \item{do_trunc}{Truncate edge pieces at boundary (default: TRUE).}
 
 \item{do_circular_border}{Use perfect circular arc borders (default: FALSE).}
+
+\item{fusion_groups}{Piece fusion specification: PILES notation string (e.g., "1-2-3,4-5"),
+list of integer vectors, or NULL for no fusion.}
+
+\item{fusion_style}{Style for fused internal edges: "none" (invisible), "dashed", "solid".}
+
+\item{fusion_opacity}{Opacity for fused edges when style != "none" (0.0 to 1.0).}
 
 \item{...}{Other arguments passed to layer().}
 

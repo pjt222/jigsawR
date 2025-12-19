@@ -16,6 +16,9 @@ geom_puzzle_conc(
   bezier_resolution = 20,
   center_shape = "hexagon",
   do_circular_border = FALSE,
+  fusion_groups = NULL,
+  fusion_style = "none",
+  fusion_opacity = 0.3,
   ...,
   na.rm = FALSE,
   show.legend = NA,
@@ -46,6 +49,13 @@ Example: 3 rings = 19 pieces (1 center + 6 + 6 + 6).}
 \item{center_shape}{Shape of the center piece: "hexagon" or "circle".}
 
 \item{do_circular_border}{Use perfect circular arc borders (default: FALSE).}
+
+\item{fusion_groups}{Piece fusion specification: PILES notation string (e.g., "1-2-3,4-5"),
+list of integer vectors, or NULL for no fusion.}
+
+\item{fusion_style}{Style for fused internal edges: "none" (invisible), "dashed", "solid".}
+
+\item{fusion_opacity}{Opacity for fused edges when style != "none" (0.0 to 1.0).}
 
 \item{...}{Other arguments passed to layer().}
 

@@ -15,6 +15,9 @@ geom_puzzle_rect(
   jitter = 4,
   seed = NULL,
   bezier_resolution = 20,
+  fusion_groups = NULL,
+  fusion_style = "none",
+  fusion_opacity = 0.3,
   ...,
   na.rm = FALSE,
   show.legend = NA,
@@ -41,6 +44,13 @@ geom_puzzle_rect(
 \item{seed}{Random seed for reproducible puzzle shapes.}
 
 \item{bezier_resolution}{Points per Bezier curve (default: 20).}
+
+\item{fusion_groups}{Piece fusion specification: PILES notation string (e.g., "1-2-3,4-5"),
+list of integer vectors, or NULL for no fusion.}
+
+\item{fusion_style}{Style for fused internal edges: "none" (invisible), "dashed", "solid".}
+
+\item{fusion_opacity}{Opacity for fused edges when style != "none" (0.0 to 1.0).}
 
 \item{...}{Other arguments passed to layer().}
 
@@ -79,6 +89,14 @@ ggplot(sales, aes(fill = value)) +
   scale_fill_gradient(low = "white", high = "steelblue") +
   theme_void() +
   labs(title = "Sales by Region")
+
+# With fusion groups
+df <- data.frame(value = 1:9)
+ggplot(df, aes(fill = value)) +
+  geom_puzzle_rect(rows = 3, cols = 3, seed = 42,
+                   fusion_groups = "1-2-3,7-8-9") +
+  scale_fill_viridis_c() +
+  theme_void()
 }
 
 }

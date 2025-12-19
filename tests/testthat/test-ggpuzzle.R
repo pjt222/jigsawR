@@ -655,3 +655,198 @@ test_that("all puzzle types handle data recycling", {
     geom_puzzle_random(n_pieces = 8, seed = 42)
   expect_error(ggplot2::ggplot_build(p_rnd), NA)
 })
+
+# =============================================================================
+# Fusion groups tests (Issue #68)
+# =============================================================================
+
+test_that("geom_puzzle_rect accepts fusion_groups parameter", {
+  df <- data.frame(value = 1:9)
+
+  # PILES notation string
+  p <- ggplot2::ggplot(df, ggplot2::aes(fill = value)) +
+    geom_puzzle_rect(rows = 3, cols = 3, seed = 42,
+                     fusion_groups = "1-2-3,7-8-9")
+
+  expect_s3_class(p, "ggplot")
+  expect_error(ggplot2::ggplot_build(p), NA)
+})
+
+test_that("geom_puzzle_rect accepts fusion_groups as list", {
+  df <- data.frame(value = 1:9)
+
+  # List of integer vectors
+  p <- ggplot2::ggplot(df, ggplot2::aes(fill = value)) +
+    geom_puzzle_rect(rows = 3, cols = 3, seed = 42,
+                     fusion_groups = list(c(1, 2, 3), c(7, 8, 9)))
+
+  expect_s3_class(p, "ggplot")
+  expect_error(ggplot2::ggplot_build(p), NA)
+})
+
+test_that("geom_puzzle_rect accepts fusion_style parameter", {
+  df <- data.frame(value = 1:9)
+
+  # Test each fusion style
+  for (style in c("none", "dashed", "solid")) {
+    p <- ggplot2::ggplot(df, ggplot2::aes(fill = value)) +
+      geom_puzzle_rect(rows = 3, cols = 3, seed = 42,
+                       fusion_groups = "1-2-3",
+                       fusion_style = style)
+
+    expect_error(ggplot2::ggplot_build(p), NA)
+  }
+})
+
+test_that("geom_puzzle_rect accepts fusion_opacity parameter", {
+  df <- data.frame(value = 1:9)
+
+  p <- ggplot2::ggplot(df, ggplot2::aes(fill = value)) +
+    geom_puzzle_rect(rows = 3, cols = 3, seed = 42,
+                     fusion_groups = "1-2-3",
+                     fusion_style = "dashed",
+                     fusion_opacity = 0.5)
+
+  expect_s3_class(p, "ggplot")
+  expect_error(ggplot2::ggplot_build(p), NA)
+})
+
+test_that("geom_puzzle_hex accepts fusion_groups parameter", {
+  df <- data.frame(value = 1:19)
+
+  p <- ggplot2::ggplot(df, ggplot2::aes(fill = value)) +
+    geom_puzzle_hex(rings = 3, seed = 42,
+                    fusion_groups = "1-2-3")
+
+  expect_s3_class(p, "ggplot")
+  expect_error(ggplot2::ggplot_build(p), NA)
+})
+
+test_that("geom_puzzle_conc accepts fusion_groups parameter", {
+  df <- data.frame(value = 1:19)
+
+  p <- ggplot2::ggplot(df, ggplot2::aes(fill = value)) +
+    geom_puzzle_conc(rings = 3, seed = 42,
+                     fusion_groups = "1-2-3")
+
+  expect_s3_class(p, "ggplot")
+  expect_error(ggplot2::ggplot_build(p), NA)
+})
+
+test_that("geom_puzzle_voronoi accepts fusion_groups parameter", {
+  skip_if_not_installed("deldir")
+
+  df <- data.frame(value = 1:12)
+
+  p <- ggplot2::ggplot(df, ggplot2::aes(fill = value)) +
+    geom_puzzle_voronoi(n_cells = 12, seed = 42,
+                        fusion_groups = "1-2-3")
+
+  expect_s3_class(p, "ggplot")
+  expect_error(ggplot2::ggplot_build(p), NA)
+})
+
+test_that("geom_puzzle_random accepts fusion_groups parameter", {
+  skip_if_not_installed("RCDT")
+
+  df <- data.frame(value = 1:12)
+
+  p <- ggplot2::ggplot(df, ggplot2::aes(fill = value)) +
+    geom_puzzle_random(n_pieces = 12, seed = 42,
+                       fusion_groups = "1-2-3")
+
+  expect_s3_class(p, "ggplot")
+  expect_error(ggplot2::ggplot_build(p), NA)
+})
+
+test_that("StatPuzzle setup_params sets fusion defaults", {
+  # Test that setup_params correctly initializes fusion parameters
+  params <- StatPuzzle$setup_params(data.frame(), list())
+
+  expect_null(params$fusion_groups)
+  expect_equal(params$fusion_style, "none")
+  expect_equal(params$fusion_opacity, 0.3)
+})
+
+test_that("StatPuzzle compute_panel accepts fusion parameters", {
+  df <- data.frame(value = 1:9)
+
+  # Should not error with fusion parameters
+  stat <- StatPuzzle$compute_panel(
+    data = df,
+    scales = list(),
+    puzzle_type = "rectangular",
+    rows = 3,
+    cols = 3,
+    seed = 42,
+    fusion_groups = "1-2-3",
+    fusion_style = "dashed",
+    fusion_opacity = 0.5
+  )
+
+  expect_true("x" %in% names(stat))
+  expect_true("y" %in% names(stat))
+  expect_equal(length(unique(stat$piece_id)), 9)
+})
+
+test_that("all puzzle geoms support full fusion parameter set", {
+  skip_if_not_installed("deldir")
+  skip_if_not_installed("RCDT")
+
+  # Define all geom constructors with their required data
+  test_cases <- list(
+    list(
+      geom = function() geom_puzzle_rect(
+        rows = 3, cols = 3, seed = 42,
+        fusion_groups = "1-2,4-5",
+        fusion_style = "solid",
+        fusion_opacity = 0.7
+      ),
+      n_pieces = 9
+    ),
+    list(
+      geom = function() geom_puzzle_hex(
+        rings = 2, seed = 42,
+        fusion_groups = "1-2,4-5",
+        fusion_style = "dashed",
+        fusion_opacity = 0.5
+      ),
+      n_pieces = 7
+    ),
+    list(
+      geom = function() geom_puzzle_conc(
+        rings = 2, seed = 42,
+        fusion_groups = "1-2,4-5",
+        fusion_style = "none",
+        fusion_opacity = 0.3
+      ),
+      n_pieces = 13
+    ),
+    list(
+      geom = function() geom_puzzle_voronoi(
+        n_cells = 8, seed = 42,
+        fusion_groups = "1-2,4-5",
+        fusion_style = "solid",
+        fusion_opacity = 0.8
+      ),
+      n_pieces = 8
+    ),
+    list(
+      geom = function() geom_puzzle_random(
+        n_pieces = 8, seed = 42,
+        fusion_groups = "1-2,4-5",
+        fusion_style = "dashed",
+        fusion_opacity = 0.6
+      ),
+      n_pieces = 16  # Upper bound for random
+    )
+  )
+
+  for (tc in test_cases) {
+    df <- data.frame(value = seq_len(tc$n_pieces))
+    p <- ggplot2::ggplot(df, ggplot2::aes(fill = value)) +
+      tc$geom()
+
+    expect_error(ggplot2::ggplot_build(p), NA)
+  }
+})

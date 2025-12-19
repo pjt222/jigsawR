@@ -93,6 +93,10 @@ GeomPuzzle <- ggplot2::ggproto("GeomPuzzle", ggplot2::Geom,
 #' @param jitter Random variation in tab positions (default: 4).
 #' @param seed Random seed for reproducible puzzle shapes.
 #' @param bezier_resolution Points per Bezier curve (default: 20).
+#' @param fusion_groups Piece fusion specification: PILES notation string (e.g., "1-2-3,4-5"),
+#'   list of integer vectors, or NULL for no fusion.
+#' @param fusion_style Style for fused internal edges: "none" (invisible), "dashed", "solid".
+#' @param fusion_opacity Opacity for fused edges when style != "none" (0.0 to 1.0).
 #' @param na.rm Remove NA values? (default: FALSE).
 #' @param show.legend Include this layer in the legend? (default: NA).
 #' @param inherit.aes Inherit aesthetics from the plot? (default: TRUE).
@@ -121,6 +125,14 @@ GeomPuzzle <- ggplot2::ggproto("GeomPuzzle", ggplot2::Geom,
 #'   scale_fill_gradient(low = "white", high = "steelblue") +
 #'   theme_void() +
 #'   labs(title = "Sales by Region")
+#'
+#' # With fusion groups
+#' df <- data.frame(value = 1:9)
+#' ggplot(df, aes(fill = value)) +
+#'   geom_puzzle_rect(rows = 3, cols = 3, seed = 42,
+#'                    fusion_groups = "1-2-3,7-8-9") +
+#'   scale_fill_viridis_c() +
+#'   theme_void()
 #' }
 #'
 #' @export
@@ -134,6 +146,9 @@ geom_puzzle_rect <- function(mapping = NULL,
                               jitter = 4,
                               seed = NULL,
                               bezier_resolution = 20,
+                              fusion_groups = NULL,
+                              fusion_style = "none",
+                              fusion_opacity = 0.3,
                               ...,
                               na.rm = FALSE,
                               show.legend = NA,
@@ -155,6 +170,9 @@ geom_puzzle_rect <- function(mapping = NULL,
       jitter = jitter,
       seed = seed,
       bezier_resolution = bezier_resolution,
+      fusion_groups = fusion_groups,
+      fusion_style = fusion_style,
+      fusion_opacity = fusion_opacity,
       na.rm = na.rm,
       ...
     )
@@ -182,6 +200,10 @@ geom_puzzle_rect <- function(mapping = NULL,
 #' @param do_warp Apply circular warping transformation (default: TRUE).
 #' @param do_trunc Truncate edge pieces at boundary (default: TRUE).
 #' @param do_circular_border Use perfect circular arc borders (default: FALSE).
+#' @param fusion_groups Piece fusion specification: PILES notation string (e.g., "1-2-3,4-5"),
+#'   list of integer vectors, or NULL for no fusion.
+#' @param fusion_style Style for fused internal edges: "none" (invisible), "dashed", "solid".
+#' @param fusion_opacity Opacity for fused edges when style != "none" (0.0 to 1.0).
 #' @param na.rm Remove NA values? (default: FALSE).
 #' @param show.legend Include this layer in the legend? (default: NA).
 #' @param inherit.aes Inherit aesthetics from the plot? (default: TRUE).
@@ -215,6 +237,9 @@ geom_puzzle_hex <- function(mapping = NULL,
                             do_warp = TRUE,
                             do_trunc = TRUE,
                             do_circular_border = FALSE,
+                            fusion_groups = NULL,
+                            fusion_style = "none",
+                            fusion_opacity = 0.3,
                             ...,
                             na.rm = FALSE,
                             show.legend = NA,
@@ -238,6 +263,9 @@ geom_puzzle_hex <- function(mapping = NULL,
       do_warp = do_warp,
       do_trunc = do_trunc,
       do_circular_border = do_circular_border,
+      fusion_groups = fusion_groups,
+      fusion_style = fusion_style,
+      fusion_opacity = fusion_opacity,
       na.rm = na.rm,
       ...
     )
@@ -264,6 +292,10 @@ geom_puzzle_hex <- function(mapping = NULL,
 #' @param bezier_resolution Points per Bezier curve (default: 20).
 #' @param center_shape Shape of the center piece: "hexagon" or "circle".
 #' @param do_circular_border Use perfect circular arc borders (default: FALSE).
+#' @param fusion_groups Piece fusion specification: PILES notation string (e.g., "1-2-3,4-5"),
+#'   list of integer vectors, or NULL for no fusion.
+#' @param fusion_style Style for fused internal edges: "none" (invisible), "dashed", "solid".
+#' @param fusion_opacity Opacity for fused edges when style != "none" (0.0 to 1.0).
 #' @param na.rm Remove NA values? (default: FALSE).
 #' @param show.legend Include this layer in the legend? (default: NA).
 #' @param inherit.aes Inherit aesthetics from the plot? (default: TRUE).
@@ -296,6 +328,9 @@ geom_puzzle_conc <- function(mapping = NULL,
                              bezier_resolution = 20,
                              center_shape = "hexagon",
                              do_circular_border = FALSE,
+                             fusion_groups = NULL,
+                             fusion_style = "none",
+                             fusion_opacity = 0.3,
                              ...,
                              na.rm = FALSE,
                              show.legend = NA,
@@ -318,6 +353,9 @@ geom_puzzle_conc <- function(mapping = NULL,
       bezier_resolution = bezier_resolution,
       center_shape = center_shape,
       do_circular_border = do_circular_border,
+      fusion_groups = fusion_groups,
+      fusion_style = fusion_style,
+      fusion_opacity = fusion_opacity,
       na.rm = na.rm,
       ...
     )
@@ -342,6 +380,10 @@ geom_puzzle_conc <- function(mapping = NULL,
 #' @param bezier_resolution Points per Bezier curve (default: 20).
 #' @param point_distribution How to distribute seed points:
 #'   "fermat" (default, golden angle spiral), "uniform" (random), or "jittered" (grid with noise).
+#' @param fusion_groups Piece fusion specification: PILES notation string (e.g., "1-2-3,4-5"),
+#'   list of integer vectors, or NULL for no fusion.
+#' @param fusion_style Style for fused internal edges: "none" (invisible), "dashed", "solid".
+#' @param fusion_opacity Opacity for fused edges when style != "none" (0.0 to 1.0).
 #' @param na.rm Remove NA values? (default: FALSE).
 #' @param show.legend Include this layer in the legend? (default: NA).
 #' @param inherit.aes Inherit aesthetics from the plot? (default: TRUE).
@@ -374,6 +416,9 @@ geom_puzzle_voronoi <- function(mapping = NULL,
                                 seed = NULL,
                                 bezier_resolution = 20,
                                 point_distribution = "fermat",
+                                fusion_groups = NULL,
+                                fusion_style = "none",
+                                fusion_opacity = 0.3,
                                 ...,
                                 na.rm = FALSE,
                                 show.legend = NA,
@@ -395,6 +440,9 @@ geom_puzzle_voronoi <- function(mapping = NULL,
       seed = seed,
       bezier_resolution = bezier_resolution,
       point_distribution = point_distribution,
+      fusion_groups = fusion_groups,
+      fusion_style = fusion_style,
+      fusion_opacity = fusion_opacity,
       na.rm = na.rm,
       ...
     )
@@ -419,6 +467,10 @@ geom_puzzle_voronoi <- function(mapping = NULL,
 #' @param seed Random seed for reproducible puzzle shapes.
 #' @param bezier_resolution Points per Bezier curve (default: 20).
 #' @param n_corner Number of corners for the base polygon (default: 4 for rectangle).
+#' @param fusion_groups Piece fusion specification: PILES notation string (e.g., "1-2-3,4-5"),
+#'   list of integer vectors, or NULL for no fusion.
+#' @param fusion_style Style for fused internal edges: "none" (invisible), "dashed", "solid".
+#' @param fusion_opacity Opacity for fused edges when style != "none" (0.0 to 1.0).
 #' @param na.rm Remove NA values? (default: FALSE).
 #' @param show.legend Include this layer in the legend? (default: NA).
 #' @param inherit.aes Inherit aesthetics from the plot? (default: TRUE).
@@ -451,6 +503,9 @@ geom_puzzle_random <- function(mapping = NULL,
                                seed = NULL,
                                bezier_resolution = 20,
                                n_corner = 4,
+                               fusion_groups = NULL,
+                               fusion_style = "none",
+                               fusion_opacity = 0.3,
                                ...,
                                na.rm = FALSE,
                                show.legend = NA,
@@ -472,6 +527,9 @@ geom_puzzle_random <- function(mapping = NULL,
       seed = seed,
       bezier_resolution = bezier_resolution,
       n_corner = n_corner,
+      fusion_groups = fusion_groups,
+      fusion_style = fusion_style,
+      fusion_opacity = fusion_opacity,
       na.rm = na.rm,
       ...
     )

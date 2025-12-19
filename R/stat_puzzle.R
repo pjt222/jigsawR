@@ -59,6 +59,10 @@ StatPuzzle <- ggplot2::ggproto("StatPuzzle", ggplot2::Stat,
     params$point_distribution <- params$point_distribution %||% "fermat"
     # Random parameters
     params$n_corner <- params$n_corner %||% 4
+    # Fusion parameters
+    params$fusion_groups <- params$fusion_groups %||% NULL
+    params$fusion_style <- params$fusion_style %||% "none"
+    params$fusion_opacity <- params$fusion_opacity %||% 0.3
     params
   },
 
@@ -70,7 +74,10 @@ StatPuzzle <- ggplot2::ggproto("StatPuzzle", ggplot2::Stat,
                            do_warp = TRUE, do_trunc = TRUE, do_circular_border = FALSE,
                            center_shape = "hexagon",
                            point_distribution = "fermat",
-                           n_corner = 4) {
+                           n_corner = 4,
+                           fusion_groups = NULL,
+                           fusion_style = "none",
+                           fusion_opacity = 0.3) {
 
     # Determine grid configuration and piece count
     if (puzzle_type == "rectangular") {
@@ -117,7 +124,11 @@ StatPuzzle <- ggplot2::ggproto("StatPuzzle", ggplot2::Stat,
       # Voronoi parameters
       point_distribution = point_distribution,
       # Random parameters
-      n_corner = n_corner
+      n_corner = n_corner,
+      # Fusion parameters
+      fusion_groups = fusion_groups,
+      fusion_style = fusion_style,
+      fusion_opacity = fusion_opacity
     )
 
     # Get actual piece count from result
