@@ -13,6 +13,7 @@ geom_puzzle_hex(
   tabsize = 20,
   jitter = 4,
   seed = NULL,
+  offset = 0,
   bezier_resolution = 20,
   do_warp = TRUE,
   do_trunc = TRUE,

@@ -13,6 +13,7 @@ geom_puzzle_random(
   tabsize = 20,
   jitter = 4,
   seed = NULL,
+  offset = 0,
   bezier_resolution = 20,
   n_corner = 4,
   fusion_groups = NULL,

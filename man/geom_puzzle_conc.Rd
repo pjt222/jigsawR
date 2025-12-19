@@ -13,6 +13,7 @@ geom_puzzle_conc(
   tabsize = 20,
   jitter = 4,
   seed = NULL,
+  offset = 0,
   bezier_resolution = 20,
   center_shape = "hexagon",
   do_circular_border = FALSE,

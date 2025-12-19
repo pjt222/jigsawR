@@ -90,6 +90,7 @@ Collate:
     'rng_iterator.R'
     'svg_utils.R'
     'tessellation_edge_generation.R'
+    'theme_puzzle.R'
     'unified_piece_generation.R'
     'unified_renderer.R'
     'voronoi_puzzle.R'
