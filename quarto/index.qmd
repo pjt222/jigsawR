@@ -193,7 +193,7 @@ p4 <- ggplot() +
   theme_void() +
   labs(title = "Voronoi")
 
-p1 + p2 + p3 + p4
+print(p1 + p2 + p3 + p4)
 ```
 :::
 
