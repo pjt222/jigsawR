@@ -1,0 +1,290 @@
+---
+title: "PILES Notation"
+subtitle: "Puzzle Input Line Entry System for piece fusion"
+---
+
+```{r}
+#| include: false
+source("quarto/_setup.R")
+```
+
+## Overview
+
+PILES (Puzzle Input Line Entry System) is a SMILES-inspired notation for specifying which puzzle pieces should be fused together. It provides a concise, readable way to define fusion groups using piece IDs, ranges, and semantic keywords.
+
+## Basic Syntax
+
+### Single Fusion Group
+
+Connect pieces with hyphens:
+
+```
+1-2-3     # Fuse pieces 1, 2, and 3
+```
+
+### Multiple Groups
+
+Separate groups with commas:
+
+```
+1-2,3-4,5-6   # Three separate fusion groups
+```
+
+### Ranges
+
+Use colon for consecutive ranges:
+
+```
+1:6       # Fuse pieces 1, 2, 3, 4, 5, 6
+```
+
+## Examples
+
+### Rectangular Grid
+
+```{r}
+#| layout-ncol: 2
+#| fig-cap:
+#|   - "No fusion"
+#|   - "fusion_groups = '1-2,5-6,11-12'"
+#| eval: false
+
+# Standard
+ggplot() +
+  geom_puzzle_rect(
+    aes(fill = after_stat(piece_id)),
+    cols = 4, rows = 3,
+    width = 300, height = 225,
+    seed = 42
+  ) +
+  scale_fill_viridis_c(guide = "none") +
+  coord_fixed() +
+  theme_void()
+
+# With fusion
+ggplot() +
+  geom_puzzle_rect(
+    aes(fill = after_stat(group_id)),
+    cols = 4, rows = 3,
+    width = 300, height = 225,
+    seed = 42,
+    fusion_groups = "1-2,5-6,11-12"
+  ) +
+  scale_fill_viridis_c(guide = "none") +
+  coord_fixed() +
+  theme_void()
+```
+
+### Hexagonal Keywords
+
+```{r}
+#| layout-ncol: 2
+#| fig-cap:
+#|   - "fusion_groups = 'center-ring1'"
+#|   - "fusion_groups = 'ring2'"
+#| eval: false
+
+# Center merged with ring 1
+ggplot() +
+  geom_puzzle_hex(
+    aes(fill = after_stat(group_id)),
+    rings = 3, diameter = 200, seed = 42,
+    fusion_groups = "center-ring1"
+  ) +
+  scale_fill_viridis_c(option = "plasma", guide = "none") +
+  coord_fixed() +
+  theme_void()
+
+# Ring 2 merged
+ggplot() +
+  geom_puzzle_hex(
+    aes(fill = after_stat(group_id)),
+    rings = 3, diameter = 200, seed = 42,
+    fusion_groups = "ring2"
+  ) +
+  scale_fill_viridis_c(option = "plasma", guide = "none") +
+  coord_fixed() +
+  theme_void()
+```
+
+## Keywords Reference
+
+### Hexagonal/Concentric Keywords
+
+| Keyword | Description | Requires |
+|---------|-------------|----------|
+| `center` | Center piece (piece 1) | puzzle_result |
+| `ring1` | All pieces in ring 1 | puzzle_result |
+| `ring2` | All pieces in ring 2 | puzzle_result |
+| `ringN` | All pieces in ring N | puzzle_result |
+| `boundary` | All outer boundary pieces | puzzle_result |
+
+### Rectangular Keywords
+
+| Keyword | Description | Requires |
+|---------|-------------|----------|
+| `R1` | Row 1 (top) | puzzle_result |
+| `R2` | Row 2 | puzzle_result |
+| `RN` | Row N | puzzle_result |
+| `C1` | Column 1 (left) | puzzle_result |
+| `C2` | Column 2 | puzzle_result |
+| `CN` | Column N | puzzle_result |
+| `boundary` | All edge pieces | puzzle_result |
+
+## Programmatic API
+
+### parse_piles()
+
+Parse a PILES string into a list of piece ID vectors:
+
+```{r}
+# Basic parsing
+result <- parse_piles("1-2-3,4-5")
+print(result)
+```
+
+### parse_fusion()
+
+Auto-detect format and parse (requires puzzle result for keywords):
+
+```{r}
+#| eval: false
+# With puzzle result for keyword expansion
+puzzle <- generate_puzzle(
+  type = "hexagonal",
+  grid = c(3),
+  size = c(200),
+  seed = 42
+)
+
+groups <- parse_fusion("center-ring1", puzzle)
+```
+
+### to_piles()
+
+Convert a list of groups back to PILES notation:
+
+```{r}
+groups <- list(c(1, 2, 3), c(4, 5))
+notation <- to_piles(groups)
+print(notation)
+```
+
+### validate_piles_syntax()
+
+Check if a PILES string is syntactically valid:
+
+```{r}
+validate_piles_syntax("1-2-3,4-5")      # TRUE
+validate_piles_syntax("1-2(-3)")        # FALSE (invalid)
+```
+
+## Complex Examples
+
+### Row Fusion
+
+```{r}
+#| fig-align: center
+#| eval: false
+# Fuse each row
+ggplot() +
+  geom_puzzle_rect(
+    aes(fill = after_stat(group_id)),
+    cols = 5, rows = 3,
+    width = 400, height = 240,
+    seed = 42,
+    fusion_groups = "R1,R2,R3"
+  ) +
+  scale_fill_viridis_c(
+    option = "magma",
+    name = "Row"
+  ) +
+  coord_fixed() +
+  theme_minimal() +
+  labs(title = "Row Fusion: R1, R2, R3")
+```
+
+### Column Fusion
+
+```{r}
+#| fig-align: center
+#| eval: false
+# Fuse each column
+ggplot() +
+  geom_puzzle_rect(
+    aes(fill = after_stat(group_id)),
+    cols = 4, rows = 4,
+    width = 320, height = 320,
+    seed = 42,
+    fusion_groups = "C1,C2,C3,C4"
+  ) +
+  scale_fill_viridis_c(
+    option = "cividis",
+    name = "Column"
+  ) +
+  coord_fixed() +
+  theme_minimal() +
+  labs(title = "Column Fusion: C1, C2, C3, C4")
+```
+
+### Mixed Notation
+
+Combine different notations in one string:
+
+```{r}
+# Numeric IDs + ranges
+"1-2,5:8,10-11-12"
+
+# Keywords + IDs
+"center-1,ring2"
+```
+
+## Validation Rules
+
+1. **Piece IDs must exist**: IDs must be valid for the puzzle
+2. **No duplicates in group**: Each piece can only appear once per group
+3. **Adjacent pieces recommended**: For visual coherence, fused pieces should be neighbors
+
+### Error Handling
+
+```{r}
+#| error: true
+# Invalid syntax
+tryCatch(
+  validate_piles_syntax("1-2(-3)"),
+  error = function(e) message("Error: ", e$message)
+)
+```
+
+## Best Practices
+
+1. **Use keywords for semantics**: `ring1` is clearer than `2-3-4-5-6-7`
+2. **Group logically**: Keep related pieces in the same fusion group
+3. **Validate first**: Use `validate_piles_syntax()` before generating
+4. **Consider adjacency**: Non-adjacent fused pieces may look disconnected
+
+## PILES vs Other Formats
+
+| Format | Example | Notes |
+|--------|---------|-------|
+| PILES | `1-2-3,4-5` | Compact, human-readable |
+| List | `list(c(1,2,3), c(4,5))` | Programmatic R format |
+| JSON | `[[1,2,3],[4,5]]` | For API interchange |
+
+Convert between formats:
+
+```{r}
+# PILES to list
+groups <- parse_piles("1-2-3,4-5")
+print(groups)
+
+# List to PILES
+notation <- to_piles(groups)
+print(notation)
+```
+
+## See Also
+
+- [generate_puzzle()](generate-puzzle.qmd) - Main API with fusion parameter
+- [ggpuzzle Extension](ggpuzzle.qmd) - ggplot2 integration
+- [PILES Documentation](../../docs/PILES-notation.md) - Full specification

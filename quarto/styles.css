@@ -1,0 +1,75 @@
+/* Additional custom styles for jigsawR documentation */
+
+/* Code block styling */
+pre.sourceCode {
+  border-radius: 6px;
+  border: 1px solid #e1e4e8;
+}
+
+/* Parameter tables */
+.parameter-table {
+  width: 100%;
+  margin: 1rem 0;
+}
+
+.parameter-table th {
+  background: #f6f8fa;
+  text-align: left;
+  padding: 0.75rem;
+}
+
+.parameter-table td {
+  padding: 0.75rem;
+  border-bottom: 1px solid #e1e4e8;
+}
+
+/* Gallery grid improvements */
+.gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 1.5rem;
+  margin: 2rem 0;
+}
+
+.gallery-item {
+  border: 1px solid #e1e4e8;
+  border-radius: 8px;
+  overflow: hidden;
+  background: white;
+}
+
+.gallery-item img {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: contain;
+  background: #fafafa;
+}
+
+.gallery-item figcaption {
+  padding: 1rem;
+  background: #f6f8fa;
+  font-size: 0.9rem;
+}
+
+/* Callout improvements */
+.callout {
+  margin: 1.5rem 0;
+}
+
+/* Responsive images */
+.quarto-figure img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Navigation improvements */
+.navbar-brand {
+  font-weight: bold;
+}
+
+/* Footer styling */
+.page-footer {
+  border-top: 1px solid #e1e4e8;
+  margin-top: 3rem;
+  padding-top: 1.5rem;
+}

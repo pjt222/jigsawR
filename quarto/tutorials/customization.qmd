@@ -1,0 +1,407 @@
+---
+title: "Customization Tutorial"
+subtitle: "Colors, themes, and advanced styling options"
+---
+
+```{r}
+#| include: false
+source("quarto/_setup.R")
+```
+
+## Color Palettes
+
+jigsawR works seamlessly with all viridis color palettes.
+
+### Viridis Options
+
+```{r}
+#| layout-ncol: 3
+#| fig-height: 3
+#| fig-cap:
+#|   - "viridis"
+#|   - "magma"
+#|   - "plasma"
+#|   - "inferno"
+#|   - "cividis"
+#|   - "turbo"
+
+palettes <- c("viridis", "magma", "plasma", "inferno", "cividis", "turbo")
+
+for (pal in palettes) {
+  print(
+    ggplot() +
+      geom_puzzle_hex(
+        aes(fill = after_stat(piece_id)),
+        rings = 3, diameter = 180, seed = 42
+      ) +
+      scale_fill_viridis_c(option = pal, guide = "none") +
+      coord_fixed() +
+      theme_void()
+  )
+}
+```
+
+### Custom Color Scales
+
+Use any ggplot2 color scale:
+
+```{r}
+#| layout-ncol: 2
+#| fig-cap:
+#|   - "Gradient Blue to Red"
+#|   - "Brewer Spectral"
+
+# Custom gradient
+ggplot() +
+  geom_puzzle_rect(
+    aes(fill = after_stat(piece_id)),
+    cols = 4, rows = 3,
+    width = 240, height = 180,
+    seed = 42
+  ) +
+  scale_fill_gradient(
+    low = "#2193b0",
+    high = "#6dd5ed",
+    guide = "none"
+  ) +
+  coord_fixed() +
+  theme_void()
+
+# Brewer palette
+ggplot() +
+  geom_puzzle_rect(
+    aes(fill = factor(after_stat(piece_id))),
+    cols = 4, rows = 3,
+    width = 240, height = 180,
+    seed = 42
+  ) +
+  scale_fill_brewer(palette = "Spectral", guide = "none") +
+  coord_fixed() +
+  theme_void()
+```
+
+## Themes
+
+### Minimal Themes
+
+```{r}
+#| layout-ncol: 2
+#| fig-cap:
+#|   - "theme_void()"
+#|   - "theme_minimal()"
+
+ggplot() +
+  geom_puzzle_hex(
+    aes(fill = after_stat(piece_id)),
+    rings = 2, diameter = 150, seed = 42
+  ) +
+  scale_fill_viridis_c(guide = "none") +
+  coord_fixed() +
+  theme_void() +
+  labs(title = "theme_void()")
+
+ggplot() +
+  geom_puzzle_hex(
+    aes(fill = after_stat(piece_id)),
+    rings = 2, diameter = 150, seed = 42
+  ) +
+  scale_fill_viridis_c(name = "Piece") +
+  coord_fixed() +
+  theme_minimal() +
+  labs(title = "theme_minimal()")
+```
+
+### Dark Themes
+
+```{r}
+#| fig-align: center
+ggplot() +
+  geom_puzzle_hex(
+    aes(fill = after_stat(piece_id)),
+    rings = 3, diameter = 200, seed = 42
+  ) +
+  scale_fill_viridis_c(option = "plasma") +
+  coord_fixed() +
+  theme_dark() +
+  theme(
+    panel.grid = element_blank(),
+    plot.background = element_rect(fill = "#1a1a1a"),
+    legend.background = element_rect(fill = "#1a1a1a"),
+    legend.text = element_text(color = "white"),
+    legend.title = element_text(color = "white")
+  ) +
+  labs(title = "Dark Theme", fill = "Piece ID")
+```
+
+### Custom Themes
+
+```{r}
+#| fig-align: center
+# Create a custom theme
+theme_puzzle <- function() {
+  theme_void() +
+  theme(
+    plot.title = element_text(
+      hjust = 0.5,
+      size = 16,
+      face = "bold",
+      margin = margin(b = 10)
+    ),
+    plot.subtitle = element_text(
+      hjust = 0.5,
+      size = 12,
+      color = "gray50",
+      margin = margin(b = 20)
+    ),
+    legend.position = "bottom",
+    legend.title = element_text(size = 10),
+    legend.text = element_text(size = 8),
+    plot.margin = margin(20, 20, 20, 20)
+  )
+}
+
+ggplot() +
+  geom_puzzle_conc(
+    aes(fill = after_stat(ring)),
+    rings = 4, diameter = 250, seed = 42
+  ) +
+  scale_fill_viridis_c(option = "cividis", name = "Ring") +
+  coord_fixed() +
+  theme_puzzle() +
+  labs(
+    title = "Concentric Puzzle",
+    subtitle = "4 rings, 250mm diameter"
+  )
+```
+
+## Legends
+
+### Legend Position
+
+```{r}
+#| layout-ncol: 2
+#| fig-cap:
+#|   - "Legend bottom"
+#|   - "Legend inside"
+
+# Bottom legend
+ggplot() +
+  geom_puzzle_rect(
+    aes(fill = after_stat(piece_id)),
+    cols = 4, rows = 3,
+    width = 200, height = 150,
+    seed = 42
+  ) +
+  scale_fill_viridis_c(name = "Piece") +
+  coord_fixed() +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+
+# Inside plot
+ggplot() +
+  geom_puzzle_rect(
+    aes(fill = after_stat(piece_id)),
+    cols = 4, rows = 3,
+    width = 200, height = 150,
+    seed = 42
+  ) +
+  scale_fill_viridis_c(name = "Piece") +
+  coord_fixed() +
+  theme_minimal() +
+  theme(
+    legend.position = c(0.85, 0.85),
+    legend.background = element_rect(fill = "white", color = "gray80")
+  )
+```
+
+### Custom Legend Labels
+
+```{r}
+#| fig-align: center
+ggplot() +
+  geom_puzzle_conc(
+    aes(fill = after_stat(ring)),
+    rings = 3, diameter = 200, seed = 42
+  ) +
+  scale_fill_viridis_c(
+    option = "magma",
+    name = "Ring Number",
+    labels = c("Center", "Ring 1", "Ring 2"),
+    breaks = c(0, 1, 2)
+  ) +
+  coord_fixed() +
+  theme_minimal() +
+  theme(legend.position = "right")
+```
+
+## Annotations
+
+### Add Text
+
+```{r}
+#| fig-align: center
+ggplot() +
+  geom_puzzle_hex(
+    aes(fill = after_stat(ring)),
+    rings = 3, diameter = 250, seed = 42
+  ) +
+  annotate(
+    "text",
+    x = 0, y = 0,
+    label = "CENTER",
+    size = 5,
+    fontface = "bold",
+    color = "white"
+  ) +
+  scale_fill_viridis_c(option = "plasma", guide = "none") +
+  coord_fixed() +
+  theme_void()
+```
+
+### Add Labels with geom_text
+
+```{r}
+#| fig-align: center
+# Get piece data
+puzzle <- generate_puzzle(
+  type = "hexagonal",
+  grid = c(2),
+  size = c(150),
+  seed = 42
+)
+
+ggplot() +
+  geom_puzzle_hex(
+    aes(fill = after_stat(piece_id)),
+    rings = 2, diameter = 150, seed = 42
+  ) +
+  scale_fill_viridis_c(guide = "none") +
+  coord_fixed() +
+  theme_void() +
+  labs(title = "7 Hexagonal Pieces")
+```
+
+## Borders and Outlines
+
+### Add Borders
+
+```{r}
+#| fig-align: center
+ggplot() +
+  geom_puzzle_rect(
+    aes(fill = after_stat(piece_id)),
+    cols = 3, rows = 3,
+    width = 200, height = 200,
+    seed = 42,
+    color = "black",    # Border color
+    linewidth = 0.5       # Border width
+  ) +
+  scale_fill_viridis_c(option = "plasma", guide = "none") +
+  coord_fixed() +
+  theme_void()
+```
+
+### Thick Borders for Emphasis
+
+```{r}
+#| layout-ncol: 2
+#| fig-cap:
+#|   - "Thin borders"
+#|   - "Thick borders"
+
+for (lw in c(0.25, 1.5)) {
+  print(
+    ggplot() +
+      geom_puzzle_hex(
+        aes(fill = after_stat(piece_id)),
+        rings = 2, diameter = 150, seed = 42,
+        color = "white",
+        linewidth = lw
+      ) +
+      scale_fill_viridis_c(option = "magma", guide = "none") +
+      coord_fixed() +
+      theme_void()
+  )
+}
+```
+
+## Alpha Transparency
+
+```{r}
+#| layout-ncol: 2
+#| fig-cap:
+#|   - "alpha = 1.0 (opaque)"
+#|   - "alpha = 0.5 (semi-transparent)"
+
+for (a in c(1.0, 0.5)) {
+  print(
+    ggplot() +
+      geom_puzzle_voronoi(
+        aes(fill = after_stat(piece_id)),
+        n_cells = 15,
+        width = 180, height = 180,
+        seed = 42,
+        alpha = a
+      ) +
+      scale_fill_viridis_c(option = "turbo", guide = "none") +
+      coord_fixed() +
+      theme_void()
+  )
+}
+```
+
+## Saving High-Quality Output
+
+### PNG (Raster)
+
+```{r}
+#| eval: false
+p <- ggplot() +
+  geom_puzzle_hex(
+    aes(fill = after_stat(piece_id)),
+    rings = 4, diameter = 300, seed = 42
+  ) +
+  scale_fill_viridis_c(option = "plasma", guide = "none") +
+  coord_fixed() +
+  theme_void()
+
+# Standard quality
+ggsave("puzzle.png", p, width = 8, height = 8, dpi = 150)
+
+# High quality for print
+ggsave("puzzle_hq.png", p, width = 8, height = 8, dpi = 300)
+
+# Very high quality
+ggsave("puzzle_print.png", p, width = 12, height = 12, dpi = 600)
+```
+
+### SVG (Vector)
+
+```{r}
+#| eval: false
+# Vector format - infinite scalability
+ggsave("puzzle.svg", p, width = 8, height = 8)
+```
+
+### PDF (Vector, Print-ready)
+
+```{r}
+#| eval: false
+ggsave("puzzle.pdf", p, width = 8, height = 8)
+```
+
+## Summary
+
+You've learned:
+
+- ✅ Using viridis and custom color palettes
+- ✅ Applying and customizing themes
+- ✅ Configuring legends
+- ✅ Adding annotations and labels
+- ✅ Using borders and transparency
+- ✅ Saving high-quality output
+
+## Next Steps
+
+- [Fusion Groups Tutorial](fusion-groups.qmd) - Merge pieces
+- [Gallery](../gallery/rectangular.qmd) - More visual examples

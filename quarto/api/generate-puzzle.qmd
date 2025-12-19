@@ -1,0 +1,231 @@
+---
+title: "generate_puzzle()"
+subtitle: "The main entry point for creating puzzles"
+---
+
+```{r}
+#| include: false
+source("quarto/_setup.R")
+```
+
+## Description
+
+`generate_puzzle()` is the unified entry point for creating all puzzle types in jigsawR. It handles rectangular, hexagonal, concentric, voronoi, and random puzzles through a single consistent interface.
+
+## Usage
+
+```r
+generate_puzzle(
+  type = "rectangular",
+  grid,
+  size,
+  seed = NULL,
+  offset = 0,
+  layout = "grid",
+  fusion_groups = NULL,
+  save_files = FALSE,
+  output_dir = "output",
+  ...
+)
+```
+
+## Arguments
+
+### Required Parameters
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `type` | string | Puzzle type: `"rectangular"`, `"hexagonal"`, `"concentric"`, `"voronoi"`, `"random"` |
+| `grid` | numeric vector | Grid dimensions (interpretation depends on type) |
+| `size` | numeric vector | Physical dimensions in mm |
+
+### Grid Parameter by Type
+
+| Type | Grid Format | Example |
+|------|-------------|---------|
+| rectangular | `c(cols, rows)` | `c(4, 3)` = 4x3 grid |
+| hexagonal | `c(rings)` | `c(3)` = 3 rings |
+| concentric | `c(rings)` | `c(4)` = 4 rings |
+| voronoi | `c(n_cells)` | `c(25)` = 25 cells |
+| random | `c(n_pieces)` | `c(20)` = 20 pieces |
+
+### Size Parameter by Type
+
+| Type | Size Format | Example |
+|------|-------------|---------|
+| rectangular | `c(width, height)` | `c(400, 300)` |
+| hexagonal | `c(diameter)` | `c(250)` |
+| concentric | `c(diameter)` | `c(200)` |
+| voronoi | `c(width, height)` | `c(400, 300)` |
+| random | `c(width, height)` | `c(400, 300)` |
+
+### Optional Parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `seed` | integer | random | Random seed for reproducibility |
+| `offset` | numeric | 0 | Piece separation distance in mm |
+| `layout` | string | "grid" | Layout algorithm: `"grid"` or `"repel"` |
+| `fusion_groups` | string | NULL | PILES notation for merging pieces |
+| `save_files` | logical | FALSE | Whether to save SVG files |
+| `output_dir` | string | "output" | Directory for saved files |
+
+### Type-Specific Parameters (via `...`)
+
+**Hexagonal/Concentric:**
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `tabsize` | numeric | 15 | Tab size in mm |
+| `jitter` | numeric | 4 | Randomness in tab shape |
+| `do_warp` | logical | TRUE | Apply circular warping |
+| `do_trunc` | logical | TRUE | Truncate to boundary |
+| `center_shape` | string | "hexagon" | Center shape (concentric only) |
+
+**Voronoi:**
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `relaxation` | integer | 0 | Lloyd relaxation iterations |
+
+**Random:**
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `n_corner` | integer | 5 | Corners per piece (3-8) |
+
+## Return Value
+
+A list with the following components:
+
+| Component | Type | Description |
+|-----------|------|-------------|
+| `svg_content` | string | Complete SVG document as text |
+| `pieces` | list | List of piece objects with paths and metadata |
+| `canvas_size` | list | Canvas dimensions (`$width`, `$height`) |
+| `files` | list | Paths to saved files (if `save_files = TRUE`) |
+| `config` | list | Configuration used to generate the puzzle |
+
+### Piece Object Structure
+
+Each piece in `pieces` contains:
+
+```r
+piece <- list(
+  id = 1,                    # Piece ID
+  path = "M0 0 L100 0...",   # SVG path data
+  parsed_segments = list(),   # Parsed path segments
+  group_id = 1,              # Fusion group ID
+  is_boundary = TRUE         # Whether piece is on boundary
+)
+```
+
+## Examples
+
+### Basic Usage
+
+```{r}
+# Rectangular puzzle
+rect <- generate_puzzle(
+  type = "rectangular",
+  grid = c(4, 3),
+  size = c(400, 300),
+  seed = 42
+)
+cat("Generated", length(rect$pieces), "pieces\n")
+```
+
+### Hexagonal Puzzle
+
+```{r}
+hex <- generate_puzzle(
+  type = "hexagonal",
+  grid = c(3),
+  size = c(200),
+  seed = 42,
+  do_warp = TRUE,
+  do_trunc = TRUE
+)
+cat("Generated", length(hex$pieces), "hexagonal pieces\n")
+```
+
+### With Fusion Groups
+
+```{r}
+fused <- generate_puzzle(
+  type = "rectangular",
+  grid = c(4, 3),
+  size = c(400, 300),
+  seed = 42,
+  fusion_groups = "1-2,5-6,11-12"
+)
+# Pieces 1&2, 5&6, and 11&12 are now merged
+```
+
+### With Offset
+
+```{r}
+separated <- generate_puzzle(
+  type = "hexagonal",
+  grid = c(3),
+  size = c(200),
+  seed = 42,
+  offset = 10
+)
+```
+
+### Saving Files
+
+```{r}
+#| eval: false
+result <- generate_puzzle(
+  type = "rectangular",
+  grid = c(4, 3),
+  size = c(400, 300),
+  seed = 42,
+  save_files = TRUE,
+  output_dir = "puzzles"
+)
+cat("Saved to:", result$files$svg, "\n")
+```
+
+## Visualization
+
+The result can be visualized using ggpuzzle:
+
+```{r}
+#| fig-align: center
+
+ggplot() +
+  geom_puzzle_hex(
+    aes(fill = after_stat(piece_id)),
+    rings = 3,
+    diameter = 200,
+    seed = 42
+  ) +
+  scale_fill_viridis_c(guide = "none") +
+  coord_fixed() +
+  theme_void()
+```
+
+Or by writing the SVG:
+
+```{r}
+#| eval: false
+result <- generate_puzzle(
+  type = "hexagonal",
+  grid = c(3),
+  size = c(200),
+  seed = 42
+)
+
+# Save as SVG
+writeLines(result$svg_content, "puzzle.svg")
+```
+
+## See Also
+
+- [PILES Notation](piles-notation.qmd) - Fusion group syntax
+- [ggpuzzle Extension](ggpuzzle.qmd) - ggplot2 integration
+- [Gallery: Rectangular](../gallery/rectangular.qmd)
+- [Gallery: Hexagonal](../gallery/hexagonal.qmd)

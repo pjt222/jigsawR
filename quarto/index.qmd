@@ -1,0 +1,255 @@
+---
+title: "jigsawR"
+subtitle: "Generate Beautiful Jigsaw Puzzles in R"
+page-layout: full
+---
+
+::: {.hero-section}
+# jigsawR {.hero-title}
+
+Generate stunning, mathematically precise jigsaw puzzles with ease.
+Five puzzle types, infinite possibilities. {.hero-subtitle}
+:::
+
+```{r}
+#| include: false
+source("quarto/_setup.R")
+```
+
+```{r}
+#| echo: false
+#| fig-align: center
+#| out-width: "100%"
+
+# Create a visually appealing hexagonal puzzle
+set.seed(42)
+p <- ggplot() +
+
+  geom_puzzle_hex(
+    aes(fill = after_stat(piece_id)),
+    rings = 3,
+    seed = 42
+  ) +
+  scale_fill_viridis_c(option = "plasma", guide = "none") +
+  coord_fixed() +
+  theme_void() +
+  theme(
+    plot.background = element_rect(fill = "white", color = NA)
+  )
+print(p)
+```
+
+## Installation
+
+```r
+# Install from GitHub
+devtools::install_github("pjt222/jigsawR")
+```
+
+::: {.feature-grid}
+
+::: {.feature-card}
+::: {.feature-icon}
+🧩
+:::
+::: {.feature-title}
+5 Puzzle Types
+:::
+Rectangular, Hexagonal, Concentric, Voronoi, and Random shapes
+:::
+
+::: {.feature-card}
+::: {.feature-icon}
+🎨
+:::
+::: {.feature-title}
+Beautiful Palettes
+:::
+Full viridis color palette support with gradient fills
+:::
+
+::: {.feature-card}
+::: {.feature-icon}
+📊
+:::
+::: {.feature-title}
+ggplot2 Integration
+:::
+Native geom_puzzle_*() functions for data visualization
+:::
+
+::: {.feature-card}
+::: {.feature-icon}
+🔗
+:::
+::: {.feature-title}
+Fusion Groups
+:::
+Merge pieces using PILES notation for custom layouts
+:::
+
+::: {.feature-card}
+::: {.feature-icon}
+⚡
+:::
+::: {.feature-title}
+High Performance
+:::
+C++ backend with Rcpp for fast puzzle generation
+:::
+
+::: {.feature-card}
+::: {.feature-icon}
+📱
+:::
+::: {.feature-title}
+Shiny App
+:::
+Interactive web app for puzzle creation and download
+:::
+
+:::
+
+## Quick Start
+
+```{r}
+#| eval: false
+library(jigsawR)
+
+# Generate a 4x3 rectangular puzzle
+result <- generate_puzzle(
+  type = "rectangular",
+  grid = c(4, 3),
+  size = c(400, 300),
+  seed = 42
+)
+
+# Save as SVG
+writeLines(result$svg_content, "my_puzzle.svg")
+```
+
+## Gallery Preview
+
+::: {.puzzle-gallery}
+
+```{r}
+#| echo: false
+#| layout-ncol: 4
+#| fig-cap:
+#|   - "Rectangular"
+#|   - "Hexagonal"
+#|   - "Concentric"
+#|   - "Voronoi"
+
+# Rectangular
+ggplot() +
+  geom_puzzle_rect(
+    aes(fill = after_stat(piece_id)),
+    cols = 3, rows = 3,
+    seed = 42
+  ) +
+  scale_fill_viridis_c(option = "viridis", guide = "none") +
+  coord_fixed() +
+  theme_void()
+
+# Hexagonal
+ggplot() +
+  geom_puzzle_hex(
+    aes(fill = after_stat(piece_id)),
+    rings = 2, seed = 42
+  ) +
+  scale_fill_viridis_c(option = "magma", guide = "none") +
+  coord_fixed() +
+  theme_void()
+
+# Concentric
+ggplot() +
+  geom_puzzle_conc(
+    aes(fill = after_stat(ring)),
+    rings = 2, seed = 42
+  ) +
+  scale_fill_viridis_c(option = "plasma", guide = "none") +
+  coord_fixed() +
+  theme_void()
+
+# Voronoi
+ggplot() +
+  geom_puzzle_voronoi(
+    aes(fill = after_stat(piece_id)),
+    n_cells = 15, seed = 42
+  ) +
+  scale_fill_viridis_c(option = "turbo", guide = "none") +
+  coord_fixed() +
+  theme_void()
+```
+
+:::
+
+[Explore the Gallery →](gallery/rectangular.qmd){.btn .btn-primary}
+
+## ggplot2 Integration
+
+Map data to puzzle pieces for creative data visualization:
+
+```{r}
+#| fig-align: center
+#| out-width: "60%"
+
+# Create data
+data <- data.frame(
+  region = 1:7,
+  value = c(23, 45, 12, 67, 34, 89, 56)
+)
+
+# Visualize with puzzle pieces
+ggplot(data) +
+  geom_puzzle_hex(
+    aes(fill = value),
+    rings = 2,
+    seed = 123
+  ) +
+  scale_fill_viridis_c(
+    name = "Value",
+    option = "plasma"
+  ) +
+  coord_fixed() +
+  theme_minimal() +
+  labs(title = "Data as Puzzle Pieces")
+```
+
+[Learn More About ggpuzzle →](api/ggpuzzle.qmd){.btn .btn-outline-primary}
+
+## PILES Notation
+
+Powerful piece fusion with intuitive syntax:
+
+```{r}
+#| eval: false
+
+# Merge center with ring 1
+result <- generate_puzzle(
+  type = "hexagonal",
+  grid = c(3),
+  size = c(200),
+  fusion_groups = "center-ring1"
+)
+
+# Custom fusion groups
+result <- generate_puzzle(
+  type = "rectangular",
+  grid = c(4, 3),
+  size = c(400, 300),
+  fusion_groups = "1-2-3,7-8-9,10-11-12"
+)
+```
+
+[PILES Notation Guide →](api/piles-notation.qmd){.btn .btn-outline-primary}
+
+---
+
+::: {.text-center}
+**Ready to create puzzles?**
+
+[Get Started](getting-started.qmd){.btn .btn-lg .btn-primary}
+[View on GitHub](https://github.com/pjt222/jigsawR){.btn .btn-lg .btn-outline-secondary}
+:::

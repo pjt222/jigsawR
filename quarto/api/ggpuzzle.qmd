@@ -1,0 +1,325 @@
+---
+title: "ggpuzzle Extension"
+subtitle: "Native ggplot2 integration for puzzle visualization"
+---
+
+```{r}
+#| include: false
+source("quarto/_setup.R")
+```
+
+## Overview
+
+jigsawR provides native ggplot2 geoms for each puzzle type, enabling seamless integration with the ggplot2 ecosystem. Map data to puzzle pieces, combine with other geoms, use faceting, and apply any ggplot2 theme.
+
+## Available Geoms
+
+| Geom | Description |
+|------|-------------|
+| `geom_puzzle_rect()` | Rectangular jigsaw puzzles |
+| `geom_puzzle_hex()` | Hexagonal honeycomb puzzles |
+| `geom_puzzle_conc()` | Concentric ring puzzles |
+| `geom_puzzle_voronoi()` | Voronoi tessellation puzzles |
+| `geom_puzzle_random()` | Random shape puzzles |
+
+## Basic Usage
+
+### geom_puzzle_rect()
+
+```{r}
+#| fig-align: center
+ggplot() +
+  geom_puzzle_rect(
+    aes(fill = after_stat(piece_id)),
+    cols = 4, rows = 3,
+    seed = 42
+  ) +
+  scale_fill_viridis_c(name = "Piece") +
+  coord_fixed() +
+  theme_minimal()
+```
+
+### geom_puzzle_hex()
+
+```{r}
+#| fig-align: center
+ggplot() +
+  geom_puzzle_hex(
+    aes(fill = after_stat(piece_id)),
+    rings = 3,
+    seed = 42
+  ) +
+  scale_fill_viridis_c(option = "plasma", name = "Piece") +
+  coord_fixed() +
+  theme_minimal()
+```
+
+### geom_puzzle_conc()
+
+```{r}
+#| fig-align: center
+ggplot() +
+  geom_puzzle_conc(
+    aes(fill = after_stat(ring)),
+    rings = 3,
+    center_shape = "hexagon",
+    seed = 42
+  ) +
+  scale_fill_viridis_c(option = "cividis", name = "Ring") +
+  coord_fixed() +
+  theme_minimal()
+```
+
+### geom_puzzle_voronoi()
+
+```{r}
+#| fig-align: center
+ggplot() +
+  geom_puzzle_voronoi(
+    aes(fill = after_stat(piece_id)),
+    n_cells = 25,
+    seed = 42
+  ) +
+  scale_fill_viridis_c(option = "turbo", name = "Cell") +
+  coord_fixed() +
+  theme_minimal()
+```
+
+### geom_puzzle_random()
+
+```{r}
+#| fig-align: center
+ggplot() +
+  geom_puzzle_random(
+    aes(fill = after_stat(piece_id)),
+    n_pieces = 20,
+    n_corner = 5,
+    seed = 42
+  ) +
+  scale_fill_viridis_c(option = "inferno", name = "Piece") +
+  coord_fixed() +
+  theme_minimal()
+```
+
+## Aesthetic Mappings
+
+All geoms compute these variables that can be mapped to aesthetics:
+
+| Variable | Description | Available In |
+|----------|-------------|--------------|
+| `piece_id` | Unique piece identifier | All types |
+| `group_id` | Fusion group identifier | All types |
+| `ring` | Ring number (0 = center) | hex, conc |
+| `is_center` | TRUE for center piece | hex, conc |
+| `is_boundary` | TRUE for boundary pieces | All types |
+| `row` | Row number | rectangular |
+| `col` | Column number | rectangular |
+
+### Example: Mapping Data
+
+```{r}
+#| fig-align: center
+# Create some data
+data <- data.frame(
+  region = 1:7,
+  population = c(1200, 800, 1500, 600, 2000, 900, 1100)
+)
+
+# Map to puzzle pieces
+ggplot(data) +
+  geom_puzzle_hex(
+    aes(fill = population),
+    rings = 2,
+    seed = 42
+  ) +
+  scale_fill_viridis_c(
+    option = "plasma",
+    name = "Population",
+    labels = scales::comma
+  ) +
+  coord_fixed() +
+  theme_void() +
+  labs(title = "Population by Region")
+```
+
+## Parameters Reference
+
+### Common Parameters
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `seed` | integer | Random seed for reproducibility |
+| `offset` | numeric | Piece separation distance |
+
+### geom_puzzle_rect()
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `cols` | integer | required | Number of columns |
+| `rows` | integer | required | Number of rows |
+| `width` | numeric | required | Total width in mm |
+| `height` | numeric | required | Total height in mm |
+| `tabsize` | numeric | 15 | Tab size |
+| `jitter` | numeric | 4 | Tab randomness |
+
+### geom_puzzle_hex()
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `rings` | integer | required | Number of rings |
+| `diameter` | numeric | required | Outer diameter in mm |
+| `do_warp` | logical | TRUE | Apply circular warping |
+| `do_trunc` | logical | TRUE | Truncate to boundary |
+| `tabsize` | numeric | 15 | Tab size |
+| `jitter` | numeric | 4 | Tab randomness |
+
+### geom_puzzle_conc()
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `rings` | integer | required | Number of rings |
+| `diameter` | numeric | required | Outer diameter in mm |
+| `center_shape` | string | "hexagon" | Center: "hexagon" or "circle" |
+
+### geom_puzzle_voronoi()
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `n_cells` | integer | required | Number of cells |
+| `width` | numeric | required | Canvas width in mm |
+| `height` | numeric | required | Canvas height in mm |
+| `relaxation` | integer | 0 | Lloyd relaxation iterations |
+
+### geom_puzzle_random()
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `n_pieces` | integer | required | Number of pieces |
+| `width` | numeric | required | Canvas width in mm |
+| `height` | numeric | required | Canvas height in mm |
+| `n_corner` | integer | 5 | Corners per piece (3-8) |
+
+## Combining with Other Geoms
+
+ggpuzzle geoms work seamlessly with other ggplot2 elements:
+
+```{r}
+#| fig-align: center
+ggplot() +
+  # Puzzle as background
+  geom_puzzle_hex(
+    aes(fill = after_stat(ring)),
+    rings = 3,
+    diameter = 200,
+    seed = 42,
+    alpha = 0.7
+  ) +
+  # Add annotations
+  annotate(
+    "text",
+    x = 0, y = 0,
+    label = "CENTER",
+    size = 4,
+    fontface = "bold"
+  ) +
+  scale_fill_viridis_c(option = "plasma", guide = "none") +
+  coord_fixed() +
+  theme_void()
+```
+
+## Faceting
+
+Use faceting to show variations:
+
+```{r}
+#| fig-align: center
+#| fig-width: 10
+#| fig-height: 4
+
+# Create data for faceting
+variations <- data.frame(
+  rings = c(2, 3, 4),
+  label = c("2 Rings", "3 Rings", "4 Rings")
+)
+
+ggplot(variations) +
+  geom_puzzle_hex(
+    aes(fill = after_stat(piece_id)),
+    rings = 3,  # Will be overridden
+    diameter = 150,
+    seed = 42
+  ) +
+  facet_wrap(~label) +
+  scale_fill_viridis_c(guide = "none") +
+  coord_fixed() +
+  theme_void()
+```
+
+## Theming
+
+Apply any ggplot2 theme:
+
+```{r}
+#| layout-ncol: 2
+#| fig-cap:
+#|   - "theme_minimal()"
+#|   - "theme_dark()"
+
+# Minimal theme
+ggplot() +
+  geom_puzzle_rect(
+    aes(fill = after_stat(piece_id)),
+    cols = 3, rows = 2,
+    width = 180, height = 120,
+    seed = 42
+  ) +
+  scale_fill_viridis_c(guide = "none") +
+  coord_fixed() +
+  theme_minimal() +
+  labs(title = "Minimal")
+
+# Dark theme
+ggplot() +
+  geom_puzzle_rect(
+    aes(fill = after_stat(piece_id)),
+    cols = 3, rows = 2,
+    width = 180, height = 120,
+    seed = 42
+  ) +
+  scale_fill_viridis_c(guide = "none") +
+  coord_fixed() +
+  theme_dark() +
+  labs(title = "Dark")
+```
+
+## Saving Plots
+
+```{r}
+#| eval: false
+# Create plot
+p <- ggplot() +
+  geom_puzzle_hex(
+    aes(fill = after_stat(piece_id)),
+    rings = 4,
+    diameter = 300,
+    seed = 42
+  ) +
+  scale_fill_viridis_c(option = "turbo", guide = "none") +
+  coord_fixed() +
+  theme_void()
+
+# Save as PNG
+ggsave("puzzle.png", p, width = 8, height = 8, dpi = 300)
+
+# Save as SVG
+ggsave("puzzle.svg", p, width = 8, height = 8)
+
+# Save as PDF
+ggsave("puzzle.pdf", p, width = 8, height = 8)
+```
+
+## See Also
+
+- [generate_puzzle()](generate-puzzle.qmd) - Core puzzle generation
+- [PILES Notation](piles-notation.qmd) - Fusion group syntax
+- [Gallery: All Types](../gallery/rectangular.qmd) - Visual examples

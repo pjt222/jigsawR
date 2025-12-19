@@ -1,0 +1,397 @@
+---
+title: "Fusion Groups Tutorial"
+subtitle: "Merge puzzle pieces with PILES notation"
+---
+
+```{r}
+#| include: false
+source("quarto/_setup.R")
+```
+
+## What is Fusion?
+
+Fusion allows you to merge multiple puzzle pieces into a single piece. This is useful for:
+
+- Creating larger, easier-to-handle pieces
+- Highlighting regions of interest
+- Reducing complexity for beginners
+- Creating custom puzzle shapes
+
+## Basic Syntax
+
+PILES (Puzzle Input Line Entry System) uses a simple syntax:
+
+| Syntax | Meaning |
+|--------|---------|
+| `1-2` | Fuse pieces 1 and 2 |
+| `1-2-3` | Fuse pieces 1, 2, and 3 |
+| `1-2,3-4` | Two groups: (1,2) and (3,4) |
+| `1:5` | Range: pieces 1 through 5 |
+
+## Your First Fusion
+
+### Without Fusion
+
+```{r}
+#| fig-align: center
+ggplot() +
+  geom_puzzle_rect(
+    aes(fill = after_stat(piece_id)),
+    cols = 4, rows = 3,
+    width = 300, height = 225,
+    seed = 42
+  ) +
+  scale_fill_viridis_c(name = "Piece ID") +
+  coord_fixed() +
+  theme_minimal() +
+  labs(title = "12 Pieces, No Fusion")
+```
+
+### With Fusion
+
+```{r}
+#| fig-align: center
+#| eval: false
+ggplot() +
+  geom_puzzle_rect(
+    aes(fill = after_stat(group_id)),
+    cols = 4, rows = 3,
+    width = 300, height = 225,
+    seed = 42,
+    fusion_groups = "1-2,5-6,11-12"
+  ) +
+  scale_fill_viridis_c(name = "Group ID") +
+  coord_fixed() +
+  theme_minimal() +
+  labs(
+    title = "Fused: 1-2, 5-6, 11-12",
+    subtitle = "12 pieces → 9 groups"
+  )
+```
+
+## Piece Numbering
+
+Understanding how pieces are numbered is essential for fusion.
+
+### Rectangular Numbering
+
+Pieces are numbered left-to-right, top-to-bottom:
+
+```
+ 1  2  3  4
+ 5  6  7  8
+ 9 10 11 12
+```
+
+```{r}
+#| fig-align: center
+#| fig-height: 4
+# Show piece numbers visually
+ggplot() +
+  geom_puzzle_rect(
+    aes(fill = after_stat(piece_id)),
+    cols = 4, rows = 3,
+    width = 320, height = 240,
+    seed = 42
+  ) +
+  scale_fill_viridis_c(name = "Piece #") +
+  coord_fixed() +
+  theme_minimal() +
+  labs(title = "Piece Numbering: Left→Right, Top→Bottom")
+```
+
+### Hexagonal Numbering
+
+Center is 1, then outward in rings:
+
+```{r}
+#| fig-align: center
+ggplot() +
+  geom_puzzle_hex(
+    aes(fill = after_stat(piece_id)),
+    rings = 3, diameter = 220, seed = 42
+  ) +
+  scale_fill_viridis_c(name = "Piece #") +
+  coord_fixed() +
+  theme_minimal() +
+  labs(title = "Hexagonal: Center=1, then rings")
+```
+
+## Fusion Examples
+
+### Fuse Adjacent Pairs
+
+```{r}
+#| fig-align: center
+#| eval: false
+ggplot() +
+  geom_puzzle_rect(
+    aes(fill = after_stat(group_id)),
+    cols = 4, rows = 3,
+    width = 300, height = 225,
+    seed = 42,
+    fusion_groups = "1-2,3-4,5-6,7-8,9-10,11-12"
+  ) +
+  scale_fill_viridis_c(option = "plasma", name = "Group") +
+  coord_fixed() +
+  theme_void() +
+  labs(title = "All adjacent pairs fused")
+```
+
+### Fuse Rows
+
+```{r}
+#| fig-align: center
+#| eval: false
+ggplot() +
+  geom_puzzle_rect(
+    aes(fill = after_stat(group_id)),
+    cols = 5, rows = 3,
+    width = 350, height = 210,
+    seed = 42,
+    fusion_groups = "1:5,6:10,11:15"  # Ranges for each row
+  ) +
+  scale_fill_viridis_c(option = "magma", name = "Row") +
+  coord_fixed() +
+  theme_void() +
+  labs(title = "Each row fused (using ranges)")
+```
+
+### Using Row Keywords
+
+```{r}
+#| fig-align: center
+#| eval: false
+# R1, R2, R3 keywords for rows
+ggplot() +
+  geom_puzzle_rect(
+    aes(fill = after_stat(group_id)),
+    cols = 4, rows = 3,
+    width = 280, height = 210,
+    seed = 42,
+    fusion_groups = "R1,R2,R3"
+  ) +
+  scale_fill_viridis_c(option = "cividis", name = "Row") +
+  coord_fixed() +
+  theme_void() +
+  labs(title = "Row fusion with keywords: R1, R2, R3")
+```
+
+## Hexagonal Keywords
+
+Special keywords for hexagonal puzzles:
+
+### Center + Ring1
+
+```{r}
+#| fig-align: center
+#| eval: false
+ggplot() +
+  geom_puzzle_hex(
+    aes(fill = after_stat(group_id)),
+    rings = 3, diameter = 220, seed = 42,
+    fusion_groups = "center-ring1"
+  ) +
+  scale_fill_viridis_c(option = "plasma", name = "Group") +
+  coord_fixed() +
+  theme_void() +
+  labs(title = "Fusion: center-ring1")
+```
+
+### Ring2 Only
+
+```{r}
+#| fig-align: center
+#| eval: false
+ggplot() +
+  geom_puzzle_hex(
+    aes(fill = after_stat(group_id)),
+    rings = 3, diameter = 220, seed = 42,
+    fusion_groups = "ring2"
+  ) +
+  scale_fill_viridis_c(option = "magma", name = "Group") +
+  coord_fixed() +
+  theme_void() +
+  labs(title = "Fusion: ring2 (all ring 2 pieces merged)")
+```
+
+### Multiple Ring Keywords
+
+```{r}
+#| fig-align: center
+#| eval: false
+ggplot() +
+  geom_puzzle_hex(
+    aes(fill = after_stat(group_id)),
+    rings = 4, diameter = 280, seed = 42,
+    fusion_groups = "center-ring1,ring2,ring3"
+  ) +
+  scale_fill_viridis_c(option = "viridis", name = "Group") +
+  coord_fixed() +
+  theme_void() +
+  labs(title = "center-ring1, ring2, ring3")
+```
+
+## Keyword Reference
+
+### Rectangular Keywords
+
+| Keyword | Description |
+|---------|-------------|
+| `R1` | All pieces in row 1 (top) |
+| `R2` | All pieces in row 2 |
+| `RN` | All pieces in row N |
+| `C1` | All pieces in column 1 (left) |
+| `CN` | All pieces in column N |
+| `boundary` | All edge pieces |
+
+### Hexagonal Keywords
+
+| Keyword | Description |
+|---------|-------------|
+| `center` | Piece 1 (center) |
+| `ring1` | All pieces in ring 1 |
+| `ringN` | All pieces in ring N |
+| `boundary` | Outermost ring |
+
+## Combining Notations
+
+You can mix numeric IDs, ranges, and keywords:
+
+```{r}
+#| fig-align: center
+#| eval: false
+# Mix of IDs and ranges
+ggplot() +
+  geom_puzzle_rect(
+    aes(fill = after_stat(group_id)),
+    cols = 5, rows = 4,
+    width = 350, height = 280,
+    seed = 42,
+    fusion_groups = "1-2-3,8:12,17-18-19-20"
+  ) +
+  scale_fill_viridis_c(option = "turbo", name = "Group") +
+  coord_fixed() +
+  theme_void() +
+  labs(
+    title = "Mixed notation",
+    subtitle = "1-2-3, 8:12 (range), 17-18-19-20"
+  )
+```
+
+## Validation
+
+Always validate your PILES strings:
+
+```{r}
+# Valid syntax
+validate_piles_syntax("1-2-3,4-5")
+validate_piles_syntax("1:10,20-21")
+
+# Invalid syntax
+validate_piles_syntax("1-2(-3)")  # FALSE
+```
+
+## Programmatic Fusion
+
+### Parse PILES to List
+
+```{r}
+groups <- parse_piles("1-2-3,4-5,6:8")
+print(groups)
+```
+
+### Convert List to PILES
+
+```{r}
+my_groups <- list(c(1, 2, 3), c(4, 5), c(10, 11, 12))
+notation <- to_piles(my_groups)
+print(notation)
+```
+
+## Creative Applications
+
+### Highlight a Region
+
+```{r}
+#| fig-align: center
+#| eval: false
+# Fuse center area to highlight it
+ggplot() +
+  geom_puzzle_rect(
+    aes(fill = after_stat(group_id)),
+    cols = 5, rows = 5,
+    width = 300, height = 300,
+    seed = 42,
+    fusion_groups = "7-8-9-12-13-14-17-18-19"  # 3x3 center
+  ) +
+  scale_fill_viridis_c(option = "plasma", name = "Group") +
+  coord_fixed() +
+  theme_void() +
+  labs(title = "Center region highlighted via fusion")
+```
+
+### Create Difficulty Levels
+
+```{r}
+#| layout-ncol: 3
+#| fig-cap:
+#|   - "Easy (fused)"
+#|   - "Medium"
+#|   - "Hard (no fusion)"
+#| eval: false
+
+# Easy - lots of fusion
+ggplot() +
+  geom_puzzle_rect(
+    aes(fill = after_stat(group_id)),
+    cols = 4, rows = 4,
+    width = 180, height = 180,
+    seed = 42,
+    fusion_groups = "1:4,5:8,9:12,13:16"
+  ) +
+  scale_fill_viridis_c(guide = "none") +
+  coord_fixed() +
+  theme_void()
+
+# Medium - some fusion
+ggplot() +
+  geom_puzzle_rect(
+    aes(fill = after_stat(group_id)),
+    cols = 4, rows = 4,
+    width = 180, height = 180,
+    seed = 42,
+    fusion_groups = "1-2,3-4,13-14,15-16"
+  ) +
+  scale_fill_viridis_c(guide = "none") +
+  coord_fixed() +
+  theme_void()
+
+# Hard - no fusion
+ggplot() +
+  geom_puzzle_rect(
+    aes(fill = after_stat(piece_id)),
+    cols = 4, rows = 4,
+    width = 180, height = 180,
+    seed = 42
+  ) +
+  scale_fill_viridis_c(guide = "none") +
+  coord_fixed() +
+  theme_void()
+```
+
+## Summary
+
+You've learned:
+
+- ✅ Basic PILES syntax (hyphens, commas, ranges)
+- ✅ Piece numbering for different puzzle types
+- ✅ Using keywords (R1, ring1, center, boundary)
+- ✅ Mixing notations for complex patterns
+- ✅ Validating and programmatic manipulation
+- ✅ Creative applications of fusion
+
+## Next Steps
+
+- [PILES Notation Reference](../api/piles-notation.qmd) - Complete syntax documentation
+- [Gallery](../gallery/rectangular.qmd) - More visual examples

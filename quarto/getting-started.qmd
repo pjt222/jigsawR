@@ -1,0 +1,254 @@
+---
+title: "Getting Started"
+subtitle: "Install jigsawR and create your first puzzle"
+---
+
+```{r}
+#| include: false
+source("quarto/_setup.R")
+```
+
+## Installation
+
+### From GitHub (Recommended)
+
+```r
+# Install devtools if needed
+install.packages("devtools")
+
+# Install jigsawR
+devtools::install_github("pjt222/jigsawR")
+```
+
+### Dependencies
+
+jigsawR requires:
+
+- R ≥ 4.0.0
+- ggplot2, ggforce, ggfx (for ggpuzzle extension)
+- viridis (for color palettes)
+
+Optional dependencies:
+
+- rsvg (for PNG export)
+- magick (for image processing)
+
+## Your First Puzzle
+
+### Rectangular Puzzle
+
+The simplest way to create a puzzle:
+
+```{r}
+#| message: false
+library(jigsawR)
+
+# Generate a 4x3 puzzle
+result <- generate_puzzle(
+  type = "rectangular",
+  grid = c(4, 3),        # 4 columns, 3 rows
+  size = c(400, 300),    # 400mm x 300mm
+  seed = 42              # For reproducibility
+)
+
+# Check the result
+cat("Generated", length(result$pieces), "pieces\n")
+cat("Canvas size:", result$canvas_size[1], "x", result$canvas_size[2], "mm\n")
+```
+
+### Visualize with ggplot2
+
+```{r}
+#| fig-align: center
+library(ggplot2)
+library(viridis)
+
+ggplot() +
+  geom_puzzle_rect(
+    aes(fill = after_stat(piece_id)),
+    cols = 4, rows = 3,
+    seed = 42
+  ) +
+  scale_fill_viridis_c(option = "viridis", guide = "none") +
+  coord_fixed() +
+  theme_void()
+```
+
+### Save Your Puzzle
+
+```{r}
+#| eval: false
+# Save as SVG
+writeLines(result$svg_content, "my_puzzle.svg")
+
+# Save as PNG (requires rsvg)
+if (requireNamespace("rsvg", quietly = TRUE)) {
+  rsvg::rsvg_png(
+    charToRaw(result$svg_content),
+    "my_puzzle.png",
+    width = 800
+  )
+}
+```
+
+## Puzzle Types
+
+### 1. Rectangular
+
+Classic jigsaw with interlocking tabs on all sides.
+
+```{r}
+#| fig-align: center
+ggplot() +
+  geom_puzzle_rect(
+    aes(fill = after_stat(piece_id)),
+    cols = 5, rows = 4,
+    seed = 123
+  ) +
+  scale_fill_viridis_c(option = "plasma", guide = "none") +
+  coord_fixed() +
+  theme_void() +
+  labs(title = "5x4 Rectangular Puzzle")
+```
+
+### 2. Hexagonal
+
+Honeycomb pattern with beautiful curved tabs.
+
+```{r}
+#| fig-align: center
+ggplot() +
+  geom_puzzle_hex(
+    aes(fill = after_stat(piece_id)),
+    rings = 3,
+    seed = 456
+  ) +
+  scale_fill_viridis_c(option = "magma", guide = "none") +
+  coord_fixed() +
+  theme_void() +
+  labs(title = "3-Ring Hexagonal Puzzle")
+```
+
+### 3. Concentric
+
+Rings of pieces radiating from a central shape.
+
+```{r}
+#| fig-align: center
+ggplot() +
+  geom_puzzle_conc(
+    aes(fill = after_stat(ring)),
+    rings = 3,
+    center_shape = "hexagon",
+    seed = 789
+  ) +
+  scale_fill_viridis_c(option = "cividis", guide = "none") +
+  coord_fixed() +
+  theme_void() +
+  labs(title = "3-Ring Concentric Puzzle")
+```
+
+### 4. Voronoi
+
+Organic, natural-looking pieces based on Voronoi tessellation.
+
+```{r}
+#| fig-align: center
+ggplot() +
+  geom_puzzle_voronoi(
+    aes(fill = after_stat(piece_id)),
+    n_cells = 20,
+    seed = 101
+  ) +
+  scale_fill_viridis_c(option = "turbo", guide = "none") +
+  coord_fixed() +
+  theme_void() +
+  labs(title = "20-Cell Voronoi Puzzle")
+```
+
+### 5. Random
+
+Unique random shapes with configurable corners.
+
+```{r}
+#| fig-align: center
+ggplot() +
+  geom_puzzle_random(
+    aes(fill = after_stat(piece_id)),
+    n_pieces = 15,
+    seed = 202
+  ) +
+  scale_fill_viridis_c(option = "inferno", guide = "none") +
+  coord_fixed() +
+  theme_void() +
+  labs(title = "15-Piece Random Puzzle")
+```
+
+## Key Parameters
+
+### Common Parameters
+
+| Parameter | Description | Example |
+|-----------|-------------|---------|
+| `type` | Puzzle type | `"rectangular"`, `"hexagonal"` |
+| `grid` | Grid dimensions | `c(cols, rows)` or `c(rings)` |
+| `size` | Physical size (mm) | `c(width, height)` or `c(diameter)` |
+| `seed` | Random seed | Any integer |
+| `offset` | Piece separation | `0` (touching) to `20+` (separated) |
+| `fusion` | Merge pieces | PILES notation string |
+
+### Type-Specific Parameters
+
+**Hexagonal:**
+
+- `do_warp`: Apply circular warping (default: `TRUE`)
+- `do_trunc`: Truncate to boundary (default: `TRUE`)
+
+**Concentric:**
+
+- `center_shape`: `"hexagon"` or `"circle"`
+- `ring_spacing`: Space between rings
+
+**Voronoi:**
+
+- `n_cells`: Number of pieces
+- `relaxation`: Lloyd relaxation iterations
+
+**Random:**
+
+- `n_pieces`: Number of pieces
+- `n_corner`: Corners per piece (3-8)
+
+## Separation Modes
+
+Control how pieces are positioned:
+
+```{r}
+#| layout-ncol: 3
+#| fig-cap:
+#|   - "offset = 0 (touching)"
+#|   - "offset = 10"
+#|   - "offset = 20"
+
+for (off in c(0, 10, 20)) {
+  print(
+    ggplot() +
+      geom_puzzle_rect(
+        aes(fill = after_stat(piece_id)),
+        cols = 3, rows = 2,
+        offset = off,
+        seed = 42
+      ) +
+      scale_fill_viridis_c(guide = "none") +
+      coord_fixed() +
+      theme_void()
+  )
+}
+```
+
+## Next Steps
+
+- [**Gallery**](gallery/rectangular.qmd): Explore all puzzle types with visual examples
+- [**API Reference**](api/generate-puzzle.qmd): Complete function documentation
+- [**PILES Notation**](api/piles-notation.qmd): Learn to merge pieces
+- [**Tutorials**](tutorials/basic-usage.qmd): Step-by-step guides

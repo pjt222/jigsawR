@@ -1,0 +1,223 @@
+---
+title: "Basic Usage Tutorial"
+subtitle: "Step-by-step guide to creating your first puzzles"
+---
+
+```{r}
+#| include: false
+source("quarto/_setup.R")
+```
+
+## Introduction
+
+This tutorial walks you through creating puzzles with jigsawR, from simple examples to more complex configurations.
+
+## Step 1: Installation
+
+```{r}
+#| eval: false
+# Install from GitHub
+devtools::install_github("pjt222/jigsawR")
+
+# Load the package
+library(jigsawR)
+```
+
+## Step 2: Your First Puzzle
+
+Let's create a simple rectangular puzzle:
+
+```{r}
+# Generate a 4x3 rectangular puzzle
+result <- generate_puzzle(
+  type = "rectangular",
+  grid = c(4, 3),      # 4 columns, 3 rows
+  size = c(400, 300),  # 400mm x 300mm
+  seed = 42            # For reproducibility
+)
+
+# What did we get?
+cat("Number of pieces:", length(result$pieces), "\n")
+cat("Canvas size:", result$canvas_size[1], "x", result$canvas_size[2], "mm\n")
+```
+
+## Step 3: Visualize with ggplot2
+
+```{r}
+#| fig-align: center
+library(ggplot2)
+library(viridis)
+
+ggplot() +
+  geom_puzzle_rect(
+    aes(fill = after_stat(piece_id)),
+    cols = 4, rows = 3,
+    width = 400, height = 300,
+    seed = 42
+  ) +
+  scale_fill_viridis_c(name = "Piece ID") +
+  coord_fixed() +
+  theme_minimal() +
+  labs(title = "My First Puzzle")
+```
+
+## Step 4: Save Your Puzzle
+
+```{r}
+#| eval: false
+# Save as SVG
+writeLines(result$svg_content, "my_puzzle.svg")
+
+# Save ggplot as PNG
+p <- ggplot() +
+  geom_puzzle_rect(
+    aes(fill = after_stat(piece_id)),
+    cols = 4, rows = 3,
+    seed = 42
+  ) +
+  scale_fill_viridis_c(guide = "none") +
+  coord_fixed() +
+  theme_void()
+
+ggsave("my_puzzle.png", p, width = 8, height = 6, dpi = 300)
+```
+
+## Step 5: Try Different Puzzle Types
+
+### Hexagonal
+
+```{r}
+#| fig-align: center
+ggplot() +
+  geom_puzzle_hex(
+    aes(fill = after_stat(piece_id)),
+    rings = 3,
+    seed = 42
+  ) +
+  scale_fill_viridis_c(option = "plasma", guide = "none") +
+  coord_fixed() +
+  theme_void() +
+  labs(title = "Hexagonal Puzzle")
+```
+
+### Concentric
+
+```{r}
+#| fig-align: center
+ggplot() +
+  geom_puzzle_conc(
+    aes(fill = after_stat(ring)),
+    rings = 3,
+    seed = 42
+  ) +
+  scale_fill_viridis_c(option = "cividis", name = "Ring") +
+  coord_fixed() +
+  theme_void() +
+  labs(title = "Concentric Puzzle")
+```
+
+### Voronoi
+
+```{r}
+#| fig-align: center
+ggplot() +
+  geom_puzzle_voronoi(
+    aes(fill = after_stat(piece_id)),
+    n_cells = 20,
+    width = 250, height = 200,
+    seed = 42
+  ) +
+  scale_fill_viridis_c(option = "turbo", guide = "none") +
+  coord_fixed() +
+  theme_void() +
+  labs(title = "Voronoi Puzzle")
+```
+
+## Step 6: Customize Parameters
+
+### Change Separation
+
+```{r}
+#| layout-ncol: 3
+#| fig-cap:
+#|   - "offset = 0"
+#|   - "offset = 10"
+#|   - "offset = 20"
+
+for (off in c(0, 10, 20)) {
+  print(
+    ggplot() +
+      geom_puzzle_rect(
+        aes(fill = after_stat(piece_id)),
+        cols = 3, rows = 2,
+        width = 150, height = 100,
+        offset = off,
+        seed = 42
+      ) +
+      scale_fill_viridis_c(guide = "none") +
+      coord_fixed() +
+      theme_void()
+  )
+}
+```
+
+### Change Colors
+
+```{r}
+#| layout-ncol: 2
+#| fig-cap:
+#|   - "Plasma palette"
+#|   - "Magma palette"
+
+ggplot() +
+  geom_puzzle_hex(
+    aes(fill = after_stat(piece_id)),
+    rings = 2, diameter = 150, seed = 42
+  ) +
+  scale_fill_viridis_c(option = "plasma", guide = "none") +
+  coord_fixed() +
+  theme_void()
+
+ggplot() +
+  geom_puzzle_hex(
+    aes(fill = after_stat(piece_id)),
+    rings = 2, diameter = 150, seed = 42
+  ) +
+  scale_fill_viridis_c(option = "magma", guide = "none") +
+  coord_fixed() +
+  theme_void()
+```
+
+## Step 7: Reproducibility
+
+The `seed` parameter ensures you get the same puzzle every time:
+
+```{r}
+# Same seed = same puzzle
+p1 <- generate_puzzle(type = "hexagonal", grid = c(2), size = c(100), seed = 42)
+p2 <- generate_puzzle(type = "hexagonal", grid = c(2), size = c(100), seed = 42)
+
+identical(p1$svg_content, p2$svg_content)  # TRUE
+
+# Different seed = different puzzle
+p3 <- generate_puzzle(type = "hexagonal", grid = c(2), size = c(100), seed = 123)
+identical(p1$svg_content, p3$svg_content)  # FALSE
+```
+
+## Summary
+
+You've learned to:
+
+1. ✅ Install and load jigsawR
+2. ✅ Generate puzzles with `generate_puzzle()`
+3. ✅ Visualize with ggplot2 geoms
+4. ✅ Save as SVG and PNG
+5. ✅ Create different puzzle types
+6. ✅ Customize offset and colors
+7. ✅ Use seeds for reproducibility
+
+## Next Steps
+
+- [Customization Tutorial](customization.qmd) - Colors, themes, and advanced styling
+- [Fusion Groups Tutorial](fusion-groups.qmd) - Merge pieces with PILES notation
+- [API Reference](../api/generate-puzzle.qmd) - Complete parameter documentation
