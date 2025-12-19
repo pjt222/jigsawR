@@ -17,25 +17,23 @@ Voronoi puzzles create organic, natural-looking pieces based on Voronoi tessella
 
 ```{r}
 #| label: fig-vor-cell-counts
-#| layout-ncol: 3
-#| fig-cap:
-#|   - "10 cells"
-#|   - "25 cells"
-#|   - "50 cells"
+#| fig-align: center
+library(patchwork)
 
-for (n in c(10, 25, 50)) {
-  print(
-    ggplot() +
-      geom_puzzle_voronoi(
-        aes(fill = after_stat(piece_id)),
-        n_cells = n,
-        seed = 42
-      ) +
-      scale_fill_viridis_c(option = "turbo", guide = "none") +
-      coord_fixed() +
-      theme_void()
-  )
+make_vor_cells <- function(n) {
+  ggplot() +
+    geom_puzzle_voronoi(
+      aes(fill = after_stat(piece_id)),
+      n_cells = n,
+      seed = 42
+    ) +
+    scale_fill_viridis_c(option = "turbo", guide = "none") +
+    coord_fixed() +
+    theme_void() +
+    labs(title = paste0(n, " cells"))
 }
+
+make_vor_cells(10) + make_vor_cells(25) + make_vor_cells(50)
 ```
 
 ## Aspect Ratios
@@ -88,55 +86,45 @@ ggplot() +
 
 ```{r}
 #| label: fig-vor-color-palettes
-#| layout-ncol: 3
-#| fig-cap:
-#|   - "viridis"
-#|   - "magma"
-#|   - "plasma"
-#|   - "inferno"
-#|   - "cividis"
-#|   - "turbo"
+#| fig-align: center
 
-for (pal in c("viridis", "magma", "plasma", "inferno", "cividis", "turbo")) {
-  print(
-    ggplot() +
-      geom_puzzle_voronoi(
-        aes(fill = after_stat(piece_id)),
-        n_cells = 20,
-        seed = 42
-      ) +
-      scale_fill_viridis_c(option = pal, guide = "none") +
-      coord_fixed() +
-      theme_void() +
-      labs(title = pal)
-  )
+make_vor_palette <- function(pal) {
+  ggplot() +
+    geom_puzzle_voronoi(
+      aes(fill = after_stat(piece_id)),
+      n_cells = 20,
+      seed = 42
+    ) +
+    scale_fill_viridis_c(option = pal, guide = "none") +
+    coord_fixed() +
+    theme_void() +
+    labs(title = pal)
 }
+
+(make_vor_palette("viridis") + make_vor_palette("magma") + make_vor_palette("plasma")) /
+(make_vor_palette("inferno") + make_vor_palette("cividis") + make_vor_palette("turbo"))
 ```
 
 ## Offset (Separation)
 
 ```{r}
 #| label: fig-vor-offset
-#| layout-ncol: 4
-#| fig-cap:
-#|   - "offset = 0"
-#|   - "offset = 5"
-#|   - "offset = 10"
-#|   - "offset = 20"
+#| fig-align: center
 
-for (off in c(0, 5, 10, 20)) {
-  print(
-    ggplot() +
-      geom_puzzle_voronoi(
-        aes(fill = after_stat(piece_id)),
-        n_cells = 20,
-        offset = off, seed = 42
-      ) +
-      scale_fill_viridis_c(option = "viridis", guide = "none") +
-      coord_fixed() +
-      theme_void()
-  )
+make_vor_offset <- function(off) {
+  ggplot() +
+    geom_puzzle_voronoi(
+      aes(fill = after_stat(piece_id)),
+      n_cells = 20,
+      offset = off, seed = 42
+    ) +
+    scale_fill_viridis_c(option = "viridis", guide = "none") +
+    coord_fixed() +
+    theme_void() +
+    labs(title = paste0("offset = ", off))
 }
+
+make_vor_offset(0) + make_vor_offset(5) + make_vor_offset(10) + make_vor_offset(20)
 ```
 
 ## Seed Variations
@@ -145,26 +133,22 @@ Different seeds create completely different tessellations:
 
 ```{r}
 #| label: fig-vor-seeds
-#| layout-ncol: 4
-#| fig-cap:
-#|   - "seed = 1"
-#|   - "seed = 42"
-#|   - "seed = 123"
-#|   - "seed = 999"
+#| fig-align: center
 
-for (s in c(1, 42, 123, 999)) {
-  print(
-    ggplot() +
-      geom_puzzle_voronoi(
-        aes(fill = after_stat(piece_id)),
-        n_cells = 15,
-        seed = s
-      ) +
-      scale_fill_viridis_c(option = "magma", guide = "none") +
-      coord_fixed() +
-      theme_void()
-  )
+make_vor_seed <- function(s) {
+  ggplot() +
+    geom_puzzle_voronoi(
+      aes(fill = after_stat(piece_id)),
+      n_cells = 15,
+      seed = s
+    ) +
+    scale_fill_viridis_c(option = "magma", guide = "none") +
+    coord_fixed() +
+    theme_void() +
+    labs(title = paste0("seed = ", s))
 }
+
+make_vor_seed(1) + make_vor_seed(42) + make_vor_seed(123) + make_vor_seed(999)
 ```
 
 ## Large Voronoi Puzzle

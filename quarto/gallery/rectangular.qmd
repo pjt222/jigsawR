@@ -65,29 +65,24 @@ All viridis palettes work beautifully with puzzle pieces:
 
 ```{r}
 #| label: fig-rect-palettes
-#| layout-ncol: 3
-#| fig-cap:
-#|   - "viridis"
-#|   - "magma"
-#|   - "plasma"
-#|   - "inferno"
-#|   - "cividis"
-#|   - "turbo"
+#| fig-align: center
+library(patchwork)
 
-for (pal in c("viridis", "magma", "plasma", "inferno", "cividis", "turbo")) {
-  print(
-    ggplot() +
-      geom_puzzle_rect(
-        aes(fill = after_stat(piece_id)),
-        cols = 4, rows = 3,
-        seed = 42
-      ) +
-      scale_fill_viridis_c(option = pal, guide = "none") +
-      coord_fixed() +
-      theme_void() +
-      labs(title = pal)
-  )
+make_palette_plot <- function(pal) {
+  ggplot() +
+    geom_puzzle_rect(
+      aes(fill = after_stat(piece_id)),
+      cols = 4, rows = 3,
+      seed = 42
+    ) +
+    scale_fill_viridis_c(option = pal, guide = "none") +
+    coord_fixed() +
+    theme_void() +
+    labs(title = pal)
 }
+
+(make_palette_plot("viridis") + make_palette_plot("magma") + make_palette_plot("plasma")) /
+(make_palette_plot("inferno") + make_palette_plot("cividis") + make_palette_plot("turbo"))
 ```
 
 ## Offset (Separation)
@@ -96,27 +91,23 @@ Control spacing between pieces:
 
 ```{r}
 #| label: fig-rect-offset
-#| layout-ncol: 4
-#| fig-cap:
-#|   - "offset = 0"
-#|   - "offset = 5"
-#|   - "offset = 10"
-#|   - "offset = 20"
+#| fig-align: center
 
-for (off in c(0, 5, 10, 20)) {
-  print(
-    ggplot() +
-      geom_puzzle_rect(
-        aes(fill = after_stat(piece_id)),
-        cols = 3, rows = 3,
-        offset = off,
-        seed = 42
-      ) +
-      scale_fill_viridis_c(option = "plasma", guide = "none") +
-      coord_fixed() +
-      theme_void()
-  )
+make_offset_plot <- function(off) {
+  ggplot() +
+    geom_puzzle_rect(
+      aes(fill = after_stat(piece_id)),
+      cols = 3, rows = 3,
+      offset = off,
+      seed = 42
+    ) +
+    scale_fill_viridis_c(option = "plasma", guide = "none") +
+    coord_fixed() +
+    theme_void() +
+    labs(title = paste0("offset = ", off))
 }
+
+make_offset_plot(0) + make_offset_plot(5) + make_offset_plot(10) + make_offset_plot(20)
 ```
 
 ## Fusion Groups

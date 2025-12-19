@@ -224,26 +224,46 @@ ggplot() +
 Control how pieces are positioned:
 
 ```{r}
-#| layout-ncol: 3
-#| fig-cap:
-#|   - "offset = 0 (touching)"
-#|   - "offset = 10"
-#|   - "offset = 20"
+#| fig-align: center
+library(patchwork)
 
-for (off in c(0, 10, 20)) {
-  print(
-    ggplot() +
-      geom_puzzle_rect(
-        aes(fill = after_stat(piece_id)),
-        cols = 3, rows = 2,
-        offset = off,
-        seed = 42
-      ) +
-      scale_fill_viridis_c(guide = "none") +
-      coord_fixed() +
-      theme_void()
-  )
-}
+p1 <- ggplot() +
+  geom_puzzle_rect(
+    aes(fill = after_stat(piece_id)),
+    cols = 3, rows = 2,
+    offset = 0,
+    seed = 42
+  ) +
+  scale_fill_viridis_c(guide = "none") +
+  coord_fixed() +
+  theme_void() +
+  labs(title = "offset = 0")
+
+p2 <- ggplot() +
+  geom_puzzle_rect(
+    aes(fill = after_stat(piece_id)),
+    cols = 3, rows = 2,
+    offset = 10,
+    seed = 42
+  ) +
+  scale_fill_viridis_c(guide = "none") +
+  coord_fixed() +
+  theme_void() +
+  labs(title = "offset = 10")
+
+p3 <- ggplot() +
+  geom_puzzle_rect(
+    aes(fill = after_stat(piece_id)),
+    cols = 3, rows = 2,
+    offset = 20,
+    seed = 42
+  ) +
+  scale_fill_viridis_c(guide = "none") +
+  coord_fixed() +
+  theme_void() +
+  labs(title = "offset = 20")
+
+p1 + p2 + p3
 ```
 
 ## Next Steps

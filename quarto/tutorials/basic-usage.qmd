@@ -138,27 +138,24 @@ ggplot() +
 ### Change Separation
 
 ```{r}
-#| layout-ncol: 3
-#| fig-cap:
-#|   - "offset = 0"
-#|   - "offset = 10"
-#|   - "offset = 20"
+#| fig-align: center
+library(patchwork)
 
-for (off in c(0, 10, 20)) {
-  print(
-    ggplot() +
-      geom_puzzle_rect(
-        aes(fill = after_stat(piece_id)),
-        cols = 3, rows = 2,
-        width = 150, height = 100,
-        offset = off,
-        seed = 42
-      ) +
-      scale_fill_viridis_c(guide = "none") +
-      coord_fixed() +
-      theme_void()
-  )
+make_offset_plot <- function(off) {
+  ggplot() +
+    geom_puzzle_rect(
+      aes(fill = after_stat(piece_id)),
+      cols = 3, rows = 2,
+      offset = off,
+      seed = 42
+    ) +
+    scale_fill_viridis_c(guide = "none") +
+    coord_fixed() +
+    theme_void() +
+    labs(title = paste0("offset = ", off))
 }
+
+make_offset_plot(0) + make_offset_plot(10) + make_offset_plot(20)
 ```
 
 ### Change Colors

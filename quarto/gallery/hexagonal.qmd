@@ -112,54 +112,45 @@ ggplot() +
 
 ```{r}
 #| label: fig-hex-palettes
-#| layout-ncol: 3
-#| fig-cap:
-#|   - "viridis"
-#|   - "magma"
-#|   - "plasma"
-#|   - "inferno"
-#|   - "cividis"
-#|   - "turbo"
+#| fig-align: center
+library(patchwork)
 
-for (pal in c("viridis", "magma", "plasma", "inferno", "cividis", "turbo")) {
-  print(
-    ggplot() +
-      geom_puzzle_hex(
-        aes(fill = after_stat(piece_id)),
-        rings = 3, seed = 42
-      ) +
-      scale_fill_viridis_c(option = pal, guide = "none") +
-      coord_fixed() +
-      theme_void() +
-      labs(title = pal)
-  )
+make_hex_palette <- function(pal) {
+  ggplot() +
+    geom_puzzle_hex(
+      aes(fill = after_stat(piece_id)),
+      rings = 3, seed = 42
+    ) +
+    scale_fill_viridis_c(option = pal, guide = "none") +
+    coord_fixed() +
+    theme_void() +
+    labs(title = pal)
 }
+
+(make_hex_palette("viridis") + make_hex_palette("magma") + make_hex_palette("plasma")) /
+(make_hex_palette("inferno") + make_hex_palette("cividis") + make_hex_palette("turbo"))
 ```
 
 ## Offset (Separation)
 
 ```{r}
 #| label: fig-hex-offset
-#| layout-ncol: 4
-#| fig-cap:
-#|   - "offset = 0"
-#|   - "offset = 5"
-#|   - "offset = 10"
-#|   - "offset = 15"
+#| fig-align: center
 
-for (off in c(0, 5, 10, 15)) {
-  print(
-    ggplot() +
-      geom_puzzle_hex(
-        aes(fill = after_stat(piece_id)),
-        rings = 3,
-        offset = off, seed = 42
-      ) +
-      scale_fill_viridis_c(option = "viridis", guide = "none") +
-      coord_fixed() +
-      theme_void()
-  )
+make_hex_offset <- function(off) {
+  ggplot() +
+    geom_puzzle_hex(
+      aes(fill = after_stat(piece_id)),
+      rings = 3,
+      offset = off, seed = 42
+    ) +
+    scale_fill_viridis_c(option = "viridis", guide = "none") +
+    coord_fixed() +
+    theme_void() +
+    labs(title = paste0("offset = ", off))
 }
+
+make_hex_offset(0) + make_hex_offset(5) + make_hex_offset(10) + make_hex_offset(15)
 ```
 
 ## Fusion Groups

@@ -17,25 +17,23 @@ Concentric puzzles feature rings of pieces that radiate outward from a central s
 
 ```{r}
 #| label: fig-conc-rings
-#| layout-ncol: 3
-#| fig-cap:
-#|   - "2 rings"
-#|   - "3 rings"
-#|   - "4 rings"
+#| fig-align: center
+library(patchwork)
 
-for (r in 2:4) {
-  print(
-    ggplot() +
-      geom_puzzle_conc(
-        aes(fill = after_stat(ring)),
-        rings = r,
-        seed = 42
-      ) +
-      scale_fill_viridis_c(option = "plasma", guide = "none") +
-      coord_fixed() +
-      theme_void()
-  )
+make_conc_rings <- function(r) {
+  ggplot() +
+    geom_puzzle_conc(
+      aes(fill = after_stat(ring)),
+      rings = r,
+      seed = 42
+    ) +
+    scale_fill_viridis_c(option = "plasma", guide = "none") +
+    coord_fixed() +
+    theme_void() +
+    labs(title = paste0(r, " rings"))
 }
+
+make_conc_rings(2) + make_conc_rings(3) + make_conc_rings(4)
 ```
 
 ## Center Shape Options
@@ -110,54 +108,44 @@ ggplot() +
 
 ```{r}
 #| label: fig-conc-palettes
-#| layout-ncol: 3
-#| fig-cap:
-#|   - "viridis"
-#|   - "magma"
-#|   - "plasma"
-#|   - "inferno"
-#|   - "cividis"
-#|   - "turbo"
+#| fig-align: center
 
-for (pal in c("viridis", "magma", "plasma", "inferno", "cividis", "turbo")) {
-  print(
-    ggplot() +
-      geom_puzzle_conc(
-        aes(fill = after_stat(ring)),
-        rings = 3, seed = 42
-      ) +
-      scale_fill_viridis_c(option = pal, guide = "none") +
-      coord_fixed() +
-      theme_void() +
-      labs(title = pal)
-  )
+make_conc_palette <- function(pal) {
+  ggplot() +
+    geom_puzzle_conc(
+      aes(fill = after_stat(ring)),
+      rings = 3, seed = 42
+    ) +
+    scale_fill_viridis_c(option = pal, guide = "none") +
+    coord_fixed() +
+    theme_void() +
+    labs(title = pal)
 }
+
+(make_conc_palette("viridis") + make_conc_palette("magma") + make_conc_palette("plasma")) /
+(make_conc_palette("inferno") + make_conc_palette("cividis") + make_conc_palette("turbo"))
 ```
 
 ## Offset (Separation)
 
 ```{r}
 #| label: fig-conc-offset
-#| layout-ncol: 4
-#| fig-cap:
-#|   - "offset = 0"
-#|   - "offset = 5"
-#|   - "offset = 10"
-#|   - "offset = 15"
+#| fig-align: center
 
-for (off in c(0, 5, 10, 15)) {
-  print(
-    ggplot() +
-      geom_puzzle_conc(
-        aes(fill = after_stat(ring)),
-        rings = 3,
-        offset = off, seed = 42
-      ) +
-      scale_fill_viridis_c(option = "cividis", guide = "none") +
-      coord_fixed() +
-      theme_void()
-  )
+make_conc_offset <- function(off) {
+  ggplot() +
+    geom_puzzle_conc(
+      aes(fill = after_stat(ring)),
+      rings = 3,
+      offset = off, seed = 42
+    ) +
+    scale_fill_viridis_c(option = "cividis", guide = "none") +
+    coord_fixed() +
+    theme_void() +
+    labs(title = paste0("offset = ", off))
 }
+
+make_conc_offset(0) + make_conc_offset(5) + make_conc_offset(10) + make_conc_offset(15)
 ```
 
 ## Large Concentric Puzzle

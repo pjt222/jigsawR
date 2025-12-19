@@ -15,30 +15,24 @@ jigsawR works seamlessly with all viridis color palettes.
 ### Viridis Options
 
 ```{r}
-#| layout-ncol: 3
-#| fig-height: 3
-#| fig-cap:
-#|   - "viridis"
-#|   - "magma"
-#|   - "plasma"
-#|   - "inferno"
-#|   - "cividis"
-#|   - "turbo"
+#| fig-align: center
+#| fig-height: 6
+library(patchwork)
 
-palettes <- c("viridis", "magma", "plasma", "inferno", "cividis", "turbo")
-
-for (pal in palettes) {
-  print(
-    ggplot() +
-      geom_puzzle_hex(
-        aes(fill = after_stat(piece_id)),
-        rings = 3, diameter = 180, seed = 42
-      ) +
-      scale_fill_viridis_c(option = pal, guide = "none") +
-      coord_fixed() +
-      theme_void()
-  )
+make_palette_demo <- function(pal) {
+  ggplot() +
+    geom_puzzle_hex(
+      aes(fill = after_stat(piece_id)),
+      rings = 3, seed = 42
+    ) +
+    scale_fill_viridis_c(option = pal, guide = "none") +
+    coord_fixed() +
+    theme_void() +
+    labs(title = pal)
 }
+
+(make_palette_demo("viridis") + make_palette_demo("magma") + make_palette_demo("plasma")) /
+(make_palette_demo("inferno") + make_palette_demo("cividis") + make_palette_demo("turbo"))
 ```
 
 ### Custom Color Scales
@@ -304,50 +298,45 @@ ggplot() +
 ### Thick Borders for Emphasis
 
 ```{r}
-#| layout-ncol: 2
-#| fig-cap:
-#|   - "Thin borders"
-#|   - "Thick borders"
+#| fig-align: center
 
-for (lw in c(0.25, 1.5)) {
-  print(
-    ggplot() +
-      geom_puzzle_hex(
-        aes(fill = after_stat(piece_id)),
-        rings = 2, diameter = 150, seed = 42,
-        color = "white",
-        linewidth = lw
-      ) +
-      scale_fill_viridis_c(option = "magma", guide = "none") +
-      coord_fixed() +
-      theme_void()
-  )
+make_border_demo <- function(lw, label) {
+  ggplot() +
+    geom_puzzle_hex(
+      aes(fill = after_stat(piece_id)),
+      rings = 2, seed = 42,
+      color = "white",
+      linewidth = lw
+    ) +
+    scale_fill_viridis_c(option = "magma", guide = "none") +
+    coord_fixed() +
+    theme_void() +
+    labs(title = label)
 }
+
+make_border_demo(0.25, "Thin borders") + make_border_demo(1.5, "Thick borders")
 ```
 
 ## Alpha Transparency
 
 ```{r}
-#| layout-ncol: 2
-#| fig-cap:
-#|   - "alpha = 1.0 (opaque)"
-#|   - "alpha = 0.5 (semi-transparent)"
+#| fig-align: center
 
-for (a in c(1.0, 0.5)) {
-  print(
-    ggplot() +
-      geom_puzzle_voronoi(
-        aes(fill = after_stat(piece_id)),
-        n_cells = 15,
-        width = 180, height = 180,
-        seed = 42,
-        alpha = a
-      ) +
-      scale_fill_viridis_c(option = "turbo", guide = "none") +
-      coord_fixed() +
-      theme_void()
-  )
+make_alpha_demo <- function(a, label) {
+  ggplot() +
+    geom_puzzle_voronoi(
+      aes(fill = after_stat(piece_id)),
+      n_cells = 15,
+      seed = 42,
+      alpha = a
+    ) +
+    scale_fill_viridis_c(option = "turbo", guide = "none") +
+    coord_fixed() +
+    theme_void() +
+    labs(title = label)
 }
+
+make_alpha_demo(1.0, "alpha = 1.0 (opaque)") + make_alpha_demo(0.5, "alpha = 0.5 (semi-transparent)")
 ```
 
 ## Saving High-Quality Output

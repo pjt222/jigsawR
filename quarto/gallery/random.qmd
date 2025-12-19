@@ -17,25 +17,23 @@ Random puzzles generate unique, irregular piece shapes using a randomized approa
 
 ```{r}
 #| label: fig-rand-piece-counts
-#| layout-ncol: 3
-#| fig-cap:
-#|   - "10 pieces"
-#|   - "20 pieces"
-#|   - "40 pieces"
+#| fig-align: center
+library(patchwork)
 
-for (n in c(10, 20, 40)) {
-  print(
-    ggplot() +
-      geom_puzzle_random(
-        aes(fill = after_stat(piece_id)),
-        n_pieces = n,
-        seed = 42
-      ) +
-      scale_fill_viridis_c(option = "inferno", guide = "none") +
-      coord_fixed() +
-      theme_void()
-  )
+make_rand_pieces <- function(n) {
+  ggplot() +
+    geom_puzzle_random(
+      aes(fill = after_stat(piece_id)),
+      n_pieces = n,
+      seed = 42
+    ) +
+    scale_fill_viridis_c(option = "inferno", guide = "none") +
+    coord_fixed() +
+    theme_void() +
+    labs(title = paste0(n, " pieces"))
 }
+
+make_rand_pieces(10) + make_rand_pieces(20) + make_rand_pieces(40)
 ```
 
 ## Corner Variations
@@ -44,82 +42,69 @@ The `n_corner` parameter controls the complexity of each piece's shape:
 
 ```{r}
 #| label: fig-rand-corners
-#| layout-ncol: 4
-#| fig-cap:
-#|   - "3 corners (triangles)"
-#|   - "4 corners (quads)"
-#|   - "6 corners (hexagons)"
-#|   - "8 corners (octagons)"
+#| fig-align: center
 
-for (nc in c(3, 4, 6, 8)) {
-  print(
-    ggplot() +
-      geom_puzzle_random(
-        aes(fill = after_stat(piece_id)),
-        n_pieces = 15,
-        n_corner = nc,
-        seed = 42
-      ) +
-      scale_fill_viridis_c(option = "plasma", guide = "none") +
-      coord_fixed() +
-      theme_void()
-  )
+make_rand_corners <- function(nc, label) {
+  ggplot() +
+    geom_puzzle_random(
+      aes(fill = after_stat(piece_id)),
+      n_pieces = 15,
+      n_corner = nc,
+      seed = 42
+    ) +
+    scale_fill_viridis_c(option = "plasma", guide = "none") +
+    coord_fixed() +
+    theme_void() +
+    labs(title = label)
 }
+
+make_rand_corners(3, "3 corners") + make_rand_corners(4, "4 corners") +
+make_rand_corners(6, "6 corners") + make_rand_corners(8, "8 corners")
 ```
 
 ## Color Palettes
 
 ```{r}
 #| label: fig-rand-palettes
-#| layout-ncol: 3
-#| fig-cap:
-#|   - "viridis"
-#|   - "magma"
-#|   - "plasma"
-#|   - "inferno"
-#|   - "cividis"
-#|   - "turbo"
+#| fig-align: center
 
-for (pal in c("viridis", "magma", "plasma", "inferno", "cividis", "turbo")) {
-  print(
-    ggplot() +
-      geom_puzzle_random(
-        aes(fill = after_stat(piece_id)),
-        n_pieces = 20,
-        seed = 42
-      ) +
-      scale_fill_viridis_c(option = pal, guide = "none") +
-      coord_fixed() +
-      theme_void() +
-      labs(title = pal)
-  )
+make_rand_palette <- function(pal) {
+  ggplot() +
+    geom_puzzle_random(
+      aes(fill = after_stat(piece_id)),
+      n_pieces = 20,
+      seed = 42
+    ) +
+    scale_fill_viridis_c(option = pal, guide = "none") +
+    coord_fixed() +
+    theme_void() +
+    labs(title = pal)
 }
+
+(make_rand_palette("viridis") + make_rand_palette("magma") + make_rand_palette("plasma")) /
+(make_rand_palette("inferno") + make_rand_palette("cividis") + make_rand_palette("turbo"))
 ```
 
 ## Offset (Separation)
 
 ```{r}
 #| label: fig-rand-offset
-#| layout-ncol: 4
-#| fig-cap:
-#|   - "offset = 0"
-#|   - "offset = 5"
-#|   - "offset = 10"
-#|   - "offset = 20"
+#| fig-align: center
 
-for (off in c(0, 5, 10, 20)) {
-  print(
-    ggplot() +
-      geom_puzzle_random(
-        aes(fill = after_stat(piece_id)),
-        n_pieces = 18,
-        offset = off, seed = 42
-      ) +
-      scale_fill_viridis_c(option = "cividis", guide = "none") +
-      coord_fixed() +
-      theme_void()
-  )
+make_rand_offset <- function(off) {
+  ggplot() +
+    geom_puzzle_random(
+      aes(fill = after_stat(piece_id)),
+      n_pieces = 18,
+      offset = off, seed = 42
+    ) +
+    scale_fill_viridis_c(option = "cividis", guide = "none") +
+    coord_fixed() +
+    theme_void() +
+    labs(title = paste0("offset = ", off))
 }
+
+make_rand_offset(0) + make_rand_offset(5) + make_rand_offset(10) + make_rand_offset(20)
 ```
 
 ## Seed Variations
@@ -128,26 +113,22 @@ Each seed creates a completely unique puzzle:
 
 ```{r}
 #| label: fig-rand-seeds
-#| layout-ncol: 4
-#| fig-cap:
-#|   - "seed = 1"
-#|   - "seed = 42"
-#|   - "seed = 123"
-#|   - "seed = 999"
+#| fig-align: center
 
-for (s in c(1, 42, 123, 999)) {
-  print(
-    ggplot() +
-      geom_puzzle_random(
-        aes(fill = after_stat(piece_id)),
-        n_pieces = 15,
-        seed = s
-      ) +
-      scale_fill_viridis_c(option = "turbo", guide = "none") +
-      coord_fixed() +
-      theme_void()
-  )
+make_rand_seed <- function(s) {
+  ggplot() +
+    geom_puzzle_random(
+      aes(fill = after_stat(piece_id)),
+      n_pieces = 15,
+      seed = s
+    ) +
+    scale_fill_viridis_c(option = "turbo", guide = "none") +
+    coord_fixed() +
+    theme_void() +
+    labs(title = paste0("seed = ", s))
 }
+
+make_rand_seed(1) + make_rand_seed(42) + make_rand_seed(123) + make_rand_seed(999)
 ```
 
 ## Aspect Ratios
