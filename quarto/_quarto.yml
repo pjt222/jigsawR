@@ -1,0 +1,95 @@
+project:
+  type: website
+  output-dir: _site
+
+website:
+  title: "jigsawR"
+  description: "Generate Beautiful Jigsaw Puzzles in R"
+  site-url: https://pjt222.github.io/jigsawR
+  repo-url: https://github.com/pjt222/jigsawR
+  repo-actions: [edit, issue]
+
+  navbar:
+    background: primary
+    left:
+      - text: "Get Started"
+        href: getting-started.qmd
+      - text: "Gallery"
+        menu:
+          - text: "Rectangular"
+            href: gallery/rectangular.qmd
+          - text: "Hexagonal"
+            href: gallery/hexagonal.qmd
+          - text: "Concentric"
+            href: gallery/concentric.qmd
+          - text: "Voronoi"
+            href: gallery/voronoi.qmd
+          - text: "Random"
+            href: gallery/random.qmd
+      - text: "API"
+        menu:
+          - text: "generate_puzzle()"
+            href: api/generate-puzzle.qmd
+          - text: "ggpuzzle Extension"
+            href: api/ggpuzzle.qmd
+          - text: "PILES Notation"
+            href: api/piles-notation.qmd
+      - text: "Tutorials"
+        menu:
+          - text: "Basic Usage"
+            href: tutorials/basic-usage.qmd
+          - text: "Customization"
+            href: tutorials/customization.qmd
+          - text: "Fusion Groups"
+            href: tutorials/fusion-groups.qmd
+    right:
+      - icon: github
+        href: https://github.com/pjt222/jigsawR
+        aria-label: GitHub
+
+  sidebar:
+    - title: "Gallery"
+      style: "docked"
+      contents:
+        - gallery/rectangular.qmd
+        - gallery/hexagonal.qmd
+        - gallery/concentric.qmd
+        - gallery/voronoi.qmd
+        - gallery/random.qmd
+
+    - title: "API Reference"
+      contents:
+        - api/generate-puzzle.qmd
+        - api/ggpuzzle.qmd
+        - api/piles-notation.qmd
+
+  page-footer:
+    left: |
+      jigsawR is developed by [Philipp Thoss](https://github.com/pjt222)
+    right: |
+      Built with [Quarto](https://quarto.org/)
+
+format:
+  html:
+    theme:
+      light: [cosmo, custom.scss]
+      dark: [darkly, custom.scss]
+    css: styles.css
+    toc: true
+    toc-depth: 3
+    code-copy: true
+    code-overflow: wrap
+    highlight-style: github
+
+execute:
+  freeze: auto
+  warning: false
+  message: false
+
+knitr:
+  opts_chunk:
+    fig.align: center
+    comment: "#>"
+    collapse: true
+  opts_knit:
+    root.dir: ".."
