@@ -146,6 +146,31 @@ StatPuzzle <- ggplot2::ggproto("StatPuzzle", ggplot2::Stat,
       poly$piece_id <- i
       poly$center_x <- piece$center[1]
       poly$center_y <- piece$center[2]
+
+      # Add ring information for hex/concentric puzzles
+      if (!is.null(piece$ring_pos)) {
+        poly$ring <- piece$ring_pos$ring
+        poly$is_center <- piece$ring_pos$ring == 0
+      }
+
+      # Add row/col for rectangular puzzles
+      if (!is.null(piece$row_col)) {
+        poly$row <- piece$row_col$row
+        poly$col <- piece$row_col$col
+      }
+
+      # Add boundary flag if available
+      if (!is.null(piece$is_boundary)) {
+        poly$is_boundary <- piece$is_boundary
+      }
+
+      # Add group_id for fusion groups
+      if (!is.null(piece$fusion_group) && !is.na(piece$fusion_group)) {
+        poly$group_id <- piece$fusion_group
+      } else {
+        poly$group_id <- i
+      }
+
       poly
     })
 

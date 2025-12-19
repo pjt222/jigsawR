@@ -6,6 +6,30 @@
 #' @import grid
 NULL
 
+# Helper function to ensure data has at least one row
+# This is needed because our stat generates its own geometry
+# and ggplot2 skips compute_panel when data has 0 rows
+ensure_puzzle_data <- function(data) {
+  # If user provides data explicitly, use it
+  if (!is.null(data) && !inherits(data, "waiver")) {
+    return(data)
+  }
+
+
+  # Return a function that ensures we have data
+  # This function receives the plot's data and returns layer data
+  function(plot_data) {
+    if (is.data.frame(plot_data) && nrow(plot_data) > 0) {
+      # Inherit from plot data
+      plot_data
+    } else {
+      # No data available - create minimal dummy row
+      # This ensures compute_panel is called
+      data.frame(.dummy = 1L)
+    }
+  }
+}
+
 #' Puzzle piece geom
 #'
 #' Renders puzzle pieces as filled polygons. Works with StatPuzzle to
@@ -155,7 +179,7 @@ geom_puzzle_rect <- function(mapping = NULL,
                               inherit.aes = TRUE) {
 
   ggplot2::layer(
-    data = data,
+    data = ensure_puzzle_data(data),
     mapping = mapping,
     stat = StatPuzzle,
     geom = GeomPuzzle,
@@ -246,7 +270,7 @@ geom_puzzle_hex <- function(mapping = NULL,
                             inherit.aes = TRUE) {
 
   ggplot2::layer(
-    data = data,
+    data = ensure_puzzle_data(data),
     mapping = mapping,
     stat = StatPuzzle,
     geom = GeomPuzzle,
@@ -337,7 +361,7 @@ geom_puzzle_conc <- function(mapping = NULL,
                              inherit.aes = TRUE) {
 
   ggplot2::layer(
-    data = data,
+    data = ensure_puzzle_data(data),
     mapping = mapping,
     stat = StatPuzzle,
     geom = GeomPuzzle,
@@ -425,7 +449,7 @@ geom_puzzle_voronoi <- function(mapping = NULL,
                                 inherit.aes = TRUE) {
 
   ggplot2::layer(
-    data = data,
+    data = ensure_puzzle_data(data),
     mapping = mapping,
     stat = StatPuzzle,
     geom = GeomPuzzle,
@@ -512,7 +536,7 @@ geom_puzzle_random <- function(mapping = NULL,
                                inherit.aes = TRUE) {
 
   ggplot2::layer(
-    data = data,
+    data = ensure_puzzle_data(data),
     mapping = mapping,
     stat = StatPuzzle,
     geom = GeomPuzzle,
