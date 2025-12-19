@@ -1,0 +1,255 @@
+---
+title: "Rectangular Puzzles"
+subtitle: "Classic jigsaw puzzles with interlocking tabs"
+---
+
+```{r}
+#| label: setup-rectangular
+#| include: false
+source("quarto/_setup.R")
+```
+
+## Overview
+
+Rectangular puzzles are the classic jigsaw format with interlocking tabs on all sides. Each piece connects to its neighbors through curved tabs that can point inward or outward.
+
+## Size Variations
+
+Explore different grid sizes:
+
+```{r}
+#| label: fig-rect-sizes
+#| layout-ncol: 3
+#| fig-cap:
+#|   - "2x2 (4 pieces)"
+#|   - "4x3 (12 pieces)"
+#|   - "6x5 (30 pieces)"
+
+# 2x2
+ggplot() +
+  geom_puzzle_rect(
+    aes(fill = after_stat(piece_id)),
+    cols = 2, rows = 2,
+    seed = 42
+  ) +
+  scale_fill_viridis_c(option = "viridis", guide = "none") +
+  coord_fixed() +
+  theme_void()
+
+# 4x3
+ggplot() +
+  geom_puzzle_rect(
+    aes(fill = after_stat(piece_id)),
+    cols = 4, rows = 3,
+    seed = 42
+  ) +
+  scale_fill_viridis_c(option = "viridis", guide = "none") +
+  coord_fixed() +
+  theme_void()
+
+# 6x5
+ggplot() +
+  geom_puzzle_rect(
+    aes(fill = after_stat(piece_id)),
+    cols = 6, rows = 5,
+    seed = 42
+  ) +
+  scale_fill_viridis_c(option = "viridis", guide = "none") +
+  coord_fixed() +
+  theme_void()
+```
+
+## Color Palettes
+
+All viridis palettes work beautifully with puzzle pieces:
+
+```{r}
+#| label: fig-rect-palettes
+#| layout-ncol: 3
+#| fig-cap:
+#|   - "viridis"
+#|   - "magma"
+#|   - "plasma"
+#|   - "inferno"
+#|   - "cividis"
+#|   - "turbo"
+
+for (pal in c("viridis", "magma", "plasma", "inferno", "cividis", "turbo")) {
+  print(
+    ggplot() +
+      geom_puzzle_rect(
+        aes(fill = after_stat(piece_id)),
+        cols = 4, rows = 3,
+        seed = 42
+      ) +
+      scale_fill_viridis_c(option = pal, guide = "none") +
+      coord_fixed() +
+      theme_void() +
+      labs(title = pal)
+  )
+}
+```
+
+## Offset (Separation)
+
+Control spacing between pieces:
+
+```{r}
+#| label: fig-rect-offset
+#| layout-ncol: 4
+#| fig-cap:
+#|   - "offset = 0"
+#|   - "offset = 5"
+#|   - "offset = 10"
+#|   - "offset = 20"
+
+for (off in c(0, 5, 10, 20)) {
+  print(
+    ggplot() +
+      geom_puzzle_rect(
+        aes(fill = after_stat(piece_id)),
+        cols = 3, rows = 3,
+        offset = off,
+        seed = 42
+      ) +
+      scale_fill_viridis_c(option = "plasma", guide = "none") +
+      coord_fixed() +
+      theme_void()
+  )
+}
+```
+
+## Fusion Groups
+
+Merge pieces together using PILES notation:
+
+```{r}
+#| label: fig-rect-fusion
+#| layout-ncol: 2
+#| fig-cap:
+#|   - "Standard 4x3"
+#|   - "Row fusion: R1,R2,R3"
+#| eval: false
+
+# Standard
+ggplot() +
+  geom_puzzle_rect(
+    aes(fill = after_stat(piece_id)),
+    cols = 4, rows = 3,
+    seed = 42
+  ) +
+  scale_fill_viridis_c(option = "magma", guide = "none") +
+  coord_fixed() +
+  theme_void()
+
+# With row fusion
+result <- generate_puzzle(
+  type = "rectangular",
+  grid = c(4, 3),
+  size = c(300, 225),
+  seed = 42,
+  fusion_groups = "R1,R2,R3"
+)
+
+ggplot() +
+  geom_puzzle_rect(
+    aes(fill = after_stat(piece_id)),
+    cols = 4, rows = 3,
+    seed = 42,
+    fusion_groups = "R1,R2,R3"
+  ) +
+  scale_fill_viridis_c(option = "magma", guide = "none") +
+  coord_fixed() +
+  theme_void()
+```
+
+## Aspect Ratios
+
+Rectangular puzzles handle any aspect ratio:
+
+```{r}
+#| label: fig-rect-aspect-ratios
+#| layout-ncol: 3
+#| fig-cap:
+#|   - "Wide (16:9)"
+#|   - "Square (1:1)"
+#|   - "Tall (9:16)"
+
+# Wide
+ggplot() +
+  geom_puzzle_rect(
+    aes(fill = after_stat(piece_id)),
+    cols = 8, rows = 4,
+    seed = 123
+  ) +
+  scale_fill_viridis_c(option = "cividis", guide = "none") +
+  coord_fixed() +
+  theme_void()
+
+# Square
+ggplot() +
+  geom_puzzle_rect(
+    aes(fill = after_stat(piece_id)),
+    cols = 5, rows = 5,
+    seed = 123
+  ) +
+  scale_fill_viridis_c(option = "cividis", guide = "none") +
+  coord_fixed() +
+  theme_void()
+
+# Tall
+ggplot() +
+  geom_puzzle_rect(
+    aes(fill = after_stat(piece_id)),
+    cols = 3, rows = 6,
+    seed = 123
+  ) +
+  scale_fill_viridis_c(option = "cividis", guide = "none") +
+  coord_fixed() +
+  theme_void()
+```
+
+## Parameters Reference
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `cols` | integer | 3 | Number of columns |
+| `rows` | integer | 3 | Number of rows |
+| `seed` | integer | random | Random seed for reproducibility |
+| `offset` | numeric | 0 | Piece separation distance |
+| `tabsize` | numeric | 20 | Tab size parameter |
+| `jitter` | numeric | 4 | Randomness in tab shape |
+| `fusion_groups` | string | NULL | PILES notation for fusing pieces |
+| `fusion_style` | string | "none" | Style for fused edges: "none", "dashed", "solid" |
+
+## Code Example
+
+```{r}
+#| label: demo-rect-usage
+#| eval: false
+library(jigsawR)
+
+# Generate puzzle
+result <- generate_puzzle(
+  type = "rectangular",
+  grid = c(6, 4),      # 6 columns, 4 rows
+  size = c(600, 400),  # 600mm x 400mm
+  seed = 42,
+  offset = 5           # Slight separation
+)
+
+# Save SVG
+writeLines(result$svg_content, "rectangular_puzzle.svg")
+
+# Visualize with ggplot2
+library(ggplot2)
+ggplot() +
+  geom_puzzle_rect(
+    aes(fill = after_stat(piece_id)),
+    cols = 6, rows = 4,
+    seed = 42, offset = 5
+  ) +
+  scale_fill_viridis_c() +
+  coord_fixed() +
+  theme_void()
+```

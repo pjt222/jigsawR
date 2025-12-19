@@ -1,0 +1,282 @@
+---
+title: "Random Puzzles"
+subtitle: "Unique random shapes with configurable complexity"
+---
+
+```{r}
+#| label: setup-random
+#| include: false
+source("quarto/_setup.R")
+```
+
+## Overview
+
+Random puzzles generate unique, irregular piece shapes using a randomized approach. Unlike the regular patterns of rectangular or hexagonal puzzles, random puzzles create organic, unpredictable boundaries that make each puzzle truly one-of-a-kind.
+
+## Piece Count Variations
+
+```{r}
+#| label: fig-rand-piece-counts
+#| layout-ncol: 3
+#| fig-cap:
+#|   - "10 pieces"
+#|   - "20 pieces"
+#|   - "40 pieces"
+
+for (n in c(10, 20, 40)) {
+  print(
+    ggplot() +
+      geom_puzzle_random(
+        aes(fill = after_stat(piece_id)),
+        n_pieces = n,
+        seed = 42
+      ) +
+      scale_fill_viridis_c(option = "inferno", guide = "none") +
+      coord_fixed() +
+      theme_void()
+  )
+}
+```
+
+## Corner Variations
+
+The `n_corner` parameter controls the complexity of each piece's shape:
+
+```{r}
+#| label: fig-rand-corners
+#| layout-ncol: 4
+#| fig-cap:
+#|   - "3 corners (triangles)"
+#|   - "4 corners (quads)"
+#|   - "6 corners (hexagons)"
+#|   - "8 corners (octagons)"
+
+for (nc in c(3, 4, 6, 8)) {
+  print(
+    ggplot() +
+      geom_puzzle_random(
+        aes(fill = after_stat(piece_id)),
+        n_pieces = 15,
+        n_corner = nc,
+        seed = 42
+      ) +
+      scale_fill_viridis_c(option = "plasma", guide = "none") +
+      coord_fixed() +
+      theme_void()
+  )
+}
+```
+
+## Color Palettes
+
+```{r}
+#| label: fig-rand-palettes
+#| layout-ncol: 3
+#| fig-cap:
+#|   - "viridis"
+#|   - "magma"
+#|   - "plasma"
+#|   - "inferno"
+#|   - "cividis"
+#|   - "turbo"
+
+for (pal in c("viridis", "magma", "plasma", "inferno", "cividis", "turbo")) {
+  print(
+    ggplot() +
+      geom_puzzle_random(
+        aes(fill = after_stat(piece_id)),
+        n_pieces = 20,
+        seed = 42
+      ) +
+      scale_fill_viridis_c(option = pal, guide = "none") +
+      coord_fixed() +
+      theme_void() +
+      labs(title = pal)
+  )
+}
+```
+
+## Offset (Separation)
+
+```{r}
+#| label: fig-rand-offset
+#| layout-ncol: 4
+#| fig-cap:
+#|   - "offset = 0"
+#|   - "offset = 5"
+#|   - "offset = 10"
+#|   - "offset = 20"
+
+for (off in c(0, 5, 10, 20)) {
+  print(
+    ggplot() +
+      geom_puzzle_random(
+        aes(fill = after_stat(piece_id)),
+        n_pieces = 18,
+        offset = off, seed = 42
+      ) +
+      scale_fill_viridis_c(option = "cividis", guide = "none") +
+      coord_fixed() +
+      theme_void()
+  )
+}
+```
+
+## Seed Variations
+
+Each seed creates a completely unique puzzle:
+
+```{r}
+#| label: fig-rand-seeds
+#| layout-ncol: 4
+#| fig-cap:
+#|   - "seed = 1"
+#|   - "seed = 42"
+#|   - "seed = 123"
+#|   - "seed = 999"
+
+for (s in c(1, 42, 123, 999)) {
+  print(
+    ggplot() +
+      geom_puzzle_random(
+        aes(fill = after_stat(piece_id)),
+        n_pieces = 15,
+        seed = s
+      ) +
+      scale_fill_viridis_c(option = "turbo", guide = "none") +
+      coord_fixed() +
+      theme_void()
+  )
+}
+```
+
+## Aspect Ratios
+
+Random puzzles handle any aspect ratio:
+
+```{r}
+#| label: fig-rand-aspect-ratios
+#| layout-ncol: 3
+#| fig-cap:
+#|   - "Wide (16:9)"
+#|   - "Square (1:1)"
+#|   - "Tall (9:16)"
+
+# Wide
+ggplot() +
+  geom_puzzle_random(
+    aes(fill = after_stat(piece_id)),
+    n_pieces = 25,
+    seed = 42
+  ) +
+  scale_fill_viridis_c(option = "magma", guide = "none") +
+  coord_fixed() +
+  theme_void()
+
+# Square
+ggplot() +
+  geom_puzzle_random(
+    aes(fill = after_stat(piece_id)),
+    n_pieces = 20,
+    seed = 42
+  ) +
+  scale_fill_viridis_c(option = "magma", guide = "none") +
+  coord_fixed() +
+  theme_void()
+
+# Tall
+ggplot() +
+  geom_puzzle_random(
+    aes(fill = after_stat(piece_id)),
+    n_pieces = 25,
+    seed = 42
+  ) +
+  scale_fill_viridis_c(option = "magma", guide = "none") +
+  coord_fixed() +
+  theme_void()
+```
+
+## Large Random Puzzle
+
+```{r}
+#| label: fig-rand-large
+#| fig-align: center
+#| fig-width: 10
+#| fig-height: 6
+
+ggplot() +
+  geom_puzzle_random(
+    aes(fill = after_stat(piece_id)),
+    n_pieces = 60,
+    seed = 456
+  ) +
+  scale_fill_viridis_c(option = "turbo", guide = "none") +
+  coord_fixed() +
+  theme_void() +
+  labs(title = "60-Piece Random Puzzle")
+```
+
+## Parameters Reference
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `n_pieces` | integer | 12 | Number of puzzle pieces |
+| `n_corner` | integer | 4 | Corners per piece (3-8) |
+| `seed` | integer | random | Random seed for reproducibility |
+| `offset` | numeric | 0 | Piece separation distance |
+| `tabsize` | numeric | 20 | Tab size parameter |
+| `jitter` | numeric | 4 | Randomness in tab shape |
+| `fusion_groups` | string | NULL | PILES notation for fusing pieces |
+
+## Corner Complexity Guide
+
+| n_corner | Shape | Complexity |
+|----------|-------|------------|
+| 3 | Triangular | Simple, angular |
+| 4 | Quadrilateral | Classic, balanced |
+| 5 | Pentagonal | Natural, organic |
+| 6 | Hexagonal | Honeycomb-like |
+| 7-8 | Complex | Highly irregular |
+
+## When to Use Random Puzzles
+
+Random puzzles are perfect for:
+
+- **Maximum uniqueness**: No two puzzles alike
+- **Artistic applications**: Abstract, modern designs
+- **Challenge modes**: Irregular shapes are harder to assemble
+- **Custom piece counts**: Exact control over difficulty
+
+## Code Example
+
+```{r}
+#| label: demo-rand-code
+#| eval: false
+library(jigsawR)
+
+# Generate puzzle
+result <- generate_puzzle(
+  type = "random",
+  grid = c(30),          # 30 pieces
+  size = c(400, 300),    # 400mm x 300mm
+  seed = 42,
+  n_corner = 5,          # Pentagonal pieces
+  offset = 5
+)
+
+# Save SVG
+writeLines(result$svg_content, "random_puzzle.svg")
+
+# Visualize with ggplot2
+library(ggplot2)
+ggplot() +
+  geom_puzzle_random(
+    aes(fill = after_stat(piece_id)),
+    n_pieces = 30,
+    n_corner = 5,
+    seed = 42, offset = 5
+  ) +
+  scale_fill_viridis_c(option = "inferno") +
+  coord_fixed() +
+  theme_void()
+```

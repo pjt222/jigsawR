@@ -1,0 +1,270 @@
+---
+title: "Hexagonal Puzzles"
+subtitle: "Beautiful honeycomb patterns with curved edges"
+---
+
+```{r}
+#| label: setup-hexagonal
+#| include: false
+source("quarto/_setup.R")
+```
+
+## Overview
+
+Hexagonal puzzles create stunning honeycomb patterns. Each hexagonal piece connects to up to six neighbors through elegantly curved tabs. The result is a visually striking circular puzzle.
+
+## Ring Variations
+
+Hexagonal puzzles are defined by the number of rings:
+
+```{r}
+#| label: fig-hex-rings
+#| layout-ncol: 3
+#| fig-cap:
+#|   - "2 rings (7 pieces)"
+#|   - "3 rings (19 pieces)"
+#|   - "4 rings (37 pieces)"
+
+# 2 rings
+ggplot() +
+  geom_puzzle_hex(
+    aes(fill = after_stat(piece_id)),
+    rings = 2, seed = 42
+  ) +
+  scale_fill_viridis_c(option = "plasma", guide = "none") +
+  coord_fixed() +
+  theme_void()
+
+# 3 rings
+ggplot() +
+  geom_puzzle_hex(
+    aes(fill = after_stat(piece_id)),
+    rings = 3, seed = 42
+  ) +
+  scale_fill_viridis_c(option = "plasma", guide = "none") +
+  coord_fixed() +
+  theme_void()
+
+# 4 rings
+ggplot() +
+  geom_puzzle_hex(
+    aes(fill = after_stat(piece_id)),
+    rings = 4, seed = 42
+  ) +
+  scale_fill_viridis_c(option = "plasma", guide = "none") +
+  coord_fixed() +
+  theme_void()
+```
+
+## Piece Count Formula
+
+The number of pieces in a hexagonal puzzle follows the formula:
+
+$$n = 3r(r-1) + 1$$
+
+Where $r$ is the number of rings.
+
+| Rings | Pieces |
+|-------|--------|
+| 2 | 7 |
+| 3 | 19 |
+| 4 | 37 |
+| 5 | 61 |
+| 6 | 91 |
+
+## Warp and Truncation
+
+Hexagonal puzzles support two key transformations:
+
+```{r}
+#| label: fig-hex-warp-trunc
+#| layout-ncol: 2
+#| fig-cap:
+#|   - "warp=TRUE, trunc=TRUE (Default)"
+#|   - "warp=TRUE, trunc=FALSE"
+
+# Default: warped and truncated
+ggplot() +
+  geom_puzzle_hex(
+    aes(fill = after_stat(piece_id)),
+    rings = 3,
+    do_warp = TRUE, do_trunc = TRUE,
+    seed = 42
+  ) +
+  scale_fill_viridis_c(option = "magma", guide = "none") +
+  coord_fixed() +
+  theme_void()
+
+# Warped but not truncated (extends beyond circle)
+ggplot() +
+  geom_puzzle_hex(
+    aes(fill = after_stat(piece_id)),
+    rings = 3,
+    do_warp = TRUE, do_trunc = FALSE,
+    seed = 42
+  ) +
+  scale_fill_viridis_c(option = "magma", guide = "none") +
+  coord_fixed() +
+  theme_void()
+```
+
+## Color Palettes
+
+```{r}
+#| label: fig-hex-palettes
+#| layout-ncol: 3
+#| fig-cap:
+#|   - "viridis"
+#|   - "magma"
+#|   - "plasma"
+#|   - "inferno"
+#|   - "cividis"
+#|   - "turbo"
+
+for (pal in c("viridis", "magma", "plasma", "inferno", "cividis", "turbo")) {
+  print(
+    ggplot() +
+      geom_puzzle_hex(
+        aes(fill = after_stat(piece_id)),
+        rings = 3, seed = 42
+      ) +
+      scale_fill_viridis_c(option = pal, guide = "none") +
+      coord_fixed() +
+      theme_void() +
+      labs(title = pal)
+  )
+}
+```
+
+## Offset (Separation)
+
+```{r}
+#| label: fig-hex-offset
+#| layout-ncol: 4
+#| fig-cap:
+#|   - "offset = 0"
+#|   - "offset = 5"
+#|   - "offset = 10"
+#|   - "offset = 15"
+
+for (off in c(0, 5, 10, 15)) {
+  print(
+    ggplot() +
+      geom_puzzle_hex(
+        aes(fill = after_stat(piece_id)),
+        rings = 3,
+        offset = off, seed = 42
+      ) +
+      scale_fill_viridis_c(option = "viridis", guide = "none") +
+      coord_fixed() +
+      theme_void()
+  )
+}
+```
+
+## Fusion Groups
+
+Special keywords for hexagonal puzzles:
+
+```{r}
+#| label: fig-hex-fusion
+#| layout-ncol: 2
+#| fig-cap:
+#|   - "center + ring1"
+#|   - "All of ring2"
+#| eval: false
+
+# Center merged with ring 1
+ggplot() +
+  geom_puzzle_hex(
+    aes(fill = after_stat(piece_id)),
+    rings = 3,
+    fusion_groups = "center-ring1",
+    seed = 42
+  ) +
+  scale_fill_viridis_c(option = "plasma", guide = "none") +
+  coord_fixed() +
+  theme_void()
+
+# Ring 2 pieces merged
+ggplot() +
+  geom_puzzle_hex(
+    aes(fill = after_stat(piece_id)),
+    rings = 3,
+    fusion_groups = "ring2",
+    seed = 42
+  ) +
+  scale_fill_viridis_c(option = "plasma", guide = "none") +
+  coord_fixed() +
+  theme_void()
+```
+
+## Large Puzzles
+
+```{r}
+#| label: fig-hex-large
+#| fig-align: center
+#| fig-width: 8
+#| fig-height: 8
+
+ggplot() +
+  geom_puzzle_hex(
+    aes(fill = after_stat(piece_id)),
+    rings = 5,
+    seed = 123
+  ) +
+  scale_fill_viridis_c(option = "turbo", guide = "none") +
+  coord_fixed() +
+  theme_void() +
+  labs(title = "5-Ring Hexagonal Puzzle (61 pieces)")
+```
+
+## Parameters Reference
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `rings` | integer | 3 | Number of concentric rings |
+| `seed` | integer | random | Random seed for reproducibility |
+| `offset` | numeric | 0 | Piece separation distance |
+| `tabsize` | numeric | 20 | Tab size parameter |
+| `jitter` | numeric | 4 | Randomness in tab shape |
+| `do_warp` | logical | TRUE | Apply circular warping |
+| `do_trunc` | logical | TRUE | Truncate to boundary |
+| `fusion_groups` | string | NULL | PILES notation for fusing pieces |
+
+## PILES Keywords
+
+Special keywords available for hexagonal puzzles:
+
+| Keyword | Description |
+|---------|-------------|
+| `center` | The center piece (piece 1) |
+| `ring1` | All pieces in ring 1 |
+| `ring2` | All pieces in ring 2 |
+| `ringN` | All pieces in ring N |
+| `boundary` | All outer boundary pieces |
+
+## Code Example
+
+```{r}
+#| label: demo-hex-code
+#| eval: false
+library(jigsawR)
+
+# Generate puzzle
+result <- generate_puzzle(
+  type = "hexagonal",
+  grid = c(4),         # 4 rings
+  size = c(250),       # 250mm diameter
+  seed = 42,
+  do_warp = TRUE,
+  do_trunc = TRUE,
+  offset = 5
+)
+
+# Save SVG
+writeLines(result$svg_content, "hexagonal_puzzle.svg")
+
+# Access piece info
+cat("Generated", length(result$pieces), "pieces\n")
+```

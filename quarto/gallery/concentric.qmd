@@ -1,0 +1,245 @@
+---
+title: "Concentric Puzzles"
+subtitle: "Rings of pieces radiating from a central shape"
+---
+
+```{r}
+#| label: setup-concentric
+#| include: false
+source("quarto/_setup.R")
+```
+
+## Overview
+
+Concentric puzzles feature rings of pieces that radiate outward from a central shape. They combine the elegance of hexagonal geometry with a distinctive radial pattern, creating puzzles that are both beautiful and satisfying to assemble.
+
+## Ring Variations
+
+```{r}
+#| label: fig-conc-rings
+#| layout-ncol: 3
+#| fig-cap:
+#|   - "2 rings"
+#|   - "3 rings"
+#|   - "4 rings"
+
+for (r in 2:4) {
+  print(
+    ggplot() +
+      geom_puzzle_conc(
+        aes(fill = after_stat(ring)),
+        rings = r,
+        seed = 42
+      ) +
+      scale_fill_viridis_c(option = "plasma", guide = "none") +
+      coord_fixed() +
+      theme_void()
+  )
+}
+```
+
+## Center Shape Options
+
+The center piece can be either a hexagon or a circle:
+
+```{r}
+#| label: fig-conc-center-shape
+#| layout-ncol: 2
+#| fig-cap:
+#|   - "Hexagon center"
+#|   - "Circle center"
+
+# Hexagon center (default)
+ggplot() +
+  geom_puzzle_conc(
+    aes(fill = after_stat(ring)),
+    rings = 3,
+    center_shape = "hexagon",
+    seed = 42
+  ) +
+  scale_fill_viridis_c(option = "magma", guide = "none") +
+  coord_fixed() +
+  theme_void()
+
+# Circle center
+ggplot() +
+  geom_puzzle_conc(
+    aes(fill = after_stat(ring)),
+    rings = 3,
+    center_shape = "circle",
+    seed = 42
+  ) +
+  scale_fill_viridis_c(option = "magma", guide = "none") +
+  coord_fixed() +
+  theme_void()
+```
+
+## Fill by Ring vs Piece ID
+
+```{r}
+#| label: fig-conc-fill-options
+#| layout-ncol: 2
+#| fig-cap:
+#|   - "Fill by ring"
+#|   - "Fill by piece_id"
+
+# By ring
+ggplot() +
+  geom_puzzle_conc(
+    aes(fill = after_stat(ring)),
+    rings = 3, seed = 42
+  ) +
+  scale_fill_viridis_c(option = "viridis", name = "Ring") +
+  coord_fixed() +
+  theme_void() +
+  theme(legend.position = "bottom")
+
+# By piece_id
+ggplot() +
+  geom_puzzle_conc(
+    aes(fill = after_stat(piece_id)),
+    rings = 3, seed = 42
+  ) +
+  scale_fill_viridis_c(option = "viridis", name = "Piece") +
+  coord_fixed() +
+  theme_void() +
+  theme(legend.position = "bottom")
+```
+
+## Color Palettes
+
+```{r}
+#| label: fig-conc-palettes
+#| layout-ncol: 3
+#| fig-cap:
+#|   - "viridis"
+#|   - "magma"
+#|   - "plasma"
+#|   - "inferno"
+#|   - "cividis"
+#|   - "turbo"
+
+for (pal in c("viridis", "magma", "plasma", "inferno", "cividis", "turbo")) {
+  print(
+    ggplot() +
+      geom_puzzle_conc(
+        aes(fill = after_stat(ring)),
+        rings = 3, seed = 42
+      ) +
+      scale_fill_viridis_c(option = pal, guide = "none") +
+      coord_fixed() +
+      theme_void() +
+      labs(title = pal)
+  )
+}
+```
+
+## Offset (Separation)
+
+```{r}
+#| label: fig-conc-offset
+#| layout-ncol: 4
+#| fig-cap:
+#|   - "offset = 0"
+#|   - "offset = 5"
+#|   - "offset = 10"
+#|   - "offset = 15"
+
+for (off in c(0, 5, 10, 15)) {
+  print(
+    ggplot() +
+      geom_puzzle_conc(
+        aes(fill = after_stat(ring)),
+        rings = 3,
+        offset = off, seed = 42
+      ) +
+      scale_fill_viridis_c(option = "cividis", guide = "none") +
+      coord_fixed() +
+      theme_void()
+  )
+}
+```
+
+## Large Concentric Puzzle
+
+```{r}
+#| label: fig-conc-large
+#| fig-align: center
+#| fig-width: 8
+#| fig-height: 8
+
+ggplot() +
+  geom_puzzle_conc(
+    aes(fill = after_stat(ring)),
+    rings = 5,
+    center_shape = "hexagon",
+    seed = 456
+  ) +
+  scale_fill_viridis_c(
+    option = "turbo",
+    name = "Ring"
+  ) +
+  coord_fixed() +
+  theme_void() +
+  theme(
+    legend.position = "bottom",
+    plot.title = element_text(hjust = 0.5, size = 16)
+  ) +
+  labs(title = "5-Ring Concentric Puzzle")
+```
+
+## Parameters Reference
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `rings` | integer | 3 | Number of concentric rings |
+| `center_shape` | string | "hexagon" | Center shape: "hexagon" or "circle" |
+| `seed` | integer | random | Random seed for reproducibility |
+| `offset` | numeric | 0 | Piece separation distance |
+| `tabsize` | numeric | 20 | Tab size parameter |
+| `jitter` | numeric | 4 | Randomness in tab shape |
+| `fusion_groups` | string | NULL | PILES notation for fusing pieces |
+
+## Fill Variables
+
+When using ggplot2 with concentric puzzles, you can map these variables:
+
+| Variable | Description |
+|----------|-------------|
+| `piece_id` | Unique piece identifier |
+| `ring` | Which ring the piece belongs to (0 = center) |
+| `is_center` | TRUE if the piece is the center piece |
+
+## Code Example
+
+```{r}
+#| label: demo-conc-code
+#| eval: false
+library(jigsawR)
+
+# Generate puzzle
+result <- generate_puzzle(
+  type = "concentric",
+  grid = c(4),           # 4 rings
+  size = c(280),         # 280mm diameter
+  seed = 42,
+  center_shape = "hexagon",
+  offset = 5
+)
+
+# Save SVG
+writeLines(result$svg_content, "concentric_puzzle.svg")
+
+# Visualize with ggplot2
+library(ggplot2)
+ggplot() +
+  geom_puzzle_conc(
+    aes(fill = after_stat(ring)),
+    rings = 4,
+    center_shape = "hexagon",
+    seed = 42, offset = 5
+  ) +
+  scale_fill_viridis_c(option = "plasma") +
+  coord_fixed() +
+  theme_void()
+```

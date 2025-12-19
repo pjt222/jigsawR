@@ -1,0 +1,265 @@
+---
+title: "Voronoi Puzzles"
+subtitle: "Organic, natural-looking tessellations"
+---
+
+```{r}
+#| label: setup-voronoi
+#| include: false
+source("quarto/_setup.R")
+```
+
+## Overview
+
+Voronoi puzzles create organic, natural-looking pieces based on Voronoi tessellation. Each piece is a convex polygon formed by the regions closest to a set of seed points. The result resembles patterns found in nature, like honeycomb cells, giraffe spots, or cracked mud.
+
+## Cell Count Variations
+
+```{r}
+#| label: fig-vor-cell-counts
+#| layout-ncol: 3
+#| fig-cap:
+#|   - "10 cells"
+#|   - "25 cells"
+#|   - "50 cells"
+
+for (n in c(10, 25, 50)) {
+  print(
+    ggplot() +
+      geom_puzzle_voronoi(
+        aes(fill = after_stat(piece_id)),
+        n_cells = n,
+        seed = 42
+      ) +
+      scale_fill_viridis_c(option = "turbo", guide = "none") +
+      coord_fixed() +
+      theme_void()
+  )
+}
+```
+
+## Aspect Ratios
+
+Voronoi puzzles adapt well to different aspect ratios:
+
+```{r}
+#| label: fig-vor-aspect-ratios
+#| layout-ncol: 3
+#| fig-cap:
+#|   - "Wide (16:9)"
+#|   - "Square (1:1)"
+#|   - "Tall (9:16)"
+
+# Wide
+ggplot() +
+  geom_puzzle_voronoi(
+    aes(fill = after_stat(piece_id)),
+    n_cells = 30,
+    seed = 123
+  ) +
+  scale_fill_viridis_c(option = "plasma", guide = "none") +
+  coord_fixed() +
+  theme_void()
+
+# Square
+ggplot() +
+  geom_puzzle_voronoi(
+    aes(fill = after_stat(piece_id)),
+    n_cells = 25,
+    seed = 123
+  ) +
+  scale_fill_viridis_c(option = "plasma", guide = "none") +
+  coord_fixed() +
+  theme_void()
+
+# Tall
+ggplot() +
+  geom_puzzle_voronoi(
+    aes(fill = after_stat(piece_id)),
+    n_cells = 30,
+    seed = 123
+  ) +
+  scale_fill_viridis_c(option = "plasma", guide = "none") +
+  coord_fixed() +
+  theme_void()
+```
+
+## Color Palettes
+
+```{r}
+#| label: fig-vor-color-palettes
+#| layout-ncol: 3
+#| fig-cap:
+#|   - "viridis"
+#|   - "magma"
+#|   - "plasma"
+#|   - "inferno"
+#|   - "cividis"
+#|   - "turbo"
+
+for (pal in c("viridis", "magma", "plasma", "inferno", "cividis", "turbo")) {
+  print(
+    ggplot() +
+      geom_puzzle_voronoi(
+        aes(fill = after_stat(piece_id)),
+        n_cells = 20,
+        seed = 42
+      ) +
+      scale_fill_viridis_c(option = pal, guide = "none") +
+      coord_fixed() +
+      theme_void() +
+      labs(title = pal)
+  )
+}
+```
+
+## Offset (Separation)
+
+```{r}
+#| label: fig-vor-offset
+#| layout-ncol: 4
+#| fig-cap:
+#|   - "offset = 0"
+#|   - "offset = 5"
+#|   - "offset = 10"
+#|   - "offset = 20"
+
+for (off in c(0, 5, 10, 20)) {
+  print(
+    ggplot() +
+      geom_puzzle_voronoi(
+        aes(fill = after_stat(piece_id)),
+        n_cells = 20,
+        offset = off, seed = 42
+      ) +
+      scale_fill_viridis_c(option = "viridis", guide = "none") +
+      coord_fixed() +
+      theme_void()
+  )
+}
+```
+
+## Seed Variations
+
+Different seeds create completely different tessellations:
+
+```{r}
+#| label: fig-vor-seeds
+#| layout-ncol: 4
+#| fig-cap:
+#|   - "seed = 1"
+#|   - "seed = 42"
+#|   - "seed = 123"
+#|   - "seed = 999"
+
+for (s in c(1, 42, 123, 999)) {
+  print(
+    ggplot() +
+      geom_puzzle_voronoi(
+        aes(fill = after_stat(piece_id)),
+        n_cells = 15,
+        seed = s
+      ) +
+      scale_fill_viridis_c(option = "magma", guide = "none") +
+      coord_fixed() +
+      theme_void()
+  )
+}
+```
+
+## Large Voronoi Puzzle
+
+```{r}
+#| label: fig-vor-large
+#| fig-align: center
+#| fig-width: 10
+#| fig-height: 6
+
+ggplot() +
+  geom_puzzle_voronoi(
+    aes(fill = after_stat(piece_id)),
+    n_cells = 80,
+    seed = 789
+  ) +
+  scale_fill_viridis_c(option = "turbo", guide = "none") +
+  coord_fixed() +
+  theme_void() +
+  labs(title = "80-Cell Voronoi Puzzle")
+```
+
+## Parameters Reference
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `n_cells` | integer | 12 | Number of Voronoi cells (pieces) |
+| `seed` | integer | random | Random seed for reproducibility |
+| `offset` | numeric | 0 | Piece separation distance |
+| `tabsize` | numeric | 20 | Tab size parameter |
+| `jitter` | numeric | 4 | Randomness in tab shape |
+| `point_distribution` | string | "fermat" | Seed point distribution method |
+| `fusion_groups` | string | NULL | PILES notation for fusing pieces |
+
+## About Voronoi Tessellation
+
+Voronoi tessellation divides a plane into regions based on distance to seed points. Each region consists of all points closer to its seed than to any other seed. This creates:
+
+- **Convex polygons**: Each piece is a convex polygon
+- **Natural appearance**: Resembles patterns in nature
+- **Variable sizes**: Piece sizes depend on seed point distribution
+
+### Lloyd Relaxation
+
+Applying Lloyd relaxation (setting `relaxation > 0`) moves seed points toward the center of their cells, creating more uniform piece sizes:
+
+```{r}
+#| label: fig-vor-relaxation
+#| layout-ncol: 2
+#| fig-cap:
+#|   - "No relaxation"
+#|   - "With relaxation (10 iterations)"
+#| eval: false
+
+# Note: relaxation parameter may need implementation verification
+# These examples show the conceptual difference
+```
+
+## Code Example
+
+```{r}
+#| label: demo-vor-code
+#| eval: false
+library(jigsawR)
+
+# Generate puzzle
+result <- generate_puzzle(
+  type = "voronoi",
+  grid = c(35),          # 35 cells
+  size = c(400, 300),    # 400mm x 300mm
+  seed = 42,
+  offset = 5
+)
+
+# Save SVG
+writeLines(result$svg_content, "voronoi_puzzle.svg")
+
+# Visualize with ggplot2
+library(ggplot2)
+ggplot() +
+  geom_puzzle_voronoi(
+    aes(fill = after_stat(piece_id)),
+    n_cells = 35,
+    seed = 42, offset = 5
+  ) +
+  scale_fill_viridis_c(option = "turbo") +
+  coord_fixed() +
+  theme_void()
+```
+
+## When to Use Voronoi
+
+Voronoi puzzles are ideal for:
+
+- **Organic themes**: Nature, landscapes, biological subjects
+- **Artistic effects**: Modern art, abstract designs
+- **Variable difficulty**: More cells = harder puzzle
+- **Unique designs**: Every seed creates a different pattern
