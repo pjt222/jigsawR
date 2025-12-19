@@ -153,7 +153,7 @@ p1 <- ggplot() +
 p2 <- ggplot() +
   geom_puzzle_hex(
     aes(fill = after_stat(piece_id)),
-    rings = 2, seed = 42
+    rings = 3, seed = 42
   ) +
   scale_fill_viridis_c(option = "magma", guide = "none") +
   coord_fixed() +
@@ -163,7 +163,7 @@ p2 <- ggplot() +
 p3 <- ggplot() +
   geom_puzzle_conc(
     aes(fill = after_stat(ring)),
-    rings = 2, seed = 42
+    rings = 3, seed = 42
   ) +
   scale_fill_viridis_c(option = "plasma", guide = "none") +
   coord_fixed() +
@@ -173,7 +173,8 @@ p3 <- ggplot() +
 p4 <- ggplot() +
   geom_puzzle_voronoi(
     aes(fill = after_stat(piece_id)),
-    n_cells = 15, seed = 42
+    n_cells = 15, seed = 42,
+    tabsize = 15, jitter = 3
   ) +
   scale_fill_viridis_c(option = "turbo", guide = "none") +
   coord_fixed() +
