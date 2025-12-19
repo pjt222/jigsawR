@@ -134,15 +134,12 @@ writeLines(result$svg_content, "my_puzzle.svg")
 
 ```{r}
 #| echo: false
-#| layout-ncol: 4
-#| fig-cap:
-#|   - "Rectangular"
-#|   - "Hexagonal"
-#|   - "Concentric"
-#|   - "Voronoi"
+#| message: false
+#| warning: false
+#| fig-align: center
+library(patchwork)
 
-# Rectangular
-ggplot() +
+p1 <- ggplot() +
   geom_puzzle_rect(
     aes(fill = after_stat(piece_id)),
     cols = 3, rows = 3,
@@ -150,37 +147,40 @@ ggplot() +
   ) +
   scale_fill_viridis_c(option = "viridis", guide = "none") +
   coord_fixed() +
-  theme_void()
+  theme_void() +
+  labs(title = "Rectangular")
 
-# Hexagonal
-ggplot() +
+p2 <- ggplot() +
   geom_puzzle_hex(
     aes(fill = after_stat(piece_id)),
     rings = 2, seed = 42
   ) +
   scale_fill_viridis_c(option = "magma", guide = "none") +
   coord_fixed() +
-  theme_void()
+  theme_void() +
+  labs(title = "Hexagonal")
 
-# Concentric
-ggplot() +
+p3 <- ggplot() +
   geom_puzzle_conc(
     aes(fill = after_stat(ring)),
     rings = 2, seed = 42
   ) +
   scale_fill_viridis_c(option = "plasma", guide = "none") +
   coord_fixed() +
-  theme_void()
+  theme_void() +
+  labs(title = "Concentric")
 
-# Voronoi
-ggplot() +
+p4 <- ggplot() +
   geom_puzzle_voronoi(
     aes(fill = after_stat(piece_id)),
     n_cells = 15, seed = 42
   ) +
   scale_fill_viridis_c(option = "turbo", guide = "none") +
   coord_fixed() +
-  theme_void()
+  theme_void() +
+  labs(title = "Voronoi")
+
+p1 + p2 + p3 + p4
 ```
 
 :::
