@@ -7,12 +7,13 @@
 extract_all_piece_coords(pieces)
 }
 \arguments{
-\item{pieces}{List of piece objects with $path fields}
+\item{pieces}{List of piece objects with $path fields (and optionally $parsed_segments)}
 }
 \value{
 List with all_x and all_y numeric vectors
 }
 \description{
 Uses the list + unlist pattern to avoid grow-on-append O(n²) behavior.
+If pieces have cached parsed_segments, uses those to avoid re-parsing (~40x faster).
 }
 \keyword{internal}

@@ -55,3 +55,9 @@ svg_puzzle_*rings_*.png
 svg_puzzle_*rings.svg
 hexagonal_puzzle.svg
 circular_puzzle.svgtemp/
+
+# Quarto
+quarto/_site/
+quarto/.quarto/
+quarto/_freeze/
+.quarto/

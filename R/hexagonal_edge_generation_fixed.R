@@ -277,6 +277,11 @@ generate_hex_edge_map <- function(rings, seed, diameter, tabsize = 27, jitter = 
       is_boundary_edge <- edge_key_check %in% boundary_edge_keys
 
       # Find neighbor (only if not a boundary edge)
+      # NOTE: We use brute-force vertex matching here because the geometry side
+      # (based on vertex order) doesn't directly correspond to the topology side
+      # (based on axial coordinates). The adjacency matrix uses topology sides,
+      # so we can't use it directly here without complex geo-topo conversion.
+      # See Insights #26-27, #43 for details on the geo-topo mapping complexity.
       neighbor_id <- NA
       neighbor_side <- NA
 

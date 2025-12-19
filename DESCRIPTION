@@ -87,6 +87,7 @@ Collate:
     'random_puzzle.R'
     'rcpp_wrappers.R'
     'rectangular_puzzle.R'
+    'rng_iterator.R'
     'svg_utils.R'
     'tessellation_edge_generation.R'
     'unified_piece_generation.R'

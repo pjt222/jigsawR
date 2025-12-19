@@ -247,8 +247,16 @@ build_effective_positions_rect <- function(pieces, fusion_data, grid) {
 apply_concentric_positioning <- function(piece_result, offset) {
 
   params <- piece_result$parameters
-  rings <- params$rings
-  piece_size <- params$piece_height
+
+  # Handle both naming conventions: rings vs grid[1]
+  rings <- params$rings %||% params$grid[1]
+
+  # Handle both naming conventions for piece_size
+  piece_size <- params$piece_height %||% {
+    # Fallback: calculate from size if piece_height not available
+    diameter <- params$diameter %||% params$size[1]
+    if (!is.null(diameter) && !is.null(rings)) diameter / (4 * rings - 2) else 20
+  }
 
   # For concentric, offset acts as a separation factor
   separation_factor <- 1.0 + (offset / piece_size)
@@ -437,7 +445,9 @@ build_effective_centers_radial <- function(pieces, fusion_data) {
 apply_hex_positioning <- function(piece_result, offset) {
 
   params <- piece_result$parameters
-  rings <- params$rings
+
+  # Handle both naming conventions: rings vs grid[1], diameter vs size[1]
+  rings <- params$rings %||% params$grid[1]
 
   # Handle both regular hexagonal (piece_radius) and concentric (piece_height) modes
   if (!is.null(params$piece_radius)) {
@@ -446,7 +456,8 @@ apply_hex_positioning <- function(piece_result, offset) {
     piece_size <- params$piece_height
   } else {
     # Fallback: calculate from diameter and rings
-    diameter <- params$diameter
+    # Handle both naming conventions: diameter vs size[1]
+    diameter <- params$diameter %||% params$size[1]
     piece_size <- diameter / (4 * rings - 2)
   }
 
@@ -870,7 +881,7 @@ compute_repulsion_vector <- function(bbox1, bbox2, overlap, step_size = 1.0) {
   # Normalize direction
   dist <- sqrt(dx^2 + dy^2)
   if (dist < 0.001) {
-    # Centers are the same - push in arbitrary direction
+    # Centers are the same - push in arbitrary direction (horizontal)
     dx <- 1
     dy <- 0
     dist <- 1
@@ -880,10 +891,13 @@ compute_repulsion_vector <- function(bbox1, bbox2, overlap, step_size = 1.0) {
   dy <- dy / dist
 
   # Push apart by the minimum overlap distance (push along axis of least overlap)
-  if (overlap$overlap_x < overlap$overlap_y) {
+  # When dy is near zero (e.g., from fallback), prefer horizontal push to avoid zero vector
+  if (overlap$overlap_x < overlap$overlap_y || abs(dy) < 0.001) {
     # Push horizontally
     push_dist <- overlap$overlap_x * step_size
-    c(sign(dx) * push_dist, 0)
+    # Ensure we have a non-zero direction
+    dir_x <- if (abs(dx) < 0.001) 1 else sign(dx)
+    c(dir_x * push_dist, 0)
   } else {
     # Push vertically
     push_dist <- overlap$overlap_y * step_size
