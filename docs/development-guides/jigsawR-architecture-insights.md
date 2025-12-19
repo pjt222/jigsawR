@@ -924,6 +924,58 @@ When `patternUnits="objectBoundingBox"`:
 - [MDN: patternContentUnits](https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/patternContentUnits)
 - [SVG 1.1 Spec: Patterns](https://www.w3.org/TR/SVG11/pservers.html#PatternElementPatternContentUnitsAttribute)
 
+### 29. ggplot2 theme_void() Causes Blank PNG in Quarto/knitr (2025-12-19)
+
+**Context**: Quarto documentation was rendering blank PNG images (exactly 3170 bytes) for all puzzle plots using `theme_void()` combined with `guide = "none"`.
+
+**Problem**: The plots rendered correctly in RStudio but produced empty images in Quarto/knitr output.
+
+**Root Cause Analysis**:
+```r
+# Inspecting theme_void() internals:
+t <- theme_void()
+t$plot.background$fill  # Returns "" (empty string, not "white")
+t$plot.margin           # Returns margin(0, 0, 0, 0, "pt")
+```
+
+When `theme_void()` is combined with `guide = "none"`, there are **no visible theme elements** for knitr's figure capture mechanism to detect. The rendering system sees an "empty" plot and produces a minimal blank PNG.
+
+**Solution**: Created `theme_puzzle()` that extends `theme_void()` with explicit visible elements:
+```r
+theme_puzzle <- function(base_size = 11, base_family = "",
+                         background = "white",
+                         margin = ggplot2::margin(2, 2, 2, 2, "pt")) {
+  ggplot2::theme_void(base_size = base_size, base_family = base_family) %+replace%
+    ggplot2::theme(
+      plot.background = ggplot2::element_rect(
+        fill = if (is.na(background)) "transparent" else background,
+        colour = NA
+      ),
+      plot.margin = margin,
+      complete = TRUE
+    )
+}
+```
+
+**Key Insight**: `theme_void()` is designed for pure data visualization where the plot background is irrelevant. For Quarto/knitr rendering, plots need at least one visible theme element (background or margin) to trigger proper figure capture.
+
+**Additional Fix Required**: In development mode, Quarto setup scripts must use `devtools::load_all()` instead of `library()` to ensure newly created functions are available:
+```r
+# quarto/_setup.R
+if (file.exists("DESCRIPTION") && requireNamespace("devtools", quietly = TRUE)) {
+  suppressMessages(devtools::load_all(path = ".", quiet = TRUE))
+} else if (requireNamespace("jigsawR", quietly = TRUE)) {
+  suppressPackageStartupMessages(library(jigsawR))
+}
+```
+
+**Files Changed**:
+- Created: `R/theme_puzzle.R`
+- Modified: `quarto/_setup.R` (dev mode detection)
+- Modified: All 13 `.qmd` files (replaced `theme_void()` with `theme_puzzle()`)
+
+**Verification**: 98 PNG files generated, 0 blank images (all 29KB-80KB vs previous 3170 bytes).
+
 ---
 
 ### Insight #22: Independent UI Controls for Related Options (2025-12-11)

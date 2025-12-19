@@ -25,8 +25,7 @@ Explore different grid sizes:
 #|   - "4x3 (12 pieces)"
 #|   - "6x5 (30 pieces)"
 
-# 2x2
-ggplot() +
+print(ggplot() +
   geom_puzzle_rect(
     aes(fill = after_stat(piece_id)),
     cols = 2, rows = 2,
@@ -34,10 +33,10 @@ ggplot() +
   ) +
   scale_fill_viridis_c(option = "viridis", guide = "none") +
   coord_fixed() +
-  theme_void()
+  theme_puzzle() +
+  labs(title = "2x2"))
 
-# 4x3
-ggplot() +
+print(ggplot() +
   geom_puzzle_rect(
     aes(fill = after_stat(piece_id)),
     cols = 4, rows = 3,
@@ -45,10 +44,10 @@ ggplot() +
   ) +
   scale_fill_viridis_c(option = "viridis", guide = "none") +
   coord_fixed() +
-  theme_void()
+  theme_puzzle() +
+  labs(title = "4x3"))
 
-# 6x5
-ggplot() +
+print(ggplot() +
   geom_puzzle_rect(
     aes(fill = after_stat(piece_id)),
     cols = 6, rows = 5,
@@ -56,7 +55,8 @@ ggplot() +
   ) +
   scale_fill_viridis_c(option = "viridis", guide = "none") +
   coord_fixed() +
-  theme_void()
+  theme_puzzle() +
+  labs(title = "6x5"))
 ```
 
 ## Color Palettes
@@ -75,12 +75,12 @@ make_palette_plot <- function(pal) {
     ) +
     scale_fill_viridis_c(option = pal, guide = "none") +
     coord_fixed() +
-    theme_void() +
+    theme_puzzle() +
     labs(title = pal)
 }
 
-(make_palette_plot("viridis") + make_palette_plot("magma") + make_palette_plot("plasma")) /
-(make_palette_plot("inferno") + make_palette_plot("cividis") + make_palette_plot("turbo"))
+print((make_palette_plot("viridis") + make_palette_plot("magma") + make_palette_plot("plasma")) /
+(make_palette_plot("inferno") + make_palette_plot("cividis") + make_palette_plot("turbo")))
 ```
 
 ## Offset (Separation)
@@ -101,11 +101,11 @@ make_offset_plot <- function(off) {
     ) +
     scale_fill_viridis_c(option = "plasma", guide = "none") +
     coord_fixed() +
-    theme_void() +
+    theme_puzzle() +
     labs(title = paste0("offset = ", off))
 }
 
-make_offset_plot(0) + make_offset_plot(5) + make_offset_plot(10) + make_offset_plot(20)
+print(make_offset_plot(0) + make_offset_plot(5) + make_offset_plot(10) + make_offset_plot(20))
 ```
 
 ## Fusion Groups
@@ -118,10 +118,9 @@ Merge pieces together using PILES notation:
 #| fig-cap:
 #|   - "Standard 4x3"
 #|   - "Row fusion: R1,R2,R3"
-#| eval: false
 
 # Standard
-ggplot() +
+print(ggplot() +
   geom_puzzle_rect(
     aes(fill = after_stat(piece_id)),
     cols = 4, rows = 3,
@@ -129,18 +128,11 @@ ggplot() +
   ) +
   scale_fill_viridis_c(option = "magma", guide = "none") +
   coord_fixed() +
-  theme_void()
+  theme_puzzle() +
+  labs(title = "Standard"))
 
 # With row fusion
-result <- generate_puzzle(
-  type = "rectangular",
-  grid = c(4, 3),
-  size = c(300, 225),
-  seed = 42,
-  fusion_groups = "R1,R2,R3"
-)
-
-ggplot() +
+print(ggplot() +
   geom_puzzle_rect(
     aes(fill = after_stat(piece_id)),
     cols = 4, rows = 3,
@@ -149,7 +141,8 @@ ggplot() +
   ) +
   scale_fill_viridis_c(option = "magma", guide = "none") +
   coord_fixed() +
-  theme_void()
+  theme_puzzle() +
+  labs(title = "Row fusion"))
 ```
 
 ## Aspect Ratios
@@ -165,7 +158,7 @@ Rectangular puzzles handle any aspect ratio:
 #|   - "Tall (9:16)"
 
 # Wide
-ggplot() +
+print(ggplot() +
   geom_puzzle_rect(
     aes(fill = after_stat(piece_id)),
     cols = 8, rows = 4,
@@ -173,10 +166,11 @@ ggplot() +
   ) +
   scale_fill_viridis_c(option = "cividis", guide = "none") +
   coord_fixed() +
-  theme_void()
+  theme_puzzle() +
+  labs(title = "Wide"))
 
 # Square
-ggplot() +
+print(ggplot() +
   geom_puzzle_rect(
     aes(fill = after_stat(piece_id)),
     cols = 5, rows = 5,
@@ -184,10 +178,11 @@ ggplot() +
   ) +
   scale_fill_viridis_c(option = "cividis", guide = "none") +
   coord_fixed() +
-  theme_void()
+  theme_puzzle() +
+  labs(title = "Square"))
 
 # Tall
-ggplot() +
+print(ggplot() +
   geom_puzzle_rect(
     aes(fill = after_stat(piece_id)),
     cols = 3, rows = 6,
@@ -195,7 +190,8 @@ ggplot() +
   ) +
   scale_fill_viridis_c(option = "cividis", guide = "none") +
   coord_fixed() +
-  theme_void()
+  theme_puzzle() +
+  labs(title = "Tall"))
 ```
 
 ## Parameters Reference
@@ -240,5 +236,5 @@ ggplot() +
   ) +
   scale_fill_viridis_c() +
   coord_fixed() +
-  theme_void()
+  theme_puzzle()
 ```

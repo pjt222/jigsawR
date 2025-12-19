@@ -140,7 +140,7 @@ ggplot() +
   ) +
   scale_fill_viridis_c(option = "plasma", name = "Group") +
   coord_fixed() +
-  theme_void() +
+  theme_puzzle() +
   labs(title = "All adjacent pairs fused")
 ```
 
@@ -160,7 +160,7 @@ ggplot() +
   ) +
   scale_fill_viridis_c(option = "magma", name = "Row") +
   coord_fixed() +
-  theme_void() +
+  theme_puzzle() +
   labs(title = "Each row fused (using ranges)")
 ```
 
@@ -181,7 +181,7 @@ ggplot() +
   ) +
   scale_fill_viridis_c(option = "cividis", name = "Row") +
   coord_fixed() +
-  theme_void() +
+  theme_puzzle() +
   labs(title = "Row fusion with keywords: R1, R2, R3")
 ```
 
@@ -203,7 +203,7 @@ ggplot() +
   ) +
   scale_fill_viridis_c(option = "plasma", name = "Group") +
   coord_fixed() +
-  theme_void() +
+  theme_puzzle() +
   labs(title = "Fusion: center-ring1")
 ```
 
@@ -221,7 +221,7 @@ ggplot() +
   ) +
   scale_fill_viridis_c(option = "magma", name = "Group") +
   coord_fixed() +
-  theme_void() +
+  theme_puzzle() +
   labs(title = "Fusion: ring2 (all ring 2 pieces merged)")
 ```
 
@@ -239,7 +239,7 @@ ggplot() +
   ) +
   scale_fill_viridis_c(option = "viridis", name = "Group") +
   coord_fixed() +
-  theme_void() +
+  theme_puzzle() +
   labs(title = "center-ring1, ring2, ring3")
 ```
 
@@ -284,7 +284,7 @@ ggplot() +
   ) +
   scale_fill_viridis_c(option = "turbo", name = "Group") +
   coord_fixed() +
-  theme_void() +
+  theme_puzzle() +
   labs(
     title = "Mixed notation",
     subtitle = "1-2-3, 8:12 (range), 17-18-19-20"
@@ -343,7 +343,7 @@ ggplot() +
   ) +
   scale_fill_viridis_c(option = "plasma", name = "Group") +
   coord_fixed() +
-  theme_void() +
+  theme_puzzle() +
   labs(title = "Center region highlighted via fusion")
 ```
 
@@ -356,10 +356,9 @@ ggplot() +
 #|   - "Easy (fused)"
 #|   - "Medium"
 #|   - "Hard (no fusion)"
-#| eval: false
 
 # Easy - lots of fusion
-ggplot() +
+print(ggplot() +
   geom_puzzle_rect(
     aes(fill = after_stat(group_id)),
     cols = 4, rows = 4,
@@ -369,10 +368,11 @@ ggplot() +
   ) +
   scale_fill_viridis_c(guide = "none") +
   coord_fixed() +
-  theme_void()
+  theme_puzzle() +
+  labs(title = "Easy"))
 
 # Medium - some fusion
-ggplot() +
+print(ggplot() +
   geom_puzzle_rect(
     aes(fill = after_stat(group_id)),
     cols = 4, rows = 4,
@@ -382,10 +382,11 @@ ggplot() +
   ) +
   scale_fill_viridis_c(guide = "none") +
   coord_fixed() +
-  theme_void()
+  theme_puzzle() +
+  labs(title = "Medium"))
 
 # Hard - no fusion
-ggplot() +
+print(ggplot() +
   geom_puzzle_rect(
     aes(fill = after_stat(piece_id)),
     cols = 4, rows = 4,
@@ -394,7 +395,8 @@ ggplot() +
   ) +
   scale_fill_viridis_c(guide = "none") +
   coord_fixed() +
-  theme_void()
+  theme_puzzle() +
+  labs(title = "Hard"))
 ```
 
 ## Summary

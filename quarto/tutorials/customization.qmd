@@ -27,12 +27,12 @@ make_palette_demo <- function(pal) {
     ) +
     scale_fill_viridis_c(option = pal, guide = "none") +
     coord_fixed() +
-    theme_void() +
+    theme_puzzle() +
     labs(title = pal)
 }
 
-(make_palette_demo("viridis") + make_palette_demo("magma") + make_palette_demo("plasma")) /
-(make_palette_demo("inferno") + make_palette_demo("cividis") + make_palette_demo("turbo"))
+print((make_palette_demo("viridis") + make_palette_demo("magma") + make_palette_demo("plasma")) /
+(make_palette_demo("inferno") + make_palette_demo("cividis") + make_palette_demo("turbo")))
 ```
 
 ### Custom Color Scales
@@ -47,7 +47,7 @@ Use any ggplot2 color scale:
 #|   - "Brewer Spectral"
 
 # Custom gradient
-ggplot() +
+print(ggplot() +
   geom_puzzle_rect(
     aes(fill = after_stat(piece_id)),
     cols = 4, rows = 3,
@@ -60,10 +60,11 @@ ggplot() +
     guide = "none"
   ) +
   coord_fixed() +
-  theme_void()
+  theme_puzzle() +
+  labs(title = "Gradient"))
 
 # Brewer palette
-ggplot() +
+print(ggplot() +
   geom_puzzle_rect(
     aes(fill = factor(after_stat(piece_id))),
     cols = 4, rows = 3,
@@ -72,7 +73,8 @@ ggplot() +
   ) +
   scale_fill_brewer(palette = "Spectral", guide = "none") +
   coord_fixed() +
-  theme_void()
+  theme_puzzle() +
+  labs(title = "Brewer"))
 ```
 
 ## Themes
@@ -83,20 +85,20 @@ ggplot() +
 #| label: minimal-themes
 #| layout-ncol: 2
 #| fig-cap:
-#|   - "theme_void()"
+#|   - "theme_puzzle()"
 #|   - "theme_minimal()"
 
-ggplot() +
+print(ggplot() +
   geom_puzzle_hex(
     aes(fill = after_stat(piece_id)),
     rings = 2, diameter = 150, seed = 42
   ) +
   scale_fill_viridis_c(guide = "none") +
   coord_fixed() +
-  theme_void() +
-  labs(title = "theme_void()")
+  theme_puzzle() +
+  labs(title = "theme_puzzle()"))
 
-ggplot() +
+print(ggplot() +
   geom_puzzle_hex(
     aes(fill = after_stat(piece_id)),
     rings = 2, diameter = 150, seed = 42
@@ -104,7 +106,7 @@ ggplot() +
   scale_fill_viridis_c(name = "Piece") +
   coord_fixed() +
   theme_minimal() +
-  labs(title = "theme_minimal()")
+  labs(title = "theme_minimal()"))
 ```
 
 ### Dark Themes
@@ -135,9 +137,9 @@ ggplot() +
 ```{r}
 #| label: custom-theme
 #| fig-align: center
-# Create a custom theme
-theme_puzzle <- function() {
-  theme_void() +
+# Extend theme_puzzle() with custom settings
+theme_puzzle_custom <- function() {
+  theme_puzzle() +
   theme(
     plot.title = element_text(
       hjust = 0.5,
@@ -165,7 +167,7 @@ ggplot() +
   ) +
   scale_fill_viridis_c(option = "cividis", name = "Ring") +
   coord_fixed() +
-  theme_puzzle() +
+  theme_puzzle_custom() +
   labs(
     title = "Concentric Puzzle",
     subtitle = "4 rings, 250mm diameter"
@@ -184,7 +186,7 @@ ggplot() +
 #|   - "Legend inside"
 
 # Bottom legend
-ggplot() +
+print(ggplot() +
   geom_puzzle_rect(
     aes(fill = after_stat(piece_id)),
     cols = 4, rows = 3,
@@ -194,10 +196,11 @@ ggplot() +
   scale_fill_viridis_c(name = "Piece") +
   coord_fixed() +
   theme_minimal() +
-  theme(legend.position = "bottom")
+  labs(title = "Bottom") +
+  theme(legend.position = "bottom"))
 
 # Inside plot
-ggplot() +
+print(ggplot() +
   geom_puzzle_rect(
     aes(fill = after_stat(piece_id)),
     cols = 4, rows = 3,
@@ -207,10 +210,11 @@ ggplot() +
   scale_fill_viridis_c(name = "Piece") +
   coord_fixed() +
   theme_minimal() +
+  labs(title = "Inside") +
   theme(
     legend.position = c(0.85, 0.85),
     legend.background = element_rect(fill = "white", color = "gray80")
-  )
+  ))
 ```
 
 ### Custom Legend Labels
@@ -256,7 +260,8 @@ ggplot() +
   ) +
   scale_fill_viridis_c(option = "plasma", guide = "none") +
   coord_fixed() +
-  theme_void()
+  theme_puzzle() +
+  labs(title = "Annotated puzzle")
 ```
 
 ### Add Labels with geom_text
@@ -279,7 +284,7 @@ ggplot() +
   ) +
   scale_fill_viridis_c(guide = "none") +
   coord_fixed() +
-  theme_void() +
+  theme_puzzle() +
   labs(title = "7 Hexagonal Pieces")
 ```
 
@@ -301,7 +306,8 @@ ggplot() +
   ) +
   scale_fill_viridis_c(option = "plasma", guide = "none") +
   coord_fixed() +
-  theme_void()
+  theme_puzzle() +
+  labs(title = "With borders")
 ```
 
 ### Thick Borders for Emphasis
@@ -320,11 +326,11 @@ make_border_demo <- function(lw, label) {
     ) +
     scale_fill_viridis_c(option = "magma", guide = "none") +
     coord_fixed() +
-    theme_void() +
+    theme_puzzle() +
     labs(title = label)
 }
 
-make_border_demo(0.25, "Thin borders") + make_border_demo(1.5, "Thick borders")
+print(make_border_demo(0.25, "Thin borders") + make_border_demo(1.5, "Thick borders"))
 ```
 
 ## Alpha Transparency
@@ -343,11 +349,11 @@ make_alpha_demo <- function(a, label) {
     ) +
     scale_fill_viridis_c(option = "turbo", guide = "none") +
     coord_fixed() +
-    theme_void() +
+    theme_puzzle() +
     labs(title = label)
 }
 
-make_alpha_demo(1.0, "alpha = 1.0 (opaque)") + make_alpha_demo(0.5, "alpha = 0.5 (semi-transparent)")
+print(make_alpha_demo(1.0, "alpha = 1.0 (opaque)") + make_alpha_demo(0.5, "alpha = 0.5 (semi-transparent)"))
 ```
 
 ## Saving High-Quality Output
@@ -364,7 +370,7 @@ p <- ggplot() +
   ) +
   scale_fill_viridis_c(option = "plasma", guide = "none") +
   coord_fixed() +
-  theme_void()
+  theme_puzzle()
 
 # Standard quality
 ggsave("puzzle.png", p, width = 8, height = 8, dpi = 150)

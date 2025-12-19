@@ -212,7 +212,8 @@ ggplot() +
   ) +
   scale_fill_viridis_c(guide = "none") +
   coord_fixed() +
-  theme_void()
+  theme_puzzle() +
+  labs(title = "Hexagonal puzzle")
 ```
 
 Or by writing the SVG:

@@ -25,9 +25,7 @@ source("quarto/_setup.R")
 #| out-width: "100%"
 
 # Create a visually appealing hexagonal puzzle
-set.seed(42)
-p <- ggplot() +
-
+ggplot() +
   geom_puzzle_hex(
     aes(fill = after_stat(piece_id)),
     rings = 3,
@@ -35,11 +33,17 @@ p <- ggplot() +
   ) +
   scale_fill_viridis_c(option = "plasma", guide = "none") +
   coord_fixed() +
-  theme_void() +
+  theme_puzzle() +
+  labs(title = "jigsawR") +
   theme(
+    plot.title = element_text(
+      hjust = 0.5,
+      size = 18,
+      face = "bold",
+      margin = margin(b = 10)
+    ),
     plot.background = element_rect(fill = "white", color = NA)
   )
-print(p)
 ```
 
 ## Installation
@@ -159,7 +163,7 @@ p1 <- ggplot() +
   ) +
   scale_fill_viridis_c(option = "viridis", guide = "none") +
   coord_fixed() +
-  theme_void() +
+  theme_puzzle() +
   labs(title = "Rectangular")
 
 p2 <- ggplot() +
@@ -169,7 +173,7 @@ p2 <- ggplot() +
   ) +
   scale_fill_viridis_c(option = "magma", guide = "none") +
   coord_fixed() +
-  theme_void() +
+  theme_puzzle() +
   labs(title = "Hexagonal")
 
 p3 <- ggplot() +
@@ -179,7 +183,7 @@ p3 <- ggplot() +
   ) +
   scale_fill_viridis_c(option = "plasma", guide = "none") +
   coord_fixed() +
-  theme_void() +
+  theme_puzzle() +
   labs(title = "Concentric")
 
 p4 <- ggplot() +
@@ -190,7 +194,7 @@ p4 <- ggplot() +
   ) +
   scale_fill_viridis_c(option = "turbo", guide = "none") +
   coord_fixed() +
-  theme_void() +
+  theme_puzzle() +
   labs(title = "Voronoi")
 
 print(p1 + p2 + p3 + p4)

@@ -145,7 +145,7 @@ ggplot(data) +
     labels = scales::comma
   ) +
   coord_fixed() +
-  theme_void() +
+  theme_puzzle() +
   labs(title = "Population by Region")
 ```
 
@@ -232,7 +232,7 @@ ggplot() +
   ) +
   scale_fill_viridis_c(option = "plasma", guide = "none") +
   coord_fixed() +
-  theme_void()
+  theme_puzzle()
 ```
 
 ## Faceting
@@ -261,7 +261,7 @@ ggplot(variations) +
   facet_wrap(~label) +
   scale_fill_viridis_c(guide = "none") +
   coord_fixed() +
-  theme_void()
+  theme_puzzle()
 ```
 
 ## Theming
@@ -276,7 +276,7 @@ Apply any ggplot2 theme:
 #|   - "theme_dark()"
 
 # Minimal theme
-ggplot() +
+print(ggplot() +
   geom_puzzle_rect(
     aes(fill = after_stat(piece_id)),
     cols = 3, rows = 2,
@@ -286,10 +286,10 @@ ggplot() +
   scale_fill_viridis_c(guide = "none") +
   coord_fixed() +
   theme_minimal() +
-  labs(title = "Minimal")
+  labs(title = "Minimal"))
 
 # Dark theme
-ggplot() +
+print(ggplot() +
   geom_puzzle_rect(
     aes(fill = after_stat(piece_id)),
     cols = 3, rows = 2,
@@ -299,7 +299,7 @@ ggplot() +
   scale_fill_viridis_c(guide = "none") +
   coord_fixed() +
   theme_dark() +
-  labs(title = "Dark")
+  labs(title = "Dark"))
 ```
 
 ## Saving Plots
@@ -317,7 +317,7 @@ p <- ggplot() +
   ) +
   scale_fill_viridis_c(option = "turbo", guide = "none") +
   coord_fixed() +
-  theme_void()
+  theme_puzzle()
 
 # Save as PNG
 ggsave("puzzle.png", p, width = 8, height = 8, dpi = 300)

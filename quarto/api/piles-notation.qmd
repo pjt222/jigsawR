@@ -49,10 +49,9 @@ Use colon for consecutive ranges:
 #| fig-cap:
 #|   - "No fusion"
 #|   - "fusion_groups = '1-2,5-6,11-12'"
-#| eval: false
 
 # Standard
-ggplot() +
+print(ggplot() +
   geom_puzzle_rect(
     aes(fill = after_stat(piece_id)),
     cols = 4, rows = 3,
@@ -61,10 +60,11 @@ ggplot() +
   ) +
   scale_fill_viridis_c(guide = "none") +
   coord_fixed() +
-  theme_void()
+  theme_puzzle() +
+  labs(title = "Standard"))
 
 # With fusion
-ggplot() +
+print(ggplot() +
   geom_puzzle_rect(
     aes(fill = after_stat(group_id)),
     cols = 4, rows = 3,
@@ -74,7 +74,8 @@ ggplot() +
   ) +
   scale_fill_viridis_c(guide = "none") +
   coord_fixed() +
-  theme_void()
+  theme_puzzle() +
+  labs(title = "With fusion"))
 ```
 
 ### Hexagonal Keywords
@@ -85,10 +86,9 @@ ggplot() +
 #| fig-cap:
 #|   - "fusion_groups = 'center-ring1'"
 #|   - "fusion_groups = 'ring2'"
-#| eval: false
 
 # Center merged with ring 1
-ggplot() +
+print(ggplot() +
   geom_puzzle_hex(
     aes(fill = after_stat(group_id)),
     rings = 3, diameter = 200, seed = 42,
@@ -96,10 +96,11 @@ ggplot() +
   ) +
   scale_fill_viridis_c(option = "plasma", guide = "none") +
   coord_fixed() +
-  theme_void()
+  theme_puzzle() +
+  labs(title = "center-ring1"))
 
 # Ring 2 merged
-ggplot() +
+print(ggplot() +
   geom_puzzle_hex(
     aes(fill = after_stat(group_id)),
     rings = 3, diameter = 200, seed = 42,
@@ -107,7 +108,8 @@ ggplot() +
   ) +
   scale_fill_viridis_c(option = "plasma", guide = "none") +
   coord_fixed() +
-  theme_void()
+  theme_puzzle() +
+  labs(title = "ring2"))
 ```
 
 ## Keywords Reference

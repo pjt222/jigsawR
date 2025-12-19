@@ -26,34 +26,37 @@ Hexagonal puzzles are defined by the number of rings:
 #|   - "4 rings (37 pieces)"
 
 # 2 rings
-ggplot() +
+print(ggplot() +
   geom_puzzle_hex(
     aes(fill = after_stat(piece_id)),
     rings = 2, seed = 42
   ) +
   scale_fill_viridis_c(option = "plasma", guide = "none") +
   coord_fixed() +
-  theme_void()
+  theme_puzzle() +
+  labs(title = "2 rings"))
 
 # 3 rings
-ggplot() +
+print(ggplot() +
   geom_puzzle_hex(
     aes(fill = after_stat(piece_id)),
     rings = 3, seed = 42
   ) +
   scale_fill_viridis_c(option = "plasma", guide = "none") +
   coord_fixed() +
-  theme_void()
+  theme_puzzle() +
+  labs(title = "3 rings"))
 
 # 4 rings
-ggplot() +
+print(ggplot() +
   geom_puzzle_hex(
     aes(fill = after_stat(piece_id)),
     rings = 4, seed = 42
   ) +
   scale_fill_viridis_c(option = "plasma", guide = "none") +
   coord_fixed() +
-  theme_void()
+  theme_puzzle() +
+  labs(title = "4 rings"))
 ```
 
 ## Piece Count Formula
@@ -84,7 +87,7 @@ Hexagonal puzzles support two key transformations:
 #|   - "warp=TRUE, trunc=FALSE"
 
 # Default: warped and truncated
-ggplot() +
+print(ggplot() +
   geom_puzzle_hex(
     aes(fill = after_stat(piece_id)),
     rings = 3,
@@ -93,10 +96,11 @@ ggplot() +
   ) +
   scale_fill_viridis_c(option = "magma", guide = "none") +
   coord_fixed() +
-  theme_void()
+  theme_puzzle() +
+  labs(title = "warp + trunc"))
 
 # Warped but not truncated (extends beyond circle)
-ggplot() +
+print(ggplot() +
   geom_puzzle_hex(
     aes(fill = after_stat(piece_id)),
     rings = 3,
@@ -105,7 +109,8 @@ ggplot() +
   ) +
   scale_fill_viridis_c(option = "magma", guide = "none") +
   coord_fixed() +
-  theme_void()
+  theme_puzzle() +
+  labs(title = "warp only"))
 ```
 
 ## Color Palettes
@@ -121,12 +126,12 @@ make_hex_palette <- function(pal) {
     ) +
     scale_fill_viridis_c(option = pal, guide = "none") +
     coord_fixed() +
-    theme_void() +
+    theme_puzzle() +
     labs(title = pal)
 }
 
-(make_hex_palette("viridis") + make_hex_palette("magma") + make_hex_palette("plasma")) /
-(make_hex_palette("inferno") + make_hex_palette("cividis") + make_hex_palette("turbo"))
+print((make_hex_palette("viridis") + make_hex_palette("magma") + make_hex_palette("plasma")) /
+(make_hex_palette("inferno") + make_hex_palette("cividis") + make_hex_palette("turbo")))
 ```
 
 ## Offset (Separation)
@@ -144,11 +149,11 @@ make_hex_offset <- function(off) {
     ) +
     scale_fill_viridis_c(option = "viridis", guide = "none") +
     coord_fixed() +
-    theme_void() +
+    theme_puzzle() +
     labs(title = paste0("offset = ", off))
 }
 
-make_hex_offset(0) + make_hex_offset(5) + make_hex_offset(10) + make_hex_offset(15)
+print(make_hex_offset(0) + make_hex_offset(5) + make_hex_offset(10) + make_hex_offset(15))
 ```
 
 ## Fusion Groups
@@ -161,10 +166,9 @@ Special keywords for hexagonal puzzles:
 #| fig-cap:
 #|   - "center + ring1"
 #|   - "All of ring2"
-#| eval: false
 
 # Center merged with ring 1
-ggplot() +
+print(ggplot() +
   geom_puzzle_hex(
     aes(fill = after_stat(piece_id)),
     rings = 3,
@@ -173,10 +177,11 @@ ggplot() +
   ) +
   scale_fill_viridis_c(option = "plasma", guide = "none") +
   coord_fixed() +
-  theme_void()
+  theme_puzzle() +
+  labs(title = "center + ring1"))
 
 # Ring 2 pieces merged
-ggplot() +
+print(ggplot() +
   geom_puzzle_hex(
     aes(fill = after_stat(piece_id)),
     rings = 3,
@@ -185,7 +190,8 @@ ggplot() +
   ) +
   scale_fill_viridis_c(option = "plasma", guide = "none") +
   coord_fixed() +
-  theme_void()
+  theme_puzzle() +
+  labs(title = "ring2"))
 ```
 
 ## Large Puzzles
@@ -204,7 +210,7 @@ ggplot() +
   ) +
   scale_fill_viridis_c(option = "turbo", guide = "none") +
   coord_fixed() +
-  theme_void() +
+  theme_puzzle() +
   labs(title = "5-Ring Hexagonal Puzzle (61 pieces)")
 ```
 
