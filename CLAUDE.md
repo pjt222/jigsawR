@@ -102,6 +102,26 @@ R_EXE="/mnt/c/Program Files/R/R-4.5.0/bin/Rscript.exe"
 - Complex `-e` commands may fail with Exit code 5 due to shell escaping
 - **Best practice**: Use script files for anything beyond trivial commands
 
+## Quarto Documentation
+
+The `quarto/` directory contains the project documentation site. To render from WSL:
+
+```bash
+QUARTO_EXE="/mnt/c/Program Files/RStudio/resources/app/bin/quarto/bin/quarto.exe"
+
+# Render entire site
+"$QUARTO_EXE" render quarto
+
+# Render single file
+"$QUARTO_EXE" render quarto/getting-started.qmd
+```
+
+**Key Notes:**
+- Quarto is bundled with RStudio (no separate installation needed)
+- Output goes to `quarto/_site/`
+- Freeze cache in `quarto/_freeze/` - delete to force re-render
+- All R code chunks should have `#| label:` for clean rendering output
+
 ## Development Commands
 
 ### Package Development
