@@ -1,0 +1,76 @@
+name: Quarto Publish
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'quarto/**'
+      - 'R/**'
+      - '.github/workflows/quarto-publish.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Quarto
+        uses: quarto-dev/quarto-actions/setup@v2
+
+      - name: Setup R
+        uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: 'release'
+          use-public-rspm: true
+
+      - name: Setup R dependencies
+        uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          packages: |
+            any::devtools
+            any::ggplot2
+            any::ggforce
+            any::ggfx
+            any::viridis
+            any::scales
+            any::Rcpp
+            any::deldir
+
+      - name: Install jigsawR
+        run: |
+          devtools::install_local('.', dependencies = FALSE)
+        shell: Rscript {0}
+
+      - name: Render Quarto Project
+        run: |
+          quarto render quarto
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: quarto/_site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
