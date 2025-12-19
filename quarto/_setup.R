@@ -16,6 +16,7 @@ if (requireNamespace("jigsawR", quietly = TRUE)) {
 suppressPackageStartupMessages({
   library(ggplot2)
   library(viridis)
+  library(patchwork)
 })
 
 # Set knitr options

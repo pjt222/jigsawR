@@ -18,8 +18,6 @@ Random puzzles generate unique, irregular piece shapes using a randomized approa
 ```{r}
 #| label: fig-rand-piece-counts
 #| fig-align: center
-library(patchwork)
-
 make_rand_pieces <- function(n) {
   ggplot() +
     geom_puzzle_random(

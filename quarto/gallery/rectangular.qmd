@@ -66,8 +66,6 @@ All viridis palettes work beautifully with puzzle pieces:
 ```{r}
 #| label: fig-rect-palettes
 #| fig-align: center
-library(patchwork)
-
 make_palette_plot <- function(pal) {
   ggplot() +
     geom_puzzle_rect(

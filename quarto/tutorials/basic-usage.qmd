@@ -148,8 +148,6 @@ ggplot() +
 ```{r}
 #| label: separation-modes
 #| fig-align: center
-library(patchwork)
-
 make_offset_plot <- function(off) {
   ggplot() +
     geom_puzzle_rect(

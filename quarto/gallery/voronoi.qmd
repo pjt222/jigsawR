@@ -18,8 +18,6 @@ Voronoi puzzles create organic, natural-looking pieces based on Voronoi tessella
 ```{r}
 #| label: fig-vor-cell-counts
 #| fig-align: center
-library(patchwork)
-
 make_vor_cells <- function(n) {
   ggplot() +
     geom_puzzle_voronoi(

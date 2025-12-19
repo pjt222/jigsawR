@@ -4,11 +4,12 @@ subtitle: "Generate Beautiful Jigsaw Puzzles in R"
 page-layout: full
 ---
 
-::: {.hero-section}
+::: hero-section
 # jigsawR {.hero-title}
+:::
 
-Generate stunning, mathematically precise jigsaw puzzles with ease.
-Five puzzle types, infinite possibilities. {.hero-subtitle}
+::: hero-section
+# Generate stunning, mathematically precise jigsaw puzzles with ease. Five puzzle types, infinite possibilities. {.hero-subtitle}
 :::
 
 ```{r}
@@ -43,74 +44,84 @@ print(p)
 
 ## Installation
 
-```r
+``` r
 # Install from GitHub
 devtools::install_github("pjt222/jigsawR")
 ```
 
-::: {.feature-grid}
-
-::: {.feature-card}
-::: {.feature-icon}
+::::::::::::::::::::: feature-grid
+::::: feature-card
+::: feature-icon
 🧩
 :::
-::: {.feature-title}
+
+::: feature-title
 5 Puzzle Types
 :::
-Rectangular, Hexagonal, Concentric, Voronoi, and Random shapes
-:::
 
-::: {.feature-card}
-::: {.feature-icon}
+Rectangular, Hexagonal, Concentric, Voronoi, and Random shapes
+:::::
+
+::::: feature-card
+::: feature-icon
 🎨
 :::
-::: {.feature-title}
+
+::: feature-title
 Beautiful Palettes
 :::
-Full viridis color palette support with gradient fills
-:::
 
-::: {.feature-card}
-::: {.feature-icon}
+Full viridis color palette support with gradient fills
+:::::
+
+::::: feature-card
+::: feature-icon
 📊
 :::
-::: {.feature-title}
+
+::: feature-title
 ggplot2 Integration
 :::
-Native geom_puzzle_*() functions for data visualization
-:::
 
-::: {.feature-card}
-::: {.feature-icon}
+Native geom_puzzle\_\*() functions for data visualization
+:::::
+
+::::: feature-card
+::: feature-icon
 🔗
 :::
-::: {.feature-title}
+
+::: feature-title
 Fusion Groups
 :::
-Merge pieces using PILES notation for custom layouts
-:::
 
-::: {.feature-card}
-::: {.feature-icon}
+Merge pieces using PILES notation for custom layouts
+:::::
+
+::::: feature-card
+::: feature-icon
 ⚡
 :::
-::: {.feature-title}
+
+::: feature-title
 High Performance
 :::
-C++ backend with Rcpp for fast puzzle generation
-:::
 
-::: {.feature-card}
-::: {.feature-icon}
+C++ backend with Rcpp for fast puzzle generation
+:::::
+
+::::: feature-card
+::: feature-icon
 📱
 :::
-::: {.feature-title}
+
+::: feature-title
 Shiny App
 :::
-Interactive web app for puzzle creation and download
-:::
 
-:::
+Interactive web app for puzzle creation and download
+:::::
+:::::::::::::::::::::
 
 ## Quick Start
 
@@ -133,16 +144,13 @@ writeLines(result$svg_content, "my_puzzle.svg")
 
 ## Gallery Preview
 
-::: {.puzzle-gallery}
-
+::: puzzle-gallery
 ```{r}
 #| label: gallery-preview
 #| echo: false
 #| message: false
 #| warning: false
 #| fig-align: center
-library(patchwork)
-
 p1 <- ggplot() +
   geom_puzzle_rect(
     aes(fill = after_stat(piece_id)),
@@ -187,7 +195,6 @@ p4 <- ggplot() +
 
 p1 + p2 + p3 + p4
 ```
-
 :::
 
 [Explore the Gallery →](gallery/rectangular.qmd){.btn .btn-primary}
@@ -252,11 +259,10 @@ result <- generate_puzzle(
 
 [PILES Notation Guide →](api/piles-notation.qmd){.btn .btn-outline-primary}
 
----
+------------------------------------------------------------------------
 
-::: {.text-center}
+::: text-center
 **Ready to create puzzles?**
 
-[Get Started](getting-started.qmd){.btn .btn-lg .btn-primary}
-[View on GitHub](https://github.com/pjt222/jigsawR){.btn .btn-lg .btn-outline-secondary}
+[Get Started](getting-started.qmd){.btn .btn-lg .btn-primary} [View on GitHub](https://github.com/pjt222/jigsawR){.btn .btn-lg .btn-outline-secondary}
 :::

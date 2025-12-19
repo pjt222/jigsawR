@@ -113,8 +113,6 @@ ggplot() +
 ```{r}
 #| label: fig-hex-palettes
 #| fig-align: center
-library(patchwork)
-
 make_hex_palette <- function(pal) {
   ggplot() +
     geom_puzzle_hex(

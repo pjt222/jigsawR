@@ -19,8 +19,6 @@ jigsawR works seamlessly with all viridis color palettes.
 #| label: viridis-palettes
 #| fig-align: center
 #| fig-height: 6
-library(patchwork)
-
 make_palette_demo <- function(pal) {
   ggplot() +
     geom_puzzle_hex(

@@ -235,8 +235,6 @@ Control how pieces are positioned:
 ```{r}
 #| label: separation-modes
 #| fig-align: center
-library(patchwork)
-
 p1 <- ggplot() +
   geom_puzzle_rect(
     aes(fill = after_stat(piece_id)),

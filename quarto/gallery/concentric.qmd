@@ -18,8 +18,6 @@ Concentric puzzles feature rings of pieces that radiate outward from a central s
 ```{r}
 #| label: fig-conc-rings
 #| fig-align: center
-library(patchwork)
-
 make_conc_rings <- function(r) {
   ggplot() +
     geom_puzzle_conc(
