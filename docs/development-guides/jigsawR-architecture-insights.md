@@ -2453,6 +2453,51 @@ if (!is.null(max_tab_size) && tab_height > max_tab_size) {
 
 ---
 
+### 31. Documentation Consolidation Pattern (2025-12-21, Issue #73)
+
+**Context**: Found 3 nearly-identical "Aspect Ratios" sections across gallery documentation files (rectangular.qmd, voronoi.qmd, random.qmd), each ~45 lines showing the same concept with type-specific code.
+
+**Problem**: Duplicate documentation creates:
+- Maintenance burden (update 3 places for one concept)
+- Inconsistency risk (different seeds, palettes, explanations)
+- Poor user experience (same information repeated)
+
+**Solution Pattern**: Consolidate → Cross-reference
+
+1. **Create single authoritative source**: `quarto/tutorials/aspect-ratios.qmd`
+   - Shows all puzzle types side-by-side for comparison
+   - Single place to update when concept evolves
+   - Better educational value through cross-type comparison
+
+2. **Replace duplicates with callout links**:
+   ```markdown
+   ::: {.callout-tip}
+   ## Aspect Ratios
+   Rectangular puzzles handle any aspect ratio. See the
+   [Aspect Ratios Tutorial](../tutorials/aspect-ratios.qmd) for examples.
+   :::
+   ```
+
+3. **Update navigation**: Add new page to `_quarto.yml` menu structure
+
+**Files Changed**:
+- Created: `quarto/tutorials/aspect-ratios.qmd`
+- Modified: `quarto/gallery/rectangular.qmd`, `voronoi.qmd`, `random.qmd`
+- Modified: `quarto/_quarto.yml` (navigation)
+
+**Key Insight**: When you find duplicate content across documentation files:
+1. Identify what's truly shared vs type-specific
+2. Create consolidated guide showing cross-type comparison
+3. Replace duplicates with concise callout boxes linking to the guide
+4. Ensure navigation structure exposes the new consolidated content
+
+**Additional Finding**: The same pattern applies to other duplicated sections:
+- Color Palettes (5 duplicates across gallery files)
+- Offset/Separation (5 duplicates)
+- These are candidates for future consolidation
+
+---
+
 ## Development History
 
 ### Completed Work (Archive)
