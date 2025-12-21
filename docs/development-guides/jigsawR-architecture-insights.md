@@ -2390,6 +2390,69 @@ ggplot(df, aes(fill = value)) +
 
 ---
 
+### 30. Cross-Type Feature Extension: Min/Max Tab Size (2025-12-21, Issue #76)
+
+**Context**: The `min_tab_size` and `max_tab_size` parameters only applied to voronoi/random puzzle types. Issue #76 requested extending these constraints to all puzzle types (rectangular, hexagonal, concentric).
+
+**Universal Tab Height Formula**:
+All puzzle types share the same fundamental relationship:
+```r
+tab_height = 3.0 * t * edge_length
+```
+Where:
+- `t` = normalized tab fraction (typically 0.08-0.12, derived from tabsize percentage)
+- `edge_length` = physical length of the puzzle edge in mm
+
+**Constraint Logic Pattern** (applied identically across all types):
+```r
+# MINIMUM constraint: scale UP if tab too small
+if (!is.null(min_tab_size) && tab_height < min_tab_size) {
+  t <- min_tab_size / (3.0 * edge_length)
+  # Safety: if tab would be too wide (>70% of edge), use straight line or cap
+  if (4.0 * t > 0.7) {
+    t <- 0.175  # Cap at safe maximum, or return straight line
+  }
+}
+
+# MAXIMUM constraint: scale DOWN if tab too large
+if (!is.null(max_tab_size) && tab_height > max_tab_size) {
+  t <- max_tab_size / (3.0 * edge_length)
+}
+```
+
+**Key Implementation Differences by Type**:
+
+1. **Hexagonal/Concentric** (Edge-by-edge generation):
+   - Added params to `generate_hex_bezier_edge()` signature
+   - Constraint logic applied directly after tab size calculation
+   - Returns straight line if constraints impossible
+
+2. **Rectangular** (Global environment state):
+   - Uses `.jigsaw_env` for global state, but edges vary in length
+   - Added `t_base` to store original tab size
+   - Created `apply_tab_constraints()` helper called in `next_tab()`
+   - Constraints recalculated per-edge based on current `sl()` (side length)
+
+**Files Changed**:
+- `R/hexagonal_bezier_generation.R`: Core constraint implementation
+- `R/rectangular_puzzle.R`: Added `apply_tab_constraints()` helper
+- `R/concentric_edge_generation.R`: Parameter pass-through (5 call sites)
+- `R/hexagonal_edge_generation_fixed.R`: Parameter pass-through
+- `R/unified_piece_generation.R`: Updated all type dispatches
+- `R/puzzle_core_clean.R`: Pass-through to `init_jigsaw()`
+- `R/jigsawR_clean.R`: Removed "voronoi/random only" restriction
+- `inst/shiny-app/app.R`: Removed conditional panel
+
+**Tests Updated**: Changed expectations from "constraints don't apply" to "constraints apply" for rectangular/hexagonal types.
+
+**Key Insight**: When extending a feature across puzzle types with different architectures:
+1. Identify the universal formula/logic (tab height calculation)
+2. Find the appropriate injection point for each type
+3. Respect each type's architectural patterns (edge-by-edge vs global state)
+4. Update tests to expect the new behavior
+
+---
+
 ## Development History
 
 ### Completed Work (Archive)

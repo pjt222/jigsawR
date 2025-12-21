@@ -67,7 +67,9 @@ generate_pieces_internal <- function(type = "rectangular",
       boundary_facing = boundary_facing,
       fusion_groups = fusion_groups,
       fusion_style = fusion_style,
-      fusion_opacity = fusion_opacity
+      fusion_opacity = fusion_opacity,
+      min_tab_size = min_tab_size,
+      max_tab_size = max_tab_size
     )
   } else if (type == "hexagonal") {
     result <- generate_hex_pieces_internal(
@@ -81,7 +83,9 @@ generate_pieces_internal <- function(type = "rectangular",
       do_circular_border = do_circular_border,
       fusion_groups = fusion_groups,
       fusion_style = fusion_style,
-      fusion_opacity = fusion_opacity
+      fusion_opacity = fusion_opacity,
+      min_tab_size = min_tab_size,
+      max_tab_size = max_tab_size
     )
   } else if (type == "voronoi") {
     result <- generate_voronoi_pieces_internal(
@@ -121,7 +125,9 @@ generate_pieces_internal <- function(type = "rectangular",
       jitter = jitter,
       fusion_groups = fusion_groups,
       fusion_style = fusion_style,
-      fusion_opacity = fusion_opacity
+      fusion_opacity = fusion_opacity,
+      min_tab_size = min_tab_size,
+      max_tab_size = max_tab_size
     )
   }
 
@@ -139,12 +145,16 @@ generate_pieces_internal <- function(type = "rectangular",
 #' @param fusion_groups List of piece ID vectors to fuse (optional)
 #' @param fusion_style Style for fused edges: "none", "dashed", "solid"
 #' @param fusion_opacity Opacity for fused edges (0.0 to 1.0)
+#' @param min_tab_size Minimum absolute tab size in mm (default: NULL)
+#' @param max_tab_size Maximum absolute tab size in mm (default: NULL)
 #' @return Piece generation result
 #' @keywords internal
 generate_rect_pieces_internal <- function(seed, grid, size, tabsize, jitter,
                                           fusion_groups = NULL,
                                           fusion_style = "none",
-                                          fusion_opacity = 0.3) {
+                                          fusion_opacity = 0.3,
+                                          min_tab_size = NULL,
+                                          max_tab_size = NULL) {
 
   yn <- grid[1]  # rows
   xn <- grid[2]  # cols
@@ -157,7 +167,9 @@ generate_rect_pieces_internal <- function(seed, grid, size, tabsize, jitter,
     grid = grid,
     size = size,
     tabsize = tabsize,
-    jitter = jitter
+    jitter = jitter,
+    min_tab_size = min_tab_size,
+    max_tab_size = max_tab_size
   )
 
   piece_width <- puzzle_structure$piece_width
@@ -281,7 +293,9 @@ generate_hex_pieces_internal <- function(seed, rings, diameter, tabsize, jitter,
                                          do_circular_border = FALSE,
                                          fusion_groups = NULL,
                                          fusion_style = "none",
-                                         fusion_opacity = 0.3) {
+                                         fusion_opacity = 0.3,
+                                         min_tab_size = NULL,
+                                         max_tab_size = NULL) {
   # Calculate total pieces for progress reporting
   num_pieces <- 3 * rings * (rings - 1) + 1
 
@@ -298,7 +312,9 @@ generate_hex_pieces_internal <- function(seed, rings, diameter, tabsize, jitter,
     separation_factor = 1.0,
     do_warp = do_warp,
     do_trunc = do_trunc,
-    do_circular_border = do_circular_border
+    do_circular_border = do_circular_border,
+    min_tab_size = min_tab_size,
+    max_tab_size = max_tab_size
   )
 
   # Compute fused edges if fusion groups provided
@@ -487,7 +503,9 @@ generate_concentric_pieces_internal <- function(seed, rings, diameter, tabsize, 
                                                  boundary_facing = "outward",
                                                  fusion_groups = NULL,
                                                  fusion_style = "none",
-                                                 fusion_opacity = 0.3) {
+                                                 fusion_opacity = 0.3,
+                                                 min_tab_size = NULL,
+                                                 max_tab_size = NULL) {
   # Calculate total pieces for progress reporting
   num_pieces <- 3 * rings * (rings - 1) + 1
 
@@ -507,7 +525,9 @@ generate_concentric_pieces_internal <- function(seed, rings, diameter, tabsize, 
     jitter = jitter,
     center_shape = center_shape,
     do_circular_border = do_circular_border,
-    boundary_facing = boundary_facing
+    boundary_facing = boundary_facing,
+    min_tab_size = min_tab_size,
+    max_tab_size = max_tab_size
   )
 
   # Extract pieces from result

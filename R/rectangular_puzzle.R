@@ -19,10 +19,15 @@
 #' @param radius Corner radius in mm (default: 2.0)
 #' @param xn Number of columns (default: 15)
 #' @param yn Number of rows (default: 10)
+#' @param min_tab_size Minimum absolute tab size in mm (default: NULL for no limit).
+#'   Prevents tabs from becoming too small on short edges.
+#' @param max_tab_size Maximum absolute tab size in mm (default: NULL for no limit).
+#'   Prevents tabs from becoming too large on long edges.
 init_jigsaw <- function(seed = NULL, tabsize = 20, jitter = 4,
                         width = 300, height = 200,
                         unit = "mm", dpi = 96, radius = 2.0,
-                        xn = 15, yn = 10) {
+                        xn = 15, yn = 10,
+                        min_tab_size = NULL, max_tab_size = NULL) {
 
   if (is.null(seed)) {
     seed <- as.integer(runif(1) * 10000)
@@ -42,8 +47,13 @@ init_jigsaw <- function(seed = NULL, tabsize = 20, jitter = 4,
   .jigsaw_env$yn <- yn
   .jigsaw_env$offset <- 0.0
 
+  # Tab size constraints
+  .jigsaw_env$min_tab_size <- min_tab_size
+  .jigsaw_env$max_tab_size <- max_tab_size
+
   # Parse input (equivalent to parse_input() in JS)
-  .jigsaw_env$t <- tabsize / 200.0
+  .jigsaw_env$t_base <- tabsize / 200.0  # Base t value before constraints
+  .jigsaw_env$t <- .jigsaw_env$t_base     # Effective t (may be adjusted per edge)
   .jigsaw_env$j <- jitter / 100.0
 
   # Create RNG iterator with pre-generated batch values for performance
@@ -81,6 +91,55 @@ next_tab <- function() {
   .jigsaw_env$c <- uniform(-.jigsaw_env$j, .jigsaw_env$j)
   .jigsaw_env$d <- uniform(-.jigsaw_env$j, .jigsaw_env$j)
   .jigsaw_env$e <- uniform(-.jigsaw_env$j, .jigsaw_env$j)
+
+  # Apply min/max tab size constraints for this edge
+  apply_tab_constraints()
+}
+
+#' Apply min/max tab size constraints for the current edge
+#'
+#' Adjusts .jigsaw_env$t based on the current edge length and any
+#' min/max constraints. Called automatically by next_tab().
+#'
+#' Tab height formula: tab_height = 3 * t * edge_length
+#' If min_tab_size would require a tab wider than 70% of the edge,
+#' the maximum safe width is used instead.
+#'
+#' @keywords internal
+apply_tab_constraints <- function() {
+  # Skip if no constraints are set
+  if (is.null(.jigsaw_env$min_tab_size) && is.null(.jigsaw_env$max_tab_size)) {
+    .jigsaw_env$t <- .jigsaw_env$t_base
+    return()
+  }
+
+  # Get current edge length
+  edge_length <- sl()
+
+  # Calculate current tab height using base t value
+  tab_height <- 3.0 * .jigsaw_env$t_base * edge_length
+
+  t <- .jigsaw_env$t_base
+
+  # Apply minimum constraint
+  if (!is.null(.jigsaw_env$min_tab_size) && tab_height < .jigsaw_env$min_tab_size) {
+    t <- .jigsaw_env$min_tab_size / (3.0 * edge_length)
+
+    # Check if this would make the tab too wide for the edge
+    # Tab spans from 0.5 - 2t to 0.5 + 2t, so total width is 4t
+    # It should fit within roughly 0.1 to 0.9 of the edge (leaving margins)
+    if (4.0 * t > 0.7) {
+      # Cap at maximum safe width
+      t <- 0.175  # 0.7 / 4
+    }
+  }
+
+  # Apply maximum constraint
+  if (!is.null(.jigsaw_env$max_tab_size) && tab_height > .jigsaw_env$max_tab_size) {
+    t <- .jigsaw_env$max_tab_size / (3.0 * edge_length)
+  }
+
+  .jigsaw_env$t <- t
 }
 
 # Coordinate calculation functions (exact JS translation)

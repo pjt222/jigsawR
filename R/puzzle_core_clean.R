@@ -3,12 +3,12 @@
 # No hard-coded adjustments or manual tinkering
 
 #' Generate puzzle with reproducible seed-based randomization
-#' 
+#'
 #' This is the clean core implementation that ensures:
 #' - Deterministic output for same seed
 #' - Adjacent pieces share exact same edge path
 #' - No hard-coded special cases
-#' 
+#'
 #' @param seed Random seed for reproducibility
 #' @param grid Vector c(rows, columns) for puzzle dimensions
 #' @param size Vector c(width, height) in specified units
@@ -16,26 +16,30 @@
 #' @param dpi DPI for pixel/mm conversion (96=screen, 300=print quality)
 #' @param tabsize Tab size as percentage (10-30)
 #' @param jitter Jitter as percentage (0-10)
+#' @param min_tab_size Minimum absolute tab size in mm (default: NULL)
+#' @param max_tab_size Maximum absolute tab size in mm (default: NULL)
 #' @return List with puzzle data and parameters
 #' @export
-generate_puzzle_core <- function(seed = 1234, 
+generate_puzzle_core <- function(seed = 1234,
                                 grid = c(2, 2),
                                 size = c(200, 200),
                                 unit = "mm",
                                 dpi = 96,
                                 tabsize = 20,
-                                jitter = 4) {
-  
+                                jitter = 4,
+                                min_tab_size = NULL,
+                                max_tab_size = NULL) {
+
   # Conversion utilities
   px_to_mm <- function(px_value, dpi) px_value * 25.4 / dpi
   mm_to_px <- function(mm_value, dpi) mm_value * dpi / 25.4
-  
+
   # Extract dimensions
   yn <- grid[1]  # rows
   xn <- grid[2]  # columns
   width <- size[1]
   height <- size[2]
-  
+
   # Convert to mm for internal calculations (algorithms expect mm)
   if (unit == "px") {
     width_mm <- px_to_mm(width, dpi)
@@ -44,15 +48,17 @@ generate_puzzle_core <- function(seed = 1234,
     width_mm <- width
     height_mm <- height
   }
-  
+
   # Initialize the jigsaw environment from rectangular_puzzle.R
-  init_jigsaw(seed = seed, 
-             tabsize = tabsize, 
+  init_jigsaw(seed = seed,
+             tabsize = tabsize,
              jitter = jitter,
-             width = width_mm, 
+             width = width_mm,
              height = height_mm,
-             xn = xn, 
-             yn = yn)
+             xn = xn,
+             yn = yn,
+             min_tab_size = min_tab_size,
+             max_tab_size = max_tab_size)
   
   # Generate shared edges for the entire puzzle
   edges <- generate_all_edges(xn, yn)

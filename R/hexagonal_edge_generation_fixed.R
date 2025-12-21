@@ -39,7 +39,8 @@ make_vertex_key <- function(x, y) {
 #' @export
 generate_hex_edge_map <- function(rings, seed, diameter, tabsize = 27, jitter = 5,
                                   do_warp = FALSE, do_trunc = FALSE,
-                                  do_circular_border = FALSE) {
+                                  do_circular_border = FALSE,
+                                  min_tab_size = NULL, max_tab_size = NULL) {
   # Source dependencies
   if (!exists("map_piece_id_to_ring")) {
     source("R/hexagonal_topology.R")
@@ -369,7 +370,9 @@ generate_hex_edge_map <- function(rings, seed, diameter, tabsize = 27, jitter = 
             v2 = v2,
             seed = edge_seed,
             edge_id = edge_counter,
-            tab_params = tab_params
+            tab_params = tab_params,
+            min_tab_size = min_tab_size,
+            max_tab_size = max_tab_size
           )
 
           # Store the unique edge
@@ -442,7 +445,9 @@ generate_hex_pieces_with_edge_map <- function(rings, seed, diameter = 240,
                                                separation_factor = 1.0,
                                                do_warp = FALSE,
                                                do_trunc = FALSE,
-                                               do_circular_border = FALSE) {
+                                               do_circular_border = FALSE,
+                                               min_tab_size = NULL,
+                                               max_tab_size = NULL) {
   # Source dependencies
   if (!exists("map_piece_id_to_ring")) {
     source("R/hexagonal_topology.R")
@@ -451,7 +456,8 @@ generate_hex_pieces_with_edge_map <- function(rings, seed, diameter = 240,
   # Generate edge mapping
   cat("Creating edge mapping...\n")
   edge_data <- generate_hex_edge_map(rings, seed, diameter, tabsize, jitter,
-                                      do_warp, do_trunc, do_circular_border)
+                                      do_warp, do_trunc, do_circular_border,
+                                      min_tab_size, max_tab_size)
   cat(sprintf("Generated %d unique edges\n", edge_data$num_edges))
 
   # Calculate spacing

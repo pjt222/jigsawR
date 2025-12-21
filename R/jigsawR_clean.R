@@ -47,10 +47,10 @@
 #' @param point_distribution Point distribution method for voronoi puzzles: "fermat", "uniform", or "jittered"
 #' @param n_corner Number of corners for base polygon in random shape puzzles (default: 4 for rectangle)
 #' @param min_piece_size Minimum piece size constraint for random shape puzzles (default: NULL for auto)
-#' @param min_tab_size Minimum absolute tab size in units (default: NULL for no limit).
-#'   Prevents tabs from becoming too small on short edges. Only applies to voronoi/random types.
-#' @param max_tab_size Maximum absolute tab size in units (default: NULL for no limit).
-#'   Prevents tabs from becoming too large on long edges. Only applies to voronoi/random types.
+#' @param min_tab_size Minimum absolute tab size in mm (default: NULL for no limit).
+#'   Prevents tabs from becoming too small on short edges. Applies to all puzzle types.
+#' @param max_tab_size Maximum absolute tab size in mm (default: NULL for no limit).
+#'   Prevents tabs from becoming too large on long edges. Applies to all puzzle types.
 #' @param output DEPRECATED: Use offset parameter instead
 #' @return List with svg_content, pieces, canvas_size, parameters, and fusion_data (if applicable)
 #' @export
@@ -291,8 +291,8 @@ generate_puzzle <- function(type = "rectangular",
       fusion_groups = parsed_fusion_groups,
       fusion_style = fusion_style,
       fusion_opacity = fusion_opacity,
-      min_tab_size = if (type %in% c("voronoi", "random")) min_tab_size else NULL,
-      max_tab_size = if (type %in% c("voronoi", "random")) max_tab_size else NULL
+      min_tab_size = min_tab_size,
+      max_tab_size = max_tab_size
     ),
     files = list(),
     fusion_data = if (!is.null(parsed_fusion_groups)) pieces_result$fusion_data else NULL

@@ -504,25 +504,22 @@ ui <- page_fluid(
             "Adds randomness to piece shapes for more organic variation. Higher values create more irregular pieces. Recommended: 2-6%"
           ),
 
-          # Tab size constraints (voronoi/random only)
-          conditionalPanel(
-            condition = "input.puzzle_type == 'voronoi' || input.puzzle_type == 'random'",
-            tooltip(
-              numericInput("min_tab_size", "Min Tab Size (mm):",
-                          value = if (!is.null(cfg_style$min_tab_size)) cfg_style$min_tab_size else 0,
-                          min = cfg_const$min_tab_size$min,
-                          max = cfg_const$min_tab_size$max,
-                          step = 1),
-              "Minimum absolute tab size in mm. Prevents tabs from becoming too small on short edges. Set to 0 for no constraint. Recommended: 5-10mm for physical puzzles."
-            ),
-            tooltip(
-              numericInput("max_tab_size", "Max Tab Size (mm):",
-                          value = if (!is.null(cfg_style$max_tab_size)) cfg_style$max_tab_size else 0,
-                          min = cfg_const$max_tab_size$min,
-                          max = cfg_const$max_tab_size$max,
-                          step = 1),
-              "Maximum absolute tab size in mm. Prevents tabs from becoming too large on long edges. Set to 0 for no constraint. Recommended: 20-30mm for large puzzles."
-            )
+          # Tab size constraints (applies to all puzzle types)
+          tooltip(
+            numericInput("min_tab_size", "Min Tab Size (mm):",
+                        value = if (!is.null(cfg_style$min_tab_size)) cfg_style$min_tab_size else 0,
+                        min = cfg_const$min_tab_size$min,
+                        max = cfg_const$min_tab_size$max,
+                        step = 1),
+            "Minimum absolute tab size in mm. Prevents tabs from becoming too small on short edges. Set to 0 for no constraint. Recommended: 5-10mm for physical puzzles."
+          ),
+          tooltip(
+            numericInput("max_tab_size", "Max Tab Size (mm):",
+                        value = if (!is.null(cfg_style$max_tab_size)) cfg_style$max_tab_size else 0,
+                        min = cfg_const$max_tab_size$min,
+                        max = cfg_const$max_tab_size$max,
+                        step = 1),
+            "Maximum absolute tab size in mm. Prevents tabs from becoming too large on long edges. Set to 0 for no constraint. Recommended: 20-30mm for large puzzles."
           ),
 
           # Unified offset slider (replaces output mode dropdowns - Epic #32)
@@ -1289,7 +1286,7 @@ server <- function(input, output, session) {
     # This prevents slow reactive re-computation when these change
     fusion_style_val <- if (is.null(input$fusion_style)) "none" else input$fusion_style
     fusion_opacity_val <- if (is.null(input$fusion_opacity)) 30 else input$fusion_opacity / 100
-    # Tab size constraints (voronoi/random only)
+    # Tab size constraints (applies to all puzzle types)
     min_tab_size_val <- if (is.null(input$min_tab_size) || input$min_tab_size == 0) NULL else input$min_tab_size
     max_tab_size_val <- if (is.null(input$max_tab_size) || input$max_tab_size == 0) NULL else input$max_tab_size
 
@@ -1363,7 +1360,7 @@ server <- function(input, output, session) {
         } else {
           4
         },
-        # Tab size constraints (voronoi/random only)
+        # Tab size constraints (applies to all puzzle types)
         min_tab_size = min_tab_size_val,
         max_tab_size = max_tab_size_val,
         save_files = FALSE  # Don't auto-save in Shiny app
@@ -1940,7 +1937,7 @@ server <- function(input, output, session) {
         } else {
           4
         },
-        # Tab size constraints (voronoi/random only)
+        # Tab size constraints (applies to all puzzle types)
         min_tab_size = min_tab_size_dl,
         max_tab_size = max_tab_size_dl
       )

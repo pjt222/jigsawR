@@ -11,6 +11,10 @@
 #' @param seed Random seed
 #' @param edge_id Unique edge identifier for deterministic tabs
 #' @param tab_params List with tabsize and jitter parameters
+#' @param min_tab_size Minimum absolute tab size in mm (default: NULL for no limit).
+#'   Prevents tabs from becoming too small on short edges.
+#' @param max_tab_size Maximum absolute tab size in mm (default: NULL for no limit).
+#'   Prevents tabs from becoming too large on long edges.
 #' @return List with forward and reverse SVG paths
 #'
 #' @details
@@ -19,15 +23,26 @@
 #' - Tab in the middle section
 #' - Deterministic based on seed and edge_id
 #'
+#' Tab size constraints use the formula: tab_height = 3 * t * edge_length
+#' If min_tab_size would require a tab wider than 70% of the edge,
+#' a straight line is returned instead.
+#'
 #' @examples
 #' v1 <- c(0, 0)
 #' v2 <- c(10, 0)
 #' edge <- generate_hex_bezier_edge(v1, v2, seed = 42, edge_id = 1,
 #'                                   tab_params = list(tabsize = 27, jitter = 5))
 #'
+#' # With constraints
+#' edge <- generate_hex_bezier_edge(v1, v2, seed = 42, edge_id = 1,
+#'                                   tab_params = list(tabsize = 27, jitter = 5),
+#'                                   min_tab_size = 2, max_tab_size = 8)
+#'
 #' @export
 generate_hex_bezier_edge <- function(v1, v2, seed, edge_id,
-                                      tab_params = list(tabsize = 27, jitter = 5)) {
+                                      tab_params = list(tabsize = 27, jitter = 5),
+                                      min_tab_size = NULL,
+                                      max_tab_size = NULL) {
 
   # Calculate edge vector and length
   dx <- v2[1] - v1[1]
@@ -52,6 +67,35 @@ generate_hex_bezier_edge <- function(v1, v2, seed, edge_id,
   c <- jitter * (runif(1) - 0.5)          # Tab offset jitter
   d <- jitter * (runif(1) - 0.5)          # Tab width jitter
   e <- jitter * (runif(1) - 0.5)          # End jitter
+
+
+  # Apply min/max tab size constraints
+  # Tab height formula: tab_height = 3 * t * edge_length
+  tab_height <- 3.0 * t * edge_length
+
+  if (!is.null(min_tab_size) && tab_height < min_tab_size) {
+    # Tab would be too small - scale up
+    t <- min_tab_size / (3.0 * edge_length)
+
+    # Check if this would make the tab too wide for the edge
+    # Tab spans from 0.5 - 2t to 0.5 + 2t, so total width is 4t
+    # It should fit within roughly 0.1 to 0.9 of the edge (leaving margins)
+    if (4.0 * t > 0.7) {
+      # Edge is too short for even a minimum tab - use straight line
+      return(list(
+        forward = sprintf("L %.2f %.2f", v2[1], v2[2]),
+        reverse = sprintf("L %.2f %.2f", v1[1], v1[2]),
+        start = v1,
+        end = v2,
+        type = "straight_constrained"
+      ))
+    }
+  }
+
+  if (!is.null(max_tab_size) && tab_height > max_tab_size) {
+    # Tab would be too large - scale down
+    t <- max_tab_size / (3.0 * edge_length)
+  }
 
   # Helper function: position along edge (0 to 1)
   l <- function(frac) {

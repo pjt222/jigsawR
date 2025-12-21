@@ -339,7 +339,7 @@ test_that("tab size constraints work for random puzzles", {
   expect_gt(length(result$pieces), 0)
 })
 
-test_that("tab size constraints don't apply to rectangular puzzles", {
+test_that("tab size constraints apply to rectangular puzzles", {
   result <- generate_puzzle(
     type = "rectangular",
     grid = c(3, 3),
@@ -350,12 +350,12 @@ test_that("tab size constraints don't apply to rectangular puzzles", {
     save_files = FALSE
   )
 
-  # Parameters should be NULL for non-tessellation types
-  expect_null(result$parameters$min_tab_size)
-  expect_null(result$parameters$max_tab_size)
+  # Parameters should be stored for all puzzle types
+  expect_equal(result$parameters$min_tab_size, 10)
+  expect_equal(result$parameters$max_tab_size, 30)
 })
 
-test_that("tab size constraints don't apply to hexagonal puzzles", {
+test_that("tab size constraints apply to hexagonal puzzles", {
   result <- generate_puzzle(
     type = "hexagonal",
     grid = c(3),
@@ -366,9 +366,26 @@ test_that("tab size constraints don't apply to hexagonal puzzles", {
     save_files = FALSE
   )
 
-  # Parameters should be NULL for non-tessellation types
-  expect_null(result$parameters$min_tab_size)
-  expect_null(result$parameters$max_tab_size)
+  # Parameters should be stored for all puzzle types
+  expect_equal(result$parameters$min_tab_size, 10)
+  expect_equal(result$parameters$max_tab_size, 30)
+})
+
+test_that("tab size constraints apply to concentric puzzles", {
+  result <- generate_puzzle(
+    type = "concentric",
+    grid = c(3),
+    size = c(200),
+    seed = 42,
+    min_tab_size = 8,
+    max_tab_size = 25,
+    save_files = FALSE
+  )
+
+  # Parameters should be stored for all puzzle types
+  expect_equal(result$parameters$min_tab_size, 8)
+  expect_equal(result$parameters$max_tab_size, 25)
+  expect_gt(length(result$pieces), 0)
 })
 
 # =============================================================================

@@ -143,13 +143,19 @@ get_inner_neighbor <- function(piece_id, rings) {
 #' @param do_circular_border If TRUE, use arc commands for perfect circular boundary
 #' @param boundary_facing Direction the circular arc faces: "outward" (convex, away from center)
 #'   or "inward" (concave, toward center). Only applies when do_circular_border = TRUE.
+#' @param min_tab_size Minimum absolute tab size in mm (default: NULL for no limit).
+#'   Prevents tabs from becoming too small on short edges.
+#' @param max_tab_size Maximum absolute tab size in mm (default: NULL for no limit).
+#'   Prevents tabs from becoming too large on long edges.
 #' @return List with edge_map, piece_edges (list of edges per piece), and piece_vertices
 #' @export
 generate_concentric_edge_map <- function(rings, seed, diameter,
                                           tabsize = 27, jitter = 5,
                                           center_shape = "hexagon",
                                           do_circular_border = FALSE,
-                                          boundary_facing = "outward") {
+                                          boundary_facing = "outward",
+                                          min_tab_size = NULL,
+                                          max_tab_size = NULL) {
   # Source dependencies
   if (!exists("generate_hex_bezier_edge")) {
     source("R/hexagonal_bezier_generation.R")
@@ -222,7 +228,9 @@ generate_concentric_edge_map <- function(rings, seed, diameter,
             v2 = v2,
             seed = edge_seed,
             edge_id = edge_counter,
-            tab_params = tab_params
+            tab_params = tab_params,
+            min_tab_size = min_tab_size,
+            max_tab_size = max_tab_size
           )
 
           edge_map[[unique_key]] <- list(
@@ -276,7 +284,9 @@ generate_concentric_edge_map <- function(rings, seed, diameter,
             v2 = v2,
             seed = edge_seed,
             edge_id = edge_counter,
-            tab_params = tab_params
+            tab_params = tab_params,
+            min_tab_size = min_tab_size,
+            max_tab_size = max_tab_size
           )
 
           edge_map[[unique_key]] <- list(
@@ -346,7 +356,9 @@ generate_concentric_edge_map <- function(rings, seed, diameter,
           v2 = v3,
           seed = edge_seed,
           edge_id = edge_counter,
-          tab_params = tab_params
+          tab_params = tab_params,
+          min_tab_size = min_tab_size,
+          max_tab_size = max_tab_size
         )
 
         edge_map[[unique_key]] <- list(
@@ -449,7 +461,9 @@ generate_concentric_edge_map <- function(rings, seed, diameter,
               v2 = nv2,
               seed = edge_seed,
               edge_id = edge_counter,
-              tab_params = tab_params
+              tab_params = tab_params,
+              min_tab_size = min_tab_size,
+              max_tab_size = max_tab_size
             )
 
             edge_map[[unique_key]] <- list(
@@ -499,7 +513,9 @@ generate_concentric_edge_map <- function(rings, seed, diameter,
           v2 = v1,
           seed = edge_seed,
           edge_id = edge_counter,
-          tab_params = tab_params
+          tab_params = tab_params,
+          min_tab_size = min_tab_size,
+          max_tab_size = max_tab_size
         )
 
         edge_map[[unique_key]] <- list(
@@ -770,7 +786,9 @@ generate_concentric_pieces <- function(rings, seed, diameter,
                                         tabsize = 27, jitter = 5,
                                         center_shape = "hexagon",
                                         do_circular_border = FALSE,
-                                        boundary_facing = "outward") {
+                                        boundary_facing = "outward",
+                                        min_tab_size = NULL,
+                                        max_tab_size = NULL) {
   cat("Creating concentric edge mapping...\n")
   edge_data <- generate_concentric_edge_map(
     rings = rings,
@@ -780,7 +798,9 @@ generate_concentric_pieces <- function(rings, seed, diameter,
     jitter = jitter,
     center_shape = center_shape,
     do_circular_border = do_circular_border,
-    boundary_facing = boundary_facing
+    boundary_facing = boundary_facing,
+    min_tab_size = min_tab_size,
+    max_tab_size = max_tab_size
   )
   cat(sprintf("Generated %d unique edges\n", edge_data$num_edges))
 
