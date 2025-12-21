@@ -34,54 +34,10 @@ make_vor_cells <- function(n) {
 print(make_vor_cells(10) + make_vor_cells(25) + make_vor_cells(50))
 ```
 
+::: {.callout-tip}
 ## Aspect Ratios
-
-Voronoi puzzles adapt well to different aspect ratios:
-
-```{r}
-#| label: fig-vor-aspect-ratios
-#| layout-ncol: 3
-#| fig-cap:
-#|   - "Wide (16:9)"
-#|   - "Square (1:1)"
-#|   - "Tall (9:16)"
-
-# Wide
-print(ggplot() +
-  geom_puzzle_voronoi(
-    aes(fill = after_stat(piece_id)),
-    n_cells = 30,
-    seed = 123
-  ) +
-  scale_fill_viridis_c(option = "plasma", guide = "none") +
-  coord_fixed() +
-  theme_puzzle() +
-  labs(title = "Wide"))
-
-# Square
-print(ggplot() +
-  geom_puzzle_voronoi(
-    aes(fill = after_stat(piece_id)),
-    n_cells = 25,
-    seed = 123
-  ) +
-  scale_fill_viridis_c(option = "plasma", guide = "none") +
-  coord_fixed() +
-  theme_puzzle() +
-  labs(title = "Square"))
-
-# Tall
-print(ggplot() +
-  geom_puzzle_voronoi(
-    aes(fill = after_stat(piece_id)),
-    n_cells = 30,
-    seed = 123
-  ) +
-  scale_fill_viridis_c(option = "plasma", guide = "none") +
-  coord_fixed() +
-  theme_puzzle() +
-  labs(title = "Tall"))
-```
+Voronoi puzzles adapt to any aspect ratio - wide, square, or tall. See the [Aspect Ratios Tutorial](../tutorials/aspect-ratios.qmd) for examples comparing all puzzle types.
+:::
 
 ## Color Palettes
 

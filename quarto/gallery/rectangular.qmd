@@ -145,54 +145,10 @@ print(ggplot() +
   labs(title = "Row fusion"))
 ```
 
+::: {.callout-tip}
 ## Aspect Ratios
-
-Rectangular puzzles handle any aspect ratio:
-
-```{r}
-#| label: fig-rect-aspect-ratios
-#| layout-ncol: 3
-#| fig-cap:
-#|   - "Wide (16:9)"
-#|   - "Square (1:1)"
-#|   - "Tall (9:16)"
-
-# Wide
-print(ggplot() +
-  geom_puzzle_rect(
-    aes(fill = after_stat(piece_id)),
-    cols = 8, rows = 4,
-    seed = 123
-  ) +
-  scale_fill_viridis_c(option = "cividis", guide = "none") +
-  coord_fixed() +
-  theme_puzzle() +
-  labs(title = "Wide"))
-
-# Square
-print(ggplot() +
-  geom_puzzle_rect(
-    aes(fill = after_stat(piece_id)),
-    cols = 5, rows = 5,
-    seed = 123
-  ) +
-  scale_fill_viridis_c(option = "cividis", guide = "none") +
-  coord_fixed() +
-  theme_puzzle() +
-  labs(title = "Square"))
-
-# Tall
-print(ggplot() +
-  geom_puzzle_rect(
-    aes(fill = after_stat(piece_id)),
-    cols = 3, rows = 6,
-    seed = 123
-  ) +
-  scale_fill_viridis_c(option = "cividis", guide = "none") +
-  coord_fixed() +
-  theme_puzzle() +
-  labs(title = "Tall"))
-```
+Rectangular puzzles handle any aspect ratio - wide, square, or tall. See the [Aspect Ratios Tutorial](../tutorials/aspect-ratios.qmd) for examples comparing all puzzle types.
+:::
 
 ## Parameters Reference
 

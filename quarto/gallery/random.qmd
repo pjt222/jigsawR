@@ -129,54 +129,10 @@ make_rand_seed <- function(s) {
 print(make_rand_seed(1) + make_rand_seed(42) + make_rand_seed(123) + make_rand_seed(999))
 ```
 
+::: {.callout-tip}
 ## Aspect Ratios
-
-Random puzzles handle any aspect ratio:
-
-```{r}
-#| label: fig-rand-aspect-ratios
-#| layout-ncol: 3
-#| fig-cap:
-#|   - "Wide (16:9)"
-#|   - "Square (1:1)"
-#|   - "Tall (9:16)"
-
-# Wide
-print(ggplot() +
-  geom_puzzle_random(
-    aes(fill = after_stat(piece_id)),
-    n_pieces = 25,
-    seed = 42
-  ) +
-  scale_fill_viridis_c(option = "magma", guide = "none") +
-  coord_fixed() +
-  theme_puzzle() +
-  labs(title = "Wide"))
-
-# Square
-print(ggplot() +
-  geom_puzzle_random(
-    aes(fill = after_stat(piece_id)),
-    n_pieces = 20,
-    seed = 42
-  ) +
-  scale_fill_viridis_c(option = "magma", guide = "none") +
-  coord_fixed() +
-  theme_puzzle() +
-  labs(title = "Square"))
-
-# Tall
-print(ggplot() +
-  geom_puzzle_random(
-    aes(fill = after_stat(piece_id)),
-    n_pieces = 25,
-    seed = 42
-  ) +
-  scale_fill_viridis_c(option = "magma", guide = "none") +
-  coord_fixed() +
-  theme_puzzle() +
-  labs(title = "Tall"))
-```
+Random puzzles handle any aspect ratio - wide, square, or tall. See the [Aspect Ratios Tutorial](../tutorials/aspect-ratios.qmd) for examples comparing all puzzle types.
+:::
 
 ## Large Random Puzzle
 

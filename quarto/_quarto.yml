@@ -40,6 +40,8 @@ website:
             href: tutorials/basic-usage.qmd
           - text: "Customization"
             href: tutorials/customization.qmd
+          - text: "Aspect Ratios"
+            href: tutorials/aspect-ratios.qmd
           - text: "Fusion Groups"
             href: tutorials/fusion-groups.qmd
     right:
