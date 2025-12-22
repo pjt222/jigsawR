@@ -55,6 +55,7 @@ StatPuzzle <- ggplot2::ggproto("StatPuzzle", ggplot2::Stat,
     params$do_circular_border <- params$do_circular_border %||% FALSE
     # Concentric parameters
     params$center_shape <- params$center_shape %||% "hexagon"
+    params$boundary_facing <- params$boundary_facing %||% "outward"
     # Voronoi parameters
     params$point_distribution <- params$point_distribution %||% "fermat"
     # Random parameters
@@ -74,34 +75,39 @@ StatPuzzle <- ggplot2::ggproto("StatPuzzle", ggplot2::Stat,
                            bezier_resolution = 20,
                            do_warp = TRUE, do_trunc = TRUE, do_circular_border = FALSE,
                            center_shape = "hexagon",
+                           boundary_facing = "outward",
                            point_distribution = "fermat",
                            n_corner = 4,
                            fusion_groups = NULL,
                            fusion_style = "none",
-                           fusion_opacity = 0.3) {
+                           fusion_opacity = 0.3,
+                           # Size parameters
+                           width = 100, height = 100, diameter = 100,
+                           # Tab constraints
+                           min_tab_size = NULL, max_tab_size = NULL) {
 
     # Determine grid configuration and piece count
     if (puzzle_type == "rectangular") {
       grid <- c(rows, cols)
       expected_pieces <- rows * cols
-      size <- c(100, 100)  # Normalized coordinates
+      size <- c(width, height)
     } else if (puzzle_type == "hexagonal") {
       grid <- c(rings)
       expected_pieces <- 3 * rings * (rings - 1) + 1
-      size <- c(100)  # Diameter
+      size <- c(diameter)
     } else if (puzzle_type == "concentric") {
       grid <- c(rings)
       expected_pieces <- rings * 6 + 1  # Center + 6 per ring
-      size <- c(100)
+      size <- c(diameter)
     } else if (puzzle_type == "voronoi") {
       grid <- c(n_cells)
       expected_pieces <- n_cells
-      size <- c(100, 100)
+      size <- c(width, height)
     } else if (puzzle_type == "random") {
       grid <- c(n_pieces)
       # Random puzzle piece count is approximate (depends on triangulation)
       expected_pieces <- n_pieces * 2  # Upper bound estimate
-      size <- c(100, 100)
+      size <- c(width, height)
     } else {
       stop("Unknown puzzle type: ", puzzle_type, call. = FALSE)
     }
@@ -116,12 +122,16 @@ StatPuzzle <- ggplot2::ggproto("StatPuzzle", ggplot2::Stat,
       jitter = jitter,
       offset = offset,
       save_files = FALSE,
+      # Tab constraints
+      min_tab_size = min_tab_size,
+      max_tab_size = max_tab_size,
       # Hexagonal parameters
       do_warp = do_warp,
       do_trunc = do_trunc,
       do_circular_border = do_circular_border,
       # Concentric parameters
       center_shape = center_shape,
+      boundary_facing = boundary_facing,
       # Voronoi parameters
       point_distribution = point_distribution,
       # Random parameters

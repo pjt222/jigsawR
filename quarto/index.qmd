@@ -27,23 +27,26 @@ source(setup_path)
 #| warning: false
 #| fig-align: center
 #| out-width: "100%"
+#| fig-width: 6
+#| fig-height: 6
+#| fig-dpi: 300
 
 # Create a visually appealing hexagonal puzzle
 ggplot() +
   geom_puzzle_hex(
-    aes(fill = after_stat(piece_id)),
+    # aes(fill = after_stat(piece_id)),
     rings = 3,
     tabsize = 10,
     diameter = 500,
     do_circular_border = TRUE,
     fusion_groups = "4-12-13,all-4-12-13",  # Two groups: 4-12-13 and all others
     fusion_style = "dashed",
-    fusion_opacity = .5,
+    fusion_opacity = .8,
     offset = 10,
     seed = 42,
     show_labels = TRUE  # Enable piece labels for refinement
   ) +
-  scale_fill_viridis_c(option = "plasma", guide = "none") +
+  # scale_fill_viridis_c(option = "plasma", guide = "none") +
   coord_fixed() +
   theme_puzzle() +
   labs(title = "jigsawR") +

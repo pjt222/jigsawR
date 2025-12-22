@@ -247,8 +247,12 @@ GeomPuzzle <- ggplot2::ggproto("GeomPuzzle", ggplot2::Geom,
 #' @param position Position adjustment (default: "identity").
 #' @param rows Number of rows in the puzzle grid.
 #' @param cols Number of columns in the puzzle grid.
+#' @param width Puzzle width in mm (default: 100).
+#' @param height Puzzle height in mm (default: 100).
 #' @param tabsize Size of the puzzle tabs (default: 20).
 #' @param jitter Random variation in tab positions (default: 4).
+#' @param min_tab_size Minimum tab height in mm (NULL for no constraint).
+#' @param max_tab_size Maximum tab height in mm (NULL for no constraint).
 #' @param seed Random seed for reproducible puzzle shapes.
 #' @param bezier_resolution Points per Bezier curve (default: 20).
 #' @param fusion_groups Piece fusion specification: PILES notation string (e.g., "1-2-3,4-5"),
@@ -298,8 +302,12 @@ geom_puzzle_rect <- function(mapping = NULL,
                               position = "identity",
                               rows = 3,
                               cols = 3,
+                              width = 100,
+                              height = 100,
                               tabsize = 20,
                               jitter = 4,
+                              min_tab_size = NULL,
+                              max_tab_size = NULL,
                               seed = NULL,
                               offset = 0,
                               bezier_resolution = 20,
@@ -326,8 +334,12 @@ geom_puzzle_rect <- function(mapping = NULL,
       puzzle_type = "rectangular",
       rows = rows,
       cols = cols,
+      width = width,
+      height = height,
       tabsize = tabsize,
       jitter = jitter,
+      min_tab_size = min_tab_size,
+      max_tab_size = max_tab_size,
       seed = seed,
       offset = offset,
       bezier_resolution = bezier_resolution,
@@ -357,8 +369,11 @@ geom_puzzle_rect <- function(mapping = NULL,
 #' @param rings Number of rings in the hexagonal puzzle (minimum 2).
 #'   Piece count formula: 3 * rings * (rings - 1) + 1.
 #'   Example: 3 rings = 19 pieces.
+#' @param diameter Puzzle diameter in mm (default: 100).
 #' @param tabsize Size of the puzzle tabs (default: 20).
 #' @param jitter Random variation in tab positions (default: 4).
+#' @param min_tab_size Minimum tab height in mm (NULL for no constraint).
+#' @param max_tab_size Maximum tab height in mm (NULL for no constraint).
 #' @param seed Random seed for reproducible puzzle shapes.
 #' @param bezier_resolution Points per Bezier curve (default: 20).
 #' @param do_warp Apply circular warping transformation (default: TRUE).
@@ -404,8 +419,11 @@ geom_puzzle_hex <- function(mapping = NULL,
                             stat = "puzzle",
                             position = "identity",
                             rings = 3,
+                            diameter = 100,
                             tabsize = 20,
                             jitter = 4,
+                            min_tab_size = NULL,
+                            max_tab_size = NULL,
                             seed = NULL,
                             offset = 0,
                             bezier_resolution = 20,
@@ -434,8 +452,11 @@ geom_puzzle_hex <- function(mapping = NULL,
     params = list(
       puzzle_type = "hexagonal",
       rings = rings,
+      diameter = diameter,
       tabsize = tabsize,
       jitter = jitter,
+      min_tab_size = min_tab_size,
+      max_tab_size = max_tab_size,
       seed = seed,
       offset = offset,
       bezier_resolution = bezier_resolution,
@@ -468,12 +489,17 @@ geom_puzzle_hex <- function(mapping = NULL,
 #' @param rings Number of rings in the puzzle (minimum 1).
 #'   Piece count formula: rings * 6 + 1.
 #'   Example: 3 rings = 19 pieces (1 center + 6 + 6 + 6).
+#' @param diameter Puzzle diameter in mm (default: 100).
 #' @param tabsize Size of the puzzle tabs (default: 20).
 #' @param jitter Random variation in tab positions (default: 4).
+#' @param min_tab_size Minimum tab height in mm (NULL for no constraint).
+#' @param max_tab_size Maximum tab height in mm (NULL for no constraint).
 #' @param seed Random seed for reproducible puzzle shapes.
 #' @param bezier_resolution Points per Bezier curve (default: 20).
 #' @param center_shape Shape of the center piece: "hexagon" or "circle".
 #' @param do_circular_border Use perfect circular arc borders (default: FALSE).
+#' @param boundary_facing Direction the circular arc faces: "outward" (convex) or "inward" (concave).
+#'   Only applies when do_circular_border = TRUE.
 #' @param fusion_groups Piece fusion specification: PILES notation string (e.g., "1-2-3,4-5"),
 #'   list of integer vectors, or NULL for no fusion.
 #' @param fusion_style Style for fused internal edges: "none" (invisible), "dashed", "solid".
@@ -507,13 +533,17 @@ geom_puzzle_conc <- function(mapping = NULL,
                              stat = "puzzle",
                              position = "identity",
                              rings = 3,
+                             diameter = 100,
                              tabsize = 20,
                              jitter = 4,
+                             min_tab_size = NULL,
+                             max_tab_size = NULL,
                              seed = NULL,
                              offset = 0,
                              bezier_resolution = 20,
                              center_shape = "hexagon",
                              do_circular_border = FALSE,
+                             boundary_facing = "outward",
                              fusion_groups = NULL,
                              fusion_style = "none",
                              fusion_opacity = 0.3,
@@ -536,13 +566,17 @@ geom_puzzle_conc <- function(mapping = NULL,
     params = list(
       puzzle_type = "concentric",
       rings = rings,
+      diameter = diameter,
       tabsize = tabsize,
       jitter = jitter,
+      min_tab_size = min_tab_size,
+      max_tab_size = max_tab_size,
       seed = seed,
       offset = offset,
       bezier_resolution = bezier_resolution,
       center_shape = center_shape,
       do_circular_border = do_circular_border,
+      boundary_facing = boundary_facing,
       fusion_groups = fusion_groups,
       fusion_style = fusion_style,
       fusion_opacity = fusion_opacity,
@@ -567,8 +601,12 @@ geom_puzzle_conc <- function(mapping = NULL,
 #' @param stat The statistical transformation to use (default: "puzzle").
 #' @param position Position adjustment (default: "identity").
 #' @param n_cells Number of Voronoi cells (pieces) in the puzzle.
+#' @param width Puzzle width in mm (default: 100).
+#' @param height Puzzle height in mm (default: 100).
 #' @param tabsize Size of the puzzle tabs (default: 20).
 #' @param jitter Random variation in tab positions (default: 4).
+#' @param min_tab_size Minimum tab height in mm (NULL for no constraint).
+#' @param max_tab_size Maximum tab height in mm (NULL for no constraint).
 #' @param seed Random seed for reproducible puzzle shapes.
 #' @param bezier_resolution Points per Bezier curve (default: 20).
 #' @param point_distribution How to distribute seed points:
@@ -607,8 +645,12 @@ geom_puzzle_voronoi <- function(mapping = NULL,
                                 stat = "puzzle",
                                 position = "identity",
                                 n_cells = 12,
+                                width = 100,
+                                height = 100,
                                 tabsize = 20,
                                 jitter = 4,
+                                min_tab_size = NULL,
+                                max_tab_size = NULL,
                                 seed = NULL,
                                 offset = 0,
                                 bezier_resolution = 20,
@@ -635,8 +677,12 @@ geom_puzzle_voronoi <- function(mapping = NULL,
     params = list(
       puzzle_type = "voronoi",
       n_cells = n_cells,
+      width = width,
+      height = height,
       tabsize = tabsize,
       jitter = jitter,
+      min_tab_size = min_tab_size,
+      max_tab_size = max_tab_size,
       seed = seed,
       offset = offset,
       bezier_resolution = bezier_resolution,
@@ -666,8 +712,12 @@ geom_puzzle_voronoi <- function(mapping = NULL,
 #' @param position Position adjustment (default: "identity").
 #' @param n_pieces Number of interior points that influence piece count.
 #'   Actual piece count depends on triangulation.
+#' @param width Puzzle width in mm (default: 100).
+#' @param height Puzzle height in mm (default: 100).
 #' @param tabsize Size of the puzzle tabs (default: 20).
 #' @param jitter Random variation in tab positions (default: 4).
+#' @param min_tab_size Minimum tab height in mm (NULL for no constraint).
+#' @param max_tab_size Maximum tab height in mm (NULL for no constraint).
 #' @param seed Random seed for reproducible puzzle shapes.
 #' @param bezier_resolution Points per Bezier curve (default: 20).
 #' @param n_corner Number of corners for the base polygon (default: 4 for rectangle).
@@ -705,8 +755,12 @@ geom_puzzle_random <- function(mapping = NULL,
                                stat = "puzzle",
                                position = "identity",
                                n_pieces = 12,
+                               width = 100,
+                               height = 100,
                                tabsize = 20,
                                jitter = 4,
+                               min_tab_size = NULL,
+                               max_tab_size = NULL,
                                seed = NULL,
                                offset = 0,
                                bezier_resolution = 20,
@@ -733,8 +787,12 @@ geom_puzzle_random <- function(mapping = NULL,
     params = list(
       puzzle_type = "random",
       n_pieces = n_pieces,
+      width = width,
+      height = height,
       tabsize = tabsize,
       jitter = jitter,
+      min_tab_size = min_tab_size,
+      max_tab_size = max_tab_size,
       seed = seed,
       offset = offset,
       bezier_resolution = bezier_resolution,
