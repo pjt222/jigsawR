@@ -33,11 +33,13 @@ ggplot() +
   geom_puzzle_hex(
     aes(fill = after_stat(piece_id)),
     rings = 3,
+    tabsize = 10,
+    diameter = 500,
     do_circular_border = TRUE,
     fusion_groups = "4-12-13,all-4-12-13",  # Two groups: 4-12-13 and all others
     fusion_style = "dashed",
-    fusion_opacity = .8,
-    offset = 50,
+    fusion_opacity = .5,
+    offset = 10,
     seed = 42,
     show_labels = TRUE  # Enable piece labels for refinement
   ) +

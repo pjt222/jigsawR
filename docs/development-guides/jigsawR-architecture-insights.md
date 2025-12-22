@@ -2669,6 +2669,63 @@ This creates:
 
 ---
 
+### Insight #49: Edge-Based Rendering for Fusion Styling in ggplot2 (2025-12-22)
+
+**Context**: `fusion_style` and `fusion_opacity` parameters were passed to `generate_puzzle()` but had no effect in ggplot2 rendering. The geom rendered each piece as a single polygon with uniform stroke, unable to style individual edges differently.
+
+**Problem**: SVG rendering uses a 3-pass approach (fill → unfused edges → fused edges), but ggplot2's `polygonGrob` renders pieces as closed polygons with single stroke style.
+
+**Solution**: Edge-based rendering in `draw_panel`:
+
+1. **Store edge data in stat output**: `stat_puzzle.R` now stores `edge_paths`, `edge_names`, and `fused_edges` as list-columns for each piece.
+
+2. **Pass fusion params to draw_panel**: Added `fusion_style`, `fusion_opacity`, `bezier_resolution` to `extra_params` in `GeomPuzzle`.
+
+3. **Two rendering modes in draw_panel**:
+   - **Standard mode** (`fusion_style == "none"`): Single polygonGrob with stroke (existing behavior)
+   - **Fusion mode** (`fusion_style != "none"`): Fill polygon (no stroke) + separate polylineGrob per edge
+
+**Implementation Details**:
+
+```r
+# stat_puzzle.R - Store edge data as list-columns
+edge_paths <- get_piece_edge_paths(piece)
+edge_names <- get_piece_edge_names(piece)
+fused_edges <- piece$fused_edges %||% list()
+poly$edge_paths <- rep(list(edge_paths), n_rows)
+poly$edge_names <- rep(list(edge_names), n_rows)
+poly$fused_edges <- rep(list(fused_edges), n_rows)
+
+# geom_puzzle.R - Edge-aware rendering
+if (use_fusion_rendering) {
+  # Pass 1: Fill polygon (no stroke)
+  fill_grob <- grid::polygonGrob(x, y, gp = gpar(col = NA, fill = fill_color))
+
+  # Pass 2+3: Edges with appropriate styling
+  for (edge_name in edge_names) {
+    is_fused <- isTRUE(fused_edges[[edge_name]])
+    edge_col <- if (is_fused) scales::alpha(colour, fusion_opacity) else colour
+    edge_lty <- if (is_fused && fusion_style == "dashed") 2 else linetype
+    edge_grob <- grid::polylineGrob(edge_x, edge_y, gp = gpar(col = edge_col, lty = edge_lty))
+  }
+}
+```
+
+**Coordinate Transformation Challenge**:
+Edge paths are in original SVG coordinates, but `draw_panel` receives transformed panel coordinates. Solution: compute scale/offset from bounding box comparison of original vs transformed piece coordinates.
+
+**Files Changed**:
+- `R/stat_puzzle.R`: Store edge_paths, edge_names, fused_edges as list-columns
+- `R/geom_puzzle.R`: Add fusion params to extra_params, implement edge-based rendering in draw_panel
+
+**Key Insight**: When extending ggplot2 geoms with edge-specific styling:
+1. Store edge-level metadata as list-columns in stat output
+2. Use `extra_params` to pass style parameters to draw_panel
+3. Switch between simple (single grob) and complex (multi-grob) rendering based on needs
+4. Handle coordinate transformation between original and panel coordinate systems
+
+---
+
 ### 30. Cross-Type Feature Extension: Min/Max Tab Size (2025-12-21, Issue #76)
 
 **Context**: The `min_tab_size` and `max_tab_size` parameters only applied to voronoi/random puzzle types. Issue #76 requested extending these constraints to all puzzle types (rectangular, hexagonal, concentric).

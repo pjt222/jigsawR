@@ -49,13 +49,16 @@ GeomPuzzle <- ggplot2::ggproto("GeomPuzzle", ggplot2::Geom,
   ),
 
   # Extra params passed to draw_panel (beyond na.rm)
-  extra_params = c("na.rm", "show_labels", "label_color", "label_size"),
+  extra_params = c("na.rm", "show_labels", "label_color", "label_size",
+                   "fusion_style", "fusion_opacity", "bezier_resolution"),
 
   # Use polygon key for legend
   draw_key = ggplot2::draw_key_polygon,
 
   draw_panel = function(data, panel_params, coord,
-                        show_labels = FALSE, label_color = "black", label_size = NULL) {
+                        show_labels = FALSE, label_color = "black", label_size = NULL,
+                        fusion_style = "none", fusion_opacity = 0.3,
+                        bezier_resolution = 20) {
     # Handle empty data
     if (nrow(data) == 0) {
       return(grid::nullGrob())
@@ -87,6 +90,15 @@ GeomPuzzle <- ggplot2::ggproto("GeomPuzzle", ggplot2::Geom,
       label_size <- max(6, min(label_size, 14))  # Clamp to reasonable range
     }
 
+    # Check if we have edge data for fusion-aware rendering
+    has_edge_data <- "edge_paths" %in% names(coords) &&
+                     !is.null(coords$edge_paths[[1]]) &&
+                     length(coords$edge_paths[[1]]) > 0
+
+    # Determine if we need fusion-aware rendering
+    # Only use complex rendering if we have fusion groups with non-"none" style
+    use_fusion_rendering <- has_edge_data && fusion_style != "none"
+
     grobs <- lapply(names(pieces), function(pid) {
       piece <- pieces[[pid]]
       # Get first row for aesthetics (all rows in piece should have same aes)
@@ -98,18 +110,100 @@ GeomPuzzle <- ggplot2::ggproto("GeomPuzzle", ggplot2::Geom,
         fill_color <- scales::alpha(first$fill, first$alpha)
       }
 
-      # Create polygon grob
-      poly_grob <- grid::polygonGrob(
-        x = piece$x,
-        y = piece$y,
-        gp = grid::gpar(
-          col = first$colour,
-          fill = fill_color,
-          lwd = first$linewidth * ggplot2::.pt,
-          lty = first$linetype
-        ),
-        default.units = "native"
-      )
+      piece_grobs <- list()
+
+      if (use_fusion_rendering) {
+        # Fusion-aware rendering: fill polygon + separate edge strokes
+
+        # Pass 1: Fill polygon (no stroke)
+        fill_grob <- grid::polygonGrob(
+          x = piece$x,
+          y = piece$y,
+          gp = grid::gpar(
+            col = NA,  # No stroke on fill
+            fill = fill_color
+          ),
+          default.units = "native"
+        )
+        piece_grobs <- c(piece_grobs, list(fill_grob))
+
+        # Get edge data from first row (same for all rows in piece)
+        edge_paths <- first$edge_paths[[1]]
+        edge_names <- first$edge_names[[1]]
+        fused_edges <- first$fused_edges[[1]]
+
+        if (length(edge_paths) > 0 && length(edge_names) > 0) {
+          # Get coordinate transformation info for edge paths
+          # We need to transform SVG coordinates to panel coordinates
+          # Use the bounding box of original vs transformed to compute scale/offset
+          orig_x_range <- range(data$x[data$piece_id == as.integer(pid)], na.rm = TRUE)
+          orig_y_range <- range(data$y[data$piece_id == as.integer(pid)], na.rm = TRUE)
+          trans_x_range <- range(piece$x, na.rm = TRUE)
+          trans_y_range <- range(piece$y, na.rm = TRUE)
+
+          # Scale factors
+          x_scale <- diff(trans_x_range) / max(diff(orig_x_range), 1e-10)
+          y_scale <- diff(trans_y_range) / max(diff(orig_y_range), 1e-10)
+          x_offset <- trans_x_range[1] - orig_x_range[1] * x_scale
+          y_offset <- trans_y_range[1] - orig_y_range[1] * y_scale
+
+          # Pass 2 & 3: Render edges with appropriate styling
+          for (edge_name in edge_names) {
+            edge_path <- edge_paths[[edge_name]]
+            if (is.null(edge_path) || !nzchar(edge_path)) next
+
+            is_fused <- isTRUE(fused_edges[[edge_name]])
+
+            # Convert edge SVG path to polygon coordinates
+            edge_coords <- svg_path_to_polygon(edge_path, bezier_resolution)
+            if (nrow(edge_coords) == 0) next
+
+            # Transform coordinates
+            edge_x <- edge_coords$x * x_scale + x_offset
+            edge_y <- edge_coords$y * y_scale + y_offset
+
+            # Determine edge styling
+            if (is_fused) {
+              # Fused edge: use fusion_style and fusion_opacity
+              edge_col <- scales::alpha(first$colour, fusion_opacity)
+              edge_lty <- if (fusion_style == "dashed") 2 else 1  # 2 = dashed
+            } else {
+              # Normal edge: use regular stroke
+              edge_col <- first$colour
+              edge_lty <- first$linetype
+            }
+
+            # Create polyline grob for this edge
+            edge_grob <- grid::polylineGrob(
+              x = edge_x,
+              y = edge_y,
+              gp = grid::gpar(
+                col = edge_col,
+                lwd = first$linewidth * ggplot2::.pt,
+                lty = edge_lty,
+                lineend = "round",
+                linejoin = "round"
+              ),
+              default.units = "native"
+            )
+            piece_grobs <- c(piece_grobs, list(edge_grob))
+          }
+        }
+      } else {
+        # Standard rendering: single polygon with stroke
+        poly_grob <- grid::polygonGrob(
+          x = piece$x,
+          y = piece$y,
+          gp = grid::gpar(
+            col = first$colour,
+            fill = fill_color,
+            lwd = first$linewidth * ggplot2::.pt,
+            lty = first$linetype
+          ),
+          default.units = "native"
+        )
+        piece_grobs <- c(piece_grobs, list(poly_grob))
+      }
 
       # Add label if requested
       if (show_labels) {
@@ -128,12 +222,11 @@ GeomPuzzle <- ggplot2::ggproto("GeomPuzzle", ggplot2::Geom,
           ),
           default.units = "native"
         )
-
-        # Return combined grob
-        grid::grobTree(poly_grob, text_grob)
-      } else {
-        poly_grob
+        piece_grobs <- c(piece_grobs, list(text_grob))
       }
+
+      # Combine all grobs for this piece
+      do.call(grid::grobTree, piece_grobs)
     })
 
     # Combine all piece grobs

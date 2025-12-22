@@ -172,6 +172,19 @@ StatPuzzle <- ggplot2::ggproto("StatPuzzle", ggplot2::Stat,
         poly$group_id <- i
       }
 
+      # Store edge data for fusion-aware rendering
+      # Edge paths and fusion status are stored as list-columns
+      # (replicated across all vertices of the piece for ggplot2 compatibility)
+      edge_paths <- get_piece_edge_paths(piece)
+      edge_names <- get_piece_edge_names(piece)
+      fused_edges <- piece$fused_edges %||% list()
+
+      # Store as list-column (same value for all rows of this piece)
+      n_rows <- nrow(poly)
+      poly$edge_paths <- rep(list(edge_paths), n_rows)
+      poly$edge_names <- rep(list(edge_names), n_rows)
+      poly$fused_edges <- rep(list(fused_edges), n_rows)
+
       poly
     })
 
