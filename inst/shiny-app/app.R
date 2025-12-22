@@ -1579,12 +1579,25 @@ server <- function(input, output, session) {
     # Also update the svg_content reactive for downloads
     svg_content(svg)
 
+    # Debug: Log SVG details
+    svg_len <- nchar(svg)
+    log_info("SVG generated: {svg_len} characters")
+    if (svg_len > 0) {
+      svg_preview <- substr(svg, 1, min(100, svg_len))
+      log_info("SVG starts with: {svg_preview}...")
+      # Check for key SVG elements
+      has_svg_tag <- grepl("<svg", svg)
+      has_path <- grepl("<path", svg)
+      log_info("Has <svg> tag: {has_svg_tag}, Has <path>: {has_path}")
+    }
+
     return(svg)
   })
 
   # Display puzzle - uses rendered_svg() for reactive styling updates
   output$puzzle_display <- renderUI({
     svg <- rendered_svg()
+    log_info("puzzle_display renderUI called, svg is NULL: {is.null(svg)}")
     if (is.null(svg)) {
       div(class = "text-center p-5 text-muted",
         icon("puzzle-piece", class = "fa-3x mb-3"),
@@ -1592,6 +1605,8 @@ server <- function(input, output, session) {
         p("Click 'Generate Puzzle' to create your first puzzle")
       )
     } else {
+      svg_len <- nchar(svg)
+      log_info("Rendering SVG to HTML, length: {svg_len}")
       # Display SVG directly in HTML
       HTML(svg)
     }

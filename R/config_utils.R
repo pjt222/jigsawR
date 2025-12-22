@@ -19,10 +19,12 @@ get_puzzle_config <- function(config_name = "default") {
   # Try multiple locations for config file
   possible_paths <- c(
     system.file("config.yml", package = "jigsawR"),
+    "config.yml",  # Current directory (for deployed Shiny app)
     "inst/config.yml",
     "../config.yml",
     "../../inst/config.yml",
-    file.path(getwd(), "inst", "config.yml")
+    file.path(getwd(), "inst", "config.yml"),
+    file.path(getwd(), "config.yml")
   )
 
   config_file <- ""

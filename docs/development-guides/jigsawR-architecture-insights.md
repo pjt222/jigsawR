@@ -2480,6 +2480,79 @@ To get C++ on shinyapps.io, updated `inst/shiny-app/deploy.R` to:
 
 ---
 
+### Insight #46: Shinyapps.io Deployment Dependencies for Fallback Mode (2025-12-22)
+
+**Problem**: After deploying to shinyapps.io, puzzles appeared to generate (logs showed "Updated positioned_result", "rendered_svg() triggered") but the preview stayed empty. Additionally, a warning appeared: "Config file not found in any location, using hardcoded defaults".
+
+**Root Cause Analysis**:
+When the jigsawR package fails to install from GitHub (the Remotes dependency), the app falls back to sourcing R files directly. However, the deployment DESCRIPTION only listed packages needed for the Shiny UI, not for the sourced R code.
+
+**Missing Dependencies**:
+| Package | Used By | Purpose |
+|---------|---------|---------|
+| viridis | config_utils.R:81 | Stroke color palettes |
+| scales | (viridis dependency) | Color utilities |
+| config | config_utils.R:43 | YAML config parsing |
+
+Without `viridis`, calls to `get_puzzle_colors()` fail silently, resulting in pieces with no visible stroke colors (hence "empty" preview).
+
+**Solution - Three Parts**:
+
+**1. Add Missing Packages to Deployment DESCRIPTION** (`inst/shiny-app/deploy.R`):
+```r
+app_desc <- c(
+  # ... existing packages ...
+  "    viridis,",
+  "    scales,",
+  "    config",
+  # ...
+)
+```
+
+**2. Copy config.yml to Deployment** (`inst/shiny-app/deploy.R`):
+```r
+# Copy config.yml for configuration
+config_source <- "inst/config.yml"
+if (file.exists(config_source)) {
+  file.copy(config_source, file.path(app_dir, "config.yml"), overwrite = TRUE)
+}
+
+# Updated appFiles to include config.yml
+appFiles = c("app.R", "www/", "R/", "DESCRIPTION", "config.yml")
+```
+
+**3. Update Config Search Paths** (`R/config_utils.R`):
+```r
+possible_paths <- c(
+  system.file("config.yml", package = "jigsawR"),
+  "config.yml",  # Current directory (for deployed Shiny app) <-- ADDED
+  "inst/config.yml",
+  # ...
+)
+```
+
+**Debugging Added** (`inst/shiny-app/app.R`):
+```r
+# In rendered_svg() reactive:
+svg_len <- nchar(svg)
+log_info("SVG generated: {svg_len} characters")
+has_svg_tag <- grepl("<svg", svg)
+has_path <- grepl("<path", svg)
+log_info("Has <svg> tag: {has_svg_tag}, Has <path>: {has_path}")
+```
+
+**Key Insight**: When deploying a Shiny app that has both a "package mode" and a "fallback source mode":
+1. The deployment DESCRIPTION must include ALL packages used by sourced R files
+2. Configuration files need to be copied AND their search paths updated
+3. Add debugging for SVG content to diagnose "empty" renders
+
+**Files Changed**:
+- `inst/shiny-app/deploy.R` - Added viridis, scales, config; copy config.yml
+- `R/config_utils.R` - Added "config.yml" to search paths
+- `inst/shiny-app/app.R` - Added SVG debugging logs
+
+---
+
 ### 30. Cross-Type Feature Extension: Min/Max Tab Size (2025-12-21, Issue #76)
 
 **Context**: The `min_tab_size` and `max_tab_size` parameters only applied to voronoi/random puzzle types. Issue #76 requested extending these constraints to all puzzle types (rectangular, hexagonal, concentric).

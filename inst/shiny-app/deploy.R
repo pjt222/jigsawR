@@ -74,13 +74,26 @@ app_desc <- c(
   "    waiter,",
   "    cli,",
   "    colourpicker,",
-  "    bsicons",
+  "    bsicons,",
+  "    viridis,",
+  "    scales,",
+  "    config",
   "Remotes:",
   "    pjt222/jigsawR"
 )
 
 writeLines(app_desc, file.path(app_dir, "DESCRIPTION"))
 log_success("Created DESCRIPTION with jigsawR as GitHub dependency")
+
+# Copy config.yml for configuration
+log_subheader("Copying configuration file")
+config_source <- "inst/config.yml"
+if (file.exists(config_source)) {
+  file.copy(config_source, file.path(app_dir, "config.yml"), overwrite = TRUE)
+  log_success("Copied config.yml")
+} else {
+  log_warn("config.yml not found at {config_source}")
+}
 
 # Also copy R files as fallback (in case package installation fails)
 log_subheader("Copying R source files (fallback)")
@@ -117,7 +130,7 @@ rsconnect::deployApp(
   appDir = app_dir,
   appName = app_name,
   account = account,
-  appFiles = c("app.R", "www/", "R/", "DESCRIPTION"),
+  appFiles = c("app.R", "www/", "R/", "DESCRIPTION", "config.yml"),
   forceUpdate = TRUE,
   launch.browser = FALSE,
   lint = FALSE,
