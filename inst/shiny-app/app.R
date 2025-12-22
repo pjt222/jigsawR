@@ -1321,8 +1321,9 @@ server <- function(input, output, session) {
     fusion_style_val <- if (is.null(input$fusion_style)) "none" else input$fusion_style
     fusion_opacity_val <- if (is.null(input$fusion_opacity)) 30 else input$fusion_opacity / 100
     # Tab size constraints (applies to all puzzle types)
-    min_tab_size_val <- if (is.null(input$min_tab_size) || input$min_tab_size == 0) NULL else input$min_tab_size
-    max_tab_size_val <- if (is.null(input$max_tab_size) || input$max_tab_size == 0) NULL else input$max_tab_size
+    # Use isTRUE() to safely handle NULL values in comparison
+    min_tab_size_val <- if (is.null(input$min_tab_size) || isTRUE(input$min_tab_size == 0)) NULL else input$min_tab_size
+    max_tab_size_val <- if (is.null(input$max_tab_size) || isTRUE(input$max_tab_size == 0)) NULL else input$max_tab_size
 
     # Now check base_settings - but dependencies are already established above
     settings <- base_settings()
