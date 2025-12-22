@@ -2800,6 +2800,49 @@ Compare Shiny app inputs (`inst/shiny-app/app.R`) with geom parameters to identi
 
 ---
 
+### Insight #51: R Output Functions and Quarto Message Suppression (2025-12-22)
+
+**Context**: Debug messages like "Creating edge mapping..." and "Generated 42 unique edges" appeared before the hero image in the rendered Quarto documentation, despite using `#| message: false` in the chunk options.
+
+**Problem**: Quarto's `#| message: false` option only suppresses output from R's `message()` function. The debug statements were using `cat()`, which writes directly to stdout and bypasses R's message system entirely.
+
+**R Output Functions Comparison**:
+
+| Function | Suppressed by `message: false` | Suppressed by `warning: false` | Use Case |
+|----------|-------------------------------|-------------------------------|----------|
+| `cat()` | ❌ No | ❌ No | Direct stdout (avoid in packages) |
+| `print()` | ❌ No | ❌ No | Interactive display |
+| `message()` | ✅ Yes | ❌ No | Informational messages |
+| `warning()` | ❌ No | ✅ Yes | Non-fatal issues |
+| `cli::cli_inform()` | ✅ Yes | ❌ No | Styled informational messages |
+
+**Solution**: Remove or convert `cat()` statements to proper logging:
+
+```r
+# BAD: Bypasses Quarto suppression
+cat("Creating edge mapping...\n")
+cat(sprintf("Generated %d unique edges\n", n))
+
+# GOOD: Respects Quarto suppression
+cli::cli_inform("Creating edge mapping...")
+cli::cli_inform("Generated {n} unique edges")
+
+# BEST: Remove debug output from production code
+# (Use comments instead for internal documentation)
+```
+
+**Files Changed**:
+- `R/hexagonal_edge_generation_fixed.R`: Removed 3 `cat()` statements
+- `R/concentric_edge_generation.R`: Removed 2 `cat()` statements
+
+**Key Insight**: In R packages, avoid `cat()` for any output that users might want to suppress:
+1. Use `message()` or `cli::cli_inform()` for informational output
+2. Use `warning()` or `cli::cli_warn()` for non-fatal issues
+3. Remove debug `cat()` statements before release
+4. Quarto/knitr chunk options only control R's formal message/warning system
+
+---
+
 ### 30. Cross-Type Feature Extension: Min/Max Tab Size (2025-12-21, Issue #76)
 
 **Context**: The `min_tab_size` and `max_tab_size` parameters only applied to voronoi/random puzzle types. Issue #76 requested extending these constraints to all puzzle types (rectangular, hexagonal, concentric).
