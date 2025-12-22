@@ -47,10 +47,29 @@ jobs:
             any::scales
             any::Rcpp
             any::deldir
+            any::patchwork
+            any::cli
+            any::config
 
       - name: Install jigsawR
+        env:
+          # Prevent renv from interfering with package installation
+          RENV_CONFIG_SANDBOX_ENABLED: "FALSE"
         run: |
-          devtools::install_local('.', dependencies = FALSE)
+          devtools::install_local('.', dependencies = FALSE, force = TRUE)
+        shell: Rscript {0}
+
+      - name: Verify jigsawR installation
+        env:
+          RENV_CONFIG_SANDBOX_ENABLED: "FALSE"
+        run: |
+          cat("Checking jigsawR installation...\n")
+          if (requireNamespace("jigsawR", quietly = TRUE)) {
+            cat("✓ jigsawR installed successfully\n")
+            cat("Version:", as.character(packageVersion("jigsawR")), "\n")
+          } else {
+            stop("✗ jigsawR not found after installation!")
+          }
         shell: Rscript {0}
 
       - name: Render Quarto Project
