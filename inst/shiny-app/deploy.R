@@ -67,7 +67,6 @@ app_desc <- c(
   "Version: 0.1.0",
   "Depends: R (>= 4.0.0)",
   "Imports:",
-  "    jigsawR,",
   "    shiny,",
   "    bslib,",
   "    shinyjs,",
@@ -77,10 +76,25 @@ app_desc <- c(
   "    bsicons,",
   "    viridis,",
   "    scales,",
-  "    config",
-  "Remotes:",
-  "    pjt222/jigsawR"
+  "    config,",
+  "    Rcpp,",
+  "    remotes",
+  "Remotes: github::pjt222/jigsawR"
 )
+
+# Also create a .Rprofile to try installing jigsawR at startup
+# This is a backup mechanism if Remotes doesn't work
+rprofile_content <- '
+# Attempt to install jigsawR from GitHub if not available
+if (!requireNamespace("jigsawR", quietly = TRUE)) {
+  if (requireNamespace("remotes", quietly = TRUE)) {
+    message("Installing jigsawR from GitHub...")
+    try(remotes::install_github("pjt222/jigsawR", quiet = TRUE), silent = TRUE)
+  }
+}
+'
+writeLines(rprofile_content, file.path(app_dir, ".Rprofile"))
+log_info("Created .Rprofile with jigsawR installation fallback")
 
 writeLines(app_desc, file.path(app_dir, "DESCRIPTION"))
 log_success("Created DESCRIPTION with jigsawR as GitHub dependency")
@@ -130,7 +144,7 @@ rsconnect::deployApp(
   appDir = app_dir,
   appName = app_name,
   account = account,
-  appFiles = c("app.R", "www/", "R/", "DESCRIPTION", "config.yml"),
+  appFiles = c("app.R", "www/", "R/", "DESCRIPTION", "config.yml", ".Rprofile"),
   forceUpdate = TRUE,
   launch.browser = FALSE,
   lint = FALSE,
