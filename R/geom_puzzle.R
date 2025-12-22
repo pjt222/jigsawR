@@ -154,24 +154,28 @@ GeomPuzzle <- ggplot2::ggproto("GeomPuzzle", ggplot2::Geom,
 
             is_fused <- isTRUE(fused_edges[[edge_name]])
 
-            # Convert edge SVG path to polygon coordinates
-            edge_coords <- svg_path_to_polygon(edge_path, bezier_resolution)
-            if (nrow(edge_coords) == 0) next
-
-            # Transform coordinates
-            edge_x <- edge_coords$x * x_scale + x_offset
-            edge_y <- edge_coords$y * y_scale + y_offset
-
             # Determine edge styling
             if (is_fused) {
               # Fused edge: use fusion_style and fusion_opacity
               edge_col <- scales::alpha(first$colour, fusion_opacity)
               edge_lty <- if (fusion_style == "dashed") 2 else 1  # 2 = dashed
+              # Use lower resolution for dashed lines to get cleaner dashes
+              # (like SVG's stroke-dasharray which applies to the smooth path)
+              edge_resolution <- if (fusion_style == "dashed") 4 else bezier_resolution
             } else {
               # Normal edge: use regular stroke
               edge_col <- first$colour
               edge_lty <- first$linetype
+              edge_resolution <- bezier_resolution
             }
+
+            # Convert edge SVG path to polygon coordinates
+            edge_coords <- svg_path_to_polygon(edge_path, edge_resolution)
+            if (nrow(edge_coords) == 0) next
+
+            # Transform coordinates
+            edge_x <- edge_coords$x * x_scale + x_offset
+            edge_y <- edge_coords$y * y_scale + y_offset
 
             # Create polyline grob for this edge
             edge_grob <- grid::polylineGrob(
