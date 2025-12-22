@@ -50,6 +50,15 @@ jobs:
             any::patchwork
             any::cli
             any::config
+            any::shiny
+            any::bslib
+            any::bsicons
+            any::shinyjs
+            any::colourpicker
+            any::waiter
+            any::rsvg
+            any::magick
+            any::zip
 
       - name: Install jigsawR
         env:
