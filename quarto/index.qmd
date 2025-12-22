@@ -15,12 +15,16 @@ page-layout: full
 ```{r}
 #| label: setup
 #| include: false
-source("quarto/_setup.R")
+# Flexible path: works from project root (Quarto) or quarto/ (RStudio interactive)
+setup_path <- if (file.exists("quarto/_setup.R")) "quarto/_setup.R" else "_setup.R"
+source(setup_path)
 ```
 
 ```{r}
 #| label: hero-puzzle
 #| echo: false
+#| message: false
+#| warning: false
 #| fig-align: center
 #| out-width: "100%"
 
@@ -29,7 +33,13 @@ ggplot() +
   geom_puzzle_hex(
     aes(fill = after_stat(piece_id)),
     rings = 3,
-    seed = 42
+    do_circular_border = TRUE,
+    fusion_groups = "4-12-13,all-4-12-13",  # Two groups: 4-12-13 and all others
+    fusion_style = "dashed",
+    fusion_opacity = .8,
+    offset = 50,
+    seed = 42,
+    show_labels = TRUE  # Enable piece labels for refinement
   ) +
   scale_fill_viridis_c(option = "plasma", guide = "none") +
   coord_fixed() +

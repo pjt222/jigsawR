@@ -2553,6 +2553,122 @@ log_info("Has <svg> tag: {has_svg_tag}, Has <path>: {has_path}")
 
 ---
 
+### Insight #47: ggpuzzle show_labels Feature via ggproto extra_params (2025-12-22)
+
+**Context**: Users needed piece labels to refine puzzle designs (identify piece IDs for fusion groups). The Shiny app had a label toggle, but ggpuzzle geoms did not.
+
+**Implementation Approach**: Extend `GeomPuzzle` ggproto to support optional label rendering within the same layer.
+
+**Key ggplot2 Extension Patterns Used**:
+
+1. **extra_params in ggproto**: Parameters that aren't aesthetics but need to pass through:
+   ```r
+   GeomPuzzle <- ggplot2::ggproto("GeomPuzzle", ggplot2::Geom,
+     extra_params = c("na.rm", "show_labels", "label_color", "label_size"),
+     # ...
+   )
+   ```
+
+2. **draw_panel signature extension**: Add parameters to receive layer-level values:
+   ```r
+   draw_panel = function(data, panel_params, coord,
+                         show_labels = FALSE, label_color = "black", label_size = NULL)
+   ```
+
+3. **Automatic label sizing**: Calculate based on piece dimensions:
+   ```r
+   if (show_labels && is.null(label_size)) {
+     first_piece <- pieces[[1]]
+     piece_width <- diff(range(first_piece$x, na.rm = TRUE))
+     piece_height <- diff(range(first_piece$y, na.rm = TRUE))
+     label_size <- min(piece_width, piece_height) * 0.2 * 72  # 20% of smaller dimension
+     label_size <- max(6, min(label_size, 14))  # Clamp to 6-14pt range
+   }
+   ```
+
+4. **Composite grobs**: Combine polygon and text into single grob tree:
+   ```r
+   if (show_labels) {
+     text_grob <- grid::textGrob(
+       label = pid, x = mean(piece$x), y = mean(piece$y),
+       gp = grid::gpar(col = label_color, fontsize = label_size, fontface = "bold"),
+       default.units = "native"
+     )
+     grid::grobTree(poly_grob, text_grob)
+   } else {
+     poly_grob
+   }
+   ```
+
+**Usage**:
+```r
+ggplot() +
+  geom_puzzle_hex(
+    aes(fill = after_stat(piece_id)),
+    rings = 3,
+    show_labels = TRUE,        # Enable piece labels
+    label_color = "white",     # Custom color
+    label_size = 12            # Custom size (NULL = auto)
+  )
+```
+
+**Files Changed**:
+- `R/geom_puzzle.R`: Modified `GeomPuzzle` ggproto and all 5 geom wrapper functions
+
+**Key Insight**: When adding optional visual elements to ggplot2 geoms:
+1. Use `extra_params` for non-aesthetic parameters
+2. Accept parameters in `draw_panel` with sensible defaults
+3. Calculate automatic sizing based on data geometry
+4. Return composite grobs when combining multiple visual elements
+
+---
+
+### Insight #48: PILES Exclusion Syntax Clarification (2025-12-22)
+
+**Context**: Hero image used `fusion_groups = "all-4-12-13"` expecting pieces 4, 12, 13 to stay together as one group while applying offset. The pieces separated instead.
+
+**Root Cause**: Misunderstanding of PILES "all-" exclusion syntax.
+
+**PILES Exclusion Syntax**:
+```r
+# What "all-4-12-13" actually means:
+parse_keyword_group("all-4-12-13", total_pieces = 19)
+# Returns: c(1,2,3,5,6,7,8,9,10,11,14,15,16,17,18,19)
+# = ALL pieces EXCEPT 4, 12, 13
+
+# This creates ONE fusion group containing pieces 1-3, 5-11, 14-19
+# Pieces 4, 12, 13 remain as separate individual pieces
+```
+
+**What User Actually Wanted**: Two fusion groups:
+1. Pieces 4, 12, 13 as one meta-piece
+2. All other pieces as another meta-piece
+
+**Correct Notation**:
+```r
+fusion_groups = "4-12-13,all-4-12-13"
+```
+
+This creates:
+- Group 1: `4-12-13` → fuses pieces 4, 12, 13 together
+- Group 2: `all-4-12-13` → fuses all OTHER pieces together (1-3, 5-11, 14-19)
+
+**PILES Syntax Reference**:
+| Notation | Meaning | Example (19 pieces) |
+|----------|---------|---------------------|
+| `"1-2-3"` | Fuse pieces 1, 2, 3 | {1,2,3} |
+| `"all"` | Fuse ALL pieces | {1,2,3,...,19} |
+| `"all-5"` | All EXCEPT piece 5 | {1,2,3,4,6,...,19} |
+| `"all-4-12-13"` | All EXCEPT 4,12,13 | {1,2,3,5,6,...,11,14,...,19} |
+| `"A,B"` | Two separate groups | Group A and Group B |
+
+**Key Insight**: The "all-" prefix with piece numbers is EXCLUSION syntax, not inclusion. To create multiple fusion groups where one contains specific pieces, list them explicitly with comma separation.
+
+**Files Changed**:
+- `quarto/index.qmd`: Fixed fusion_groups from `"all-4-12-13"` to `"4-12-13,all-4-12-13"`
+
+---
+
 ### 30. Cross-Type Feature Extension: Min/Max Tab Size (2025-12-21, Issue #76)
 
 **Context**: The `min_tab_size` and `max_tab_size` parameters only applied to voronoi/random puzzle types. Issue #76 requested extending these constraints to all puzzle types (rectangular, hexagonal, concentric).

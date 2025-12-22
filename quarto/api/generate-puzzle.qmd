@@ -6,7 +6,9 @@ subtitle: "The main entry point for creating puzzles"
 ```{r}
 #| label: setup
 #| include: false
-source("quarto/_setup.R")
+# Flexible path: works from project root (Quarto) or quarto/api/ (RStudio interactive)
+setup_path <- if (file.exists("quarto/_setup.R")) "quarto/_setup.R" else "../_setup.R"
+source(setup_path)
 ```
 
 ## Description

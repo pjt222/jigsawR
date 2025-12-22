@@ -48,10 +48,14 @@ GeomPuzzle <- ggplot2::ggproto("GeomPuzzle", ggplot2::Geom,
     alpha = NA
   ),
 
-  # Use polygon key for legend
- draw_key = ggplot2::draw_key_polygon,
+  # Extra params passed to draw_panel (beyond na.rm)
+  extra_params = c("na.rm", "show_labels", "label_color", "label_size"),
 
-  draw_panel = function(data, panel_params, coord) {
+  # Use polygon key for legend
+  draw_key = ggplot2::draw_key_polygon,
+
+  draw_panel = function(data, panel_params, coord,
+                        show_labels = FALSE, label_color = "black", label_size = NULL) {
     # Handle empty data
     if (nrow(data) == 0) {
       return(grid::nullGrob())
@@ -72,7 +76,19 @@ GeomPuzzle <- ggplot2::ggproto("GeomPuzzle", ggplot2::Geom,
     # Split by piece_id and create grobs
     pieces <- split(coords, coords$piece_id)
 
-    grobs <- lapply(pieces, function(piece) {
+    # Calculate auto label size if needed (based on average piece size)
+    if (show_labels && is.null(label_size)) {
+      # Estimate piece size from bounding box of first piece
+      first_piece <- pieces[[1]]
+      piece_width <- diff(range(first_piece$x, na.rm = TRUE))
+      piece_height <- diff(range(first_piece$y, na.rm = TRUE))
+      # Use 20% of smaller dimension, scaled to points
+      label_size <- min(piece_width, piece_height) * 0.2 * 72  # Convert to points
+      label_size <- max(6, min(label_size, 14))  # Clamp to reasonable range
+    }
+
+    grobs <- lapply(names(pieces), function(pid) {
+      piece <- pieces[[pid]]
       # Get first row for aesthetics (all rows in piece should have same aes)
       first <- piece[1, , drop = FALSE]
 
@@ -82,7 +98,8 @@ GeomPuzzle <- ggplot2::ggproto("GeomPuzzle", ggplot2::Geom,
         fill_color <- scales::alpha(first$fill, first$alpha)
       }
 
-      grid::polygonGrob(
+      # Create polygon grob
+      poly_grob <- grid::polygonGrob(
         x = piece$x,
         y = piece$y,
         gp = grid::gpar(
@@ -93,6 +110,30 @@ GeomPuzzle <- ggplot2::ggproto("GeomPuzzle", ggplot2::Geom,
         ),
         default.units = "native"
       )
+
+      # Add label if requested
+      if (show_labels) {
+        # Calculate centroid (mean of transformed coordinates)
+        label_x <- mean(piece$x, na.rm = TRUE)
+        label_y <- mean(piece$y, na.rm = TRUE)
+
+        text_grob <- grid::textGrob(
+          label = pid,
+          x = label_x,
+          y = label_y,
+          gp = grid::gpar(
+            col = label_color,
+            fontsize = label_size,
+            fontface = "bold"
+          ),
+          default.units = "native"
+        )
+
+        # Return combined grob
+        grid::grobTree(poly_grob, text_grob)
+      } else {
+        poly_grob
+      }
     })
 
     # Combine all piece grobs
@@ -121,6 +162,9 @@ GeomPuzzle <- ggplot2::ggproto("GeomPuzzle", ggplot2::Geom,
 #'   list of integer vectors, or NULL for no fusion.
 #' @param fusion_style Style for fused internal edges: "none" (invisible), "dashed", "solid".
 #' @param fusion_opacity Opacity for fused edges when style != "none" (0.0 to 1.0).
+#' @param show_labels Logical; if TRUE, display piece ID labels at piece centers (default: FALSE).
+#' @param label_color Color for piece labels (default: "black").
+#' @param label_size Font size for labels in points. NULL for auto-sizing based on piece dimensions.
 #' @param na.rm Remove NA values? (default: FALSE).
 #' @param show.legend Include this layer in the legend? (default: NA).
 #' @param inherit.aes Inherit aesthetics from the plot? (default: TRUE).
@@ -139,16 +183,11 @@ GeomPuzzle <- ggplot2::ggproto("GeomPuzzle", ggplot2::Geom,
 #'   scale_fill_viridis_c() +
 #'   theme_void()
 #'
-#' # With categorical data
-#' sales <- data.frame(
-#'   region = c("North", "South", "East", "West"),
-#'   value = c(100, 150, 80, 120)
-#' )
-#' ggplot(sales, aes(fill = value)) +
-#'   geom_puzzle_rect(rows = 2, cols = 2, seed = 42) +
-#'   scale_fill_gradient(low = "white", high = "steelblue") +
-#'   theme_void() +
-#'   labs(title = "Sales by Region")
+#' # With piece labels
+#' ggplot(df, aes(fill = value)) +
+#'   geom_puzzle_rect(rows = 3, cols = 3, seed = 42, show_labels = TRUE) +
+#'   scale_fill_viridis_c() +
+#'   theme_void()
 #'
 #' # With fusion groups
 #' df <- data.frame(value = 1:9)
@@ -174,6 +213,9 @@ geom_puzzle_rect <- function(mapping = NULL,
                               fusion_groups = NULL,
                               fusion_style = "none",
                               fusion_opacity = 0.3,
+                              show_labels = FALSE,
+                              label_color = "black",
+                              label_size = NULL,
                               ...,
                               na.rm = FALSE,
                               show.legend = NA,
@@ -199,6 +241,9 @@ geom_puzzle_rect <- function(mapping = NULL,
       fusion_groups = fusion_groups,
       fusion_style = fusion_style,
       fusion_opacity = fusion_opacity,
+      show_labels = show_labels,
+      label_color = label_color,
+      label_size = label_size,
       na.rm = na.rm,
       ...
     )
@@ -230,6 +275,9 @@ geom_puzzle_rect <- function(mapping = NULL,
 #'   list of integer vectors, or NULL for no fusion.
 #' @param fusion_style Style for fused internal edges: "none" (invisible), "dashed", "solid".
 #' @param fusion_opacity Opacity for fused edges when style != "none" (0.0 to 1.0).
+#' @param show_labels Logical; if TRUE, display piece ID labels at piece centers (default: FALSE).
+#' @param label_color Color for piece labels (default: "black").
+#' @param label_size Font size for labels in points. NULL for auto-sizing based on piece dimensions.
 #' @param na.rm Remove NA values? (default: FALSE).
 #' @param show.legend Include this layer in the legend? (default: NA).
 #' @param inherit.aes Inherit aesthetics from the plot? (default: TRUE).
@@ -245,6 +293,13 @@ geom_puzzle_rect <- function(mapping = NULL,
 #' df <- data.frame(value = 1:19)
 #' ggplot(df, aes(fill = value)) +
 #'   geom_puzzle_hex(rings = 3, seed = 42) +
+#'   scale_fill_viridis_c() +
+#'   theme_void() +
+#'   coord_fixed()
+#'
+#' # With piece labels
+#' ggplot(df, aes(fill = value)) +
+#'   geom_puzzle_hex(rings = 3, seed = 42, show_labels = TRUE) +
 #'   scale_fill_viridis_c() +
 #'   theme_void() +
 #'   coord_fixed()
@@ -267,6 +322,9 @@ geom_puzzle_hex <- function(mapping = NULL,
                             fusion_groups = NULL,
                             fusion_style = "none",
                             fusion_opacity = 0.3,
+                            show_labels = FALSE,
+                            label_color = "black",
+                            label_size = NULL,
                             ...,
                             na.rm = FALSE,
                             show.legend = NA,
@@ -294,6 +352,9 @@ geom_puzzle_hex <- function(mapping = NULL,
       fusion_groups = fusion_groups,
       fusion_style = fusion_style,
       fusion_opacity = fusion_opacity,
+      show_labels = show_labels,
+      label_color = label_color,
+      label_size = label_size,
       na.rm = na.rm,
       ...
     )
@@ -324,6 +385,9 @@ geom_puzzle_hex <- function(mapping = NULL,
 #'   list of integer vectors, or NULL for no fusion.
 #' @param fusion_style Style for fused internal edges: "none" (invisible), "dashed", "solid".
 #' @param fusion_opacity Opacity for fused edges when style != "none" (0.0 to 1.0).
+#' @param show_labels Logical; if TRUE, display piece ID labels at piece centers (default: FALSE).
+#' @param label_color Color for piece labels (default: "black").
+#' @param label_size Font size for labels in points. NULL for auto-sizing based on piece dimensions.
 #' @param na.rm Remove NA values? (default: FALSE).
 #' @param show.legend Include this layer in the legend? (default: NA).
 #' @param inherit.aes Inherit aesthetics from the plot? (default: TRUE).
@@ -360,6 +424,9 @@ geom_puzzle_conc <- function(mapping = NULL,
                              fusion_groups = NULL,
                              fusion_style = "none",
                              fusion_opacity = 0.3,
+                             show_labels = FALSE,
+                             label_color = "black",
+                             label_size = NULL,
                              ...,
                              na.rm = FALSE,
                              show.legend = NA,
@@ -386,6 +453,9 @@ geom_puzzle_conc <- function(mapping = NULL,
       fusion_groups = fusion_groups,
       fusion_style = fusion_style,
       fusion_opacity = fusion_opacity,
+      show_labels = show_labels,
+      label_color = label_color,
+      label_size = label_size,
       na.rm = na.rm,
       ...
     )
@@ -414,6 +484,9 @@ geom_puzzle_conc <- function(mapping = NULL,
 #'   list of integer vectors, or NULL for no fusion.
 #' @param fusion_style Style for fused internal edges: "none" (invisible), "dashed", "solid".
 #' @param fusion_opacity Opacity for fused edges when style != "none" (0.0 to 1.0).
+#' @param show_labels Logical; if TRUE, display piece ID labels at piece centers (default: FALSE).
+#' @param label_color Color for piece labels (default: "black").
+#' @param label_size Font size for labels in points. NULL for auto-sizing based on piece dimensions.
 #' @param na.rm Remove NA values? (default: FALSE).
 #' @param show.legend Include this layer in the legend? (default: NA).
 #' @param inherit.aes Inherit aesthetics from the plot? (default: TRUE).
@@ -450,6 +523,9 @@ geom_puzzle_voronoi <- function(mapping = NULL,
                                 fusion_groups = NULL,
                                 fusion_style = "none",
                                 fusion_opacity = 0.3,
+                                show_labels = FALSE,
+                                label_color = "black",
+                                label_size = NULL,
                                 ...,
                                 na.rm = FALSE,
                                 show.legend = NA,
@@ -475,6 +551,9 @@ geom_puzzle_voronoi <- function(mapping = NULL,
       fusion_groups = fusion_groups,
       fusion_style = fusion_style,
       fusion_opacity = fusion_opacity,
+      show_labels = show_labels,
+      label_color = label_color,
+      label_size = label_size,
       na.rm = na.rm,
       ...
     )
@@ -503,6 +582,9 @@ geom_puzzle_voronoi <- function(mapping = NULL,
 #'   list of integer vectors, or NULL for no fusion.
 #' @param fusion_style Style for fused internal edges: "none" (invisible), "dashed", "solid".
 #' @param fusion_opacity Opacity for fused edges when style != "none" (0.0 to 1.0).
+#' @param show_labels Logical; if TRUE, display piece ID labels at piece centers (default: FALSE).
+#' @param label_color Color for piece labels (default: "black").
+#' @param label_size Font size for labels in points. NULL for auto-sizing based on piece dimensions.
 #' @param na.rm Remove NA values? (default: FALSE).
 #' @param show.legend Include this layer in the legend? (default: NA).
 #' @param inherit.aes Inherit aesthetics from the plot? (default: TRUE).
@@ -539,6 +621,9 @@ geom_puzzle_random <- function(mapping = NULL,
                                fusion_groups = NULL,
                                fusion_style = "none",
                                fusion_opacity = 0.3,
+                               show_labels = FALSE,
+                               label_color = "black",
+                               label_size = NULL,
                                ...,
                                na.rm = FALSE,
                                show.legend = NA,
@@ -564,6 +649,9 @@ geom_puzzle_random <- function(mapping = NULL,
       fusion_groups = fusion_groups,
       fusion_style = fusion_style,
       fusion_opacity = fusion_opacity,
+      show_labels = show_labels,
+      label_color = label_color,
+      label_size = label_size,
       na.rm = na.rm,
       ...
     )

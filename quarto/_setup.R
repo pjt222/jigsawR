@@ -4,6 +4,29 @@
 # Detect CI environment (GitHub Actions, etc.)
 is_ci <- nzchar(Sys.getenv("CI")) || nzchar(Sys.getenv("GITHUB_ACTIONS"))
 
+# Find project root (directory containing DESCRIPTION)
+# This handles both:
+#   - Quarto rendering from project root: source("quarto/_setup.R")
+#   - RStudio interactive mode from quarto/: source("_setup.R")
+find_project_root <- function() {
+  # Check current directory first
+  if (file.exists("DESCRIPTION")) {
+    return(normalizePath("."))
+  }
+  # Check parent directory (when running from quarto/)
+  if (file.exists("../DESCRIPTION")) {
+    return(normalizePath(".."))
+  }
+  # Check two levels up (edge case)
+  if (file.exists("../../DESCRIPTION")) {
+    return(normalizePath("../.."))
+  }
+  # Not found - return NULL
+  return(NULL)
+}
+
+project_root <- find_project_root()
+
 # Loading strategy:
 # - CI: Use installed package (workflow installs via devtools::install_local)
 # - Local dev: Use devtools::load_all() for rapid iteration with latest source
@@ -14,10 +37,9 @@ if (is_ci) {
   } else {
     stop("jigsawR package not installed in CI. Check workflow installation step.")
   }
-} else if (file.exists("DESCRIPTION") && requireNamespace("devtools", quietly = TRUE)) {
+} else if (!is.null(project_root) && requireNamespace("devtools", quietly = TRUE)) {
   # Local development mode - load from source to get latest changes
-
-  suppressMessages(devtools::load_all(path = ".", quiet = TRUE))
+  suppressMessages(devtools::load_all(path = project_root, quiet = TRUE))
 } else if (requireNamespace("jigsawR", quietly = TRUE)) {
   # Fallback - use installed package
   suppressPackageStartupMessages(library(jigsawR))

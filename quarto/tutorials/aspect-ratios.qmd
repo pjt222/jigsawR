@@ -6,7 +6,9 @@ description: "How jigsawR puzzles adapt to any canvas shape"
 ```{r}
 #| label: setup
 #| include: false
-source("quarto/_setup.R")
+# Flexible path: works from project root (Quarto) or quarto/tutorials/ (RStudio interactive)
+setup_path <- if (file.exists("quarto/_setup.R")) "quarto/_setup.R" else "../_setup.R"
+source(setup_path)
 ```
 
 ## Overview
