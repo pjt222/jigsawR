@@ -32,21 +32,44 @@ source(setup_path)
 #| fig-dpi: 300
 
 # Create a visually appealing hexagonal puzzle
+# This example demonstrates ALL available parameters for geom_puzzle_hex
 ggplot() +
   geom_puzzle_hex(
-    # aes(fill = after_stat(piece_id)),
-    rings = 3,
-    tabsize = 10,
-    diameter = 500,
-    do_circular_border = TRUE,
-    fusion_groups = "4-12-13,all-4-12-13",  # Two groups: 4-12-13 and all others
-    fusion_style = "dashed",
-    fusion_opacity = .8,
-    offset = 10,
-    seed = 42,
-    show_labels = TRUE  # Enable piece labels for refinement
+    # === Aesthetics ===
+    aes(fill = after_stat(piece_id)),
+    colour = grey(0.1),             # Edge color (all edges)
+    linewidth = 0.5,                # Edge thickness
+    alpha = NA,                     # Fill transparency (NA = opaque)
+
+    # === Puzzle Geometry ===
+    rings = 3,                      # Number of rings (pieces = 3*r*(r-1)+1)
+    diameter = 222,                 # Puzzle diameter in mm
+    tabsize = 11,                   # Tab size percentage (default: 20)
+    jitter = 4,                     # Tab position randomness (default: 4)
+    min_tab_size = NULL,            # Minimum tab height in mm (NULL = no limit)
+    max_tab_size = NULL,            # Maximum tab height in mm (NULL = no limit)
+    seed = 22,                      # Random seed for reproducibility
+    offset = 22,                    # Piece separation (0 = interlocked)
+
+    # === Hexagonal Transformations ===
+    do_warp = TRUE,                 # Apply circular warping
+    do_trunc = FALSE,               # Truncate edge pieces at boundary
+    do_circular_border = FALSE,     # Use perfect circular arc borders
+
+    # === Fusion Groups (PILES notation) ===
+    fusion_groups = "4-12-13,all-4-12-13",
+    fusion_style = "solid",         # "none", "dashed", or "solid"
+    fusion_opacity = 0.22,          # Fused edge opacity (0.0-1.0)
+
+    # === Labels ===
+    show_labels = TRUE,             # Show piece ID labels
+    label_color = "black",          # Label text color
+    label_size = NULL,              # Label font size (NULL = auto)
+
+    # === Rendering ===
+    bezier_resolution = 22          # Points per bezier curve
   ) +
-  # scale_fill_viridis_c(option = "plasma", guide = "none") +
+  scale_fill_viridis_c(option = "plasma", guide = "none") +
   coord_fixed() +
   theme_puzzle() +
   labs(title = "jigsawR") +
@@ -57,7 +80,7 @@ ggplot() +
       face = "bold",
       margin = margin(b = 10)
     ),
-    plot.background = element_rect(fill = "white", color = NA)
+    plot.background = element_rect(fill = NA, color = NA)
   )
 ```
 
