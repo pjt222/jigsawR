@@ -13,11 +13,13 @@ library(cli)
 # 2. Fall back to sourcing R files directly (for development or if pkg unavailable)
 # =============================================================================
 
-log_header <- function(msg) cli::cli_h1(msg)
-log_info <- function(msg) cli::cli_alert_info(msg)
-log_success <- function(msg) cli::cli_alert_success(msg)
-log_warn <- function(msg) cli::cli_alert_warning(msg)
-log_error <- function(msg) cli::cli_alert_danger(msg)
+# Simple logging wrappers that properly pass the calling environment
+# These are used before logging.R is sourced
+log_header <- function(msg) cli::cli_h1(msg, .envir = parent.frame())
+log_info <- function(msg) cli::cli_alert_info(msg, .envir = parent.frame())
+log_success <- function(msg) cli::cli_alert_success(msg, .envir = parent.frame())
+log_warn <- function(msg) cli::cli_alert_warning(msg, .envir = parent.frame())
+log_error <- function(msg) cli::cli_alert_danger(msg, .envir = parent.frame())
 
 log_header("App Initialization")
 

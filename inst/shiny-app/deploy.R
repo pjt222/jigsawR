@@ -60,19 +60,23 @@ log_subheader("Creating package dependencies")
 
 # Create a minimal DESCRIPTION that lists jigsawR as a GitHub dependency
 # This tells shinyapps.io to install jigsawR from GitHub (with compiled C++)
+# Type: Shiny is required for rsconnect to recognize this as a Shiny app
 app_desc <- c(
+  "Type: Shiny",
   "Title: jigsawR Shiny App",
   "Version: 0.1.0",
+  "Depends: R (>= 4.0.0)",
   "Imports:",
+  "    jigsawR,",
   "    shiny,",
   "    bslib,",
   "    shinyjs,",
   "    waiter,",
   "    cli,",
   "    colourpicker,",
-  "    bsicons,",
-  "    jigsawR",
-  "Remotes: pjt222/jigsawR"
+  "    bsicons",
+  "Remotes:",
+  "    pjt222/jigsawR"
 )
 
 writeLines(app_desc, file.path(app_dir, "DESCRIPTION"))
