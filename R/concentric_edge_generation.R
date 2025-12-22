@@ -789,7 +789,7 @@ generate_concentric_pieces <- function(rings, seed, diameter,
                                         boundary_facing = "outward",
                                         min_tab_size = NULL,
                                         max_tab_size = NULL) {
-  cat("Creating concentric edge mapping...\n")
+  # Generate concentric edge mapping
   edge_data <- generate_concentric_edge_map(
     rings = rings,
     seed = seed,
@@ -802,7 +802,6 @@ generate_concentric_pieces <- function(rings, seed, diameter,
     min_tab_size = min_tab_size,
     max_tab_size = max_tab_size
   )
-  cat(sprintf("Generated %d unique edges\n", edge_data$num_edges))
 
   num_pieces <- get_concentric_piece_count(rings)
   pieces <- list()

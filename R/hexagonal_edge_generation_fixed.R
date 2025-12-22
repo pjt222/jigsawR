@@ -181,7 +181,7 @@ generate_hex_edge_map <- function(rings, seed, diameter, tabsize = 27, jitter = 
         }
       }
 
-      cat("Circular warp enabled - ALL vertices transformed\n")
+      # Circular warp applied to ALL vertices
 
       # If do_trunc is enabled, project boundary vertices to circle radius
       # This gives a clean circular outline. The difference is:
@@ -454,11 +454,9 @@ generate_hex_pieces_with_edge_map <- function(rings, seed, diameter = 240,
   }
 
   # Generate edge mapping
-  cat("Creating edge mapping...\n")
-  edge_data <- generate_hex_edge_map(rings, seed, diameter, tabsize, jitter,
+ edge_data <- generate_hex_edge_map(rings, seed, diameter, tabsize, jitter,
                                       do_warp, do_trunc, do_circular_border,
                                       min_tab_size, max_tab_size)
-  cat(sprintf("Generated %d unique edges\n", edge_data$num_edges))
 
   # Calculate spacing
   if (separated && is.null(base_spacing)) {

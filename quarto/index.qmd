@@ -27,8 +27,8 @@ source(setup_path)
 #| warning: false
 #| fig-align: center
 #| out-width: "100%"
-#| fig-width: 6
-#| fig-height: 6
+#| fig-width: 5
+#| fig-height: 5
 #| fig-dpi: 300
 
 # Create a visually appealing hexagonal puzzle
@@ -45,7 +45,7 @@ ggplot() +
     rings = 3,                      # Number of rings (pieces = 3*r*(r-1)+1)
     diameter = 222,                 # Puzzle diameter in mm
     tabsize = 11,                   # Tab size percentage (default: 20)
-    jitter = 4,                     # Tab position randomness (default: 4)
+    jitter = 10,                     # Tab position randomness (default: 4)
     min_tab_size = NULL,            # Minimum tab height in mm (NULL = no limit)
     max_tab_size = NULL,            # Maximum tab height in mm (NULL = no limit)
     seed = 22,                      # Random seed for reproducibility
@@ -57,7 +57,7 @@ ggplot() +
     do_circular_border = FALSE,     # Use perfect circular arc borders
 
     # === Fusion Groups (PILES notation) ===
-    fusion_groups = "4-12-13,all-4-12-13",
+    fusion_groups = "4-12-13,2-8-19,all-4-12-13-2-8-19",
     fusion_style = "solid",         # "none", "dashed", or "solid"
     fusion_opacity = 0.22,          # Fused edge opacity (0.0-1.0)
 
