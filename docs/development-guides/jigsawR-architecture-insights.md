@@ -2726,6 +2726,80 @@ Edge paths are in original SVG coordinates, but `draw_panel` receives transforme
 
 ---
 
+### Insight #50: ggpuzzle Parameter Parity with Shiny App (2025-12-22)
+
+**Context**: The Shiny app had parameters that were missing from the corresponding `geom_puzzle_*` functions, creating a feature gap between the two interfaces.
+
+**Problem**: Users could configure puzzles in the Shiny app with parameters that weren't available in the ggplot2 geoms:
+- Size parameters (`width`, `height`, `diameter`)
+- Tab constraints (`min_tab_size`, `max_tab_size`)
+- Concentric arc direction (`boundary_facing`)
+
+**Solution**: Systematic parameter audit and addition across all geom functions:
+
+| Geom | Parameters Added |
+|------|------------------|
+| `geom_puzzle_rect` | `width`, `height`, `min_tab_size`, `max_tab_size` |
+| `geom_puzzle_hex` | `diameter`, `min_tab_size`, `max_tab_size` |
+| `geom_puzzle_conc` | `diameter`, `boundary_facing`, `min_tab_size`, `max_tab_size` |
+| `geom_puzzle_voronoi` | `width`, `height`, `min_tab_size`, `max_tab_size` |
+| `geom_puzzle_random` | `width`, `height`, `min_tab_size`, `max_tab_size` |
+
+**Implementation Pattern**:
+
+1. **Geom function signature**: Add parameters with sensible defaults
+   ```r
+   geom_puzzle_rect <- function(...,
+                                 width = 100,
+                                 height = 100,
+                                 min_tab_size = NULL,
+                                 max_tab_size = NULL, ...)
+   ```
+
+2. **Pass to layer params**: Include in the `params = list(...)` block
+   ```r
+   params = list(
+     puzzle_type = "rectangular",
+     width = width,
+     height = height,
+     min_tab_size = min_tab_size,
+     max_tab_size = max_tab_size,
+     ...
+   )
+   ```
+
+3. **Stat setup_params**: Add default handling with null-coalescing
+   ```r
+   params$boundary_facing <- params$boundary_facing %||% "outward"
+   ```
+
+4. **Stat compute_panel**: Add to function signature and pass to `generate_puzzle()`
+   ```r
+   compute_panel = function(data, scales, ..., boundary_facing = "outward", ...) {
+     result <- generate_puzzle(..., boundary_facing = boundary_facing, ...)
+   }
+   ```
+
+**Verification Method**:
+Compare Shiny app inputs (`inst/shiny-app/app.R`) with geom parameters to identify gaps:
+```r
+# Extract Shiny inputs per puzzle type
+# Compare with geom_puzzle_* function signatures
+# Add missing parameters following the pattern above
+```
+
+**Files Changed**:
+- `R/geom_puzzle.R`: Added parameters to all 5 geom functions
+- `R/stat_puzzle.R`: Added `boundary_facing` to setup_params and compute_panel
+
+**Key Insight**: Maintaining feature parity between UI (Shiny) and API (ggplot2) interfaces:
+1. Audit both interfaces periodically for parameter gaps
+2. Use consistent parameter names across interfaces
+3. Follow the established ggplot2 extension pattern for parameter passthrough
+4. Size parameters use type-appropriate names (`diameter` for circular puzzles, `width`/`height` for rectangular)
+
+---
+
 ### 30. Cross-Type Feature Extension: Min/Max Tab Size (2025-12-21, Issue #76)
 
 **Context**: The `min_tab_size` and `max_tab_size` parameters only applied to voronoi/random puzzle types. Issue #76 requested extending these constraints to all puzzle types (rectangular, hexagonal, concentric).
