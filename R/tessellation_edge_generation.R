@@ -90,20 +90,21 @@ generate_tessellation_edge <- function(v1, v2, seed, edge_id,
   # Rotate 90 degrees counterclockwise, apply tab_direction
   normal <- c(-tangent[2], tangent[1]) * tab_direction
 
-  # Initialize tab parameters using seed + edge_id for determinism
-  set.seed(seed + edge_id)
-
   # Tab parameters (convert percentages to fractions)
   t_base <- tabsize / 100
   j <- jitter / 100
 
+  # Generate 6 random values using unified batch RNG (Rcpp with R fallback)
+  # Uses seed + edge_id for determinism - same edge always gets same tab shape
+  rng_vals <- uniform_batch(seed + edge_id, 6)
+
   # Random tab parameters (same pattern as rectangular puzzles)
-  t <- t_base * (0.8 + 0.4 * runif(1))  # Tab size with variation
-  a <- j * (runif(1) - 0.5)              # Start jitter
-  b <- j * (runif(1) - 0.5)              # Tab position jitter
-  c_val <- j * (runif(1) - 0.5)          # Tab offset jitter
-  d <- j * (runif(1) - 0.5)              # Tab width jitter
-  e <- j * (runif(1) - 0.5)              # End jitter
+  t <- t_base * (0.8 + 0.4 * rng_vals[1])    # Tab size with variation
+  a <- j * (rng_vals[2] - 0.5)                # Start jitter
+  b <- j * (rng_vals[3] - 0.5)                # Tab position jitter
+  c_val <- j * (rng_vals[4] - 0.5)            # Tab offset jitter
+  d <- j * (rng_vals[5] - 0.5)                # Tab width jitter
+  e <- j * (rng_vals[6] - 0.5)                # End jitter
 
   # Apply min/max tab size constraints
 

@@ -15,13 +15,23 @@ NULL
 #' Returns TRUE if the C++ implementations are loaded and available.
 #' This is used internally to decide whether to use C++ or R fallback.
 #'
+#' Actually tests the C++ symbol, not just the R wrapper function,
+#' because the R wrapper exists in RcppExports.R but the C++ symbol
+#' may not be available (e.g., on shinyapps.io where the package
+#' isn't compiled with Rcpp).
+#'
 #' @return Logical indicating if Rcpp functions are available
 #' @keywords internal
 .rcpp_available <- function() {
-  # Check if the C++ function exists and is callable
+  # Must actually TEST the C++ function works, not just check if
+
+  # the R wrapper exists. The R wrapper in RcppExports.R always exists,
+
+  # but .Call() will fail if the shared library isn't loaded.
   tryCatch({
-    exists("random_batch_cpp", mode = "function") &&
-      is.function(get("random_batch_cpp", mode = "function"))
+    # Try a minimal call to verify the C++ symbol is available
+    result <- random_batch_cpp(seed = 1, count = 1, min_val = 0, max_val = 1)
+    is.numeric(result) && length(result) == 1
   }, error = function(e) FALSE)
 }
 

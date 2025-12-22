@@ -2390,6 +2390,96 @@ ggplot(df, aes(fill = value)) +
 
 ---
 
+### Insight #45: Unified RNG Strategy with Rcpp Fallback (2025-12-22)
+
+**Problem**: The rectangular puzzle failed on shinyapps.io with error `object '_jigsawR_random_batch_cpp' not found`, while hexagonal and concentric puzzles worked fine.
+
+**Root Cause Analysis**:
+1. **Rectangular puzzle**: Used `uniform_batch()` → Rcpp C++ implementation
+2. **Hexagonal/Concentric puzzles**: Used `set.seed()` + `runif()` → R's built-in RNG
+3. **Fallback detection bug**: `.rcpp_available()` only checked if the R wrapper function existed (it always does in `RcppExports.R`), not whether the C++ symbol was actually callable
+
+**The Bug in Detail**:
+```r
+# BEFORE: Only checked if wrapper exists (always TRUE)
+.rcpp_available <- function() {
+  exists("random_batch_cpp", mode = "function")  # Always TRUE!
+}
+
+# The R wrapper exists, but calling it fails:
+random_batch_cpp <- function(...) {
+  .Call(`_jigsawR_random_batch_cpp`, ...)  # Fails if C++ not compiled
+}
+```
+
+**Solution - Two Parts**:
+
+**1. Fix Rcpp Detection** (`R/rcpp_wrappers.R`):
+```r
+# AFTER: Actually TEST the C++ function
+.rcpp_available <- function() {
+  tryCatch({
+    result <- random_batch_cpp(seed = 1, count = 1, min_val = 0, max_val = 1)
+    is.numeric(result) && length(result) == 1
+  }, error = function(e) FALSE)
+}
+```
+
+**2. Unify RNG Strategy** (`R/hexagonal_bezier_generation.R`, `R/tessellation_edge_generation.R`):
+```r
+# BEFORE: R's standard RNG
+set.seed(seed + edge_id)
+t <- tabsize * (0.8 + 0.4 * runif(1))
+a <- jitter * (runif(1) - 0.5)
+# ...
+
+# AFTER: Unified batch RNG (Rcpp with R fallback)
+rng_vals <- uniform_batch(seed + edge_id, 6)
+t <- tabsize * (0.8 + 0.4 * rng_vals[1])
+a <- jitter * (rng_vals[2] - 0.5)
+# ...
+```
+
+**Key Insight - Three-Layer RNG Architecture**:
+```
+┌─────────────────────────────────────────────────┐
+│ uniform_batch(seed, count)  [R/rcpp_wrappers.R] │
+│   └─> if .rcpp_status() → random_batch_cpp()    │
+│   └─> else → .random_batch_r() [pure R]         │
+├─────────────────────────────────────────────────┤
+│ random_batch_cpp()          [R/RcppExports.R]   │
+│   └─> .Call('_jigsawR_random_batch_cpp', ...)   │
+├─────────────────────────────────────────────────┤
+│ _jigsawR_random_batch_cpp   [src/jigsawR_core.cpp] │
+│   └─> Sine-based deterministic RNG (~27x faster)│
+└─────────────────────────────────────────────────┘
+```
+
+**Result**:
+| Puzzle Type | Before | After |
+|-------------|--------|-------|
+| Rectangular | Rcpp only (failed on shinyapps.io) | Rcpp with R fallback |
+| Hexagonal | `set.seed()`/`runif()` only | Unified `uniform_batch()` |
+| Concentric | `set.seed()`/`runif()` only | Unified `uniform_batch()` |
+| Tessellation | `set.seed()`/`runif()` only | Unified `uniform_batch()` |
+
+**Deployment Optimization**:
+To get C++ on shinyapps.io, updated `inst/shiny-app/deploy.R` to:
+1. Create a DESCRIPTION listing `jigsawR` as a GitHub dependency
+2. Use `Remotes: pjt222/jigsawR` so shinyapps.io installs from GitHub
+3. App now tries `library(jigsawR)` first, falls back to sourcing R files
+
+**Files Changed**:
+- `R/rcpp_wrappers.R` - Fixed fallback detection
+- `R/hexagonal_bezier_generation.R` - Unified RNG
+- `R/tessellation_edge_generation.R` - Unified RNG
+- `inst/shiny-app/app.R` - Package-first loading strategy
+- `inst/shiny-app/deploy.R` - GitHub package installation
+
+**Lesson**: When implementing fallback logic, always TEST the actual functionality, not just the existence of wrapper functions. The wrapper may exist but fail when called if underlying dependencies aren't available.
+
+---
+
 ### 30. Cross-Type Feature Extension: Min/Max Tab Size (2025-12-21, Issue #76)
 
 **Context**: The `min_tab_size` and `max_tab_size` parameters only applied to voronoi/random puzzle types. Issue #76 requested extending these constraints to all puzzle types (rectangular, hexagonal, concentric).
@@ -2501,6 +2591,13 @@ if (!is.null(max_tab_size) && tab_height > max_tab_size) {
 ## Development History
 
 ### Completed Work (Archive)
+
+✅ **Unified RNG Strategy with Rcpp Fallback** (2025-12-22)
+  - Fixed Rcpp fallback detection to actually TEST the C++ function, not just check wrapper existence
+  - Unified all puzzle types to use `uniform_batch()` (Rcpp with R fallback)
+  - Updated Shiny app to install jigsawR from GitHub for C++ compilation on shinyapps.io
+  - Files: `R/rcpp_wrappers.R`, `R/hexagonal_bezier_generation.R`, `R/tessellation_edge_generation.R`
+  - Files: `inst/shiny-app/app.R`, `inst/shiny-app/deploy.R`
 
 ✅ **ggpuzzle Fusion Groups Support** (2025-12-19, Issue #68)
   - Added `fusion_groups`, `fusion_style`, `fusion_opacity` parameters to all 5 geom functions

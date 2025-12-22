@@ -53,20 +53,21 @@ generate_hex_bezier_edge <- function(v1, v2, seed, edge_id,
   tangent <- c(dx / edge_length, dy / edge_length)
   normal <- c(-tangent[2], tangent[1])  # Rotate 90° counterclockwise
 
-  # Initialize tab parameters using seed + edge_id for determinism
-  set.seed(seed + edge_id)
-
   # Tab parameters (adapted from rectangular puzzle)
   tabsize <- tab_params$tabsize / 100  # Convert percentage to fraction
   jitter <- tab_params$jitter / 100
 
+  # Generate 6 random values using unified batch RNG (Rcpp with R fallback)
+  # Uses seed + edge_id for determinism - same edge always gets same tab shape
+  rng_vals <- uniform_batch(seed + edge_id, 6)
+
   # Random tab parameters (same pattern as rectangular)
-  t <- tabsize * (0.8 + 0.4 * runif(1))  # Tab size
-  a <- jitter * (runif(1) - 0.5)          # Start jitter
-  b <- jitter * (runif(1) - 0.5)          # Tab position jitter
-  c <- jitter * (runif(1) - 0.5)          # Tab offset jitter
-  d <- jitter * (runif(1) - 0.5)          # Tab width jitter
-  e <- jitter * (runif(1) - 0.5)          # End jitter
+  t <- tabsize * (0.8 + 0.4 * rng_vals[1])    # Tab size
+  a <- jitter * (rng_vals[2] - 0.5)            # Start jitter
+  b <- jitter * (rng_vals[3] - 0.5)            # Tab position jitter
+  c <- jitter * (rng_vals[4] - 0.5)            # Tab offset jitter
+  d <- jitter * (rng_vals[5] - 0.5)            # Tab width jitter
+  e <- jitter * (rng_vals[6] - 0.5)            # End jitter
 
 
   # Apply min/max tab size constraints

@@ -7,68 +7,100 @@ library(shinyjs)
 library(waiter)
 library(cli)
 
-# Source logging utilities first
-possible_logging_paths <- c("R/logging.R", "./R/logging.R", "../../R/logging.R", "../R/logging.R")
-for (path in possible_logging_paths) {
-  if (file.exists(path)) {
-    source(path)
-    break
-  }
-}
+# =============================================================================
+# Package Loading Strategy:
+# 1. Try to load jigsawR as an installed package (includes compiled C++ code)
+# 2. Fall back to sourcing R files directly (for development or if pkg unavailable)
+# =============================================================================
 
-# Source the required functions from the package
-# In production, these would be loaded via library(jigsawR)
-source_dir <- function(path) {
-  log_info("Attempting to source from: {.path {path}}")
-  if (file.exists(path)) {
-    log_success("Directory exists!")
-    files <- list.files(path, pattern = "\\.R$", full.names = TRUE)
-    n_files <- length(files)
-    log_info("Found {n_files} R files")
-    for (file in files) {
-      # Skip archive and example files
-      if (!grepl("scripts_archive|examples", file)) {
-        file_name <- basename(file)
-        log_info("Sourcing: {.file {file_name}}")
-        source(file)
-      }
-    }
-  } else {
-    log_warn("Directory does NOT exist")
-  }
-}
+log_header <- function(msg) cli::cli_h1(msg)
+log_info <- function(msg) cli::cli_alert_info(msg)
+log_success <- function(msg) cli::cli_alert_success(msg)
+log_warn <- function(msg) cli::cli_alert_warning(msg)
+log_error <- function(msg) cli::cli_alert_danger(msg)
 
-# Debug: Show current working directory and files
 log_header("App Initialization")
-wd <- getwd()
-log_info("Working directory: {.path {wd}}")
-current_files <- paste(list.files(), collapse=', ')
-log_info("Files in current dir: {current_files}")
-parent_files <- paste(list.files('..'), collapse=', ')
-log_info("Files in parent dir: {parent_files}")
-parent_parent_files <- paste(list.files('../..'), collapse=', ')
-log_info("Files in parent/parent dir: {parent_parent_files}")
 
-# Try to load functions (adjust path based on where app is run from)
-# On shinyapps.io, R files will be in ./R (same directory as app.R)
-# During local development, they're in ../../R
-possible_paths <- c("R", "./R", "../../R", "../R")
-loaded <- FALSE
+# Try to load jigsawR package first (includes compiled Rcpp code)
+jigsawR_loaded <- tryCatch({
+  library(jigsawR)
+  log_success("Loaded jigsawR package (with compiled C++ code)")
 
-for (path in possible_paths) {
-  log_info("Trying path: {.path {path}}")
-  if (file.exists(path)) {
-    log_success("Found R directory at {.path {path}}")
-    source_dir(path)
-    loaded <- TRUE
-    break
+
+  # Verify Rcpp is working
+ if (exists(".rcpp_status", envir = asNamespace("jigsawR"))) {
+    rcpp_ok <- jigsawR:::.rcpp_status()
+    if (rcpp_ok) {
+      log_success("Rcpp C++ optimizations: ENABLED")
+    } else {
+      log_warn("Rcpp C++ optimizations: DISABLED (using R fallback)")
+    }
   }
-}
+  TRUE
+}, error = function(e) {
+  log_warn("jigsawR package not installed, falling back to sourcing R files")
+  FALSE
+})
 
-if (!loaded) {
-  log_error("Could not find R directory in any expected location!")
-  files_list <- paste(list.files(), collapse=', ')
-  log_info("Current files: {files_list}")
+# If package not loaded, source R files directly (development mode)
+if (!jigsawR_loaded) {
+  # Source logging utilities first
+  possible_logging_paths <- c("R/logging.R", "./R/logging.R", "../../R/logging.R", "../R/logging.R")
+  for (path in possible_logging_paths) {
+    if (file.exists(path)) {
+      source(path)
+      break
+    }
+  }
+
+  # Source the required functions from the package
+  source_dir <- function(path) {
+    log_info("Attempting to source from: {.path {path}}")
+    if (file.exists(path)) {
+      log_success("Directory exists!")
+      files <- list.files(path, pattern = "\\.R$", full.names = TRUE)
+      n_files <- length(files)
+      log_info("Found {n_files} R files")
+      for (file in files) {
+        # Skip archive and example files
+        if (!grepl("scripts_archive|examples", file)) {
+          file_name <- basename(file)
+          log_info("Sourcing: {.file {file_name}}")
+          source(file)
+        }
+      }
+    } else {
+      log_warn("Directory does NOT exist")
+    }
+  }
+
+  # Debug: Show current working directory and files
+  wd <- getwd()
+  log_info("Working directory: {.path {wd}}")
+  current_files <- paste(list.files(), collapse=', ')
+  log_info("Files in current dir: {current_files}")
+
+  # Try to load functions (adjust path based on where app is run from)
+  possible_paths <- c("R", "./R", "../../R", "../R")
+  loaded <- FALSE
+
+  for (path in possible_paths) {
+    log_info("Trying path: {.path {path}}")
+    if (file.exists(path)) {
+      log_success("Found R directory at {.path {path}}")
+      source_dir(path)
+      loaded <- TRUE
+      break
+    }
+  }
+
+  if (!loaded) {
+    log_error("Could not find R directory in any expected location!")
+    files_list <- paste(list.files(), collapse=', ')
+    log_info("Current files: {files_list}")
+  }
+
+  log_warn("Running WITHOUT C++ optimizations (sourced R files only)")
 }
 
 # Load configuration - SINGLE SOURCE OF TRUTH for all defaults
