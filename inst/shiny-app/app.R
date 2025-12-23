@@ -182,6 +182,80 @@ cfg_bg <- cfg$background
 cfg_ui <- cfg$ui
 cfg_const <- cfg$constraints
 
+# =============================================================================
+# UI HELPER: Slider with Numeric Input (Issue #75 Enhancement)
+# Creates a slider paired with a numeric input that sync bidirectionally.
+# Pattern adapted from spiralizer app.
+# =============================================================================
+
+#' Create Slider with Numeric Input
+#'
+#' @param id Base input ID (numeric input will be {id}_num)
+#' @param label Label text (NULL for no label)
+#' @param min Minimum value
+#' @param max Maximum value
+#' @param value Initial value
+#' @param step Step increment (default 1)
+#' @param post Suffix to display on slider value (e.g., "%" or " mm")
+#' @param ticks Whether to show tick marks on slider
+#' @param width Width for numeric input (default "80px")
+#' @return Shiny tagList with slider and numeric input side by side
+slider_with_numeric <- function(id, label, min, max, value, step = 1,
+                                 post = NULL, ticks = TRUE, width = "80px") {
+  tagList(
+    # Label above the inputs (if provided)
+    if (!is.null(label)) {
+      tags$label(label, class = "form-label mb-1", `for` = id)
+    },
+    # Flex container: slider (grows) + numeric input (fixed width)
+    div(
+      class = "d-flex align-items-center gap-2",
+      # Slider takes remaining space
+      div(
+        class = "flex-grow-1",
+        sliderInput(
+          inputId = id,
+          label = NULL,
+          min = min,
+          max = max,
+          value = value,
+          step = step,
+          ticks = ticks,
+          post = post,
+          sep = "",
+          width = "100%"
+        )
+      ),
+      # Compact numeric input with optional suffix
+      if (!is.null(post) && nchar(trimws(post)) > 0) {
+        div(
+          class = "d-flex align-items-center",
+          numericInput(
+            inputId = paste0(id, "_num"),
+            label = NULL,
+            value = value,
+            min = min,
+            max = max,
+            step = step,
+            width = width
+          ),
+          tags$span(class = "ms-1 text-muted small", trimws(post))
+        )
+      } else {
+        numericInput(
+          inputId = paste0(id, "_num"),
+          label = NULL,
+          value = value,
+          min = min,
+          max = max,
+          step = step,
+          width = width
+        )
+      }
+    )
+  )
+}
+
 # Define UI with enhanced bslib theme
 ui <- page_fluid(
   theme = bs_theme(
@@ -231,645 +305,712 @@ ui <- page_fluid(
     sidebar = sidebar(
       width = 300,  # Approximately same as width = 4 in old layout (300px)
 
+      # Generate and Reset buttons - ALWAYS VISIBLE at top of sidebar (Issue #75)
+      actionButton("generate", "Generate Puzzle",
+                  icon = icon("puzzle-piece"),
+                  class = "btn-primary btn-lg w-100 mb-2"),
+
+      actionButton("reset", "Reset to Defaults",
+                  icon = icon("undo"),
+                  class = "btn-secondary w-100 mb-3"),
+
       # Parameter Accordion - Reorganized into Settings, Styling, Download
       accordion(
         id = "params_accordion",
         open = cfg_ui$default_accordion_open,  # From config.yml
 
         # ===== SETTINGS PANEL =====
-        # Combines Basic Settings + Advanced Settings + Generate/Reset buttons
+        # All puzzle configuration options in nested sub-accordions
+        # Restructured with nested sub-accordions for better UX (Issue #75)
         accordion_panel(
           title = "Settings",
           value = "settings",
           icon = bsicons::bs_icon("gear"),
 
-          # Puzzle Type Selection
-          radioButtons("puzzle_type", "Puzzle Type:",
-                      choices = list("Rectangular" = "rectangular",
-                                    "Hexagonal" = "hexagonal",
-                                    "Concentric" = "concentric",
-                                    "Voronoi" = "voronoi",
-                                    "Random" = "random"),
-                      selected = "rectangular",
-                      inline = TRUE),
+          # Nested sub-accordions for settings organization
+          accordion(
+            id = "settings_sub",
+            class = "accordion-flush",
+            open = "puzzle_type",  # Puzzle Type open by default
+            multiple = TRUE,
 
-          # Conditional UI for puzzle parameters (values from config.yml)
-          conditionalPanel(
-            condition = "input.puzzle_type == 'rectangular'",
-            # Grid dimensions for rectangular
-            fluidRow(
-              column(6,
-                numericInput("rows", "Rows:",
-                            value = cfg_rect$rows,
-                            min = cfg_const$rows$min,
-                            max = cfg_const$rows$max, step = 1)
-              ),
-              column(6,
-                numericInput("cols", "Columns:",
-                            value = cfg_rect$cols,
-                            min = cfg_const$cols$min,
-                            max = cfg_const$cols$max, step = 1)
-              )
-            ),
+            # --- Puzzle Type sub-accordion ---
+            accordion_panel(
+              title = "Puzzle Type",
+              value = "puzzle_type_section",
+              icon = bsicons::bs_icon("puzzle"),
 
-            # Size for rectangular
-            fluidRow(
-              column(6,
-                numericInput("width", "Width (mm):",
-                            value = cfg_rect$width,
-                            min = cfg_const$width$min,
-                            max = cfg_const$width$max, step = 10)
-              ),
-              column(6,
-                numericInput("height", "Height (mm):",
-                            value = cfg_rect$height,
-                            min = cfg_const$height$min,
-                            max = cfg_const$height$max, step = 10)
-              )
-            )
-          ),
-
-          conditionalPanel(
-            condition = "input.puzzle_type == 'hexagonal'",
-            # Rings for hexagonal
-            numericInput("rings", "Rings:",
-                        value = cfg_hex$rings,
-                        min = cfg_const$rings$min,
-                        max = cfg_const$rings$max),
-
-            # Diameter for hexagonal
-            numericInput("diameter", "Diameter (mm):",
-                        value = cfg_hex$diameter,
-                        min = cfg_const$diameter$min,
-                        max = cfg_const$diameter$max, step = 10),
-
-            # Hexagonal boundary shape options
-            radioButtons("hex_boundary", "Boundary Shape:",
-                        choices = list(
-                          "Zigzag (Original)" = "zigzag",
-                          "Clean Hexagon" = "hexagon",
-                          "Warped Zigzag" = "warped",
-                          "Warped Hexagon" = "warped_hex",
-                          "Perfect Circle" = "circle"
-                        ),
-                        selected = cfg_hex$boundary)
-          ),
-
-          # Concentric puzzle type panel
-          conditionalPanel(
-            condition = "input.puzzle_type == 'concentric'",
-            # Rings for concentric
-            numericInput("rings_conc", "Rings:",
-                        value = cfg_conc$rings,
-                        min = cfg_const$rings$min,
-                        max = cfg_const$rings$max),
-
-            # Diameter for concentric
-            numericInput("diameter_conc", "Diameter (mm):",
-                        value = cfg_conc$diameter,
-                        min = cfg_const$diameter$min,
-                        max = cfg_const$diameter$max, step = 10),
-
-            # Note: center_shape is hardcoded to "hexagon" for now
-            # Future: may add UI option - see GitHub issue for refinement plans
-
-            # Concentric boundary shape options
-            radioButtons("conc_boundary", "Boundary Shape:",
-                        choices = list(
-                          "Straight" = "straight",
-                          "Perfect Circle" = "circle"
-                        ),
-                        selected = if (!is.null(cfg_conc$boundary)) cfg_conc$boundary else "straight",
-                        inline = TRUE),
-
-            # Boundary facing direction (only shown when "Perfect Circle" is selected)
-            conditionalPanel(
-              condition = "input.conc_boundary == 'circle'",
-              radioButtons("conc_boundary_facing", "Arc Direction:",
-                          choices = list(
-                            "Outward (convex)" = "outward",
-                            "Inward (concave)" = "inward"
-                          ),
-                          selected = if (!is.null(cfg_conc$boundary_facing)) cfg_conc$boundary_facing else "outward",
+              radioButtons("puzzle_type", "Puzzle Type:",
+                          choices = list("Rectangular" = "rectangular",
+                                        "Hexagonal" = "hexagonal",
+                                        "Concentric" = "concentric",
+                                        "Voronoi" = "voronoi",
+                                        "Random" = "random"),
+                          selected = "rectangular",
                           inline = TRUE)
-            )
-          ),
-
-          # Voronoi puzzle type panel
-          conditionalPanel(
-            condition = "input.puzzle_type == 'voronoi'",
-            # Number of cells
-            numericInput("n_cells", "Number of Cells:",
-                        value = 20,
-                        min = 5,
-                        max = 100),
-
-            # Size for voronoi
-            fluidRow(
-              column(6,
-                numericInput("vor_width", "Width (mm):",
-                            value = 200,
-                            min = 50,
-                            max = 1000, step = 10)
-              ),
-              column(6,
-                numericInput("vor_height", "Height (mm):",
-                            value = 200,
-                            min = 50,
-                            max = 1000, step = 10)
-              )
             ),
 
-            # Point distribution
-            radioButtons("point_distribution", "Point Distribution:",
-                        choices = list(
-                          "Fermat Spiral" = "fermat",
-                          "Uniform Random" = "uniform",
-                          "Jittered Grid" = "jittered"
-                        ),
-                        selected = "fermat")
-          ),
+            # --- Puzzle Parameters sub-accordion ---
+            accordion_panel(
+              title = "Puzzle Parameters",
+              value = "puzzle_params",
+              icon = bsicons::bs_icon("sliders"),
 
-          # Random shape puzzle type panel
-          conditionalPanel(
-            condition = "input.puzzle_type == 'random'",
-            # Number of interior points
-            numericInput("n_interior", "Interior Points:",
-                        value = 10,
-                        min = 3,
-                        max = 50),
+              # Conditional UI for puzzle parameters (values from config.yml)
+              conditionalPanel(
+                condition = "input.puzzle_type == 'rectangular'",
+                # Grid dimensions for rectangular
+                fluidRow(
+                  column(6,
+                    numericInput("rows", "Rows:",
+                                value = cfg_rect$rows,
+                                min = cfg_const$rows$min,
+                                max = cfg_const$rows$max, step = 1)
+                  ),
+                  column(6,
+                    numericInput("cols", "Columns:",
+                                value = cfg_rect$cols,
+                                min = cfg_const$cols$min,
+                                max = cfg_const$cols$max, step = 1)
+                  )
+                ),
 
-            # Size for random
-            fluidRow(
-              column(6,
-                numericInput("rnd_width", "Width (mm):",
-                            value = 200,
-                            min = 50,
-                            max = 1000, step = 10)
-              ),
-              column(6,
-                numericInput("rnd_height", "Height (mm):",
-                            value = 200,
-                            min = 50,
-                            max = 1000, step = 10)
-              )
-            ),
-
-            # Base polygon corners
-            sliderInput("n_corner", "Base Polygon Corners:",
-                       min = 3, max = 8, value = 4, step = 1,
-                       ticks = TRUE),
-            tags$small(class = "text-muted",
-              "3=Triangle, 4=Rectangle, 5=Pentagon, 6=Hexagon..."
-            )
-          ),
-
-          # Fusion groups input - affects puzzle generation (requires Generate click)
-          # Supports both PILES notation (1-2-3,4-5) and legacy format (1,2),(3,4,5)
-          tags$hr(class = "my-2"),
-          tags$small(class = "text-muted", "Piece Fusion"),
-          tooltip(
-            textInput("fusion_groups",
-                     "Fuse Pieces:",
-                     value = "",
-                     placeholder = "1-2-3,4-5"),
-            "Fuse adjacent pieces using PILES notation. Examples: '1-2' fuses pieces 1 and 2, '1-2-3,4-5' creates two groups. Use ':' for ranges (1:6), or keywords like 'R1' (row 1), 'ring1'. Changes apply when you click Generate."
-          ),
-
-          # Seed
-          fluidRow(
-            column(8,
-              numericInput("seed", "Random Seed:",
-                          value = cfg$seed,
-                          min = cfg_const$seed$min,
-                          max = cfg_const$seed$max, step = 1)
-            ),
-            column(4,
-              br(),
-              actionButton("randomize", "Random",
-                          icon = icon("dice"),
-                          class = "mt-4")
-            )
-          ),
-
-          # Layout Algorithm (affects piece positioning - computed on Generate)
-          tags$small(class = "text-muted", "Layout Algorithm"),
-          tooltip(
-            radioButtons("layout", NULL,
-                        choices = list(
-                          "Grid (Regular Spacing)" = "grid",
-                          "Repel (Anti-Overlap)" = "repel"
-                        ),
-                        selected = cfg_style$layout,
-                        inline = FALSE),
-            "Grid: Regular spacing based on offset. Repel: Iteratively pushes pieces apart to prevent overlapping (useful for fused meta-pieces)."
-          ),
-
-          # Repel-specific options (only shown when layout == "repel")
-          conditionalPanel(
-            condition = "input.layout == 'repel'",
-            fluidRow(
-              column(6,
-                tooltip(
-                  numericInput("repel_margin", "Margin:",
-                              value = cfg_style$repel_margin,
-                              min = cfg_const$repel_margin$min,
-                              max = cfg_const$repel_margin$max,
-                              step = 1),
-                  "Minimum gap (mm) between pieces after repelling."
+                # Size for rectangular
+                fluidRow(
+                  column(6,
+                    numericInput("width", "Width (mm):",
+                                value = cfg_rect$width,
+                                min = cfg_const$width$min,
+                                max = cfg_const$width$max, step = 10)
+                  ),
+                  column(6,
+                    numericInput("height", "Height (mm):",
+                                value = cfg_rect$height,
+                                min = cfg_const$height$min,
+                                max = cfg_const$height$max, step = 10)
+                  )
                 )
               ),
-              column(6,
-                tooltip(
-                  numericInput("repel_max_iter", "Iterations:",
-                              value = cfg_style$repel_max_iter,
-                              min = cfg_const$repel_max_iter$min,
-                              max = cfg_const$repel_max_iter$max,
-                              step = 10),
-                  "Max iterations for collision resolution."
+
+              conditionalPanel(
+                condition = "input.puzzle_type == 'hexagonal'",
+                # Rings for hexagonal
+                numericInput("rings", "Rings:",
+                            value = cfg_hex$rings,
+                            min = cfg_const$rings$min,
+                            max = cfg_const$rings$max),
+
+                # Diameter for hexagonal
+                numericInput("diameter", "Diameter (mm):",
+                            value = cfg_hex$diameter,
+                            min = cfg_const$diameter$min,
+                            max = cfg_const$diameter$max, step = 10),
+
+                # Hexagonal boundary shape options
+                radioButtons("hex_boundary", "Boundary Shape:",
+                            choices = list(
+                              "Zigzag (Original)" = "zigzag",
+                              "Clean Hexagon" = "hexagon",
+                              "Warped Zigzag" = "warped",
+                              "Warped Hexagon" = "warped_hex",
+                              "Perfect Circle" = "circle"
+                            ),
+                            selected = cfg_hex$boundary)
+              ),
+
+              # Concentric puzzle type panel
+              conditionalPanel(
+                condition = "input.puzzle_type == 'concentric'",
+                # Rings for concentric
+                numericInput("rings_conc", "Rings:",
+                            value = cfg_conc$rings,
+                            min = cfg_const$rings$min,
+                            max = cfg_const$rings$max),
+
+                # Diameter for concentric
+                numericInput("diameter_conc", "Diameter (mm):",
+                            value = cfg_conc$diameter,
+                            min = cfg_const$diameter$min,
+                            max = cfg_const$diameter$max, step = 10),
+
+                # Note: center_shape is hardcoded to "hexagon" for now
+                # Future: may add UI option - see GitHub issue for refinement plans
+
+                # Concentric boundary shape options
+                radioButtons("conc_boundary", "Boundary Shape:",
+                            choices = list(
+                              "Straight" = "straight",
+                              "Perfect Circle" = "circle"
+                            ),
+                            selected = if (!is.null(cfg_conc$boundary)) cfg_conc$boundary else "straight",
+                            inline = TRUE),
+
+                # Boundary facing direction (only shown when "Perfect Circle" is selected)
+                conditionalPanel(
+                  condition = "input.conc_boundary == 'circle'",
+                  radioButtons("conc_boundary_facing", "Arc Direction:",
+                              choices = list(
+                                "Outward (convex)" = "outward",
+                                "Inward (concave)" = "inward"
+                              ),
+                              selected = if (!is.null(cfg_conc$boundary_facing)) cfg_conc$boundary_facing else "outward",
+                              inline = TRUE)
+                )
+              ),
+
+              # Voronoi puzzle type panel
+              conditionalPanel(
+                condition = "input.puzzle_type == 'voronoi'",
+                # Number of cells
+                numericInput("n_cells", "Number of Cells:",
+                            value = 20,
+                            min = 5,
+                            max = 100),
+
+                # Size for voronoi
+                fluidRow(
+                  column(6,
+                    numericInput("vor_width", "Width (mm):",
+                                value = 200,
+                                min = 50,
+                                max = 1000, step = 10)
+                  ),
+                  column(6,
+                    numericInput("vor_height", "Height (mm):",
+                                value = 200,
+                                min = 50,
+                                max = 1000, step = 10)
+                  )
+                ),
+
+                # Point distribution
+                radioButtons("point_distribution", "Point Distribution:",
+                            choices = list(
+                              "Fermat Spiral" = "fermat",
+                              "Uniform Random" = "uniform",
+                              "Jittered Grid" = "jittered"
+                            ),
+                            selected = "fermat")
+              ),
+
+              # Random shape puzzle type panel
+              conditionalPanel(
+                condition = "input.puzzle_type == 'random'",
+                # Number of interior points
+                numericInput("n_interior", "Interior Points:",
+                            value = 10,
+                            min = 3,
+                            max = 50),
+
+                # Size for random
+                fluidRow(
+                  column(6,
+                    numericInput("rnd_width", "Width (mm):",
+                                value = 200,
+                                min = 50,
+                                max = 1000, step = 10)
+                  ),
+                  column(6,
+                    numericInput("rnd_height", "Height (mm):",
+                                value = 200,
+                                min = 50,
+                                max = 1000, step = 10)
+                  )
+                ),
+
+                # Base polygon corners
+                slider_with_numeric("n_corner", "Base Polygon Corners:",
+                                   min = 3, max = 8, value = 4, step = 1),
+                tags$small(class = "text-muted",
+                  "3=Triangle, 4=Rectangle, 5=Pentagon, 6=Hexagon..."
+                )
+              )
+            ),
+
+            # --- Piece Fusion sub-accordion ---
+            accordion_panel(
+              title = "Piece Fusion",
+              value = "fusion",
+              icon = bsicons::bs_icon("link-45deg"),
+
+              # Fusion groups input - affects puzzle generation (requires Generate click)
+              # Supports both PILES notation (1-2-3,4-5) and legacy format (1,2),(3,4,5)
+              tooltip(
+                textInput("fusion_groups",
+                         "Fuse Pieces:",
+                         value = "",
+                         placeholder = "1-2-3,4-5"),
+                "Fuse adjacent pieces using PILES notation. Examples: '1-2' fuses pieces 1 and 2, '1-2-3,4-5' creates two groups. Use ':' for ranges (1:6), or keywords like 'R1' (row 1), 'ring1'. Changes apply when you click Generate."
+              )
+            ),
+
+            # --- Randomization sub-accordion ---
+            accordion_panel(
+              title = "Randomization",
+              value = "randomization",
+              icon = bsicons::bs_icon("dice-5"),
+
+              # Seed
+              fluidRow(
+                column(8,
+                  numericInput("seed", "Random Seed:",
+                              value = cfg$seed,
+                              min = cfg_const$seed$min,
+                              max = cfg_const$seed$max, step = 1)
+                ),
+                column(4,
+                  br(),
+                  actionButton("randomize", "Random",
+                              icon = icon("dice"),
+                              class = "mt-4")
+                )
+              )
+            ),
+
+            # --- Layout sub-accordion ---
+            accordion_panel(
+              title = "Layout",
+              value = "layout_section",
+              icon = bsicons::bs_icon("grid-3x3"),
+
+              # Layout Algorithm (affects piece positioning - computed on Generate)
+              tooltip(
+                radioButtons("layout", "Layout Algorithm:",
+                            choices = list(
+                              "Grid (Regular Spacing)" = "grid",
+                              "Repel (Anti-Overlap)" = "repel"
+                            ),
+                            selected = cfg_style$layout,
+                            inline = FALSE),
+                "Grid: Regular spacing based on offset. Repel: Iteratively pushes pieces apart to prevent overlapping (useful for fused meta-pieces)."
+              ),
+
+              # Repel-specific options (only shown when layout == "repel")
+              conditionalPanel(
+                condition = "input.layout == 'repel'",
+                fluidRow(
+                  column(6,
+                    tooltip(
+                      numericInput("repel_margin", "Margin:",
+                                  value = cfg_style$repel_margin,
+                                  min = cfg_const$repel_margin$min,
+                                  max = cfg_const$repel_margin$max,
+                                  step = 1),
+                      "Minimum gap (mm) between pieces after repelling."
+                    )
+                  ),
+                  column(6,
+                    tooltip(
+                      numericInput("repel_max_iter", "Iterations:",
+                                  value = cfg_style$repel_max_iter,
+                                  min = cfg_const$repel_max_iter$min,
+                                  max = cfg_const$repel_max_iter$max,
+                                  step = 10),
+                      "Max iterations for collision resolution."
+                    )
+                  )
                 )
               )
             )
-          ),
-
-          # Divider before action buttons
-          tags$hr(class = "my-3"),
-
-          # Generate and Reset buttons
-          actionButton("generate", "Generate Puzzle",
-                      icon = icon("puzzle-piece"),
-                      class = "btn-primary btn-lg w-100 mb-2"),
-
-          actionButton("reset", "Reset to Defaults",
-                      icon = icon("undo"),
-                      class = "btn-secondary w-100")
+          )  # End of nested settings_sub accordion
         ),
 
         # ===== STYLING PANEL =====
         # Visual options - changes update preview automatically (reactive)
+        # Restructured with nested sub-accordions for better UX (Issue #75)
         # All values from config.yml
         accordion_panel(
           title = "Styling",
           value = "styling",
           icon = bsicons::bs_icon("palette"),
 
-          # Piece shape options (affect piece generation - reactive)
-          tags$small(class = "text-muted", "Piece Shape"),
+          # Nested sub-accordions for styling organization
+          accordion(
+            id = "styling_sub",
+            class = "accordion-flush",
+            open = "piece_shape",  # Piece Shape open by default
+            multiple = TRUE,
 
-          tooltip(
-            sliderInput("tabsize", "Tab Size:",
-                       min = cfg_const$tabsize$min,
-                       max = cfg_const$tabsize$max,
-                       value = cfg_style$tabsize, step = 1,
-                       ticks = TRUE,
-                       post = "%",
-                       sep = ""),
-            "Controls the size of interlocking tabs. Higher values create larger, more prominent tabs. Recommended: 15-25%"
-          ),
+            # --- Piece Shape sub-accordion ---
+            accordion_panel(
+              title = "Piece Shape",
+              value = "piece_shape",
+              icon = bsicons::bs_icon("pentagon"),
 
-          tooltip(
-            sliderInput("jitter", "Jitter:",
-                       min = cfg_const$jitter$min,
-                       max = cfg_const$jitter$max,
-                       value = cfg_style$jitter, step = 1,
-                       ticks = TRUE,
-                       post = "%",
-                       sep = ""),
-            "Adds randomness to piece shapes for more organic variation. Higher values create more irregular pieces. Recommended: 2-6%"
-          ),
-
-          # Tab size constraints (applies to all puzzle types)
-          tooltip(
-            numericInput("min_tab_size", "Min Tab Size (mm):",
-                        value = if (!is.null(cfg_style$min_tab_size)) cfg_style$min_tab_size else 0,
-                        min = cfg_const$min_tab_size$min,
-                        max = cfg_const$min_tab_size$max,
-                        step = 1),
-            "Minimum absolute tab size in mm. Prevents tabs from becoming too small on short edges. Set to 0 for no constraint. Recommended: 5-10mm for physical puzzles."
-          ),
-          tooltip(
-            numericInput("max_tab_size", "Max Tab Size (mm):",
-                        value = if (!is.null(cfg_style$max_tab_size)) cfg_style$max_tab_size else 0,
-                        min = cfg_const$max_tab_size$min,
-                        max = cfg_const$max_tab_size$max,
-                        step = 1),
-            "Maximum absolute tab size in mm. Prevents tabs from becoming too large on long edges. Set to 0 for no constraint. Recommended: 20-30mm for large puzzles."
-          ),
-
-          # Unified offset slider (replaces output mode dropdowns - Epic #32)
-          tooltip(
-            sliderInput("offset", "Piece Separation:",
-                       min = cfg_const$offset$min,
-                       max = cfg_const$offset$max,
-                       value = cfg_style$offset, step = 1,
-                       ticks = TRUE,
-                       post = " mm",
-                       sep = ""),
-            "Gap between pieces. 0mm = complete puzzle (pieces touching), >0mm = separated pieces for laser cutting"
-          ),
-
-          # Piece fill options (always visible)
-          radioButtons("fill_type", "Piece Fill:",
-                      choices = fill_type_choices,
-                      selected = cfg_style$fill_type,
-                      inline = TRUE),
-          conditionalPanel(
-            condition = "input.fill_type == 'solid'",
-            colourpicker::colourInput(
-              "fill_color",
-              "Fill Color:",
-              value = cfg_style$fill_color,
-              showColour = "background"
-            )
-          ),
-          # Fill palette options (shown when fill_type == "palette")
-          conditionalPanel(
-            condition = "input.fill_type == 'palette'",
-            selectInput("fill_palette", "Fill Palette:",
-                     choices = list(
-                       "Magma (Purple-Yellow)" = "magma",
-                       "Viridis (Blue-Green-Yellow)" = "viridis",
-                       "Plasma (Purple-Red-Yellow)" = "plasma",
-                       "Inferno (Black-Purple-Yellow)" = "inferno",
-                       "Cividis (Colorblind Friendly)" = "cividis",
-                       "Mako (Blue-Green)" = "mako",
-                       "Rocket (Black-Red-Yellow)" = "rocket",
-                       "Turbo (Rainbow)" = "turbo"
-                     ),
-                     selected = cfg_style$fill_palette),
-            tooltip(
-              input_switch(
-                "fill_palette_invert",
-                "Invert Fill Palette",
-                value = FALSE
+              tooltip(
+                slider_with_numeric("tabsize", "Tab Size:",
+                                   min = cfg_const$tabsize$min,
+                                   max = cfg_const$tabsize$max,
+                                   value = cfg_style$tabsize, step = 1,
+                                   post = "%"),
+                "Controls the size of interlocking tabs. Higher values create larger, more prominent tabs. Recommended: 15-25%"
               ),
-              "Reverse the fill palette direction."
-            )
-          ),
-          # Gradient color pickers for piece fill
-          conditionalPanel(
-            condition = "input.fill_type == 'gradient'",
-            colourpicker::colourInput(
-              "piece_gradient_center",
-              "Center Color:",
-              value = "#ffffff",
-              showColour = "background"
-            ),
-            colourpicker::colourInput(
-              "piece_gradient_middle",
-              "Middle Color:",
-              value = "#e0e0e0",
-              showColour = "background"
-            ),
-            colourpicker::colourInput(
-              "piece_gradient_edge",
-              "Edge Color:",
-              value = "#808080",
-              showColour = "background"
-            )
-          ),
-          # Noise options for piece fill
-          conditionalPanel(
-            condition = "input.fill_type == 'noise'",
-            selectInput("fill_noise_type", "Noise Type:",
-                       choices = list(
-                         "Perlin" = "perlin",
-                         "Simplex" = "simplex",
-                         "Worley (Cellular)" = "worley",
-                         "Cubic" = "cubic",
-                         "Value" = "value"
-                       ),
-                       selected = "simplex"),
-            tooltip(
-              sliderInput("fill_noise_frequency", "Frequency:",
-                         min = 0.005, max = 0.1, value = 0.03, step = 0.005),
-              "Controls the scale of noise features. Lower = larger, smoother patterns."
-            ),
-            colourpicker::colourInput(
-              "fill_noise_color_low",
-              "Dark Color:",
-              value = "#2d2d44",
-              showColour = "background"
-            ),
-            colourpicker::colourInput(
-              "fill_noise_color_high",
-              "Light Color:",
-              value = "#8888aa",
-              showColour = "background"
-            ),
-            tooltip(
-              numericInput("fill_noise_seed", "Noise Seed:",
-                          value = 123, min = 1, max = 99999, step = 1),
-              "Seed for reproducible noise patterns (independent of puzzle seed)."
-            )
-          ),
 
-          tags$hr(class = "my-2"),
-          tags$small(class = "text-muted", "Internal Edges (Fusion)"),
-
-          # Fusion style - reactive styling for internal edges
-          # Note: Fusion groups are defined in Settings panel (requires Generate)
-          radioButtons("fusion_style", "Internal Edge Style:",
-                      choices = list(
-                        "Dashed" = "dashed",
-                        "Solid" = "solid",
-                        "Hidden" = "none"
-                      ),
-                      selected = "dashed",
-                      inline = TRUE),
-
-          # Fusion opacity (only shown when style != none)
-          conditionalPanel(
-            condition = "input.fusion_style != 'none'",
-            tooltip(
-              sliderInput("fusion_opacity", "Internal Edge Opacity:",
-                         min = 0,
-                         max = 100,
-                         value = 30, step = 5,
-                         ticks = TRUE,
-                         post = "%",
-                         sep = ""),
-              "Transparency of internal edges between fused pieces. 100% = fully visible, 0% = hidden."
-            )
-          ),
-
-          tags$hr(class = "my-2"),
-          tags$small(class = "text-muted", "Stroke"),
-
-          # Stroke color type selection (none, solid, palette)
-          radioButtons("stroke_color_type", "Stroke Color:",
-                      choices = list(
-                        "None" = "none",
-                        "Solid" = "solid",
-                        "Palette" = "palette"
-                      ),
-                      selected = cfg_style$stroke_color_type,
-                      inline = TRUE),
-
-          # Stroke color picker (shown when stroke_color_type == "solid")
-          conditionalPanel(
-            condition = "input.stroke_color_type == 'solid'",
-            colourpicker::colourInput(
-              "stroke_color",
-              "Stroke Color:",
-              value = cfg_style$stroke_color,
-              showColour = "background"
-            )
-          ),
-          # Stroke palette options (shown when stroke_color_type == "palette")
-          conditionalPanel(
-            condition = "input.stroke_color_type == 'palette'",
-            selectInput("stroke_palette", "Stroke Palette:",
-                     choices = list(
-                       "Viridis (Blue-Green-Yellow)" = "viridis",
-                       "Magma (Purple-Yellow)" = "magma",
-                       "Plasma (Purple-Red-Yellow)" = "plasma",
-                       "Inferno (Black-Purple-Yellow)" = "inferno",
-                       "Cividis (Colorblind Friendly)" = "cividis",
-                       "Mako (Blue-Green)" = "mako",
-                       "Rocket (Black-Red-Yellow)" = "rocket",
-                       "Turbo (Rainbow)" = "turbo"
-                     ),
-                     selected = cfg_style$stroke_palette),
-            tooltip(
-              input_switch(
-                "stroke_palette_invert",
-                "Invert Stroke Palette",
-                value = FALSE
+              tooltip(
+                slider_with_numeric("jitter", "Jitter:",
+                                   min = cfg_const$jitter$min,
+                                   max = cfg_const$jitter$max,
+                                   value = cfg_style$jitter, step = 1,
+                                   post = "%"),
+                "Adds randomness to piece shapes for more organic variation. Higher values create more irregular pieces. Recommended: 2-6%"
               ),
-              "Reverse the stroke palette direction."
+
+              # Tab size constraints (applies to all puzzle types)
+              tooltip(
+                numericInput("min_tab_size", "Min Tab Size (mm):",
+                            value = if (!is.null(cfg_style$min_tab_size)) cfg_style$min_tab_size else 0,
+                            min = cfg_const$min_tab_size$min,
+                            max = cfg_const$min_tab_size$max,
+                            step = 1),
+                "Minimum absolute tab size in mm. Prevents tabs from becoming too small on short edges. Set to 0 for no constraint. Recommended: 5-10mm for physical puzzles."
+              ),
+              tooltip(
+                numericInput("max_tab_size", "Max Tab Size (mm):",
+                            value = if (!is.null(cfg_style$max_tab_size)) cfg_style$max_tab_size else 0,
+                            min = cfg_const$max_tab_size$min,
+                            max = cfg_const$max_tab_size$max,
+                            step = 1),
+                "Maximum absolute tab size in mm. Prevents tabs from becoming too large on long edges. Set to 0 for no constraint. Recommended: 20-30mm for large puzzles."
+              )
+            ),
+
+            # --- Piece Separation sub-accordion ---
+            accordion_panel(
+              title = "Piece Separation",
+              value = "piece_separation",
+              icon = bsicons::bs_icon("arrows-expand"),
+
+              # Unified offset slider (replaces output mode dropdowns - Epic #32)
+              tooltip(
+                slider_with_numeric("offset", "Piece Separation:",
+                                   min = cfg_const$offset$min,
+                                   max = cfg_const$offset$max,
+                                   value = cfg_style$offset, step = 1,
+                                   post = " mm"),
+                "Gap between pieces. 0mm = complete puzzle (pieces touching), >0mm = separated pieces for laser cutting"
+              )
+            ),
+
+            # --- Piece Fill sub-accordion ---
+            accordion_panel(
+              title = "Piece Fill",
+              value = "piece_fill",
+              icon = bsicons::bs_icon("paint-bucket"),
+
+              # Piece fill options (always visible)
+              radioButtons("fill_type", "Piece Fill:",
+                          choices = fill_type_choices,
+                          selected = cfg_style$fill_type,
+                          inline = TRUE),
+              conditionalPanel(
+                condition = "input.fill_type == 'solid'",
+                colourpicker::colourInput(
+                  "fill_color",
+                  "Fill Color:",
+                  value = cfg_style$fill_color,
+                  showColour = "background"
+                )
+              ),
+              # Fill palette options (shown when fill_type == "palette")
+              conditionalPanel(
+                condition = "input.fill_type == 'palette'",
+                selectInput("fill_palette", "Fill Palette:",
+                         choices = list(
+                           "Magma (Purple-Yellow)" = "magma",
+                           "Viridis (Blue-Green-Yellow)" = "viridis",
+                           "Plasma (Purple-Red-Yellow)" = "plasma",
+                           "Inferno (Black-Purple-Yellow)" = "inferno",
+                           "Cividis (Colorblind Friendly)" = "cividis",
+                           "Mako (Blue-Green)" = "mako",
+                           "Rocket (Black-Red-Yellow)" = "rocket",
+                           "Turbo (Rainbow)" = "turbo"
+                         ),
+                         selected = cfg_style$fill_palette),
+                tooltip(
+                  input_switch(
+                    "fill_palette_invert",
+                    "Invert Fill Palette",
+                    value = FALSE
+                  ),
+                  "Reverse the fill palette direction."
+                )
+              ),
+              # Gradient color pickers for piece fill
+              conditionalPanel(
+                condition = "input.fill_type == 'gradient'",
+                colourpicker::colourInput(
+                  "piece_gradient_center",
+                  "Center Color:",
+                  value = "#ffffff",
+                  showColour = "background"
+                ),
+                colourpicker::colourInput(
+                  "piece_gradient_middle",
+                  "Middle Color:",
+                  value = "#e0e0e0",
+                  showColour = "background"
+                ),
+                colourpicker::colourInput(
+                  "piece_gradient_edge",
+                  "Edge Color:",
+                  value = "#808080",
+                  showColour = "background"
+                )
+              ),
+              # Noise options for piece fill
+              conditionalPanel(
+                condition = "input.fill_type == 'noise'",
+                selectInput("fill_noise_type", "Noise Type:",
+                           choices = list(
+                             "Perlin" = "perlin",
+                             "Simplex" = "simplex",
+                             "Worley (Cellular)" = "worley",
+                             "Cubic" = "cubic",
+                             "Value" = "value"
+                           ),
+                           selected = "simplex"),
+                tooltip(
+                  slider_with_numeric("fill_noise_frequency", "Frequency:",
+                                     min = 0.005, max = 0.1, value = 0.03, step = 0.005,
+                                     ticks = FALSE),
+                  "Controls the scale of noise features. Lower = larger, smoother patterns."
+                ),
+                colourpicker::colourInput(
+                  "fill_noise_color_low",
+                  "Dark Color:",
+                  value = "#2d2d44",
+                  showColour = "background"
+                ),
+                colourpicker::colourInput(
+                  "fill_noise_color_high",
+                  "Light Color:",
+                  value = "#8888aa",
+                  showColour = "background"
+                ),
+                tooltip(
+                  numericInput("fill_noise_seed", "Noise Seed:",
+                              value = 123, min = 1, max = 99999, step = 1),
+                  "Seed for reproducible noise patterns (independent of puzzle seed)."
+                )
+              )
+            ),
+
+            # --- Internal Edges sub-accordion ---
+            accordion_panel(
+              title = "Internal Edges",
+              value = "internal_edges",
+              icon = bsicons::bs_icon("subtract"),
+
+              # Fusion style - reactive styling for internal edges
+              # Note: Fusion groups are defined in Settings panel (requires Generate)
+              radioButtons("fusion_style", "Internal Edge Style:",
+                          choices = list(
+                            "Dashed" = "dashed",
+                            "Solid" = "solid",
+                            "Hidden" = "none"
+                          ),
+                          selected = "dashed",
+                          inline = TRUE),
+
+              # Fusion opacity (only shown when style != none)
+              conditionalPanel(
+                condition = "input.fusion_style != 'none'",
+                tooltip(
+                  slider_with_numeric("fusion_opacity", "Internal Edge Opacity:",
+                                     min = 0, max = 100, value = 30, step = 5,
+                                     post = "%"),
+                  "Transparency of internal edges between fused pieces. 100% = fully visible, 0% = hidden."
+                )
+              )
+            ),
+
+            # --- Stroke & Outline sub-accordion ---
+            accordion_panel(
+              title = "Stroke & Outline",
+              value = "stroke_outline",
+              icon = bsicons::bs_icon("pencil"),
+
+              # Stroke color type selection (none, solid, palette)
+              radioButtons("stroke_color_type", "Stroke Color:",
+                          choices = list(
+                            "None" = "none",
+                            "Solid" = "solid",
+                            "Palette" = "palette"
+                          ),
+                          selected = cfg_style$stroke_color_type,
+                          inline = TRUE),
+
+              # Stroke color picker (shown when stroke_color_type == "solid")
+              conditionalPanel(
+                condition = "input.stroke_color_type == 'solid'",
+                colourpicker::colourInput(
+                  "stroke_color",
+                  "Stroke Color:",
+                  value = cfg_style$stroke_color,
+                  showColour = "background"
+                )
+              ),
+              # Stroke palette options (shown when stroke_color_type == "palette")
+              conditionalPanel(
+                condition = "input.stroke_color_type == 'palette'",
+                selectInput("stroke_palette", "Stroke Palette:",
+                         choices = list(
+                           "Viridis (Blue-Green-Yellow)" = "viridis",
+                           "Magma (Purple-Yellow)" = "magma",
+                           "Plasma (Purple-Red-Yellow)" = "plasma",
+                           "Inferno (Black-Purple-Yellow)" = "inferno",
+                           "Cividis (Colorblind Friendly)" = "cividis",
+                           "Mako (Blue-Green)" = "mako",
+                           "Rocket (Black-Red-Yellow)" = "rocket",
+                           "Turbo (Rainbow)" = "turbo"
+                         ),
+                         selected = cfg_style$stroke_palette),
+                tooltip(
+                  input_switch(
+                    "stroke_palette_invert",
+                    "Invert Stroke Palette",
+                    value = FALSE
+                  ),
+                  "Reverse the stroke palette direction."
+                )
+              ),
+
+              tooltip(
+                slider_with_numeric("stroke_width", "Line Width:",
+                                   min = cfg_const$stroke_width$min,
+                                   max = cfg_const$stroke_width$max,
+                                   value = cfg_style$stroke_width, step = 0.5,
+                                   post = " mm"),
+                "Thickness of puzzle piece outlines. For laser cutting, use 0.5mm. For printing or display, use 1.5-2.5mm."
+              ),
+
+              tooltip(
+                slider_with_numeric("opacity", "Opacity:",
+                                   min = cfg_const$opacity$min,
+                                   max = cfg_const$opacity$max,
+                                   value = cfg_style$opacity, step = 5,
+                                   post = "%"),
+                "Transparency of puzzle pieces. 100% = fully opaque, 0% = fully transparent. Lower values create a watermark effect."
+              )
+            ),
+
+            # --- Labels sub-accordion ---
+            accordion_panel(
+              title = "Labels",
+              value = "labels",
+              icon = bsicons::bs_icon("type"),
+
+              # Piece labels switch
+              tooltip(
+                input_switch(
+                  id = "show_labels",
+                  label = "Show Piece Labels",
+                  value = cfg_labels$show
+                ),
+                "Display piece ID numbers at the center of each piece. Useful for assembly instructions."
+              ),
+
+              # Label options (always visible)
+              colourpicker::colourInput(
+                "label_color",
+                "Label Color:",
+                value = cfg_labels$color,
+                showColour = "background"
+              ),
+              tooltip(
+                slider_with_numeric("label_size", "Label Font Size:",
+                                   min = cfg_const$label_size$min,
+                                   max = cfg_const$label_size$max,
+                                   value = cfg_labels$size, step = 1,
+                                   post = " mm"),
+                "Font size for piece labels. Set to 0 for automatic sizing based on piece dimensions."
+              )
+            ),
+
+            # --- Background sub-accordion ---
+            accordion_panel(
+              title = "Background",
+              value = "background",
+              icon = bsicons::bs_icon("image"),
+
+              # Background type selector
+              radioButtons("background_type", "Background:",
+                          choices = background_type_choices,
+                          selected = cfg_bg$type,
+                          inline = TRUE),
+
+              # Solid color picker (shown when background_type == "solid")
+              conditionalPanel(
+                condition = "input.background_type == 'solid'",
+                colourpicker::colourInput(
+                  "background_color",
+                  "Background Color:",
+                  value = cfg_bg$solid_color,
+                  showColour = "background"
+                )
+              ),
+
+              # Gradient color pickers (shown when background_type == "gradient")
+              conditionalPanel(
+                condition = "input.background_type == 'gradient'",
+                colourpicker::colourInput(
+                  "gradient_center",
+                  "Center Color (0%):",
+                  value = cfg_bg$gradient$center,
+                  showColour = "background"
+                ),
+                colourpicker::colourInput(
+                  "gradient_middle",
+                  "Middle Color (50%):",
+                  value = cfg_bg$gradient$middle,
+                  showColour = "background"
+                ),
+                colourpicker::colourInput(
+                  "gradient_edge",
+                  "Edge Color (100%):",
+                  value = cfg_bg$gradient$edge,
+                  showColour = "background"
+                )
+              ),
+
+              # Noise options (shown when background_type == "noise")
+              conditionalPanel(
+                condition = "input.background_type == 'noise'",
+                selectInput("bg_noise_type", "Noise Type:",
+                           choices = list(
+                             "Perlin" = "perlin",
+                             "Simplex" = "simplex",
+                             "Worley (Cellular)" = "worley",
+                             "Cubic" = "cubic",
+                             "Value" = "value"
+                           ),
+                           selected = "perlin"),
+                tooltip(
+                  slider_with_numeric("bg_noise_frequency", "Frequency:",
+                                     min = 0.005, max = 0.1, value = 0.02, step = 0.005,
+                                     ticks = FALSE),
+                  "Controls the scale of noise features. Lower = larger, smoother patterns."
+                ),
+                colourpicker::colourInput(
+                  "bg_noise_color_low",
+                  "Dark Color:",
+                  value = "#1a1a2e",
+                  showColour = "background"
+                ),
+                colourpicker::colourInput(
+                  "bg_noise_color_high",
+                  "Light Color:",
+                  value = "#4a4a6e",
+                  showColour = "background"
+                ),
+                tooltip(
+                  numericInput("bg_noise_seed", "Noise Seed:",
+                              value = 42, min = 1, max = 99999, step = 1),
+                  "Seed for reproducible noise patterns (independent of puzzle seed)."
+                )
+              )
             )
-          ),
-
-        tooltip(
-          sliderInput("stroke_width", "Line Width:",
-                     min = cfg_const$stroke_width$min,
-                     max = cfg_const$stroke_width$max,
-                     value = cfg_style$stroke_width, step = 0.5,
-                     ticks = TRUE,
-                     round = 1,
-                     post = " mm",
-                     sep = ""),
-          "Thickness of puzzle piece outlines. For laser cutting, use 0.5mm. For printing or display, use 1.5-2.5mm."
-        ),
-
-        tooltip(
-          sliderInput("opacity", "Opacity:",
-                     min = cfg_const$opacity$min,
-                     max = cfg_const$opacity$max,
-                     value = cfg_style$opacity, step = 5,
-                     ticks = TRUE,
-                     post = "%",
-                     sep = ""),
-          "Transparency of puzzle pieces. 100% = fully opaque, 0% = fully transparent. Lower values create a watermark effect."
-        ),
-
-        # Piece labels switch
-        tooltip(
-          input_switch(
-            id = "show_labels",
-            label = "Show Piece Labels",
-            value = cfg_labels$show
-          ),
-          "Display piece ID numbers at the center of each piece. Useful for assembly instructions."
-        ),
-
-        # Label options (always visible)
-        colourpicker::colourInput(
-          "label_color",
-          "Label Color:",
-          value = cfg_labels$color,
-          showColour = "background"
-        ),
-        tooltip(
-          sliderInput("label_size", "Label Font Size:",
-                     min = cfg_const$label_size$min,
-                     max = cfg_const$label_size$max,
-                     value = cfg_labels$size, step = 1,
-                     ticks = TRUE,
-                     post = " mm",
-                     sep = ""),
-          "Font size for piece labels. Set to 0 for automatic sizing based on piece dimensions."
-        ),
-
-        tags$hr(class = "my-2"),
-        tags$small(class = "text-muted", "Background"),
-
-        # Background type selector
-        radioButtons("background_type", "Background:",
-                    choices = background_type_choices,
-                    selected = cfg_bg$type,
-                    inline = TRUE),
-
-        # Solid color picker (shown when background_type == "solid")
-        conditionalPanel(
-          condition = "input.background_type == 'solid'",
-          colourpicker::colourInput(
-            "background_color",
-            "Background Color:",
-            value = cfg_bg$solid_color,
-            showColour = "background"
-          )
-        ),
-
-        # Gradient color pickers (shown when background_type == "gradient")
-        conditionalPanel(
-          condition = "input.background_type == 'gradient'",
-          colourpicker::colourInput(
-            "gradient_center",
-            "Center Color (0%):",
-            value = cfg_bg$gradient$center,
-            showColour = "background"
-          ),
-          colourpicker::colourInput(
-            "gradient_middle",
-            "Middle Color (50%):",
-            value = cfg_bg$gradient$middle,
-            showColour = "background"
-          ),
-          colourpicker::colourInput(
-            "gradient_edge",
-            "Edge Color (100%):",
-            value = cfg_bg$gradient$edge,
-            showColour = "background"
-          )
-        ),
-
-        # Noise options (shown when background_type == "noise")
-        conditionalPanel(
-          condition = "input.background_type == 'noise'",
-          selectInput("bg_noise_type", "Noise Type:",
-                     choices = list(
-                       "Perlin" = "perlin",
-                       "Simplex" = "simplex",
-                       "Worley (Cellular)" = "worley",
-                       "Cubic" = "cubic",
-                       "Value" = "value"
-                     ),
-                     selected = "perlin"),
-          tooltip(
-            sliderInput("bg_noise_frequency", "Frequency:",
-                       min = 0.005, max = 0.1, value = 0.02, step = 0.005),
-            "Controls the scale of noise features. Lower = larger, smoother patterns."
-          ),
-          colourpicker::colourInput(
-            "bg_noise_color_low",
-            "Dark Color:",
-            value = "#1a1a2e",
-            showColour = "background"
-          ),
-          colourpicker::colourInput(
-            "bg_noise_color_high",
-            "Light Color:",
-            value = "#4a4a6e",
-            showColour = "background"
-          ),
-          tooltip(
-            numericInput("bg_noise_seed", "Noise Seed:",
-                        value = 42, min = 1, max = 99999, step = 1),
-            "Seed for reproducible noise patterns (independent of puzzle seed)."
-          )
-        )
+          )  # End of nested styling_sub accordion
         ),
 
         # ===== DOWNLOAD PANEL =====
@@ -906,12 +1047,12 @@ ui <- page_fluid(
             "Download exactly what you see as PNG (raster image, 2000x2000px)"
           ),
 
-          # Download Individual Pieces - available for ALL puzzle types
+          # Download Individual Pieces as ZIP - available for ALL puzzle types
           tooltip(
-            disabled(actionButton("download_pieces", "Individual Pieces",
-                          icon = icon("download"),
+            disabled(downloadButton("download_pieces", "Individual Pieces (ZIP)",
+                          icon = icon("file-archive"),
                           class = "btn-warning w-100")),
-            "Download each piece as a separate SVG file"
+            "Download all pieces as a ZIP file containing separate SVG files"
           )
         )
       )  # Close accordion
@@ -1094,6 +1235,44 @@ server <- function(input, output, session) {
 
   # Positioned result is now computed reactively based on base_settings + styling
   positioned_result <- reactiveVal(NULL)
+
+  # ===========================================================================
+  # BIDIRECTIONAL SYNC: SLIDER <-> NUMERIC INPUT (Issue #75 Enhancement)
+  # Pattern adapted from spiralizer app
+  # ===========================================================================
+
+  # Helper to sync slider and numeric input (avoids infinite loops)
+  sync_slider_numeric <- function(slider_id, numeric_id) {
+    # Slider → Numeric
+    observeEvent(input[[slider_id]], {
+      slider_val <- input[[slider_id]]
+      numeric_val <- input[[numeric_id]]
+      if (!is.null(slider_val) && (is.null(numeric_val) || is.na(numeric_val) || slider_val != numeric_val)) {
+        updateNumericInput(session, numeric_id, value = slider_val)
+      }
+    }, ignoreInit = TRUE)
+
+    # Numeric → Slider
+    observeEvent(input[[numeric_id]], {
+      numeric_val <- input[[numeric_id]]
+      slider_val <- input[[slider_id]]
+      if (!is.null(numeric_val) && !is.na(numeric_val) && (is.null(slider_val) || numeric_val != slider_val)) {
+        updateSliderInput(session, slider_id, value = numeric_val)
+      }
+    }, ignoreInit = TRUE)
+  }
+
+  # Set up sync for each slider-numeric pair
+  sync_slider_numeric("n_corner", "n_corner_num")
+  sync_slider_numeric("tabsize", "tabsize_num")
+  sync_slider_numeric("jitter", "jitter_num")
+  sync_slider_numeric("offset", "offset_num")
+  sync_slider_numeric("fill_noise_frequency", "fill_noise_frequency_num")
+  sync_slider_numeric("fusion_opacity", "fusion_opacity_num")
+  sync_slider_numeric("stroke_width", "stroke_width_num")
+  sync_slider_numeric("opacity", "opacity_num")
+  sync_slider_numeric("label_size", "label_size_num")
+  sync_slider_numeric("bg_noise_frequency", "bg_noise_frequency_num")
 
   # Randomize seed
   observeEvent(input$randomize, {
@@ -2109,118 +2288,118 @@ server <- function(input, output, session) {
     contentType = "image/png"
   )
 
-  # Handle individual pieces download - UNIFIED using render_single_piece_svg()
-  observeEvent(input$download_pieces, {
-    pos <- positioned_result()
-    data <- puzzle_data()
+  # Handle individual pieces download as ZIP - UNIFIED using render_single_piece_svg()
+  output$download_pieces <- downloadHandler(
+    filename = function() {
+      data <- puzzle_data()
+      if (is.null(data)) return("pieces.zip")
+      sprintf("%s_pieces_seed%d.zip", data$type, data$seed)
+    },
+    content = function(file) {
+      pos <- positioned_result()
+      data <- puzzle_data()
 
-    if (is.null(pos) || is.null(data)) {
-      showNotification("Please generate a puzzle first.", type = "warning", duration = 3)
-      return(NULL)
-    }
+      if (is.null(pos) || is.null(data)) {
+        # Create empty zip as fallback
+        writeLines("No puzzle generated", file)
+        return()
+      }
 
-    # Create www/pieces directory
-    pieces_dir <- file.path("www", "pieces")
-    if (!dir.exists(pieces_dir)) {
+      # Create temp directory for pieces
+      pieces_dir <- tempfile("pieces_")
       dir.create(pieces_dir, recursive = TRUE)
-    }
+      on.exit(unlink(pieces_dir, recursive = TRUE), add = TRUE)
 
-    # Clean up ALL old piece files
-    old_files <- list.files(pieces_dir, pattern = ".*piece.*\\.svg$", full.names = TRUE)
-    if (length(old_files) > 0) {
-      file.remove(old_files)
-    }
+      # Determine fill color/value
+      fill_value <- "none"
+      if (input$fill_type == "solid") {
+        fill_value <- input$fill_color
+      } else if (input$fill_type == "gradient") {
+        fill_value <- list(
+          type = "gradient",
+          center = input$piece_gradient_center,
+          middle = input$piece_gradient_middle,
+          edge = input$piece_gradient_edge
+        )
+      } else if (input$fill_type == "noise") {
+        # Note: Noise fill for individual pieces uses same pattern per piece
+        if (noise_available) {
+          fill_value <- noise_fill_spec(
+            noise_type = if (is.null(input$fill_noise_type)) "simplex" else input$fill_noise_type,
+            frequency = if (is.null(input$fill_noise_frequency)) 0.03 else input$fill_noise_frequency,
+            color_low = if (is.null(input$fill_noise_color_low)) "#2d2d44" else input$fill_noise_color_low,
+            color_high = if (is.null(input$fill_noise_color_high)) "#8888aa" else input$fill_noise_color_high,
+            seed = if (is.null(input$fill_noise_seed)) 123 else input$fill_noise_seed
+          )
+        } else {
+          fill_value <- "#a1a1a1"
+        }
+      }
+      # Note: For palette fill, we use per-piece colors below
 
-    # Determine fill color/value
-    fill_value <- "none"
-    if (input$fill_type == "solid") {
-      fill_value <- input$fill_color
-    } else if (input$fill_type == "gradient") {
-      fill_value <- list(
-        type = "gradient",
-        center = input$piece_gradient_center,
-        middle = input$piece_gradient_middle,
-        edge = input$piece_gradient_edge
-      )
-    } else if (input$fill_type == "noise") {
-      # Note: Noise fill for individual pieces uses same pattern per piece
-      if (noise_available) {
-        fill_value <- noise_fill_spec(
-          noise_type = if (is.null(input$fill_noise_type)) "simplex" else input$fill_noise_type,
-          frequency = if (is.null(input$fill_noise_frequency)) 0.03 else input$fill_noise_frequency,
-          color_low = if (is.null(input$fill_noise_color_low)) "#2d2d44" else input$fill_noise_color_low,
-          color_high = if (is.null(input$fill_noise_color_high)) "#8888aa" else input$fill_noise_color_high,
-          seed = if (is.null(input$fill_noise_seed)) 123 else input$fill_noise_seed
+      # Determine background value
+      background_value <- if (input$background_type == "none") {
+        "none"
+      } else if (input$background_type == "solid") {
+        input$background_color
+      } else if (input$background_type == "gradient") {
+        list(
+          type = "gradient",
+          center = input$gradient_center,
+          middle = input$gradient_middle,
+          edge = input$gradient_edge
+        )
+      } else if (input$background_type == "noise" && noise_available) {
+        noise_fill_spec(
+          noise_type = if (is.null(input$bg_noise_type)) "perlin" else input$bg_noise_type,
+          frequency = if (is.null(input$bg_noise_frequency)) 0.02 else input$bg_noise_frequency,
+          color_low = if (is.null(input$bg_noise_color_low)) "#1a1a2e" else input$bg_noise_color_low,
+          color_high = if (is.null(input$bg_noise_color_high)) "#4a4a6e" else input$bg_noise_color_high,
+          seed = if (is.null(input$bg_noise_seed)) 42 else input$bg_noise_seed
         )
       } else {
-        fill_value <- "#a1a1a1"
+        "none"
       }
-    }
-    # Note: For palette fill, we use per-piece colors below
 
-    # Determine background value
-    background_value <- if (input$background_type == "none") {
-      "none"
-    } else if (input$background_type == "solid") {
-      input$background_color
-    } else if (input$background_type == "gradient") {
-      list(
-        type = "gradient",
-        center = input$gradient_center,
-        middle = input$gradient_middle,
-        edge = input$gradient_edge
+      # Handle stroke color based on stroke_color_type
+      stroke_color_type_val <- if (is.null(input$stroke_color_type)) "solid" else input$stroke_color_type
+      stroke_width_val <- input$stroke_width
+      stroke_palette_val <- if (is.null(input$stroke_palette)) "viridis" else input$stroke_palette
+
+      # Generate stroke colors for all pieces
+      n_pieces <- length(pos$pieces)
+      stroke_colors <- if (stroke_color_type_val == "none") {
+        rep("none", n_pieces)
+      } else if (stroke_color_type_val == "solid") {
+        rep(input$stroke_color, n_pieces)
+      } else {
+        # Palette mode
+        get_puzzle_colors(n_pieces, stroke_palette_val, invert = isTRUE(input$stroke_palette_invert))
+      }
+
+      # Generate fill colors for palette mode
+      fill_colors <- NULL
+      if (input$fill_type == "palette") {
+        fill_palette_val <- if (is.null(input$fill_palette)) "magma" else input$fill_palette
+        fill_colors <- get_puzzle_colors(n_pieces, fill_palette_val, invert = isTRUE(input$fill_palette_invert))
+      }
+
+      # Set stroke width to 0 for "none" mode
+      if (stroke_color_type_val == "none") {
+        stroke_width_val <- 0
+      }
+
+      # Generate filename prefix based on type
+      file_prefix <- switch(data$type,
+        "hexagonal" = "hex_piece",
+        "concentric" = "concentric_piece",
+        "voronoi" = "voronoi_piece",
+        "random" = "random_piece",
+        "piece"  # rectangular default
       )
-    } else if (input$background_type == "noise" && noise_available) {
-      noise_fill_spec(
-        noise_type = if (is.null(input$bg_noise_type)) "perlin" else input$bg_noise_type,
-        frequency = if (is.null(input$bg_noise_frequency)) 0.02 else input$bg_noise_frequency,
-        color_low = if (is.null(input$bg_noise_color_low)) "#1a1a2e" else input$bg_noise_color_low,
-        color_high = if (is.null(input$bg_noise_color_high)) "#4a4a6e" else input$bg_noise_color_high,
-        seed = if (is.null(input$bg_noise_seed)) 42 else input$bg_noise_seed
-      )
-    } else {
-      "none"
-    }
 
-    # Handle stroke color based on stroke_color_type
-    stroke_color_type_val <- if (is.null(input$stroke_color_type)) "solid" else input$stroke_color_type
-    stroke_width_val <- input$stroke_width
-    stroke_palette_val <- if (is.null(input$stroke_palette)) "viridis" else input$stroke_palette
-
-    # Generate stroke colors for all pieces
-    n_pieces <- length(pos$pieces)
-    stroke_colors <- if (stroke_color_type_val == "none") {
-      rep("none", n_pieces)
-    } else if (stroke_color_type_val == "solid") {
-      rep(input$stroke_color, n_pieces)
-    } else {
-      # Palette mode
-      get_puzzle_colors(n_pieces, stroke_palette_val, invert = isTRUE(input$stroke_palette_invert))
-    }
-
-    # Generate fill colors for palette mode
-    fill_colors <- NULL
-    if (input$fill_type == "palette") {
-      fill_palette_val <- if (is.null(input$fill_palette)) "magma" else input$fill_palette
-      fill_colors <- get_puzzle_colors(n_pieces, fill_palette_val, invert = isTRUE(input$fill_palette_invert))
-    }
-
-    # Set stroke width to 0 for "none" mode
-    if (stroke_color_type_val == "none") {
-      stroke_width_val <- 0
-    }
-
-    # Generate filename prefix based on type
-    file_prefix <- switch(data$type,
-      "hexagonal" = "hex_piece",
-      "concentric" = "concentric_piece",
-      "voronoi" = "voronoi_piece",
-      "random" = "random_piece",
-      "piece"  # rectangular default
-    )
-
-    # Generate individual piece SVGs using render_single_piece_svg()
-    result <- tryCatch({
+      # Generate individual piece SVGs using render_single_piece_svg()
+      piece_files <- character(0)
       for (i in seq_along(pos$pieces)) {
         piece <- pos$pieces[[i]]
 
@@ -2245,62 +2424,18 @@ server <- function(input, output, session) {
           label_size = if (is.null(input$label_size) || input$label_size == 0) NULL else input$label_size
         )
 
-        # Generate filename
+        # Generate filename and save
         filename <- sprintf("%s_%02d_seed%d.svg", file_prefix, i, data$seed)
         filepath <- file.path(pieces_dir, filename)
-
-        # Write SVG file
         writeLines(piece_svg, filepath)
+        piece_files <- c(piece_files, filepath)
       }
-      TRUE
-    }, error = function(e) {
-      showNotification(
-        paste("Error generating pieces:", e$message),
-        type = "error",
-        duration = 10
-      )
-      return(FALSE)
-    })
 
-    if (!isTRUE(result)) return(NULL)
-
-    # Verify files were created
-    piece_files <- list.files(pieces_dir, pattern = paste0(file_prefix, ".*\\.svg$"), full.names = TRUE)
-
-    if (length(piece_files) > 0) {
-      files_ok <- all(sapply(piece_files, file.size) > 0)
-
-      if (files_ok) {
-        # Create file list for JavaScript sequential download
-        files_list <- lapply(basename(piece_files), function(filename) {
-          list(
-            url = paste0("pieces/", filename),
-            name = filename
-          )
-        })
-
-        session$sendCustomMessage("downloadFiles", files_list)
-
-        showNotification(
-          sprintf("Downloading %d %s piece files...", length(piece_files), data$type),
-          type = "message",
-          duration = 3
-        )
-      } else {
-        showNotification(
-          "Error: Generated files are empty. Please try again.",
-          type = "error",
-          duration = 5
-        )
-      }
-    } else {
-      showNotification(
-        "Error: No piece files were generated. Please try again.",
-        type = "error",
-        duration = 5
-      )
-    }
-  })
+      # Create ZIP file
+      zip::zipr(file, piece_files, mode = "cherry-pick")
+    },
+    contentType = "application/zip"
+  )
 }
 
 # Run the application

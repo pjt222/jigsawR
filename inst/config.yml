@@ -110,6 +110,11 @@ default:
     icon_size: "48px"
     info_padding: "10px"
     default_accordion_open: "settings"
+    # Sub-accordion defaults (Issue #75)
+    # Settings panel: Puzzle Type open by default
+    settings_sub_default_open: ["puzzle_type"]
+    # Styling panel: Piece Shape open by default (most commonly adjusted)
+    styling_sub_default_open: ["piece_shape"]
 
   # Input constraints
   constraints:
