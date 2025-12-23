@@ -2951,6 +2951,139 @@ if (!is.null(max_tab_size) && tab_height > max_tab_size) {
 
 ---
 
+### Insight #52: Nested bslib Accordions for Complex UI Organization (2025-12-23, Issue #75)
+
+**Context**: The Shiny app sidebar had grown to 73 inputs across Settings, Styling, and Download panels. Users had to scroll extensively to find controls, and related options weren't visually grouped.
+
+**Solution**: Nested sub-accordions within existing accordion panels:
+
+```r
+# Parent accordion panel
+accordion_panel(
+  title = "Settings",
+  value = "settings",
+  icon = bsicons::bs_icon("gear"),
+
+  # Nested sub-accordion
+  accordion(
+    id = "settings_sub",
+    class = "accordion-flush",  # Seamless styling
+    open = "puzzle_type",       # Default open panel
+    multiple = TRUE,            # Allow multiple open
+
+    accordion_panel(title = "Puzzle Type", ...),
+    accordion_panel(title = "Puzzle Parameters", ...),
+    accordion_panel(title = "Piece Fusion", ...),
+    accordion_panel(title = "Randomization", ...),
+    accordion_panel(title = "Layout", ...)
+  )
+)
+```
+
+**Key Pattern**: `class = "accordion-flush"` removes borders for seamless nesting within parent accordion panels.
+
+**UI Structure After Refactoring**:
+
+| Panel | Sub-Accordions |
+|-------|---------------|
+| Settings | Puzzle Type, Puzzle Parameters, Piece Fusion, Randomization, Layout |
+| Styling | Piece Shape, Piece Separation, Piece Fill, Internal Edges, Stroke & Outline, Labels, Background |
+| Download | (no sub-accordions - simple button list) |
+
+**Additional UX Improvements**:
+1. **Generate/Reset buttons moved above accordion** - Always visible without scrolling
+2. **Individual pieces download changed to ZIP** - Single download instead of multiple browser dialogs
+
+**Files Changed**:
+- `inst/shiny-app/app.R`: Major UI restructuring
+- `inst/config.yml`: Added `settings_sub_default_open` and `styling_sub_default_open` config options
+
+---
+
+### Insight #53: Slider + Numeric Input Bidirectional Sync Pattern (2025-12-23, Issue #75)
+
+**Context**: Sliders are great for quick adjustments but imprecise for exact values. Users wanted to type specific values while retaining slider functionality.
+
+**Solution**: Create paired slider + numeric input with bidirectional sync (pattern from spiralizer app).
+
+**UI Helper Function**:
+```r
+slider_with_numeric <- function(id, label, min, max, value, step = 1,
+                                 post = NULL, ticks = TRUE, width = "80px") {
+  tagList(
+    if (!is.null(label)) {
+      tags$label(label, class = "form-label mb-1", `for` = id)
+    },
+    div(
+      class = "d-flex align-items-center gap-2",
+      div(
+        class = "flex-grow-1",
+        sliderInput(inputId = id, label = NULL, min = min, max = max,
+                   value = value, step = step, ticks = ticks, post = post,
+                   sep = "", width = "100%")
+      ),
+      # Numeric input with optional unit suffix
+      if (!is.null(post) && nchar(trimws(post)) > 0) {
+        div(
+          class = "d-flex align-items-center",
+          numericInput(inputId = paste0(id, "_num"), label = NULL,
+                      value = value, min = min, max = max, step = step,
+                      width = width),
+          tags$span(class = "ms-1 text-muted small", trimws(post))
+        )
+      } else {
+        numericInput(inputId = paste0(id, "_num"), label = NULL,
+                    value = value, min = min, max = max, step = step,
+                    width = width)
+      }
+    )
+  )
+}
+```
+
+**Server Sync Logic**:
+```r
+sync_slider_numeric <- function(slider_id, numeric_id) {
+  # Slider → Numeric
+  observeEvent(input[[slider_id]], {
+    slider_val <- input[[slider_id]]
+    numeric_val <- input[[numeric_id]]
+    if (!is.null(slider_val) &&
+        (is.null(numeric_val) || is.na(numeric_val) || slider_val != numeric_val)) {
+      updateNumericInput(session, numeric_id, value = slider_val)
+    }
+  }, ignoreInit = TRUE)
+
+  # Numeric → Slider
+  observeEvent(input[[numeric_id]], {
+    numeric_val <- input[[numeric_id]]
+    slider_val <- input[[slider_id]]
+    if (!is.null(numeric_val) && !is.na(numeric_val) &&
+        (is.null(slider_val) || numeric_val != slider_val)) {
+      updateSliderInput(session, slider_id, value = numeric_val)
+    }
+  }, ignoreInit = TRUE)
+}
+
+# Set up sync for each pair
+sync_slider_numeric("tabsize", "tabsize_num")
+sync_slider_numeric("jitter", "jitter_num")
+# ... etc for all 10 sliders
+```
+
+**Key Anti-Pattern**: Avoid infinite loops by checking if values differ before updating.
+
+**Sliders Enhanced**:
+- `n_corner`, `tabsize`, `jitter`, `offset` (Settings/Styling)
+- `fill_noise_frequency`, `fusion_opacity` (Fill/Fusion)
+- `stroke_width`, `opacity`, `label_size` (Stroke/Labels)
+- `bg_noise_frequency` (Background)
+
+**Files Changed**:
+- `inst/shiny-app/app.R`: Added helper function, replaced 10 sliders, added sync observers
+
+---
+
 ## Development History
 
 ### Completed Work (Archive)
