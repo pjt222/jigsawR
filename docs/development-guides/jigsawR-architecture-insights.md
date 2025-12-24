@@ -3084,6 +3084,118 @@ sync_slider_numeric("jitter", "jitter_num")
 
 ---
 
+### Insight #54: Inline SVG Embedding for Quarto Documentation (2025-12-24, Issue #79)
+
+**Context**: The jigsawR documentation needed to show both ggplot2 (ggpuzzle) and API outputs side-by-side in tabsets. The API generates SVG content that needed to render properly in Quarto HTML output.
+
+**Problem**: Initial attempts to render API puzzle output produced:
+1. PNG temp file paths appearing in rendered HTML
+2. Blank images when using `knitr::asis_output()`
+3. Quarto warnings about unclosed divs
+
+**Solution**: Create a helper function that embeds SVG directly using `htmltools::browsable(htmltools::HTML())`:
+
+```r
+# quarto/_setup.R
+render_puzzle_preview <- function(result, width = "100%", max_width = "400px", ...) {
+  svg_content <- result$svg_content
+
+  # Wrap in centered div with size constraints
+  html_output <- sprintf(
+    '<div style="text-align: center; margin: 1em 0;"><div style="display: inline-block; width: %s; max-width: %s;">%s</div></div>',
+    width, max_width, svg_content
+  )
+
+  # Use htmltools for proper HTML handling in Quarto
+  if (requireNamespace("htmltools", quietly = TRUE)) {
+    htmltools::browsable(htmltools::HTML(html_output))
+  } else {
+    knitr::asis_output(html_output)
+  }
+}
+```
+
+**Key Design Decisions**:
+1. **Inline SVG over PNG**: SVG provides infinite scalability and smaller file sizes
+2. **Single-line HTML**: Compacting HTML to one line avoids Quarto's unclosed div warnings
+3. **htmltools priority**: `htmltools::browsable()` properly signals to knitr that this is HTML output
+4. **Fallback support**: `knitr::asis_output()` works when htmltools unavailable
+5. **Silent unused args**: `...` captures ignored arguments (like `title`) for API compatibility
+
+**Why Not PNG?**:
+- Requires `rsvg` or `magick` package
+- Temp file paths can appear in output
+- Larger file sizes
+- Loss of quality when scaled
+
+**Files Changed**:
+- `quarto/_setup.R`: Added `render_puzzle_preview()` helper function
+
+---
+
+### Insight #55: Documentation Tabset Audit Pattern (2025-12-24, Issue #79)
+
+**Context**: After adding API/ggpuzzle tabsets to documentation, a comprehensive audit revealed significant gaps in coverage and consistency.
+
+**Audit Methodology**: Spawned parallel subagents to examine:
+1. Getting-started.qmd - introduction examples
+2. Gallery files (5 files) - visual examples by puzzle type
+3. Tutorial files (3 files) - step-by-step guides
+4. Rendered HTML output - actual visible results
+
+**Issues Discovered**:
+
+| Issue Type | Count | Impact |
+|------------|-------|--------|
+| Gallery files missing API tabs entirely | 2 | concentric.qmd, voronoi.qmd |
+| Gallery files with partial API coverage | 1 | hexagonal.qmd (1/7 sections) |
+| API chunks with `eval: false` | 6 | fusion-groups.qmd - code shows, no output |
+| `cat()` remnants | 3 | Violates cli package guidelines |
+| Silent argument ignoring | 40+ | `title` passed but never rendered |
+
+**Key Observations**:
+
+1. **Subagent code quality varies**: One subagent introduced a non-existent function (`geom_puzzle_pieces()`), requiring git restoration
+2. **Loop + patchwork issues**: API examples can't use patchwork `+` operator like ggplot2; must use `layout-ncol` with for loops
+3. **Intentional omissions**: `customization.qmd` focuses on ggplot2 features - API tabs may not be appropriate
+
+**Coverage Summary**:
+- Gallery: 48% (12/25 sections with API tabs)
+- Tutorials: 21% (5/24 sections with API tabs)
+- Overall: ~35% (18/52 sections)
+
+**Lessons Learned**:
+
+1. **Explicit parallel requirements**: When adding parallel examples (API vs ggpuzzle), explicitly track which files/sections need both
+2. **Subagent verification**: Always verify subagent-generated code compiles before committing
+3. **Intentional gaps**: Document when API examples are intentionally omitted (e.g., ggplot2-specific features)
+4. **Examination reports**: Create comprehensive audits before attempting fixes to understand full scope
+
+**Documentation Pattern**:
+```markdown
+::: {.panel-tabset}
+
+## ggpuzzle
+```{r}
+#| label: fig-example-ggpuzzle
+ggplot() + geom_puzzle_*(...) + ...
+```
+
+## API
+```{r}
+#| label: fig-example-api
+result <- generate_puzzle(...)
+render_puzzle_preview(result)
+```
+
+:::
+```
+
+**Files Created**:
+- `CONTINUE_HERE.md`: Comprehensive examination report at project root
+
+---
+
 ## Development History
 
 ### Completed Work (Archive)
