@@ -62,8 +62,11 @@ result <- generate_puzzle(
 )
 
 # Check the result
-cat("Generated", length(result$pieces), "pieces\n")
-cat("Canvas size:", result$canvas_size[1], "x", result$canvas_size[2], "mm\n")
+n_pieces <- length(result$pieces)
+canvas_w <- result$canvas_size[1]
+canvas_h <- result$canvas_size[2]
+cli::cli_alert_info("Generated {n_pieces} pieces")
+cli::cli_alert_info("Canvas size: {canvas_w} x {canvas_h} mm")
 ```
 
 **Render the SVG:**

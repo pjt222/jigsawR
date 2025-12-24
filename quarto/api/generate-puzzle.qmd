@@ -144,7 +144,8 @@ rect <- generate_puzzle(
   size = c(400, 300),
   seed = 42
 )
-cat("Generated", length(rect$pieces), "pieces\n")
+n_pieces <- length(rect$pieces)
+cli::cli_alert_info("Generated {n_pieces} pieces")
 ```
 
 ### Hexagonal Puzzle
@@ -159,7 +160,8 @@ hex <- generate_puzzle(
   do_warp = TRUE,
   do_trunc = TRUE
 )
-cat("Generated", length(hex$pieces), "hexagonal pieces\n")
+n_hex_pieces <- length(hex$pieces)
+cli::cli_alert_info("Generated {n_hex_pieces} hexagonal pieces")
 ```
 
 ### With Fusion Groups
@@ -202,7 +204,8 @@ result <- generate_puzzle(
   save_files = TRUE,
   output_dir = "puzzles"
 )
-cat("Saved to:", result$files$svg, "\n")
+file_path <- result$files$svg
+cli::cli_alert_success("Saved to: {.file {file_path}}")
 ```
 
 ## Visualization

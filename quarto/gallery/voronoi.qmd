@@ -17,8 +17,12 @@ Voronoi puzzles create organic, natural-looking pieces based on Voronoi tessella
 
 ## Cell Count Variations
 
+::: {.panel-tabset}
+
+## ggpuzzle
+
 ```{r}
-#| label: fig-vor-cell-counts
+#| label: fig-vor-cell-counts-ggpuzzle
 #| fig-align: center
 make_vor_cells <- function(n) {
   ggplot() +
@@ -35,6 +39,29 @@ make_vor_cells <- function(n) {
 
 print(make_vor_cells(10) + make_vor_cells(25) + make_vor_cells(50))
 ```
+
+## API
+
+```{r}
+#| label: fig-vor-cell-counts-api
+#| layout-ncol: 3
+#| fig-cap:
+#|   - "10 cells"
+#|   - "25 cells"
+#|   - "50 cells"
+
+for (n in c(10, 25, 50)) {
+  result <- generate_puzzle(
+    type = "voronoi",
+    grid = c(n),
+    size = c(200, 200),
+    seed = 42
+  )
+  render_puzzle_preview(result)
+}
+```
+
+:::
 
 ::: {.callout-tip}
 ## Aspect Ratios
@@ -66,8 +93,12 @@ print((make_vor_palette("viridis") + make_vor_palette("magma") + make_vor_palett
 
 ## Offset (Separation)
 
+::: {.panel-tabset}
+
+## ggpuzzle
+
 ```{r}
-#| label: fig-vor-offset
+#| label: fig-vor-offset-ggpuzzle
 #| fig-align: center
 
 make_vor_offset <- function(off) {
@@ -86,12 +117,41 @@ make_vor_offset <- function(off) {
 print(make_vor_offset(0) + make_vor_offset(5) + make_vor_offset(10) + make_vor_offset(20))
 ```
 
+## API
+
+```{r}
+#| label: fig-vor-offset-api
+#| layout-ncol: 4
+#| fig-cap:
+#|   - "offset = 0"
+#|   - "offset = 5"
+#|   - "offset = 10"
+#|   - "offset = 20"
+
+for (off in c(0, 5, 10, 20)) {
+  result <- generate_puzzle(
+    type = "voronoi",
+    grid = c(20),
+    size = c(200, 200),
+    seed = 42,
+    offset = off
+  )
+  render_puzzle_preview(result)
+}
+```
+
+:::
+
 ## Seed Variations
 
 Different seeds create completely different tessellations:
 
+::: {.panel-tabset}
+
+## ggpuzzle
+
 ```{r}
-#| label: fig-vor-seeds
+#| label: fig-vor-seeds-ggpuzzle
 #| fig-align: center
 
 make_vor_seed <- function(s) {
@@ -110,10 +170,38 @@ make_vor_seed <- function(s) {
 print(make_vor_seed(1) + make_vor_seed(42) + make_vor_seed(123) + make_vor_seed(999))
 ```
 
-## Large Voronoi Puzzle
+## API
 
 ```{r}
-#| label: fig-vor-large
+#| label: fig-vor-seeds-api
+#| layout-ncol: 4
+#| fig-cap:
+#|   - "seed = 1"
+#|   - "seed = 42"
+#|   - "seed = 123"
+#|   - "seed = 999"
+
+for (s in c(1, 42, 123, 999)) {
+  result <- generate_puzzle(
+    type = "voronoi",
+    grid = c(15),
+    size = c(200, 200),
+    seed = s
+  )
+  render_puzzle_preview(result)
+}
+```
+
+:::
+
+## Large Voronoi Puzzle
+
+::: {.panel-tabset}
+
+## ggpuzzle
+
+```{r}
+#| label: fig-vor-large-ggpuzzle
 #| fig-align: center
 #| fig-width: 10
 #| fig-height: 6
@@ -129,6 +217,23 @@ ggplot() +
   theme_puzzle() +
   labs(title = "80-Cell Voronoi Puzzle")
 ```
+
+## API
+
+```{r}
+#| label: fig-vor-large-api
+#| fig-align: center
+
+result <- generate_puzzle(
+  type = "voronoi",
+  grid = c(80),
+  size = c(400, 300),
+  seed = 789
+)
+render_puzzle_preview(result, max_width = "600px")
+```
+
+:::
 
 ## Parameters Reference
 

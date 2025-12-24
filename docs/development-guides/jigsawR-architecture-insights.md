@@ -3196,6 +3196,70 @@ render_puzzle_preview(result)
 
 ---
 
+### Insight #56: Quarto Documentation API Tab Coverage Fix (2025-12-24)
+
+**Context**: Following the audit in Insight #55, systematic fixes were applied to address the ~35% API tab coverage gap across Quarto documentation.
+
+**Work Completed**:
+
+| Task | Files | Changes |
+|------|-------|---------|
+| Remove `eval: false` blocking | fusion-groups.qmd | 15 chunks unblocked |
+| Add API tabs to concentric gallery | concentric.qmd | 4 sections (Ring Variations, Center Shape, Offset, Large Puzzle) |
+| Add API tabs to voronoi gallery | voronoi.qmd | 4 sections (Cell Count, Offset, Seed Variations, Large Puzzle) |
+| Add API tabs to hexagonal gallery | hexagonal.qmd | 4 sections (Warp/Trunc, Offset, Fusion Groups, Large Puzzles) |
+| Replace `cat()` with cli package | 4 files | 7 instances converted |
+
+**Key Technical Details**:
+
+1. **API Tab Pattern for Loop Rendering**:
+   ```r
+   #| layout-ncol: 3
+   #| fig-cap:
+   #|   - "Caption 1"
+   #|   - "Caption 2"
+   #|   - "Caption 3"
+
+   for (param in c(val1, val2, val3)) {
+     result <- generate_puzzle(type = "...", ...)
+     render_puzzle_preview(result)
+   }
+   ```
+   Unlike ggpuzzle which uses patchwork's `+` operator, API examples must use Quarto's `layout-ncol` with for loops.
+
+2. **cli Package Glue Syntax**:
+   ```r
+   # Extract values first, then use in cli call
+   n_pieces <- length(result$pieces)
+   cli::cli_alert_info("Generated {n_pieces} pieces")
+   ```
+   Per project guidelines: never nest function calls in cli markup.
+
+3. **Grid Parameter Order Verification**:
+   The audit report incorrectly claimed `grid = c(cols, rows)`. Actual API is `grid = c(rows, cols)`:
+   - Documentation: `@param grid For rectangular: c(rows, columns)`
+   - Code: `yn <- grid[1] # rows`, `xn <- grid[2] # columns`
+   - Mapping: `rows = 4, cols = 3` → `grid = c(4, 3)` (ggpuzzle → API)
+
+4. **Intentional `eval: false` Sections**:
+   "Code Example" sections at file bottoms remain `eval: false` - they show complete usage patterns including `library()` and `writeLines()` that shouldn't execute during render.
+
+**Coverage After Fix**:
+- Gallery: ~75% (up from 48%)
+- Tutorials: ~40% (up from 21%)
+- Overall: ~60% (up from 35%)
+
+**Files Changed**:
+- `quarto/tutorials/fusion-groups.qmd`
+- `quarto/gallery/concentric.qmd`
+- `quarto/gallery/voronoi.qmd`
+- `quarto/gallery/hexagonal.qmd`
+- `quarto/getting-started.qmd`
+- `quarto/tutorials/basic-usage.qmd`
+- `quarto/api/generate-puzzle.qmd`
+
+---
+
 ## Development History
 
 ### Completed Work (Archive)

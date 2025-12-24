@@ -80,7 +80,6 @@ render_puzzle_preview(result)
 ```{r}
 #| label: with-fusion-ggpuzzle
 #| fig-align: center
-#| eval: false
 ggplot() +
   geom_puzzle_rect(
     aes(fill = after_stat(group_id)),
@@ -103,7 +102,6 @@ ggplot() +
 ```{r}
 #| label: with-fusion-api
 #| fig-align: center
-#| eval: false
 result <- generate_puzzle(
   type = "rectangular",
   seed = 42,
@@ -177,7 +175,6 @@ ggplot() +
 ```{r}
 #| label: fusion-pairs-ggpuzzle
 #| fig-align: center
-#| eval: false
 ggplot() +
   geom_puzzle_rect(
     aes(fill = after_stat(group_id)),
@@ -197,7 +194,6 @@ ggplot() +
 ```{r}
 #| label: fusion-pairs-api
 #| fig-align: center
-#| eval: false
 result <- generate_puzzle(
   type = "rectangular",
   seed = 42,
@@ -219,7 +215,6 @@ render_puzzle_preview(result)
 ```{r}
 #| label: fusion-rows-ggpuzzle
 #| fig-align: center
-#| eval: false
 ggplot() +
   geom_puzzle_rect(
     aes(fill = after_stat(group_id)),
@@ -239,7 +234,6 @@ ggplot() +
 ```{r}
 #| label: fusion-rows-api
 #| fig-align: center
-#| eval: false
 result <- generate_puzzle(
   type = "rectangular",
   seed = 42,
@@ -261,7 +255,6 @@ render_puzzle_preview(result)
 ```{r}
 #| label: fusion-row-keywords-ggpuzzle
 #| fig-align: center
-#| eval: false
 # R1, R2, R3 keywords for rows
 ggplot() +
   geom_puzzle_rect(
@@ -282,7 +275,6 @@ ggplot() +
 ```{r}
 #| label: fusion-row-keywords-api
 #| fig-align: center
-#| eval: false
 result <- generate_puzzle(
   type = "rectangular",
   seed = 42,
@@ -308,7 +300,6 @@ Special keywords for hexagonal puzzles:
 ```{r}
 #| label: hex-center-ring1-ggpuzzle
 #| fig-align: center
-#| eval: false
 ggplot() +
   geom_puzzle_hex(
     aes(fill = after_stat(group_id)),
@@ -326,7 +317,6 @@ ggplot() +
 ```{r}
 #| label: hex-center-ring1-api
 #| fig-align: center
-#| eval: false
 result <- generate_puzzle(
   type = "hexagonal",
   seed = 42,
@@ -344,7 +334,6 @@ render_puzzle_preview(result)
 ```{r}
 #| label: hex-ring2
 #| fig-align: center
-#| eval: false
 ggplot() +
   geom_puzzle_hex(
     aes(fill = after_stat(group_id)),
@@ -362,7 +351,6 @@ ggplot() +
 ```{r}
 #| label: hex-multi-ring
 #| fig-align: center
-#| eval: false
 ggplot() +
   geom_puzzle_hex(
     aes(fill = after_stat(group_id)),
@@ -404,7 +392,6 @@ You can mix numeric IDs, ranges, and keywords:
 ```{r}
 #| label: mixed-notation
 #| fig-align: center
-#| eval: false
 # Mix of IDs and ranges
 ggplot() +
   geom_puzzle_rect(
@@ -467,7 +454,6 @@ print(notation)
 ```{r}
 #| label: highlight-region-ggpuzzle
 #| fig-align: center
-#| eval: false
 # Fuse center area to highlight it
 ggplot() +
   geom_puzzle_rect(
@@ -488,7 +474,6 @@ ggplot() +
 ```{r}
 #| label: highlight-region-api
 #| fig-align: center
-#| eval: false
 result <- generate_puzzle(
   type = "rectangular",
   seed = 42,

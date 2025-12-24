@@ -17,8 +17,12 @@ Concentric puzzles feature rings of pieces that radiate outward from a central s
 
 ## Ring Variations
 
+::: {.panel-tabset}
+
+## ggpuzzle
+
 ```{r}
-#| label: fig-conc-rings
+#| label: fig-conc-rings-ggpuzzle
 #| fig-align: center
 make_conc_rings <- function(r) {
   ggplot() +
@@ -36,12 +40,39 @@ make_conc_rings <- function(r) {
 print(make_conc_rings(2) + make_conc_rings(3) + make_conc_rings(4))
 ```
 
+## API
+
+```{r}
+#| label: fig-conc-rings-api
+#| layout-ncol: 3
+#| fig-cap:
+#|   - "2 rings"
+#|   - "3 rings"
+#|   - "4 rings"
+
+for (r in c(2, 3, 4)) {
+  result <- generate_puzzle(
+    type = "concentric",
+    grid = c(r),
+    size = c(200),
+    seed = 42
+  )
+  render_puzzle_preview(result)
+}
+```
+
+:::
+
 ## Center Shape Options
 
 The center piece can be either a hexagon or a circle:
 
+::: {.panel-tabset}
+
+## ggpuzzle
+
 ```{r}
-#| label: fig-conc-center-shape
+#| label: fig-conc-center-shape-ggpuzzle
 #| layout-ncol: 2
 #| fig-cap:
 #|   - "Hexagon center"
@@ -73,6 +104,38 @@ print(ggplot() +
   theme_puzzle() +
   labs(title = "Circle center"))
 ```
+
+## API
+
+```{r}
+#| label: fig-conc-center-shape-api
+#| layout-ncol: 2
+#| fig-cap:
+#|   - "Hexagon center"
+#|   - "Circle center"
+
+# Hexagon center (default)
+result_hex <- generate_puzzle(
+  type = "concentric",
+  grid = c(3),
+  size = c(200),
+  seed = 42,
+  center_shape = "hexagon"
+)
+render_puzzle_preview(result_hex)
+
+# Circle center
+result_circle <- generate_puzzle(
+  type = "concentric",
+  grid = c(3),
+  size = c(200),
+  seed = 42,
+  center_shape = "circle"
+)
+render_puzzle_preview(result_circle)
+```
+
+:::
 
 ## Fill by Ring vs Piece ID
 
@@ -132,8 +195,12 @@ print((make_conc_palette("viridis") + make_conc_palette("magma") + make_conc_pal
 
 ## Offset (Separation)
 
+::: {.panel-tabset}
+
+## ggpuzzle
+
 ```{r}
-#| label: fig-conc-offset
+#| label: fig-conc-offset-ggpuzzle
 #| fig-align: center
 
 make_conc_offset <- function(off) {
@@ -152,10 +219,39 @@ make_conc_offset <- function(off) {
 print(make_conc_offset(0) + make_conc_offset(5) + make_conc_offset(10) + make_conc_offset(15))
 ```
 
-## Large Concentric Puzzle
+## API
 
 ```{r}
-#| label: fig-conc-large
+#| label: fig-conc-offset-api
+#| layout-ncol: 4
+#| fig-cap:
+#|   - "offset = 0"
+#|   - "offset = 5"
+#|   - "offset = 10"
+#|   - "offset = 15"
+
+for (off in c(0, 5, 10, 15)) {
+  result <- generate_puzzle(
+    type = "concentric",
+    grid = c(3),
+    size = c(200),
+    seed = 42,
+    offset = off
+  )
+  render_puzzle_preview(result)
+}
+```
+
+:::
+
+## Large Concentric Puzzle
+
+::: {.panel-tabset}
+
+## ggpuzzle
+
+```{r}
+#| label: fig-conc-large-ggpuzzle
 #| fig-align: center
 #| fig-width: 8
 #| fig-height: 8
@@ -179,6 +275,24 @@ ggplot() +
   ) +
   labs(title = "5-Ring Concentric Puzzle")
 ```
+
+## API
+
+```{r}
+#| label: fig-conc-large-api
+#| fig-align: center
+
+result <- generate_puzzle(
+  type = "concentric",
+  grid = c(5),
+  size = c(300),
+  seed = 456,
+  center_shape = "hexagon"
+)
+render_puzzle_preview(result, max_width = "500px")
+```
+
+:::
 
 ## Parameters Reference
 

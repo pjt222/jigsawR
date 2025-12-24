@@ -48,8 +48,11 @@ result <- generate_puzzle(
 )
 
 # What did we get?
-cat("Number of pieces:", length(result$pieces), "\n")
-cat("Canvas size:", result$canvas_size[1], "x", result$canvas_size[2], "mm\n")
+n_pieces <- length(result$pieces)
+canvas_w <- result$canvas_size[1]
+canvas_h <- result$canvas_size[2]
+cli::cli_alert_info("Number of pieces: {n_pieces}")
+cli::cli_alert_info("Canvas size: {canvas_w} x {canvas_h} mm")
 
 # Visualize
 render_puzzle_preview(result)
