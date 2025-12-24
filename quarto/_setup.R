@@ -62,25 +62,25 @@ knitr::opts_chunk$set(
   dpi = 150
 )
 
-# Helper function to render API puzzle result as image
-# Uses rsvg to convert SVG to PNG for display in Quarto
-render_puzzle_preview <- function(result, width = 400, ...) {
-  # Note: ... captures unused arguments like 'title' for compatibility
-  if (!requireNamespace("rsvg", quietly = TRUE)) {
-    message("Package 'rsvg' not available. Install with: install.packages('rsvg')")
-    return(invisible(NULL))
-  }
+# Helper function to render API puzzle result as inline SVG
+# Embeds SVG directly in HTML for best quality
+render_puzzle_preview <- function(result, width = "100%", max_width = "400px", ...) {
+  # Note: ... captures unused arguments for compatibility
 
-  # Create temp file for PNG
-  tmp_png <- tempfile(fileext = ".png")
+  # Get the SVG content
 
-  # Convert SVG to PNG
-  rsvg::rsvg_png(
-    svg = charToRaw(result$svg_content),
-    file = tmp_png,
-    width = width
+  svg_content <- result$svg_content
+
+  # Wrap in a centered div with size constraints
+  html_output <- sprintf(
+    '<div style="text-align: center; margin: 1em 0;">
+<div style="display: inline-block; width: %s; max-width: %s;">
+%s
+</div>
+</div>',
+    width, max_width, svg_content
   )
 
-  # Display using knitr
-  knitr::include_graphics(tmp_png)
+  # Output as raw HTML
+  knitr::asis_output(html_output)
 }
