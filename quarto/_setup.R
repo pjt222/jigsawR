@@ -68,19 +68,18 @@ render_puzzle_preview <- function(result, width = "100%", max_width = "400px", .
   # Note: ... captures unused arguments for compatibility
 
   # Get the SVG content
-
   svg_content <- result$svg_content
 
   # Wrap in a centered div with size constraints
   html_output <- sprintf(
-    '<div style="text-align: center; margin: 1em 0;">
-<div style="display: inline-block; width: %s; max-width: %s;">
-%s
-</div>
-</div>',
+    '<div style="text-align: center; margin: 1em 0;"><div style="display: inline-block; width: %s; max-width: %s;">%s</div></div>',
     width, max_width, svg_content
   )
 
-  # Output as raw HTML
-  knitr::asis_output(html_output)
+  # Use htmltools for proper HTML handling in Quarto
+  if (requireNamespace("htmltools", quietly = TRUE)) {
+    htmltools::browsable(htmltools::HTML(html_output))
+  } else {
+    knitr::asis_output(html_output)
+  }
 }
