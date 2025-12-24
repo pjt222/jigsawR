@@ -134,19 +134,26 @@ print((make_palette_plot("viridis") + make_palette_plot("magma") + make_palette_
 
 ```{r}
 #| label: fig-rect-palettes-api
-#| fig-align: center
-make_palette_plot_api <- function(pal) {
+#| layout-ncol: 3
+#| fig-cap:
+#|   - "viridis"
+#|   - "magma"
+#|   - "plasma"
+#|   - "inferno"
+#|   - "cividis"
+#|   - "turbo"
+# API generates SVG without built-in palette coloring
+# Use ggpuzzle for palette visualization
+for (pal in c("viridis", "magma", "plasma", "inferno", "cividis", "turbo")) {
   result <- generate_puzzle(
     type = "rectangular",
     grid = c(4, 3),
     size = c(400, 300),
-    seed = 42
+    seed = 42,
+    palette = pal
   )
-  render_puzzle_preview(result, title = pal, palette = pal)
+  print(render_puzzle_preview(result))
 }
-
-print((make_palette_plot_api("viridis") + make_palette_plot_api("magma") + make_palette_plot_api("plasma")) /
-(make_palette_plot_api("inferno") + make_palette_plot_api("cividis") + make_palette_plot_api("turbo")))
 ```
 
 :::
@@ -184,9 +191,13 @@ print(make_offset_plot(0) + make_offset_plot(5) + make_offset_plot(10) + make_of
 
 ```{r}
 #| label: fig-rect-offset-api
-#| fig-align: center
-
-make_offset_plot_api <- function(off) {
+#| layout-ncol: 4
+#| fig-cap:
+#|   - "offset = 0"
+#|   - "offset = 5"
+#|   - "offset = 10"
+#|   - "offset = 20"
+for (off in c(0, 5, 10, 20)) {
   result <- generate_puzzle(
     type = "rectangular",
     grid = c(3, 3),
@@ -194,10 +205,8 @@ make_offset_plot_api <- function(off) {
     offset = off,
     seed = 42
   )
-  render_puzzle_preview(result, title = paste0("offset = ", off))
+  print(render_puzzle_preview(result))
 }
-
-print(make_offset_plot_api(0) + make_offset_plot_api(5) + make_offset_plot_api(10) + make_offset_plot_api(20))
 ```
 
 :::

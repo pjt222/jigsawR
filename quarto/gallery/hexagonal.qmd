@@ -84,7 +84,7 @@ result_2 <- generate_puzzle(
   do_warp = TRUE,
   do_trunc = TRUE
 )
-print(render_puzzle_preview(result_2) + labs(title = "2 rings"))
+render_puzzle_preview(result_2)  # 2 rings
 
 # 3 rings
 result_3 <- generate_puzzle(
@@ -95,7 +95,7 @@ result_3 <- generate_puzzle(
   do_warp = TRUE,
   do_trunc = TRUE
 )
-print(render_puzzle_preview(result_3) + labs(title = "3 rings"))
+render_puzzle_preview(result_3)  # 3 rings
 
 # 4 rings
 result_4 <- generate_puzzle(
@@ -106,7 +106,7 @@ result_4 <- generate_puzzle(
   do_warp = TRUE,
   do_trunc = TRUE
 )
-print(render_puzzle_preview(result_4) + labs(title = "4 rings"))
+render_puzzle_preview(result_4)  # 4 rings
 ```
 
 :::
