@@ -206,8 +206,12 @@ When using ggplot2 with concentric puzzles, you can map these variables:
 
 ## Code Example
 
+::: {.panel-tabset}
+
+## API
+
 ```{r}
-#| label: demo-conc-code
+#| label: demo-conc-api
 #| eval: false
 library(jigsawR)
 
@@ -224,16 +228,33 @@ result <- generate_puzzle(
 # Save SVG
 writeLines(result$svg_content, "concentric_puzzle.svg")
 
-# Visualize with ggplot2
+# Preview the puzzle
+render_puzzle_preview(result)
+```
+
+## ggpuzzle
+
+```{r}
+#| label: demo-conc-ggpuzzle
+#| eval: false
+library(jigsawR)
 library(ggplot2)
+
+# Visualize with ggplot2
 ggplot() +
   geom_puzzle_conc(
     aes(fill = after_stat(ring)),
     rings = 4,
+    diameter = 280,
     center_shape = "hexagon",
-    seed = 42, offset = 5
+    seed = 42,
+    offset = 5
   ) +
-  scale_fill_viridis_c(option = "plasma") +
+  scale_fill_viridis_c(option = "plasma", name = "Ring") +
   coord_fixed() +
-  theme_puzzle()
+  theme_puzzle() +
+  labs(title = "4-Ring Concentric Puzzle")
 ```
+
+:::
+

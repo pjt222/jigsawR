@@ -29,10 +29,16 @@ library(jigsawR)
 
 ## Step 2: Your First Puzzle
 
-Let's create a simple rectangular puzzle:
+Let's create a simple rectangular puzzle. Choose your approach:
+
+::: {.panel-tabset}
+
+## API
+
+The API approach gives you full control and access to the SVG data:
 
 ```{r}
-#| label: first-puzzle
+#| label: first-puzzle-api
 # Generate a 4x3 rectangular puzzle
 result <- generate_puzzle(
   type = "rectangular",
@@ -44,12 +50,21 @@ result <- generate_puzzle(
 # What did we get?
 cat("Number of pieces:", length(result$pieces), "\n")
 cat("Canvas size:", result$canvas_size[1], "x", result$canvas_size[2], "mm\n")
+
+# Visualize
+render_puzzle_preview(result)
 ```
 
-## Step 3: Visualize with ggplot2
+::: {.callout-tip}
+The API returns a list with `$svg_content`, `$pieces`, `$canvas_size`, and `$files`.
+:::
+
+## ggpuzzle
+
+The ggpuzzle approach integrates with ggplot2 for quick visualization:
 
 ```{r}
-#| label: visualize-ggplot2
+#| label: first-puzzle-ggpuzzle
 #| fig-align: center
 library(ggplot2)
 library(viridis)
@@ -67,14 +82,30 @@ ggplot() +
   labs(title = "My First Puzzle")
 ```
 
-## Step 4: Save Your Puzzle
+::: {.callout-tip}
+`geom_puzzle_rect()` computes piece geometry and provides `piece_id`, `row`, `col` for mapping.
+:::
+
+:::
+
+## Step 3: Save Your Puzzle
+
+::: {.panel-tabset}
+
+## API
 
 ```{r}
-#| label: save-puzzle
+#| label: save-puzzle-api
 #| eval: false
-# Save as SVG
+# Save as SVG (from API result)
 writeLines(result$svg_content, "my_puzzle.svg")
+```
 
+## ggpuzzle
+
+```{r}
+#| label: save-puzzle-ggpuzzle
+#| eval: false
 # Save ggplot as PNG
 p <- ggplot() +
   geom_puzzle_rect(
@@ -89,12 +120,36 @@ p <- ggplot() +
 ggsave("my_puzzle.png", p, width = 8, height = 6, dpi = 300)
 ```
 
-## Step 5: Try Different Puzzle Types
+:::
+
+::: {.callout-note}
+API generates SVG files, while ggpuzzle uses ggplot2's `ggsave()` for PNG/PDF export.
+:::
+
+## Step 4: Try Different Puzzle Types
 
 ### Hexagonal
 
+::: {.panel-tabset}
+
+## API
+
 ```{r}
-#| label: type-hexagonal
+#| label: type-hexagonal-api
+hex_result <- generate_puzzle(
+  type = "hexagonal",
+  grid = c(3),      # 3 rings
+  size = c(200),    # 200mm diameter
+  seed = 42
+)
+
+render_puzzle_preview(hex_result)
+```
+
+## ggpuzzle
+
+```{r}
+#| label: type-hexagonal-ggpuzzle
 #| fig-align: center
 ggplot() +
   geom_puzzle_hex(
@@ -108,10 +163,30 @@ ggplot() +
   labs(title = "Hexagonal Puzzle")
 ```
 
+:::
+
 ### Concentric
 
+::: {.panel-tabset}
+
+## API
+
 ```{r}
-#| label: type-concentric
+#| label: type-concentric-api
+conc_result <- generate_puzzle(
+  type = "concentric",
+  grid = c(3),      # 3 rings
+  size = c(200),    # 200mm diameter
+  seed = 42
+)
+
+render_puzzle_preview(conc_result)
+```
+
+## ggpuzzle
+
+```{r}
+#| label: type-concentric-ggpuzzle
 #| fig-align: center
 ggplot() +
   geom_puzzle_conc(
@@ -125,10 +200,30 @@ ggplot() +
   labs(title = "Concentric Puzzle")
 ```
 
+:::
+
 ### Voronoi
 
+::: {.panel-tabset}
+
+## API
+
 ```{r}
-#| label: type-voronoi
+#| label: type-voronoi-api
+vor_result <- generate_puzzle(
+  type = "voronoi",
+  grid = c(20),            # 20 cells
+  size = c(250, 200),      # 250x200mm
+  seed = 42
+)
+
+render_puzzle_preview(vor_result)
+```
+
+## ggpuzzle
+
+```{r}
+#| label: type-voronoi-ggpuzzle
 #| fig-align: center
 ggplot() +
   geom_puzzle_voronoi(
@@ -143,12 +238,38 @@ ggplot() +
   labs(title = "Voronoi Puzzle")
 ```
 
-## Step 6: Customize Parameters
+:::
+
+## Step 5: Customize Parameters
 
 ### Change Separation
 
+::: {.panel-tabset}
+
+## API
+
 ```{r}
-#| label: separation-modes
+#| label: separation-modes-api
+#| layout-ncol: 3
+#| fig-cap:
+#|   - "Complete puzzle (offset = 0)"
+#|   - "Slightly separated (offset = 10)"
+#|   - "More separated (offset = 20)"
+
+# Generate with different offset values
+r0 <- generate_puzzle(type = "rectangular", grid = c(3, 2), size = c(300, 200), offset = 0, seed = 42)
+r10 <- generate_puzzle(type = "rectangular", grid = c(3, 2), size = c(300, 200), offset = 10, seed = 42)
+r20 <- generate_puzzle(type = "rectangular", grid = c(3, 2), size = c(300, 200), offset = 20, seed = 42)
+
+render_puzzle_preview(r0)
+render_puzzle_preview(r10)
+render_puzzle_preview(r20)
+```
+
+## ggpuzzle
+
+```{r}
+#| label: separation-modes-ggpuzzle
 #| fig-align: center
 make_offset_plot <- function(off) {
   ggplot() +
@@ -167,10 +288,14 @@ make_offset_plot <- function(off) {
 print(make_offset_plot(0) + make_offset_plot(10) + make_offset_plot(20))
 ```
 
+:::
+
 ### Change Colors
 
+The ggpuzzle approach makes it easy to apply different color schemes using ggplot2's scale functions.
+
 ```{r}
-#| label: color-palettes
+#| label: color-palettes-ggpuzzle
 #| layout-ncol: 2
 #| fig-cap:
 #|   - "Plasma palette"
@@ -197,12 +322,20 @@ print(ggplot() +
   labs(title = "Magma"))
 ```
 
-## Step 7: Reproducibility
+::: {.callout-note}
+For the API approach, colors are controlled through SVG styling. See the [Customization Tutorial](customization.qmd) for advanced coloring techniques.
+:::
+
+## Step 6: Reproducibility
 
 The `seed` parameter ensures you get the same puzzle every time:
 
+::: {.panel-tabset}
+
+## API
+
 ```{r}
-#| label: reproducibility
+#| label: reproducibility-api
 # Same seed = same puzzle
 p1 <- generate_puzzle(type = "hexagonal", grid = c(2), size = c(100), seed = 42)
 p2 <- generate_puzzle(type = "hexagonal", grid = c(2), size = c(100), seed = 42)
@@ -214,17 +347,54 @@ p3 <- generate_puzzle(type = "hexagonal", grid = c(2), size = c(100), seed = 123
 identical(p1$svg_content, p3$svg_content)  # FALSE
 ```
 
+## ggpuzzle
+
+```{r}
+#| label: reproducibility-ggpuzzle
+#| layout-ncol: 2
+#| fig-cap:
+#|   - "seed = 42"
+#|   - "seed = 123"
+
+# Same seed produces identical geometry
+plot_with_seed <- function(s) {
+  ggplot() +
+    geom_puzzle_hex(
+      aes(fill = after_stat(piece_id)),
+      rings = 2,
+      seed = s
+    ) +
+    scale_fill_viridis_c(guide = "none") +
+    coord_fixed() +
+    theme_puzzle() +
+    labs(title = paste("seed =", s))
+}
+
+print(plot_with_seed(42))
+print(plot_with_seed(123))
+```
+
+:::
+
+::: {.callout-tip}
+Both approaches use the same deterministic RNG, so `seed = 42` generates identical piece shapes whether you use the API or ggpuzzle.
+:::
+
 ## Summary
 
 You've learned to:
 
 1. ✅ Install and load jigsawR
-2. ✅ Generate puzzles with `generate_puzzle()`
-3. ✅ Visualize with ggplot2 geoms
-4. ✅ Save as SVG and PNG
-5. ✅ Create different puzzle types
-6. ✅ Customize offset and colors
-7. ✅ Use seeds for reproducibility
+2. ✅ Generate puzzles using both **API** and **ggpuzzle** approaches
+3. ✅ Save puzzles as SVG (API) or PNG (ggpuzzle)
+4. ✅ Create different puzzle types (rectangular, hexagonal, concentric, voronoi)
+5. ✅ Customize offset and colors
+6. ✅ Use seeds for reproducibility
+
+**Choosing an approach:**
+
+- **API** (`generate_puzzle()`): Best for SVG export, programmatic manipulation, and custom rendering
+- **ggpuzzle** (`geom_puzzle_*()`): Best for quick visualization, ggplot2 integration, and color customization
 
 ## Next Steps
 

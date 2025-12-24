@@ -38,19 +38,25 @@ Optional dependencies:
 
 ## Your First Puzzle
 
-### Rectangular Puzzle
+jigsawR offers two ways to create puzzles:
 
-The simplest way to create a puzzle:
+1. **API** (`generate_puzzle()`): Returns SVG content and piece data for manufacturing
+2. **ggpuzzle** (`geom_puzzle_*()`): Integrates with ggplot2 for visualization
+
+::: {.panel-tabset}
+
+## API Approach
 
 ```{r}
-#| label: first-puzzle
+#| label: first-puzzle-api
 #| message: false
 library(jigsawR)
 
 # Generate a 4x3 puzzle
 result <- generate_puzzle(
+
   type = "rectangular",
-  grid = c(4, 3),        # 4 columns, 3 rows
+  grid = c(4, 3),        # 4 rows, 3 columns
   size = c(400, 300),    # 400mm x 300mm
   seed = 42              # For reproducibility
 )
@@ -60,43 +66,75 @@ cat("Generated", length(result$pieces), "pieces\n")
 cat("Canvas size:", result$canvas_size[1], "x", result$canvas_size[2], "mm\n")
 ```
 
-### Visualize with ggplot2
+**Render the SVG:**
 
 ```{r}
-#| label: visualize-ggplot2
+#| label: first-puzzle-api-render
 #| fig-align: center
+#| echo: false
+render_puzzle_preview(result)
+```
+
+**Save your puzzle:**
+
+```r
+# Save as SVG (for laser cutting, etc.)
+writeLines(result$svg_content, "my_puzzle.svg")
+
+# Save as PNG (requires rsvg)
+rsvg::rsvg_png(charToRaw(result$svg_content), "my_puzzle.png", width = 800)
+```
+
+## ggpuzzle Approach
+
+```{r}
+#| label: first-puzzle-ggpuzzle
+#| fig-align: center
+#| message: false
 library(ggplot2)
 library(viridis)
 
 ggplot() +
   geom_puzzle_rect(
     aes(fill = after_stat(piece_id)),
-    cols = 4, rows = 3,
+    rows = 4, cols = 3,    # Same as grid = c(4, 3)
+    width = 400, height = 300,
     seed = 42
   ) +
   scale_fill_viridis_c(option = "viridis", guide = "none") +
   coord_fixed() +
   theme_puzzle() +
-  labs(title = "4x3 Rectangular puzzle")
+  labs(title = "4x3 Rectangular Puzzle")
 ```
 
-### Save Your Puzzle
+**Save your puzzle:**
 
-```{r}
-#| label: save-puzzle
-#| eval: false
-# Save as SVG
-writeLines(result$svg_content, "my_puzzle.svg")
-
-# Save as PNG (requires rsvg)
-if (requireNamespace("rsvg", quietly = TRUE)) {
-  rsvg::rsvg_png(
-    charToRaw(result$svg_content),
-    "my_puzzle.png",
-    width = 800
-  )
-}
+```r
+# Save as PNG with ggsave
+ggsave("my_puzzle.png", width = 8, height = 6, dpi = 300)
 ```
+
+:::
+
+::: {.callout-tip}
+## Which approach should I use?
+
+- **API**: Best for manufacturing (laser cutting, 3D printing) and when you need raw SVG output
+- **ggpuzzle**: Best for visualization, data exploration, and when you want ggplot2's styling options
+:::
+
+### Parameter Mapping
+
+The two approaches use equivalent parameters:
+
+| API (`generate_puzzle()`) | ggpuzzle (`geom_puzzle_rect()`) |
+|---------------------------|--------------------------------|
+| `type = "rectangular"` | Use `geom_puzzle_rect()` |
+| `grid = c(4, 3)` | `rows = 4, cols = 3` |
+| `size = c(400, 300)` | `width = 400, height = 300` |
+| `seed = 42` | `seed = 42` |
+| `tabsize = 10` | `tabsize = 10` |
+| `offset = 10` | `offset = 10` |
 
 ## Puzzle Types
 

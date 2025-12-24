@@ -191,12 +191,14 @@ Random puzzles are perfect for:
 
 ## Code Example
 
-```{r}
-#| label: demo-rand-code
-#| eval: false
-library(jigsawR)
+::: {.panel-tabset}
 
-# Generate puzzle
+## API
+
+```{r}
+#| label: demo-rand-api
+#| fig-align: center
+
 result <- generate_puzzle(
   type = "random",
   grid = c(30),          # 30 pieces
@@ -206,19 +208,34 @@ result <- generate_puzzle(
   offset = 5
 )
 
-# Save SVG
-writeLines(result$svg_content, "random_puzzle.svg")
+render_puzzle_preview(result)
+```
 
-# Visualize with ggplot2
-library(ggplot2)
+## ggpuzzle
+
+```{r}
+#| label: demo-rand-ggpuzzle
+#| fig-align: center
+
 ggplot() +
   geom_puzzle_random(
     aes(fill = after_stat(piece_id)),
     n_pieces = 30,
+    width = 400, height = 300,
     n_corner = 5,
     seed = 42, offset = 5
   ) +
-  scale_fill_viridis_c(option = "inferno") +
+  scale_fill_viridis_c(option = "inferno", guide = "none") +
   coord_fixed() +
   theme_puzzle()
 ```
+
+:::
+
+::: {.callout-note}
+## Saving to File
+The API approach returns a result object that can be saved to SVG:
+```r
+writeLines(result$svg_content, "random_puzzle.svg")
+```
+:::

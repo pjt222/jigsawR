@@ -19,8 +19,12 @@ Rectangular puzzles are the classic jigsaw format with interlocking tabs on all 
 
 Explore different grid sizes:
 
+::: {.panel-tabset}
+
+## ggpuzzle
+
 ```{r}
-#| label: fig-rect-sizes
+#| label: fig-rect-sizes-ggpuzzle
 #| layout-ncol: 3
 #| fig-cap:
 #|   - "2x2 (4 pieces)"
@@ -61,12 +65,53 @@ print(ggplot() +
   labs(title = "6x5"))
 ```
 
+## API
+
+```{r}
+#| label: fig-rect-sizes-api
+#| layout-ncol: 3
+#| fig-cap:
+#|   - "2x2 (4 pieces)"
+#|   - "4x3 (12 pieces)"
+#|   - "6x5 (30 pieces)"
+
+result_2x2 <- generate_puzzle(
+  type = "rectangular",
+  grid = c(2, 2),
+  size = c(200, 200),
+  seed = 42
+)
+render_puzzle_preview(result_2x2, title = "2x2")
+
+result_4x3 <- generate_puzzle(
+  type = "rectangular",
+  grid = c(4, 3),
+  size = c(400, 300),
+  seed = 42
+)
+render_puzzle_preview(result_4x3, title = "4x3")
+
+result_6x5 <- generate_puzzle(
+  type = "rectangular",
+  grid = c(6, 5),
+  size = c(600, 500),
+  seed = 42
+)
+render_puzzle_preview(result_6x5, title = "6x5")
+```
+
+:::
+
 ## Color Palettes
 
 All viridis palettes work beautifully with puzzle pieces:
 
+::: {.panel-tabset}
+
+## ggpuzzle
+
 ```{r}
-#| label: fig-rect-palettes
+#| label: fig-rect-palettes-ggpuzzle
 #| fig-align: center
 make_palette_plot <- function(pal) {
   ggplot() +
@@ -85,12 +130,37 @@ print((make_palette_plot("viridis") + make_palette_plot("magma") + make_palette_
 (make_palette_plot("inferno") + make_palette_plot("cividis") + make_palette_plot("turbo")))
 ```
 
+## API
+
+```{r}
+#| label: fig-rect-palettes-api
+#| fig-align: center
+make_palette_plot_api <- function(pal) {
+  result <- generate_puzzle(
+    type = "rectangular",
+    grid = c(4, 3),
+    size = c(400, 300),
+    seed = 42
+  )
+  render_puzzle_preview(result, title = pal, palette = pal)
+}
+
+print((make_palette_plot_api("viridis") + make_palette_plot_api("magma") + make_palette_plot_api("plasma")) /
+(make_palette_plot_api("inferno") + make_palette_plot_api("cividis") + make_palette_plot_api("turbo")))
+```
+
+:::
+
 ## Offset (Separation)
 
 Control spacing between pieces:
 
+::: {.panel-tabset}
+
+## ggpuzzle
+
 ```{r}
-#| label: fig-rect-offset
+#| label: fig-rect-offset-ggpuzzle
 #| fig-align: center
 
 make_offset_plot <- function(off) {
@@ -110,12 +180,38 @@ make_offset_plot <- function(off) {
 print(make_offset_plot(0) + make_offset_plot(5) + make_offset_plot(10) + make_offset_plot(20))
 ```
 
+## API
+
+```{r}
+#| label: fig-rect-offset-api
+#| fig-align: center
+
+make_offset_plot_api <- function(off) {
+  result <- generate_puzzle(
+    type = "rectangular",
+    grid = c(3, 3),
+    size = c(300, 300),
+    offset = off,
+    seed = 42
+  )
+  render_puzzle_preview(result, title = paste0("offset = ", off))
+}
+
+print(make_offset_plot_api(0) + make_offset_plot_api(5) + make_offset_plot_api(10) + make_offset_plot_api(20))
+```
+
+:::
+
 ## Fusion Groups
 
 Merge pieces together using PILES notation:
 
+::: {.panel-tabset}
+
+## ggpuzzle
+
 ```{r}
-#| label: fig-rect-fusion
+#| label: fig-rect-fusion-ggpuzzle
 #| layout-ncol: 2
 #| fig-cap:
 #|   - "Standard 4x3"
@@ -147,6 +243,37 @@ print(ggplot() +
   labs(title = "Row fusion"))
 ```
 
+## API
+
+```{r}
+#| label: fig-rect-fusion-api
+#| layout-ncol: 2
+#| fig-cap:
+#|   - "Standard 4x3"
+#|   - "Row fusion: R1,R2,R3"
+
+# Standard
+result_standard <- generate_puzzle(
+  type = "rectangular",
+  grid = c(4, 3),
+  size = c(400, 300),
+  seed = 42
+)
+render_puzzle_preview(result_standard, title = "Standard")
+
+# With row fusion
+result_fusion <- generate_puzzle(
+  type = "rectangular",
+  grid = c(4, 3),
+  size = c(400, 300),
+  seed = 42,
+  fusion_groups = "R1,R2,R3"
+)
+render_puzzle_preview(result_fusion, title = "Row fusion")
+```
+
+:::
+
 ::: {.callout-tip}
 ## Aspect Ratios
 Rectangular puzzles handle any aspect ratio - wide, square, or tall. See the [Aspect Ratios Tutorial](../tutorials/aspect-ratios.qmd) for examples comparing all puzzle types.
@@ -169,8 +296,12 @@ Rectangular puzzles handle any aspect ratio - wide, square, or tall. See the [As
 
 ## Code Example
 
+::: {.panel-tabset}
+
+## API
+
 ```{r}
-#| label: demo-rect-usage
+#| label: demo-rect-usage-api
 #| eval: false
 library(jigsawR)
 
@@ -185,9 +316,17 @@ result <- generate_puzzle(
 
 # Save SVG
 writeLines(result$svg_content, "rectangular_puzzle.svg")
+```
+
+## ggpuzzle
+
+```{r}
+#| label: demo-rect-usage-ggpuzzle
+#| eval: false
+library(jigsawR)
+library(ggplot2)
 
 # Visualize with ggplot2
-library(ggplot2)
 ggplot() +
   geom_puzzle_rect(
     aes(fill = after_stat(piece_id)),
@@ -197,4 +336,9 @@ ggplot() +
   scale_fill_viridis_c() +
   coord_fixed() +
   theme_puzzle()
+
+# Save as PNG
+ggsave("rectangular_puzzle.png", width = 10, height = 8, dpi = 300)
 ```
+
+:::

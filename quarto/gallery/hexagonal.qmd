@@ -19,8 +19,12 @@ Hexagonal puzzles create stunning honeycomb patterns. Each hexagonal piece conne
 
 Hexagonal puzzles are defined by the number of rings:
 
+::: {.panel-tabset}
+
+## ggpuzzle
+
 ```{r}
-#| label: fig-hex-rings
+#| label: fig-hex-rings-ggpuzzle
 #| layout-ncol: 3
 #| fig-cap:
 #|   - "2 rings (7 pieces)"
@@ -60,6 +64,52 @@ print(ggplot() +
   theme_puzzle() +
   labs(title = "4 rings"))
 ```
+
+## API
+
+```{r}
+#| label: fig-hex-rings-api
+#| layout-ncol: 3
+#| fig-cap:
+#|   - "2 rings (7 pieces)"
+#|   - "3 rings (19 pieces)"
+#|   - "4 rings (37 pieces)"
+
+# 2 rings
+result_2 <- generate_puzzle(
+  type = "hexagonal",
+  grid = c(2),
+  size = c(200),
+  seed = 42,
+  do_warp = TRUE,
+  do_trunc = TRUE
+)
+print(render_puzzle_preview(result_2) + labs(title = "2 rings"))
+
+# 3 rings
+result_3 <- generate_puzzle(
+  type = "hexagonal",
+  grid = c(3),
+  size = c(200),
+  seed = 42,
+  do_warp = TRUE,
+  do_trunc = TRUE
+)
+print(render_puzzle_preview(result_3) + labs(title = "3 rings"))
+
+# 4 rings
+result_4 <- generate_puzzle(
+  type = "hexagonal",
+  grid = c(4),
+  size = c(200),
+  seed = 42,
+  do_warp = TRUE,
+  do_trunc = TRUE
+)
+print(render_puzzle_preview(result_4) + labs(title = "4 rings"))
+```
+
+:::
 
 ## Piece Count Formula
 

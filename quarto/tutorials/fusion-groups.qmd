@@ -35,8 +35,12 @@ PILES (Puzzle Input Line Entry System) uses a simple syntax:
 
 ### Without Fusion
 
+::: {.panel-tabset}
+
+## ggpuzzle
+
 ```{r}
-#| label: no-fusion
+#| label: no-fusion-ggpuzzle
 #| fig-align: center
 ggplot() +
   geom_puzzle_rect(
@@ -51,10 +55,30 @@ ggplot() +
   labs(title = "12 Pieces, No Fusion")
 ```
 
-### With Fusion
+## API
 
 ```{r}
-#| label: with-fusion
+#| label: no-fusion-api
+#| fig-align: center
+result <- generate_puzzle(
+  type = "rectangular",
+  seed = 42,
+  grid = c(4, 3),
+  size = c(300, 225)
+)
+render_puzzle_preview(result)
+```
+
+:::
+
+### With Fusion
+
+::: {.panel-tabset}
+
+## ggpuzzle
+
+```{r}
+#| label: with-fusion-ggpuzzle
 #| fig-align: center
 #| eval: false
 ggplot() +
@@ -73,6 +97,24 @@ ggplot() +
     subtitle = "12 pieces → 9 groups"
   )
 ```
+
+## API
+
+```{r}
+#| label: with-fusion-api
+#| fig-align: center
+#| eval: false
+result <- generate_puzzle(
+  type = "rectangular",
+  seed = 42,
+  grid = c(4, 3),
+  size = c(300, 225),
+  fusion_groups = "1-2,5-6,11-12"
+)
+render_puzzle_preview(result)
+```
+
+:::
 
 ## Piece Numbering
 
@@ -128,8 +170,12 @@ ggplot() +
 
 ### Fuse Adjacent Pairs
 
+::: {.panel-tabset}
+
+## ggpuzzle
+
 ```{r}
-#| label: fusion-pairs
+#| label: fusion-pairs-ggpuzzle
 #| fig-align: center
 #| eval: false
 ggplot() +
@@ -146,10 +192,32 @@ ggplot() +
   labs(title = "All adjacent pairs fused")
 ```
 
-### Fuse Rows
+## API
 
 ```{r}
-#| label: fusion-rows
+#| label: fusion-pairs-api
+#| fig-align: center
+#| eval: false
+result <- generate_puzzle(
+  type = "rectangular",
+  seed = 42,
+  grid = c(4, 3),
+  size = c(300, 225),
+  fusion_groups = "1-2,3-4,5-6,7-8,9-10,11-12"
+)
+render_puzzle_preview(result)
+```
+
+:::
+
+### Fuse Rows
+
+::: {.panel-tabset}
+
+## ggpuzzle
+
+```{r}
+#| label: fusion-rows-ggpuzzle
 #| fig-align: center
 #| eval: false
 ggplot() +
@@ -166,10 +234,32 @@ ggplot() +
   labs(title = "Each row fused (using ranges)")
 ```
 
-### Using Row Keywords
+## API
 
 ```{r}
-#| label: fusion-row-keywords
+#| label: fusion-rows-api
+#| fig-align: center
+#| eval: false
+result <- generate_puzzle(
+  type = "rectangular",
+  seed = 42,
+  grid = c(5, 3),
+  size = c(350, 210),
+  fusion_groups = "1:5,6:10,11:15"  # Ranges for each row
+)
+render_puzzle_preview(result)
+```
+
+:::
+
+### Using Row Keywords
+
+::: {.panel-tabset}
+
+## ggpuzzle
+
+```{r}
+#| label: fusion-row-keywords-ggpuzzle
 #| fig-align: center
 #| eval: false
 # R1, R2, R3 keywords for rows
@@ -187,14 +277,36 @@ ggplot() +
   labs(title = "Row fusion with keywords: R1, R2, R3")
 ```
 
+## API
+
+```{r}
+#| label: fusion-row-keywords-api
+#| fig-align: center
+#| eval: false
+result <- generate_puzzle(
+  type = "rectangular",
+  seed = 42,
+  grid = c(4, 3),
+  size = c(280, 210),
+  fusion_groups = "R1,R2,R3"
+)
+render_puzzle_preview(result)
+```
+
+:::
+
 ## Hexagonal Keywords
 
 Special keywords for hexagonal puzzles:
 
 ### Center + Ring1
 
+::: {.panel-tabset}
+
+## ggpuzzle
+
 ```{r}
-#| label: hex-center-ring1
+#| label: hex-center-ring1-ggpuzzle
 #| fig-align: center
 #| eval: false
 ggplot() +
@@ -208,6 +320,24 @@ ggplot() +
   theme_puzzle() +
   labs(title = "Fusion: center-ring1")
 ```
+
+## API
+
+```{r}
+#| label: hex-center-ring1-api
+#| fig-align: center
+#| eval: false
+result <- generate_puzzle(
+  type = "hexagonal",
+  seed = 42,
+  grid = c(3),
+  size = c(220),
+  fusion_groups = "center-ring1"
+)
+render_puzzle_preview(result)
+```
+
+:::
 
 ### Ring2 Only
 
@@ -330,8 +460,12 @@ print(notation)
 
 ### Highlight a Region
 
+::: {.panel-tabset}
+
+## ggpuzzle
+
 ```{r}
-#| label: highlight-region
+#| label: highlight-region-ggpuzzle
 #| fig-align: center
 #| eval: false
 # Fuse center area to highlight it
@@ -348,6 +482,24 @@ ggplot() +
   theme_puzzle() +
   labs(title = "Center region highlighted via fusion")
 ```
+
+## API
+
+```{r}
+#| label: highlight-region-api
+#| fig-align: center
+#| eval: false
+result <- generate_puzzle(
+  type = "rectangular",
+  seed = 42,
+  grid = c(5, 5),
+  size = c(300, 300),
+  fusion_groups = "7-8-9-12-13-14-17-18-19"  # 3x3 center
+)
+render_puzzle_preview(result)
+```
+
+:::
 
 ### Create Difficulty Levels
 

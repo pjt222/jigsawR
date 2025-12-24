@@ -170,8 +170,12 @@ Applying Lloyd relaxation (setting `relaxation > 0`) moves seed points toward th
 
 ## Code Example
 
+::: {.panel-tabset}
+
+## API
+
 ```{r}
-#| label: demo-vor-code
+#| label: demo-vor-code-api
 #| eval: false
 library(jigsawR)
 
@@ -187,18 +191,32 @@ result <- generate_puzzle(
 # Save SVG
 writeLines(result$svg_content, "voronoi_puzzle.svg")
 
-# Visualize with ggplot2
+# Preview
+render_puzzle_preview(result)
+```
+
+## ggpuzzle
+
+```{r}
+#| label: demo-vor-code-ggpuzzle
+#| eval: false
+library(jigsawR)
 library(ggplot2)
+
 ggplot() +
   geom_puzzle_voronoi(
     aes(fill = after_stat(piece_id)),
     n_cells = 35,
-    seed = 42, offset = 5
+    width = 400, height = 300,
+    seed = 42,
+    offset = 5
   ) +
-  scale_fill_viridis_c(option = "turbo") +
+  scale_fill_viridis_c(option = "turbo", guide = "none") +
   coord_fixed() +
   theme_puzzle()
 ```
+
+:::
 
 ## When to Use Voronoi
 

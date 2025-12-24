@@ -17,8 +17,12 @@ jigsawR works seamlessly with all viridis color palettes.
 
 ### Viridis Options
 
+::: {.panel-tabset}
+
+## ggpuzzle
+
 ```{r}
-#| label: viridis-palettes
+#| label: viridis-palettes-ggpuzzle
 #| fig-align: center
 #| fig-height: 6
 make_palette_demo <- function(pal) {
@@ -37,12 +41,47 @@ print((make_palette_demo("viridis") + make_palette_demo("magma") + make_palette_
 (make_palette_demo("inferno") + make_palette_demo("cividis") + make_palette_demo("turbo")))
 ```
 
+## API
+
+```{r}
+#| label: viridis-palettes-api
+#| fig-align: center
+#| fig-height: 6
+make_api_demo <- function(pal) {
+  result <- generate_puzzle(
+    type = "hexagonal",
+    grid = c(3),
+    size = c(150),
+    seed = 42
+  )
+
+  ggplot() +
+    geom_puzzle_pieces(
+      data = result$pieces,
+      aes(fill = piece_id)
+    ) +
+    scale_fill_viridis_c(option = pal, guide = "none") +
+    coord_fixed() +
+    theme_puzzle() +
+    labs(title = pal)
+}
+
+print((make_api_demo("viridis") + make_api_demo("magma") + make_api_demo("plasma")) /
+(make_api_demo("inferno") + make_api_demo("cividis") + make_api_demo("turbo")))
+```
+
+:::
+
 ### Custom Color Scales
 
 Use any ggplot2 color scale:
 
+::: {.panel-tabset}
+
+## ggpuzzle
+
 ```{r}
-#| label: custom-colors
+#| label: custom-colors-ggpuzzle
 #| layout-ncol: 2
 #| fig-cap:
 #|   - "Gradient Blue to Red"
@@ -79,12 +118,62 @@ print(ggplot() +
   labs(title = "Brewer"))
 ```
 
+## API
+
+```{r}
+#| label: custom-colors-api
+#| layout-ncol: 2
+#| fig-cap:
+#|   - "Gradient Blue to Red"
+#|   - "Brewer Spectral"
+
+# Generate puzzle once
+rect_result <- generate_puzzle(
+  type = "rectangular",
+  grid = c(4, 3),
+  size = c(240, 180),
+  seed = 42
+)
+
+# Custom gradient
+print(ggplot() +
+  geom_puzzle_pieces(
+    data = rect_result$pieces,
+    aes(fill = piece_id)
+  ) +
+  scale_fill_gradient(
+    low = "#2193b0",
+    high = "#6dd5ed",
+    guide = "none"
+  ) +
+  coord_fixed() +
+  theme_puzzle() +
+  labs(title = "Gradient"))
+
+# Brewer palette
+print(ggplot() +
+  geom_puzzle_pieces(
+    data = rect_result$pieces,
+    aes(fill = factor(piece_id))
+  ) +
+  scale_fill_brewer(palette = "Spectral", guide = "none") +
+  coord_fixed() +
+  theme_puzzle() +
+  labs(title = "Brewer"))
+```
+
+:::
+
 ## Themes
 
 ### Minimal Themes
 
+::: {.panel-tabset}
+
+## ggpuzzle
+
 ```{r}
-#| label: minimal-themes
+#| label: minimal-themes-ggpuzzle
 #| layout-ncol: 2
 #| fig-cap:
 #|   - "theme_puzzle()"
@@ -111,10 +200,53 @@ print(ggplot() +
   labs(title = "theme_minimal()"))
 ```
 
-### Dark Themes
+## API
 
 ```{r}
-#| label: dark-theme
+#| label: minimal-themes-api
+#| layout-ncol: 2
+#| fig-cap:
+#|   - "theme_puzzle()"
+#|   - "theme_minimal()"
+
+theme_result <- generate_puzzle(
+  type = "hexagonal",
+  grid = c(2),
+  size = c(150),
+  seed = 42
+)
+
+print(ggplot() +
+  geom_puzzle_pieces(
+    data = theme_result$pieces,
+    aes(fill = piece_id)
+  ) +
+  scale_fill_viridis_c(guide = "none") +
+  coord_fixed() +
+  theme_puzzle() +
+  labs(title = "theme_puzzle()"))
+
+print(ggplot() +
+  geom_puzzle_pieces(
+    data = theme_result$pieces,
+    aes(fill = piece_id)
+  ) +
+  scale_fill_viridis_c(name = "Piece") +
+  coord_fixed() +
+  theme_minimal() +
+  labs(title = "theme_minimal()"))
+```
+
+:::
+
+### Dark Themes
+
+::: {.panel-tabset}
+
+## ggpuzzle
+
+```{r}
+#| label: dark-theme-ggpuzzle
 #| fig-align: center
 ggplot() +
   geom_puzzle_hex(
@@ -134,10 +266,46 @@ ggplot() +
   labs(title = "Dark Theme", fill = "Piece ID")
 ```
 
-### Custom Themes
+## API
 
 ```{r}
-#| label: custom-theme
+#| label: dark-theme-api
+#| fig-align: center
+hex_result <- generate_puzzle(
+  type = "hexagonal",
+  grid = c(3),
+  size = c(200),
+  seed = 42
+)
+
+ggplot() +
+  geom_puzzle_pieces(
+    data = hex_result$pieces,
+    aes(fill = piece_id)
+  ) +
+  scale_fill_viridis_c(option = "plasma") +
+  coord_fixed() +
+  theme_dark() +
+  theme(
+    panel.grid = element_blank(),
+    plot.background = element_rect(fill = "#1a1a1a"),
+    legend.background = element_rect(fill = "#1a1a1a"),
+    legend.text = element_text(color = "white"),
+    legend.title = element_text(color = "white")
+  ) +
+  labs(title = "Dark Theme", fill = "Piece ID")
+```
+
+:::
+
+### Custom Themes
+
+::: {.panel-tabset}
+
+## ggpuzzle
+
+```{r}
+#| label: custom-theme-ggpuzzle
 #| fig-align: center
 # Extend theme_puzzle() with custom settings
 theme_puzzle_custom <- function() {
@@ -175,6 +343,57 @@ ggplot() +
     subtitle = "4 rings, 250mm diameter"
   )
 ```
+
+## API
+
+```{r}
+#| label: custom-theme-api
+#| fig-align: center
+# Extend theme_puzzle() with custom settings
+theme_puzzle_custom <- function() {
+  theme_puzzle() +
+  theme(
+    plot.title = element_text(
+      hjust = 0.5,
+      size = 16,
+      face = "bold",
+      margin = margin(b = 10)
+    ),
+    plot.subtitle = element_text(
+      hjust = 0.5,
+      size = 12,
+      color = "gray50",
+      margin = margin(b = 20)
+    ),
+    legend.position = "bottom",
+    legend.title = element_text(size = 10),
+    legend.text = element_text(size = 8),
+    plot.margin = margin(20, 20, 20, 20)
+  )
+}
+
+conc_result <- generate_puzzle(
+  type = "concentric",
+  grid = c(4),
+  size = c(250),
+  seed = 42
+)
+
+ggplot() +
+  geom_puzzle_pieces(
+    data = conc_result$pieces,
+    aes(fill = ring)
+  ) +
+  scale_fill_viridis_c(option = "cividis", name = "Ring") +
+  coord_fixed() +
+  theme_puzzle_custom() +
+  labs(
+    title = "Concentric Puzzle",
+    subtitle = "4 rings, 250mm diameter"
+  )
+```
+
+:::
 
 ## Legends
 
@@ -244,8 +463,12 @@ ggplot() +
 
 ### Add Text
 
+::: {.panel-tabset}
+
+## ggpuzzle
+
 ```{r}
-#| label: annotation-text
+#| label: annotation-text-ggpuzzle
 #| fig-align: center
 ggplot() +
   geom_puzzle_hex(
@@ -265,6 +488,39 @@ ggplot() +
   theme_puzzle() +
   labs(title = "Annotated puzzle")
 ```
+
+## API
+
+```{r}
+#| label: annotation-text-api
+#| fig-align: center
+annot_result <- generate_puzzle(
+  type = "hexagonal",
+  grid = c(3),
+  size = c(250),
+  seed = 42
+)
+
+ggplot() +
+  geom_puzzle_pieces(
+    data = annot_result$pieces,
+    aes(fill = ring)
+  ) +
+  annotate(
+    "text",
+    x = 0, y = 0,
+    label = "CENTER",
+    size = 5,
+    fontface = "bold",
+    color = "white"
+  ) +
+  scale_fill_viridis_c(option = "plasma", guide = "none") +
+  coord_fixed() +
+  theme_puzzle() +
+  labs(title = "Annotated puzzle")
+```
+
+:::
 
 ### Add Labels with geom_text
 
@@ -294,8 +550,12 @@ ggplot() +
 
 ### Add Borders
 
+::: {.panel-tabset}
+
+## ggpuzzle
+
 ```{r}
-#| label: borders-basic
+#| label: borders-basic-ggpuzzle
 #| fig-align: center
 ggplot() +
   geom_puzzle_rect(
@@ -311,6 +571,33 @@ ggplot() +
   theme_puzzle() +
   labs(title = "With borders")
 ```
+
+## API
+
+```{r}
+#| label: borders-basic-api
+#| fig-align: center
+border_result <- generate_puzzle(
+  type = "rectangular",
+  grid = c(3, 3),
+  size = c(200, 200),
+  seed = 42
+)
+
+ggplot() +
+  geom_puzzle_pieces(
+    data = border_result$pieces,
+    aes(fill = piece_id),
+    color = "black",
+    linewidth = 0.5
+  ) +
+  scale_fill_viridis_c(option = "plasma", guide = "none") +
+  coord_fixed() +
+  theme_puzzle() +
+  labs(title = "With borders")
+```
+
+:::
 
 ### Thick Borders for Emphasis
 
@@ -337,8 +624,12 @@ print(make_border_demo(0.25, "Thin borders") + make_border_demo(1.5, "Thick bord
 
 ## Alpha Transparency
 
+::: {.panel-tabset}
+
+## ggpuzzle
+
 ```{r}
-#| label: alpha-transparency
+#| label: alpha-transparency-ggpuzzle
 #| fig-align: center
 
 make_alpha_demo <- function(a, label) {
@@ -358,12 +649,47 @@ make_alpha_demo <- function(a, label) {
 print(make_alpha_demo(1.0, "alpha = 1.0 (opaque)") + make_alpha_demo(0.5, "alpha = 0.5 (semi-transparent)"))
 ```
 
+## API
+
+```{r}
+#| label: alpha-transparency-api
+#| fig-align: center
+
+make_api_alpha_demo <- function(a, label) {
+  voronoi_result <- generate_puzzle(
+    type = "voronoi",
+    grid = c(15),
+    size = c(200),
+    seed = 42
+  )
+
+  ggplot() +
+    geom_puzzle_pieces(
+      data = voronoi_result$pieces,
+      aes(fill = piece_id),
+      alpha = a
+    ) +
+    scale_fill_viridis_c(option = "turbo", guide = "none") +
+    coord_fixed() +
+    theme_puzzle() +
+    labs(title = label)
+}
+
+print(make_api_alpha_demo(1.0, "alpha = 1.0 (opaque)") + make_api_alpha_demo(0.5, "alpha = 0.5 (semi-transparent)"))
+```
+
+:::
+
 ## Saving High-Quality Output
+
+::: {.panel-tabset}
+
+## ggpuzzle
 
 ### PNG (Raster)
 
 ```{r}
-#| label: save-png
+#| label: save-png-ggpuzzle
 #| eval: false
 p <- ggplot() +
   geom_puzzle_hex(
@@ -387,7 +713,7 @@ ggsave("puzzle_print.png", p, width = 12, height = 12, dpi = 600)
 ### SVG (Vector)
 
 ```{r}
-#| label: save-svg
+#| label: save-svg-ggpuzzle
 #| eval: false
 # Vector format - infinite scalability
 ggsave("puzzle.svg", p, width = 8, height = 8)
@@ -396,10 +722,62 @@ ggsave("puzzle.svg", p, width = 8, height = 8)
 ### PDF (Vector, Print-ready)
 
 ```{r}
-#| label: save-pdf
+#| label: save-pdf-ggpuzzle
 #| eval: false
 ggsave("puzzle.pdf", p, width = 8, height = 8)
 ```
+
+## API
+
+### Built-in SVG Export
+
+```{r}
+#| label: save-api-svg
+#| eval: false
+# SVG files are automatically saved during generation
+result <- generate_puzzle(
+  type = "hexagonal",
+  grid = c(4),
+  size = c(300),
+  seed = 42,
+  output_dir = "my_puzzles"
+)
+
+# Access the SVG file path
+result$files$svg
+```
+
+### PNG Export via ggsave
+
+```{r}
+#| label: save-api-png
+#| eval: false
+# Generate puzzle
+result <- generate_puzzle(
+  type = "hexagonal",
+  grid = c(4),
+  size = c(300),
+  seed = 42
+)
+
+# Create plot
+p <- ggplot() +
+  geom_puzzle_pieces(
+    data = result$pieces,
+    aes(fill = piece_id)
+  ) +
+  scale_fill_viridis_c(option = "plasma", guide = "none") +
+  coord_fixed() +
+  theme_puzzle()
+
+# Standard quality
+ggsave("puzzle.png", p, width = 8, height = 8, dpi = 150)
+
+# High quality for print
+ggsave("puzzle_hq.png", p, width = 8, height = 8, dpi = 300)
+```
+
+:::
 
 ## Summary
 
