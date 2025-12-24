@@ -187,9 +187,11 @@ ggplot() +
 | `rings` | integer | 3 | Number of concentric rings |
 | `center_shape` | string | "hexagon" | Center shape: "hexagon" or "circle" |
 | `seed` | integer | random | Random seed for reproducibility |
-| `offset` | numeric | 0 | Piece separation distance |
-| `tabsize` | numeric | 20 | Tab size parameter |
-| `jitter` | numeric | 4 | Randomness in tab shape |
+| `offset` | numeric | 0 (mm) | Piece separation distance |
+| `tabsize` | numeric | 10 (%) | Tab size as percentage of piece width |
+| `jitter` | numeric | 2 (%) | Randomness in tab shape as percentage |
+| `min_tab_size` | numeric | 0 (mm) | Minimum tab size in millimeters |
+| `max_tab_size` | numeric | Inf (mm) | Maximum tab size in millimeters |
 | `fusion_groups` | string | NULL | PILES notation for fusing pieces |
 
 ## Fill Variables

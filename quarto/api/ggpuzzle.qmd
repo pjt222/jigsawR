@@ -168,8 +168,8 @@ ggplot(data) +
 | `rows` | integer | required | Number of rows |
 | `width` | numeric | required | Total width in mm |
 | `height` | numeric | required | Total height in mm |
-| `tabsize` | numeric | 15 | Tab size |
-| `jitter` | numeric | 4 | Tab randomness |
+| `tabsize` | numeric | 10 | Tab size (% of piece) |
+| `jitter` | numeric | 2 | Tab randomness (% of piece) |
 
 ### geom_puzzle_hex()
 
@@ -179,8 +179,8 @@ ggplot(data) +
 | `diameter` | numeric | required | Outer diameter in mm |
 | `do_warp` | logical | TRUE | Apply circular warping |
 | `do_trunc` | logical | TRUE | Truncate to boundary |
-| `tabsize` | numeric | 15 | Tab size |
-| `jitter` | numeric | 4 | Tab randomness |
+| `tabsize` | numeric | 10 | Tab size (% of piece) |
+| `jitter` | numeric | 2 | Tab randomness (% of piece) |
 
 ### geom_puzzle_conc()
 

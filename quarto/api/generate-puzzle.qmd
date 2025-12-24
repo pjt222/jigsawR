@@ -46,7 +46,7 @@ generate_puzzle(
 
 | Type | Grid Format | Example |
 |------|-------------|---------|
-| rectangular | `c(cols, rows)` | `c(4, 3)` = 4x3 grid |
+| rectangular | `c(rows, cols)` | `c(3, 4)` = 3x4 grid |
 | hexagonal | `c(rings)` | `c(3)` = 3 rings |
 | concentric | `c(rings)` | `c(4)` = 4 rings |
 | voronoi | `c(n_cells)` | `c(25)` = 25 cells |
@@ -67,7 +67,7 @@ generate_puzzle(
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `seed` | integer | random | Random seed for reproducibility |
-| `offset` | numeric | 0 | Piece separation distance in mm |
+| `offset` | numeric (mm) | 0 | Piece separation distance |
 | `layout` | string | "grid" | Layout algorithm: `"grid"` or `"repel"` |
 | `fusion_groups` | string | NULL | PILES notation for merging pieces |
 | `save_files` | logical | FALSE | Whether to save SVG files |
@@ -75,12 +75,20 @@ generate_puzzle(
 
 ### Type-Specific Parameters (via `...`)
 
+**Common (all types):**
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `tabsize` | numeric (%) | 10 | Tab size as percentage of edge length |
+| `jitter` | numeric (%) | 2 | Randomness in tab shape as percentage |
+| `stroke_width` | numeric (mm) | 1 | SVG stroke width |
+| `min_tab_size` | numeric (mm) | NULL | Minimum tab size constraint (all types) |
+| `max_tab_size` | numeric (mm) | NULL | Maximum tab size constraint (all types) |
+
 **Hexagonal/Concentric:**
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `tabsize` | numeric | 15 | Tab size in mm |
-| `jitter` | numeric | 4 | Randomness in tab shape |
 | `do_warp` | logical | TRUE | Apply circular warping |
 | `do_trunc` | logical | TRUE | Truncate to boundary |
 | `center_shape` | string | "hexagon" | Center shape (concentric only) |
@@ -132,7 +140,7 @@ piece <- list(
 # Rectangular puzzle
 rect <- generate_puzzle(
   type = "rectangular",
-  grid = c(4, 3),
+  grid = c(3, 4),
   size = c(400, 300),
   seed = 42
 )
@@ -160,7 +168,7 @@ cat("Generated", length(hex$pieces), "hexagonal pieces\n")
 #| label: with-fusion
 fused <- generate_puzzle(
   type = "rectangular",
-  grid = c(4, 3),
+  grid = c(3, 4),
   size = c(400, 300),
   seed = 42,
   fusion_groups = "1-2,5-6,11-12"
@@ -188,7 +196,7 @@ separated <- generate_puzzle(
 #| eval: false
 result <- generate_puzzle(
   type = "rectangular",
-  grid = c(4, 3),
+  grid = c(3, 4),
   size = c(400, 300),
   seed = 42,
   save_files = TRUE,

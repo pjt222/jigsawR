@@ -253,8 +253,8 @@ GeomPuzzle <- ggplot2::ggproto("GeomPuzzle", ggplot2::Geom,
 #' @param cols Number of columns in the puzzle grid.
 #' @param width Puzzle width in mm (default: 100).
 #' @param height Puzzle height in mm (default: 100).
-#' @param tabsize Size of the puzzle tabs (default: 20).
-#' @param jitter Random variation in tab positions (default: 4).
+#' @param tabsize Size of the puzzle tabs (default: 10).
+#' @param jitter Random variation in tab positions (default: 2).
 #' @param min_tab_size Minimum tab height in mm (NULL for no constraint).
 #' @param max_tab_size Maximum tab height in mm (NULL for no constraint).
 #' @param seed Random seed for reproducible puzzle shapes.
@@ -308,8 +308,8 @@ geom_puzzle_rect <- function(mapping = NULL,
                               cols = 3,
                               width = 100,
                               height = 100,
-                              tabsize = 20,
-                              jitter = 4,
+                              tabsize = 10,
+                              jitter = 2,
                               min_tab_size = NULL,
                               max_tab_size = NULL,
                               seed = NULL,
@@ -374,8 +374,8 @@ geom_puzzle_rect <- function(mapping = NULL,
 #'   Piece count formula: 3 * rings * (rings - 1) + 1.
 #'   Example: 3 rings = 19 pieces.
 #' @param diameter Puzzle diameter in mm (default: 100).
-#' @param tabsize Size of the puzzle tabs (default: 20).
-#' @param jitter Random variation in tab positions (default: 4).
+#' @param tabsize Size of the puzzle tabs (default: 10).
+#' @param jitter Random variation in tab positions (default: 2).
 #' @param min_tab_size Minimum tab height in mm (NULL for no constraint).
 #' @param max_tab_size Maximum tab height in mm (NULL for no constraint).
 #' @param seed Random seed for reproducible puzzle shapes.
@@ -424,8 +424,8 @@ geom_puzzle_hex <- function(mapping = NULL,
                             position = "identity",
                             rings = 3,
                             diameter = 100,
-                            tabsize = 20,
-                            jitter = 4,
+                            tabsize = 10,
+                            jitter = 2,
                             min_tab_size = NULL,
                             max_tab_size = NULL,
                             seed = NULL,
@@ -494,8 +494,8 @@ geom_puzzle_hex <- function(mapping = NULL,
 #'   Piece count formula: rings * 6 + 1.
 #'   Example: 3 rings = 19 pieces (1 center + 6 + 6 + 6).
 #' @param diameter Puzzle diameter in mm (default: 100).
-#' @param tabsize Size of the puzzle tabs (default: 20).
-#' @param jitter Random variation in tab positions (default: 4).
+#' @param tabsize Size of the puzzle tabs (default: 10).
+#' @param jitter Random variation in tab positions (default: 2).
 #' @param min_tab_size Minimum tab height in mm (NULL for no constraint).
 #' @param max_tab_size Maximum tab height in mm (NULL for no constraint).
 #' @param seed Random seed for reproducible puzzle shapes.
@@ -538,8 +538,8 @@ geom_puzzle_conc <- function(mapping = NULL,
                              position = "identity",
                              rings = 3,
                              diameter = 100,
-                             tabsize = 20,
-                             jitter = 4,
+                             tabsize = 10,
+                             jitter = 2,
                              min_tab_size = NULL,
                              max_tab_size = NULL,
                              seed = NULL,
@@ -607,8 +607,8 @@ geom_puzzle_conc <- function(mapping = NULL,
 #' @param n_cells Number of Voronoi cells (pieces) in the puzzle.
 #' @param width Puzzle width in mm (default: 100).
 #' @param height Puzzle height in mm (default: 100).
-#' @param tabsize Size of the puzzle tabs (default: 20).
-#' @param jitter Random variation in tab positions (default: 4).
+#' @param tabsize Size of the puzzle tabs (default: 10).
+#' @param jitter Random variation in tab positions (default: 2).
 #' @param min_tab_size Minimum tab height in mm (NULL for no constraint).
 #' @param max_tab_size Maximum tab height in mm (NULL for no constraint).
 #' @param seed Random seed for reproducible puzzle shapes.
@@ -651,8 +651,8 @@ geom_puzzle_voronoi <- function(mapping = NULL,
                                 n_cells = 12,
                                 width = 100,
                                 height = 100,
-                                tabsize = 20,
-                                jitter = 4,
+                                tabsize = 10,
+                                jitter = 2,
                                 min_tab_size = NULL,
                                 max_tab_size = NULL,
                                 seed = NULL,
@@ -718,8 +718,8 @@ geom_puzzle_voronoi <- function(mapping = NULL,
 #'   Actual piece count depends on triangulation.
 #' @param width Puzzle width in mm (default: 100).
 #' @param height Puzzle height in mm (default: 100).
-#' @param tabsize Size of the puzzle tabs (default: 20).
-#' @param jitter Random variation in tab positions (default: 4).
+#' @param tabsize Size of the puzzle tabs (default: 10).
+#' @param jitter Random variation in tab positions (default: 2).
 #' @param min_tab_size Minimum tab height in mm (NULL for no constraint).
 #' @param max_tab_size Maximum tab height in mm (NULL for no constraint).
 #' @param seed Random seed for reproducible puzzle shapes.
@@ -761,8 +761,8 @@ geom_puzzle_random <- function(mapping = NULL,
                                n_pieces = 12,
                                width = 100,
                                height = 100,
-                               tabsize = 20,
-                               jitter = 4,
+                               tabsize = 10,
+                               jitter = 2,
                                min_tab_size = NULL,
                                max_tab_size = NULL,
                                seed = NULL,

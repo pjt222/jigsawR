@@ -62,6 +62,27 @@ ggplot() +
   <img src="man/figures/readme-ggpuzzle.png" alt="ggplot2 puzzle example" width="450">
 </p>
 
+## Quick Parameter Reference
+
+| Parameter | Default | Unit | Description |
+|-----------|---------|------|-------------|
+| `type` | "rectangular" | - | Puzzle type: rectangular, hexagonal, concentric, voronoi, random |
+| `grid` | c(3, 4) | - | Rows × cols (rect), rings (hex/conc), or cell count (voronoi/random) |
+| `size` | c(400, 300) | mm | Width × height (rect) or diameter (hex/conc) |
+| `seed` | random | - | Integer for reproducibility |
+| `tabsize` | 10 | % | Tab size as percentage of edge length |
+| `jitter` | 2 | % | Random variation in tab shape |
+| `offset` | 0 | mm | Piece separation (0 = complete puzzle) |
+| `layout` | "grid" | - | Layout algorithm: "grid" or "repel" |
+
+**Type-specific:**
+- **Hexagonal**: `do_warp`, `do_trunc`, `do_circular_border`
+- **Concentric**: `center_shape` ("hexagon"/"circle"), `boundary_facing`
+- **Voronoi**: `point_distribution` ("fermat"/"uniform"/"jittered")
+- **Random**: `n_corner` (3-8 for base polygon shape)
+
+See the [full API reference](https://pjt222.github.io/jigsawR/api/generate-puzzle.html) for all parameters.
+
 ## Gallery
 
 | Rectangular | Hexagonal | Concentric | Voronoi | Random |
