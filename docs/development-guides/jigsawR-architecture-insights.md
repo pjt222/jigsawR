@@ -3436,6 +3436,74 @@ center <- c(size[2] / 2, size[1] / 2)
 
 ---
 
+### Insight #63: Quarto Grid Layouts Must Use htmltools, Not cat() (2025-01-07)
+
+**Context**: Gallery documentation pages were rendering with literal `<p>:::</p>` paragraphs instead of properly closed panel-tabset divs. Six such occurrences appeared per file.
+
+**Problem**: The API tab examples used `cat()` with `#| results: asis` to output HTML grids containing SVG content:
+
+```r
+#| results: asis
+cat('<div style="display: grid; ...">')
+for (item in items) {
+  cat(sprintf('<div>%s</div>', item$svg_content))
+}
+cat('</div>')
+```
+
+This pattern breaks Quarto's markdown parsing context. After raw HTML output from `cat()`, Pandoc/Quarto no longer recognizes subsequent `:::` markers as fenced div closers - they're rendered as literal `<p>:::</p>` paragraphs.
+
+**Solution**: Create a helper function using `htmltools::browsable(htmltools::HTML())`:
+
+```r
+# quarto/_setup.R
+render_puzzle_grid <- function(items, ncol = 3, labels = NULL) {
+  # Build grid items as single string
+  grid_items <- vapply(seq_along(items), function(i) {
+    label_html <- if (!is.null(labels[i])) {
+      sprintf('<div style="font-weight: bold; margin-bottom: 0.5em;">%s</div>', labels[i])
+    } else ""
+    sprintf('<div style="text-align: center;">%s%s</div>', label_html, items[[i]]$svg_content)
+  }, character(1))
+
+  # Single-line HTML avoids Quarto parsing issues
+  html_output <- sprintf(
+    '<div style="display: grid; grid-template-columns: repeat(%d, 1fr); gap: 1em;">%s</div>',
+    ncol, paste(grid_items, collapse = "")
+  )
+
+  # htmltools properly signals HTML output to knitr
+  htmltools::browsable(htmltools::HTML(html_output))
+}
+```
+
+**Usage in .qmd files** (no `results: asis` needed):
+```r
+#| echo: false
+items <- lapply(params, function(p) generate_puzzle(..., param = p))
+render_puzzle_grid(items, ncol = 3, labels = paste("param =", params))
+```
+
+**Key Design Decisions**:
+1. **htmltools over cat()**: `htmltools::browsable()` properly signals to knitr that output is HTML, maintaining Quarto's parsing context
+2. **Single-line HTML**: Compacting all HTML to one line prevents any ambiguity in Pandoc's parsing
+3. **No `results: asis`**: Removed entirely - htmltools handles output mode automatically
+4. **Fallback support**: `knitr::asis_output()` used when htmltools unavailable
+
+**Why This Matters**:
+- `cat()` writes directly to stdout, bypassing knitr's output handling
+- Quarto/Pandoc tracks parsing state (inside code block, inside div, etc.)
+- Raw stdout injection resets this state, breaking subsequent markdown parsing
+- `htmltools` uses knitr's proper output channels, preserving parsing context
+
+**Files Changed**:
+- `quarto/_setup.R`: Added `render_puzzle_grid()` helper
+- `quarto/gallery/*.qmd`: All 5 gallery files updated to use new helper
+
+**Result**: All gallery files render correctly with 0 literal `:::` markers (previously 6 per file).
+
+---
+
 ## Development History
 
 ### Completed Work (Archive)
