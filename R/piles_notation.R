@@ -233,6 +233,12 @@ parse_piles_structure <- function(str, puzzle_result = NULL) {
       # Range within structure
       parts <- as.integer(strsplit(token, ":")[[1]])
       pieces <- c(pieces, seq(parts[1], parts[2]))
+    } else if (grepl("^[a-zA-Z]", token)) {
+      # Keyword token - parse using keyword handler
+      keyword_pieces <- parse_piles_keyword(token, puzzle_result)
+      if (!is.null(keyword_pieces) && length(keyword_pieces) > 0) {
+        pieces <- c(pieces, keyword_pieces)
+      }
     }
     # Ignore hyphens (just separators)
   }
@@ -276,8 +282,16 @@ tokenize_piles <- function(str) {
       }
       tokens <- c(tokens, substr(str, i, j - 1))
       i <- j
+    } else if (grepl("[a-zA-Z]", char)) {
+      # Keyword (alphabetic characters followed by alphanumeric)
+      j <- i
+      while (j <= n && grepl("[a-zA-Z0-9]", substr(str, j, j))) {
+        j <- j + 1
+      }
+      tokens <- c(tokens, substr(str, i, j - 1))
+      i <- j
     } else {
-      # Skip other characters
+      # Skip other characters (spaces, commas handled elsewhere)
       i <- i + 1
     }
   }
@@ -447,7 +461,12 @@ get_ring_pieces <- function(ring_num, puzzle_result = NULL) {
     return(seq(start_piece, end_piece))
 
   } else if (type == "concentric") {
-    rings <- puzzle_result$parameters$rings
+    # Get rings from parameters (might be stored as rings or grid[1])
+    rings <- puzzle_result$parameters$rings %||% puzzle_result$parameters$grid[1]
+    if (is.null(rings) || length(rings) == 0) {
+      log_warn("Cannot determine rings from concentric puzzle")
+      return(integer())
+    }
     if (ring_num == 0) return(1L)  # Center
     if (ring_num >= rings) return(integer())
 
