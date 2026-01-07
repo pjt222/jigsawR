@@ -100,7 +100,7 @@ ggplot() +
 ggplot() +
   geom_puzzle_random(
     aes(fill = after_stat(piece_id)),
-    n_pieces = 20,
+    n_interior = 20,
     n_corner = 5,
     seed = 42
   ) +
@@ -203,10 +203,10 @@ ggplot(data) +
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `n_pieces` | integer | required | Number of pieces |
-| `width` | numeric | required | Canvas width in mm |
-| `height` | numeric | required | Canvas height in mm |
-| `n_corner` | integer | 5 | Corners per piece (3-8) |
+| `n_interior` | integer | 12 | Number of interior points (influences piece count) |
+| `width` | numeric | 100 | Canvas width in mm |
+| `height` | numeric | 100 | Canvas height in mm |
+| `n_corner` | integer | 4 | Corners for base polygon (3-8) |
 
 ## Combining with Other Geoms
 

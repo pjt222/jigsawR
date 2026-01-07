@@ -288,7 +288,7 @@ library(jigsawR)
 result <- generate_puzzle(
   type = "voronoi",
   grid = c(35),          # 35 cells
-  size = c(400, 300),    # 400mm x 300mm
+  size = c(400, 300),    # height=400mm, width=300mm
   seed = 42,
   offset = 5
 )

@@ -322,8 +322,8 @@ library(jigsawR)
 # Generate puzzle
 result <- generate_puzzle(
   type = "rectangular",
-  grid = c(6, 4),      # 6 columns, 4 rows
-  size = c(600, 400),  # 600mm x 400mm
+  grid = c(6, 4),      # 6 rows, 4 columns
+  size = c(600, 400),  # height=600mm, width=400mm
   seed = 42,
   offset = 5           # Slight separation
 )

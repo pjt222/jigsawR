@@ -24,7 +24,7 @@ make_rand_pieces <- function(n) {
   ggplot() +
     geom_puzzle_random(
       aes(fill = after_stat(piece_id)),
-      n_pieces = n,
+      n_interior = n,
       seed = 42
     ) +
     scale_fill_viridis_c(option = "inferno", guide = "none") +
@@ -48,7 +48,7 @@ make_rand_corners <- function(nc, label) {
   ggplot() +
     geom_puzzle_random(
       aes(fill = after_stat(piece_id)),
-      n_pieces = 15,
+      n_interior = 15,
       n_corner = nc,
       seed = 42
     ) +
@@ -72,7 +72,7 @@ make_rand_palette <- function(pal) {
   ggplot() +
     geom_puzzle_random(
       aes(fill = after_stat(piece_id)),
-      n_pieces = 20,
+      n_interior = 20,
       seed = 42
     ) +
     scale_fill_viridis_c(option = pal, guide = "none") +
@@ -95,7 +95,7 @@ make_rand_offset <- function(off) {
   ggplot() +
     geom_puzzle_random(
       aes(fill = after_stat(piece_id)),
-      n_pieces = 18,
+      n_interior = 18,
       offset = off, seed = 42
     ) +
     scale_fill_viridis_c(option = "cividis", guide = "none") +
@@ -119,7 +119,7 @@ make_rand_seed <- function(s) {
   ggplot() +
     geom_puzzle_random(
       aes(fill = after_stat(piece_id)),
-      n_pieces = 15,
+      n_interior = 15,
       seed = s
     ) +
     scale_fill_viridis_c(option = "turbo", guide = "none") +
@@ -147,7 +147,7 @@ Random puzzles handle any aspect ratio - wide, square, or tall. See the [Aspect 
 ggplot() +
   geom_puzzle_random(
     aes(fill = after_stat(piece_id)),
-    n_pieces = 60,
+    n_interior = 60,
     seed = 456
   ) +
   scale_fill_viridis_c(option = "turbo", guide = "none") +
@@ -160,7 +160,7 @@ ggplot() +
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `n_pieces` | integer | 12 | Number of puzzle pieces |
+| `n_interior` | integer | 12 | Number of interior points (influences piece count) |
 | `n_corner` | integer | 4 | Corners per piece (3-8) |
 | `seed` | integer | random | Random seed for reproducibility |
 | `offset` | numeric | 0 (mm) | Piece separation distance |
@@ -202,7 +202,7 @@ Random puzzles are perfect for:
 result <- generate_puzzle(
   type = "random",
   grid = c(30),          # 30 pieces
-  size = c(400, 300),    # 400mm x 300mm
+  size = c(400, 300),    # height=400mm, width=300mm
   seed = 42,
   n_corner = 5,          # Pentagonal pieces
   offset = 5
@@ -220,7 +220,7 @@ render_puzzle_preview(result)
 ggplot() +
   geom_puzzle_random(
     aes(fill = after_stat(piece_id)),
-    n_pieces = 30,
+    n_interior = 30,
     width = 400, height = 300,
     n_corner = 5,
     seed = 42, offset = 5

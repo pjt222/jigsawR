@@ -42,8 +42,8 @@ The API approach gives you full control and access to the SVG data:
 # Generate a 4x3 rectangular puzzle
 result <- generate_puzzle(
   type = "rectangular",
-  grid = c(4, 3),      # 4 columns, 3 rows
-  size = c(400, 300),  # 400mm x 300mm
+  grid = c(4, 3),      # 4 rows, 3 columns
+  size = c(400, 300),  # height=400mm, width=300mm
   seed = 42            # For reproducibility
 )
 

@@ -57,7 +57,7 @@ result <- generate_puzzle(
 
   type = "rectangular",
   grid = c(4, 3),        # 4 rows, 3 columns
-  size = c(400, 300),    # 400mm x 300mm
+  size = c(400, 300),    # height=400mm, width=300mm (portrait)
   seed = 42              # For reproducibility
 )
 
@@ -134,7 +134,7 @@ The two approaches use equivalent parameters:
 |---------------------------|--------------------------------|
 | `type = "rectangular"` | Use `geom_puzzle_rect()` |
 | `grid = c(4, 3)` | `rows = 4, cols = 3` |
-| `size = c(400, 300)` | `width = 400, height = 300` |
+| `size = c(300, 400)` | `height = 300, width = 400` |
 | `seed = 42` | `seed = 42` |
 | `tabsize = 10` | `tabsize = 10` |
 | `offset = 10` | `offset = 10` |
@@ -228,7 +228,7 @@ Unique random shapes with configurable corners.
 ggplot() +
   geom_puzzle_random(
     aes(fill = after_stat(piece_id)),
-    n_pieces = 15,
+    n_interior = 15,
     seed = 202
   ) +
   scale_fill_viridis_c(option = "inferno", guide = "none") +
@@ -244,8 +244,8 @@ ggplot() +
 | Parameter | Description | Example |
 |-----------|-------------|---------|
 | `type` | Puzzle type | `"rectangular"`, `"hexagonal"` |
-| `grid` | Grid dimensions | `c(cols, rows)` or `c(rings)` |
-| `size` | Physical size (mm) | `c(width, height)` or `c(diameter)` |
+| `grid` | Grid dimensions | `c(rows, cols)` or `c(rings)` |
+| `size` | Physical size (mm) | `c(height, width)` or `c(diameter)` |
 | `seed` | Random seed | Any integer |
 | `offset` | Piece separation | `0` (touching) to `20+` (separated) |
 | `fusion` | Merge pieces | PILES notation string |
@@ -269,8 +269,8 @@ ggplot() +
 
 **Random:**
 
-- `n_pieces`: Number of pieces
-- `n_corner`: Corners per piece (3-8)
+- `n_interior`: Number of interior points (influences piece count)
+- `n_corner`: Corners for base polygon (default: 4)
 
 ## Separation Modes
 

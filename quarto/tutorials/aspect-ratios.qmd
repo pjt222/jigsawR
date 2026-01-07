@@ -68,7 +68,7 @@ print(ggplot() +
 print(ggplot() +
   geom_puzzle_random(
     aes(fill = after_stat(piece_id)),
-    n_pieces = 25,
+    n_interior = 25,
     seed = 42
   ) +
   scale_fill_viridis_c(option = "viridis", guide = "none") +
@@ -115,7 +115,7 @@ print(ggplot() +
 print(ggplot() +
   geom_puzzle_random(
     aes(fill = after_stat(piece_id)),
-    n_pieces = 20,
+    n_interior = 20,
     seed = 42
   ) +
   scale_fill_viridis_c(option = "plasma", guide = "none") +
@@ -162,7 +162,7 @@ print(ggplot() +
 print(ggplot() +
   geom_puzzle_random(
     aes(fill = after_stat(piece_id)),
-    n_pieces = 25,
+    n_interior = 25,
     seed = 42
   ) +
   scale_fill_viridis_c(option = "magma", guide = "none") +

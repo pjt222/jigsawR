@@ -50,17 +50,17 @@ generate_puzzle(
 | hexagonal | `c(rings)` | `c(3)` = 3 rings |
 | concentric | `c(rings)` | `c(4)` = 4 rings |
 | voronoi | `c(n_cells)` | `c(25)` = 25 cells |
-| random | `c(n_pieces)` | `c(20)` = 20 pieces |
+| random | `c(n_interior)` | `c(20)` = 20 interior points |
 
 ### Size Parameter by Type
 
 | Type | Size Format | Example |
 |------|-------------|---------|
-| rectangular | `c(width, height)` | `c(400, 300)` |
+| rectangular | `c(height, width)` | `c(300, 400)` = 300mm tall, 400mm wide |
 | hexagonal | `c(diameter)` | `c(250)` |
 | concentric | `c(diameter)` | `c(200)` |
-| voronoi | `c(width, height)` | `c(400, 300)` |
-| random | `c(width, height)` | `c(400, 300)` |
+| voronoi | `c(height, width)` | `c(300, 400)` = 300mm tall, 400mm wide |
+| random | `c(height, width)` | `c(300, 400)` = 300mm tall, 400mm wide |
 
 ### Optional Parameters
 
