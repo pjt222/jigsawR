@@ -16,7 +16,7 @@
 #'
 #' @param seed Random seed for reproducibility
 #' @param grid Number of cells (single value) or grid dimensions c(cols, rows)
-#' @param size Canvas dimensions c(width, height)
+#' @param size Canvas dimensions c(height, width) to match grid c(rows, cols)
 #' @param tabsize Tab size percentage (default: 20)
 #' @param jitter Jitter percentage for tabs (default: 4)
 #' @param boundary Boundary type: "rectangular" or "circular" (default: "rectangular
@@ -53,7 +53,7 @@ generate_voronoi_pieces_internal <- function(seed, grid, size, tabsize, jitter,
   # Determine number of cells
   n_cells <- if (length(grid) == 1) grid[1] else grid[1] * grid[2]
 
-  # Ensure size is c(width, height)
+  # Ensure size is c(height, width) to match grid c(rows, cols)
   if (length(size) == 1) {
     size <- c(size, size)
   }
@@ -69,8 +69,9 @@ generate_voronoi_pieces_internal <- function(seed, grid, size, tabsize, jitter,
   )
 
   # Compute Voronoi tessellation using deldir
-  # rw = rectangular window for clipping
-  rw <- c(0, size[1], 0, size[2])
+  # rw = rectangular window for clipping: c(xmin, xmax, ymin, ymax)
+  # size = c(height, width), so width = size[2], height = size[1]
+  rw <- c(0, size[2], 0, size[1])
   vor <- deldir::deldir(points$x, points$y, rw = rw)
 
   # Extract tiles as polygons

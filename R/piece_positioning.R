@@ -129,8 +129,8 @@ apply_rect_positioning <- function(piece_result, offset) {
     unique_eff_yi <- unique(sapply(effective_positions, function(p) p$yi))
     n_gaps_x <- length(unique_eff_xi) - 1
     n_gaps_y <- length(unique_eff_yi) - 1
-    original_width <- params$size[1]
-    original_height <- params$size[2]
+    original_height <- params$size[1]
+    original_width <- params$size[2]
     list(
       min_x = -offset,
       max_x = original_width + n_gaps_x * offset + offset,

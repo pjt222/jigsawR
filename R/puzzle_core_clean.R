@@ -37,8 +37,8 @@ generate_puzzle_core <- function(seed = 1234,
   # Extract dimensions
   yn <- grid[1]  # rows
   xn <- grid[2]  # columns
-  width <- size[1]
-  height <- size[2]
+  height <- size[1]  # matches grid[1] = rows
+  width <- size[2]   # matches grid[2] = cols
 
   # Convert to mm for internal calculations (algorithms expect mm)
   if (unit == "px") {
@@ -438,8 +438,8 @@ generate_puzzle_svg <- function(puzzle_structure, mode = "complete", colors = NU
 
   xn <- puzzle_structure$grid[2]
   yn <- puzzle_structure$grid[1]
-  width <- puzzle_structure$size[1]
-  height <- puzzle_structure$size[2]
+  height <- puzzle_structure$size[1]
+  width <- puzzle_structure$size[2]
 
   # Add padding to prevent stroke clipping at viewBox boundary
   # SVG strokes are centered on the path, so half the stroke extends outside

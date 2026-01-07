@@ -87,10 +87,11 @@ StatPuzzle <- ggplot2::ggproto("StatPuzzle", ggplot2::Stat,
                            min_tab_size = NULL, max_tab_size = NULL) {
 
     # Determine grid configuration and piece count
+    # Note: size = c(height, width) to match grid = c(rows, cols)
     if (puzzle_type == "rectangular") {
       grid <- c(rows, cols)
       expected_pieces <- rows * cols
-      size <- c(width, height)
+      size <- c(height, width)
     } else if (puzzle_type == "hexagonal") {
       grid <- c(rings)
       expected_pieces <- 3 * rings * (rings - 1) + 1
@@ -102,12 +103,12 @@ StatPuzzle <- ggplot2::ggproto("StatPuzzle", ggplot2::Stat,
     } else if (puzzle_type == "voronoi") {
       grid <- c(n_cells)
       expected_pieces <- n_cells
-      size <- c(width, height)
+      size <- c(height, width)
     } else if (puzzle_type == "random") {
       grid <- c(n_pieces)
       # Random puzzle piece count is approximate (depends on triangulation)
       expected_pieces <- n_pieces * 2  # Upper bound estimate
-      size <- c(width, height)
+      size <- c(height, width)
     } else {
       stop("Unknown puzzle type: ", puzzle_type, call. = FALSE)
     }

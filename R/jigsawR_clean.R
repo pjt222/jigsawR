@@ -12,7 +12,7 @@
 #'
 #' @param type Puzzle type: "rectangular", "hexagonal", or "concentric"
 #' @param grid For rectangular: c(rows, columns). For hexagonal/concentric: c(rings) or just rings
-#' @param size For rectangular: c(width, height) in mm. For hexagonal/concentric: c(diameter) or just diameter
+#' @param size For rectangular: c(height, width) in mm to match grid order. For hexagonal/concentric: c(diameter) or just diameter
 #' @param seed Random seed for reproducibility
 #' @param tabsize Tab size as percentage (10-40)
 #' @param jitter Jitter as percentage (0-15)
@@ -354,8 +354,8 @@ save_individual_pieces <- function(puzzle_structure, output_dir, filename_prefix
 
   xn <- puzzle_structure$grid[2]
   yn <- puzzle_structure$grid[1]
-  width <- puzzle_structure$size[1]
-  height <- puzzle_structure$size[2]
+  height <- puzzle_structure$size[1]
+  width <- puzzle_structure$size[2]
 
   if (is.null(colors)) {
     colors <- "black"

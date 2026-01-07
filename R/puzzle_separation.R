@@ -62,8 +62,8 @@ generate_separated_puzzle_svg <- function(puzzle_structure,
   piece_height <- puzzle_structure$piece_height
 
   # Calculate new canvas size with offsets
-  total_width <- puzzle_structure$size[1] + (xn - 1) * offset
-  total_height <- puzzle_structure$size[2] + (yn - 1) * offset
+  total_height <- puzzle_structure$size[1] + (yn - 1) * offset
+  total_width <- puzzle_structure$size[2] + (xn - 1) * offset
 
   # Add padding for visual clarity
   padding <- offset

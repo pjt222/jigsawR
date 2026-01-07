@@ -158,8 +158,8 @@ generate_rect_pieces_internal <- function(seed, grid, size, tabsize, jitter,
 
   yn <- grid[1]  # rows
   xn <- grid[2]  # cols
-  width <- size[1]
-  height <- size[2]
+  height <- size[1]  # matches grid[1] = rows
+  width <- size[2]   # matches grid[2] = cols
 
   # Generate puzzle structure using existing core function
   puzzle_structure <- generate_puzzle_core(

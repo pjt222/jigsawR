@@ -324,7 +324,7 @@ get_edge_path <- function(edge_map, cell_id, neighbor_id) {
 #' works well for Voronoi tessellation.
 #'
 #' @param n Number of points to generate
-#' @param size Canvas dimensions c(width, height) or c(diameter) for circular
+#' @param size Canvas dimensions c(height, width) to match grid c(rows, cols), or c(diameter) for circular
 #' @param seed Random seed (for small perturbation if desired)
 #' @param center Optional center point c(x, y), default is center of size
 #' @return Data frame with x and y columns
@@ -359,11 +359,12 @@ generate_fermat_points <- function(n, size, seed = NULL, center = NULL) {
       center <- c(size / 2, size / 2)
     }
   } else {
-    # Rectangular: size is c(width, height)
+    # Rectangular: size is c(height, width) to match grid c(rows, cols)
     radius <- min(size) / 2
     scale <- radius / sqrt(n)
     if (is.null(center)) {
-      center <- size / 2
+      # center is c(x, y) = c(width/2, height/2) = c(size[2]/2, size[1]/2)
+      center <- c(size[2] / 2, size[1] / 2)
     }
   }
 
@@ -384,16 +385,16 @@ generate_fermat_points <- function(n, size, seed = NULL, center = NULL) {
 #' Creates uniformly distributed random points within a rectangle.
 #'
 #' @param n Number of points
-#' @param size Canvas dimensions c(width, height)
+#' @param size Canvas dimensions c(height, width) to match grid c(rows, cols)
 #' @param seed Random seed
 #' @return Data frame with x and y columns
 #'
 #' @export
 generate_uniform_points <- function(n, size, seed) {
   set.seed(seed)
-
-  x <- runif(n, min = 0, max = size[1])
-  y <- runif(n, min = 0, max = size[2])
+  # size = c(height, width), so width = size[2], height = size[1]
+  x <- runif(n, min = 0, max = size[2])
+  y <- runif(n, min = 0, max = size[1])
 
   data.frame(x = x, y = y)
 }
@@ -405,7 +406,7 @@ generate_uniform_points <- function(n, size, seed) {
 #' maintaining some irregularity.
 #'
 #' @param grid Grid dimensions c(cols, rows) or c(n) for auto-layout
-#' @param size Canvas dimensions c(width, height)
+#' @param size Canvas dimensions c(height, width)
 #' @param seed Random seed
 #' @param jitter_amount Jitter as fraction of cell size (default: 0.3)
 #' @return Data frame with x and y columns
@@ -413,11 +414,14 @@ generate_uniform_points <- function(n, size, seed) {
 #' @export
 generate_jittered_grid_points <- function(grid, size, seed, jitter_amount = 0.3) {
   set.seed(seed)
+  # size = c(height, width), so width = size[2], height = size[1]
+  width <- size[2]
+  height <- size[1]
 
   if (length(grid) == 1) {
     # Auto-calculate grid dimensions
     n <- grid
-    aspect <- size[1] / size[2]
+    aspect <- width / height
     cols <- round(sqrt(n * aspect))
     rows <- ceiling(n / cols)
     grid <- c(cols, rows)
@@ -427,8 +431,8 @@ generate_jittered_grid_points <- function(grid, size, seed, jitter_amount = 0.3)
   rows <- grid[2]
   n <- cols * rows
 
-  cell_width <- size[1] / cols
-  cell_height <- size[2] / rows
+  cell_width <- width / cols
+  cell_height <- height / rows
 
   # Generate grid centers
   x_centers <- (seq_len(cols) - 0.5) * cell_width
@@ -446,8 +450,8 @@ generate_jittered_grid_points <- function(grid, size, seed, jitter_amount = 0.3)
   y <- y + jitter_y
 
   # Clamp to bounds
-  x <- pmax(0.01 * size[1], pmin(0.99 * size[1], x))
-  y <- pmax(0.01 * size[2], pmin(0.99 * size[2], y))
+  x <- pmax(0.01 * width, pmin(0.99 * width, x))
+  y <- pmax(0.01 * height, pmin(0.99 * height, y))
 
   data.frame(x = x, y = y)
 }
@@ -461,7 +465,7 @@ generate_jittered_grid_points <- function(grid, size, seed, jitter_amount = 0.3)
 #' Creates vertices for a regular polygon with n corners.
 #'
 #' @param n_corner Number of corners (3=triangle, 4=rectangle, 5=pentagon, etc.)
-#' @param size Dimensions c(width, height)
+#' @param size Dimensions c(height, width) to match grid c(rows, cols)
 #' @param center Optional center point c(x, y)
 #' @return List with vertices (matrix) and constraint_edges (matrix)
 #'
@@ -471,17 +475,21 @@ generate_jittered_grid_points <- function(grid, size, seed, jitter_amount = 0.3)
 #'
 #' @export
 generate_base_polygon <- function(n_corner, size, center = NULL) {
+  # size = c(height, width), so width = size[2], height = size[1]
+  width <- size[2]
+  height <- size[1]
+
   if (is.null(center)) {
-    center <- size / 2
+    center <- c(width / 2, height / 2)
   }
 
   if (n_corner == 4) {
     # Special case: rectangle aligned with axes
     vertices <- matrix(c(
       0, 0,
-      size[1], 0,
-      size[1], size[2],
-      0, size[2]
+      width, 0,
+      width, height,
+      0, height
     ), ncol = 2, byrow = TRUE)
   } else {
     # Regular polygon inscribed in ellipse
@@ -489,8 +497,8 @@ generate_base_polygon <- function(n_corner, size, center = NULL) {
     # Start from top for visual consistency
     angles <- angles - pi / 2
 
-    rx <- size[1] / 2 * 0.95  # Slight inset
-    ry <- size[2] / 2 * 0.95
+    rx <- width / 2 * 0.95  # Slight inset
+    ry <- height / 2 * 0.95
 
     x <- center[1] + rx * cos(angles)
     y <- center[2] + ry * sin(angles)
