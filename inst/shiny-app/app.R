@@ -1352,13 +1352,13 @@ server <- function(input, output, session) {
         size_param <- c(input$diameter_conc)
       } else if (puzzle_type == "voronoi") {
         grid_param <- c(input$n_cells)
-        size_param <- c(input$vor_width, input$vor_height)
+        size_param <- c(input$vor_height, input$vor_width)  # height first to match API convention
       } else if (puzzle_type == "random") {
         grid_param <- c(input$n_interior)
-        size_param <- c(input$rnd_width, input$rnd_height)
+        size_param <- c(input$rnd_height, input$rnd_width)  # height first to match API convention
       } else {
         grid_param <- c(input$rows, input$cols)
-        size_param <- c(input$width, input$height)
+        size_param <- c(input$height, input$width)  # height first to match API convention
       }
 
       # Get boundary parameters from radio button selection (hexagonal only)
@@ -2066,13 +2066,13 @@ server <- function(input, output, session) {
         size_param <- c(input$diameter_conc)
       } else if (data$type == "voronoi") {
         grid_param <- c(input$n_cells)
-        size_param <- c(input$vor_width, input$vor_height)
+        size_param <- c(input$vor_height, input$vor_width)  # height first to match API convention
       } else if (data$type == "random") {
         grid_param <- c(input$n_interior)
-        size_param <- c(input$rnd_width, input$rnd_height)
+        size_param <- c(input$rnd_height, input$rnd_width)  # height first to match API convention
       } else {
         grid_param <- c(input$rows, input$cols)
-        size_param <- c(input$width, input$height)
+        size_param <- c(input$height, input$width)  # height first to match API convention
       }
 
       # Get voronoi and random specific parameters
