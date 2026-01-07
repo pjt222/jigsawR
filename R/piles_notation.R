@@ -475,6 +475,7 @@ get_ring_pieces <- function(ring_num, puzzle_result = NULL) {
 #' @return Integer vector of piece IDs
 #' @keywords internal
 get_row_pieces <- function(row_num, puzzle_result = NULL) {
+
   if (is.null(puzzle_result)) {
     log_warn("Cannot resolve row {row_num} without puzzle_result")
     return(integer())
@@ -486,14 +487,16 @@ get_row_pieces <- function(row_num, puzzle_result = NULL) {
     return(integer())
   }
 
-  xn <- puzzle_result$parameters$grid[1]
-  yn <- puzzle_result$parameters$grid[2]
+  # grid = c(rows, cols) per API documentation
+  n_rows <- puzzle_result$parameters$grid[1]
+  n_cols <- puzzle_result$parameters$grid[2]
 
-  if (row_num < 1 || row_num > yn) return(integer())
+  if (row_num < 1 || row_num > n_rows) return(integer())
 
   # Row numbering: row 1 is y=0 (top)
+  # Pieces are numbered left-to-right, top-to-bottom: 1,2,3 / 4,5,6 / ...
   y <- row_num - 1
-  pieces <- (y * xn + 1):(y * xn + xn)
+  pieces <- (y * n_cols + 1):(y * n_cols + n_cols)
   return(as.integer(pieces))
 }
 
@@ -504,6 +507,7 @@ get_row_pieces <- function(row_num, puzzle_result = NULL) {
 #' @return Integer vector of piece IDs
 #' @keywords internal
 get_col_pieces <- function(col_num, puzzle_result = NULL) {
+
   if (is.null(puzzle_result)) {
     log_warn("Cannot resolve column {col_num} without puzzle_result")
     return(integer())
@@ -515,14 +519,16 @@ get_col_pieces <- function(col_num, puzzle_result = NULL) {
     return(integer())
   }
 
-  xn <- puzzle_result$parameters$grid[1]
-  yn <- puzzle_result$parameters$grid[2]
+  # grid = c(rows, cols) per API documentation
+  n_rows <- puzzle_result$parameters$grid[1]
+  n_cols <- puzzle_result$parameters$grid[2]
 
-  if (col_num < 1 || col_num > xn) return(integer())
+  if (col_num < 1 || col_num > n_cols) return(integer())
 
   # Column numbering: col 1 is x=0 (left)
+  # Pieces are numbered left-to-right, top-to-bottom: 1,2,3 / 4,5,6 / ...
   x <- col_num - 1
-  pieces <- x + 1 + (0:(yn - 1)) * xn
+  pieces <- x + 1 + (0:(n_rows - 1)) * n_cols
   return(as.integer(pieces))
 }
 
