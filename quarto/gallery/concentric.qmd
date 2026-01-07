@@ -321,6 +321,80 @@ cat('</div>')
 
 :::
 
+## Fusion Groups
+
+Merge pieces together using PILES notation:
+
+::: {.panel-tabset}
+
+## ggpuzzle
+
+```{r}
+#| label: fig-conc-fusion-ggpuzzle
+#| layout-ncol: 2
+#| fig-cap:
+#|   - "center + ring1"
+#|   - "All of ring2"
+
+# Center merged with ring 1
+print(ggplot() +
+  geom_puzzle_conc(
+    aes(fill = after_stat(ring)),
+    rings = 3,
+    fusion_groups = "center-ring1",
+    seed = 42
+  ) +
+  scale_fill_viridis_c(option = "plasma", guide = "none") +
+  coord_fixed() +
+  theme_puzzle() +
+  labs(title = "center + ring1"))
+
+# Ring 2 pieces merged
+print(ggplot() +
+  geom_puzzle_conc(
+    aes(fill = after_stat(ring)),
+    rings = 3,
+    fusion_groups = "ring2",
+    seed = 42
+  ) +
+  scale_fill_viridis_c(option = "plasma", guide = "none") +
+  coord_fixed() +
+  theme_puzzle() +
+  labs(title = "ring2"))
+```
+
+## API
+
+```{r}
+#| label: fig-conc-fusion-api
+#| layout-ncol: 2
+#| fig-cap:
+#|   - "center + ring1"
+#|   - "All of ring2"
+
+# Center merged with ring 1
+result_center_ring1 <- generate_puzzle(
+  type = "concentric",
+  grid = c(3),
+  size = c(200),
+  seed = 42,
+  fusion_groups = "center-ring1"
+)
+render_puzzle_preview(result_center_ring1)
+
+# Ring 2 pieces merged
+result_ring2 <- generate_puzzle(
+  type = "concentric",
+  grid = c(3),
+  size = c(200),
+  seed = 42,
+  fusion_groups = "ring2"
+)
+render_puzzle_preview(result_ring2)
+```
+
+:::
+
 ## Large Concentric Puzzle
 
 ::: {.panel-tabset}

@@ -286,6 +286,80 @@ cat('</div>')
 
 :::
 
+## Fusion Groups
+
+Merge pieces together using PILES notation:
+
+::: {.panel-tabset}
+
+## ggpuzzle
+
+```{r}
+#| label: fig-vor-fusion-ggpuzzle
+#| layout-ncol: 2
+#| fig-cap:
+#|   - "Standard 20-cell"
+#|   - "Adjacent pieces fused"
+
+# Standard
+print(ggplot() +
+  geom_puzzle_voronoi(
+    aes(fill = after_stat(piece_id)),
+    n_cells = 12,
+    seed = 42
+  ) +
+  scale_fill_viridis_c(option = "magma", guide = "none") +
+  coord_fixed() +
+  theme_puzzle() +
+  labs(title = "Standard"))
+
+# Adjacent pieces fused
+print(ggplot() +
+  geom_puzzle_voronoi(
+    aes(fill = after_stat(piece_id)),
+    n_cells = 12,
+    seed = 42,
+    fusion_groups = "1-2-3,5-6"
+  ) +
+  scale_fill_viridis_c(option = "magma", guide = "none") +
+  coord_fixed() +
+  theme_puzzle() +
+  labs(title = "Pieces fused"))
+```
+
+## API
+
+```{r}
+#| label: fig-vor-fusion-api
+#| layout-ncol: 2
+#| fig-cap:
+#|   - "Standard 12-cell"
+#|   - "Adjacent pieces fused"
+
+# Standard
+result_standard <- generate_puzzle(
+  type = "voronoi",
+  grid = c(12),
+  size = c(200, 200),
+  seed = 42,
+  fill_palette = "magma"
+)
+render_puzzle_preview(result_standard, title = "Standard")
+
+# Adjacent pieces fused
+result_fused <- generate_puzzle(
+  type = "voronoi",
+  grid = c(12),
+  size = c(200, 200),
+  seed = 42,
+  fill_palette = "magma",
+  fusion_groups = "1-2-3,5-6"
+)
+render_puzzle_preview(result_fused, title = "Pieces fused")
+```
+
+:::
+
 ## Large Voronoi Puzzle
 
 ::: {.panel-tabset}

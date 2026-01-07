@@ -357,6 +357,80 @@ cat('</div>')
 Random puzzles handle any aspect ratio - wide, square, or tall. See the [Aspect Ratios Tutorial](../tutorials/aspect-ratios.qmd) for examples comparing all puzzle types.
 :::
 
+## Fusion Groups
+
+Merge pieces together using PILES notation:
+
+::: {.panel-tabset}
+
+## ggpuzzle
+
+```{r}
+#| label: fig-rand-fusion-ggpuzzle
+#| layout-ncol: 2
+#| fig-cap:
+#|   - "Standard 12-piece"
+#|   - "Adjacent pieces fused"
+
+# Standard
+print(ggplot() +
+  geom_puzzle_random(
+    aes(fill = after_stat(piece_id)),
+    n_interior = 12,
+    seed = 42
+  ) +
+  scale_fill_viridis_c(option = "magma", guide = "none") +
+  coord_fixed() +
+  theme_puzzle() +
+  labs(title = "Standard"))
+
+# Adjacent pieces fused
+print(ggplot() +
+  geom_puzzle_random(
+    aes(fill = after_stat(piece_id)),
+    n_interior = 12,
+    seed = 42,
+    fusion_groups = "1-2-3,5-6"
+  ) +
+  scale_fill_viridis_c(option = "magma", guide = "none") +
+  coord_fixed() +
+  theme_puzzle() +
+  labs(title = "Pieces fused"))
+```
+
+## API
+
+```{r}
+#| label: fig-rand-fusion-api
+#| layout-ncol: 2
+#| fig-cap:
+#|   - "Standard 12-piece"
+#|   - "Adjacent pieces fused"
+
+# Standard
+result_standard <- generate_puzzle(
+  type = "random",
+  grid = c(12),
+  size = c(200, 200),
+  seed = 42,
+  fill_palette = "magma"
+)
+render_puzzle_preview(result_standard, title = "Standard")
+
+# Adjacent pieces fused
+result_fused <- generate_puzzle(
+  type = "random",
+  grid = c(12),
+  size = c(200, 200),
+  seed = 42,
+  fill_palette = "magma",
+  fusion_groups = "1-2-3,5-6"
+)
+render_puzzle_preview(result_fused, title = "Pieces fused")
+```
+
+:::
+
 ## Large Random Puzzle
 
 ::: {.panel-tabset}
