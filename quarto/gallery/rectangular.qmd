@@ -137,25 +137,40 @@ print((make_palette_plot("viridis") + make_palette_plot("magma") + make_palette_
 
 ```{r}
 #| label: fig-rect-palettes-api
-#| layout-ncol: 3
-#| fig-cap:
-#|   - "viridis"
-#|   - "magma"
-#|   - "plasma"
-#|   - "inferno"
-#|   - "cividis"
-#|   - "turbo"
-# API with fill_palette for colored fills matching ggpuzzle aesthetics
-for (pal in c("viridis", "magma", "plasma", "inferno", "cividis", "turbo")) {
+#| results: asis
+#| echo: false
+
+# Generate all palette previews and combine into a grid
+palettes <- c("viridis", "magma", "plasma", "inferno", "cividis", "turbo")
+
+# Create HTML grid
+cat('<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1em; margin: 1em 0;">')
+for (pal in palettes) {
   result <- generate_puzzle(
     type = "rectangular",
     grid = c(4, 3),
     size = c(400, 300),
     seed = 42,
-    fill_palette = pal  # Fills pieces with palette colors
+    fill_palette = pal
   )
-  print(render_puzzle_preview(result))
+  cat(sprintf('<div style="text-align: center;"><div style="font-weight: bold; margin-bottom: 0.5em;">%s</div>%s</div>',
+              pal, result$svg_content))
 }
+cat('</div>')
+```
+
+```{r}
+#| label: fig-rect-palettes-api-code
+#| eval: false
+# API with fill_palette for colored fills
+result <- generate_puzzle(
+  type = "rectangular",
+  grid = c(4, 3),
+  size = c(400, 300),
+  seed = 42,
+  fill_palette = "viridis"  # Options: viridis, magma, plasma, inferno, cividis, turbo
+)
+render_puzzle_preview(result)
 ```
 
 :::
@@ -193,13 +208,14 @@ print(make_offset_plot(0) + make_offset_plot(5) + make_offset_plot(10) + make_of
 
 ```{r}
 #| label: fig-rect-offset-api
-#| layout-ncol: 4
-#| fig-cap:
-#|   - "offset = 0"
-#|   - "offset = 5"
-#|   - "offset = 10"
-#|   - "offset = 20"
-for (off in c(0, 5, 10, 20)) {
+#| results: asis
+#| echo: false
+
+# Generate offset previews in a grid
+offsets <- c(0, 5, 10, 20)
+
+cat('<div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1em; margin: 1em 0;">')
+for (off in offsets) {
   result <- generate_puzzle(
     type = "rectangular",
     grid = c(3, 3),
@@ -208,8 +224,25 @@ for (off in c(0, 5, 10, 20)) {
     seed = 42,
     fill_palette = "plasma"
   )
-  print(render_puzzle_preview(result))
+  cat(sprintf('<div style="text-align: center;"><div style="font-weight: bold; margin-bottom: 0.5em;">offset = %d</div>%s</div>',
+              off, result$svg_content))
 }
+cat('</div>')
+```
+
+```{r}
+#| label: fig-rect-offset-api-code
+#| eval: false
+# API with offset for piece separation
+result <- generate_puzzle(
+  type = "rectangular",
+  grid = c(3, 3),
+  size = c(300, 300),
+  offset = 10,  # Separation in mm
+  seed = 42,
+  fill_palette = "plasma"
+)
+render_puzzle_preview(result)
 ```
 
 :::

@@ -44,21 +44,37 @@ print(make_conc_rings(2) + make_conc_rings(3) + make_conc_rings(4))
 
 ```{r}
 #| label: fig-conc-rings-api
-#| layout-ncol: 3
-#| fig-cap:
-#|   - "2 rings"
-#|   - "3 rings"
-#|   - "4 rings"
+#| results: asis
+#| echo: false
 
-for (r in c(2, 3, 4)) {
+# Generate ring previews in a grid
+rings <- c(2, 3, 4)
+
+cat('<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1em; margin: 1em 0;">')
+for (r in rings) {
   result <- generate_puzzle(
     type = "concentric",
     grid = c(r),
     size = c(200),
     seed = 42
   )
-  render_puzzle_preview(result)
+  cat(sprintf('<div style="text-align: center;"><div style="font-weight: bold; margin-bottom: 0.5em;">%d rings</div>%s</div>',
+              r, result$svg_content))
 }
+cat('</div>')
+```
+
+```{r}
+#| label: fig-conc-rings-api-code
+#| eval: false
+# API with varying ring counts
+result <- generate_puzzle(
+  type = "concentric",
+  grid = c(3),      # Number of rings
+  size = c(200),    # Diameter in mm
+  seed = 42
+)
+render_puzzle_preview(result)
 ```
 
 :::
@@ -223,14 +239,14 @@ print(make_conc_offset(0) + make_conc_offset(5) + make_conc_offset(10) + make_co
 
 ```{r}
 #| label: fig-conc-offset-api
-#| layout-ncol: 4
-#| fig-cap:
-#|   - "offset = 0"
-#|   - "offset = 5"
-#|   - "offset = 10"
-#|   - "offset = 15"
+#| results: asis
+#| echo: false
 
-for (off in c(0, 5, 10, 15)) {
+# Generate offset previews in a grid
+offsets <- c(0, 5, 10, 15)
+
+cat('<div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1em; margin: 1em 0;">')
+for (off in offsets) {
   result <- generate_puzzle(
     type = "concentric",
     grid = c(3),
@@ -238,8 +254,24 @@ for (off in c(0, 5, 10, 15)) {
     seed = 42,
     offset = off
   )
-  render_puzzle_preview(result)
+  cat(sprintf('<div style="text-align: center;"><div style="font-weight: bold; margin-bottom: 0.5em;">offset = %d</div>%s</div>',
+              off, result$svg_content))
 }
+cat('</div>')
+```
+
+```{r}
+#| label: fig-conc-offset-api-code
+#| eval: false
+# API with offset for piece separation
+result <- generate_puzzle(
+  type = "concentric",
+  grid = c(3),
+  size = c(200),
+  offset = 10,  # Separation in mm
+  seed = 42
+)
+render_puzzle_preview(result)
 ```
 
 :::
