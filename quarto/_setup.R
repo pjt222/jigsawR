@@ -83,3 +83,41 @@ render_puzzle_preview <- function(result, width = "100%", max_width = "400px", .
     knitr::asis_output(html_output)
   }
 }
+
+# Helper function to render multiple puzzles in a grid layout
+# Uses htmltools to avoid breaking Quarto's markdown parsing context
+# (cat() with results: asis breaks ::: div markers)
+render_puzzle_grid <- function(items, ncol = 3, labels = NULL) {
+  # items: list of puzzle results (each with $svg_content)
+  # labels: character vector of labels for each item (optional)
+  # ncol: number of columns in grid
+
+  if (is.null(labels) && !is.null(names(items))) {
+    labels <- names(items)
+  }
+
+  # Build grid items
+  grid_items <- vapply(seq_along(items), function(i) {
+    svg_content <- items[[i]]$svg_content
+    label <- if (!is.null(labels) && length(labels) >= i) {
+      sprintf('<div style="font-weight: bold; margin-bottom: 0.5em;">%s</div>', labels[i])
+    } else {
+      ""
+    }
+    sprintf('<div style="text-align: center;">%s%s</div>', label, svg_content)
+  }, character(1))
+
+  # Build complete grid HTML (single line to avoid Quarto parsing issues)
+  html_output <- sprintf(
+    '<div style="display: grid; grid-template-columns: repeat(%d, 1fr); gap: 1em; margin: 1em 0;">%s</div>',
+    ncol,
+    paste(grid_items, collapse = "")
+  )
+
+  # Use htmltools for proper HTML handling in Quarto
+  if (requireNamespace("htmltools", quietly = TRUE)) {
+    htmltools::browsable(htmltools::HTML(html_output))
+  } else {
+    knitr::asis_output(html_output)
+  }
+}

@@ -57,24 +57,14 @@ render_puzzle_preview(result)
 
 ```{r}
 #| label: fig-conc-rings-api
-#| results: asis
 #| echo: false
 
 # Generate ring previews in a grid
 rings <- c(2, 3, 4)
-
-cat('<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1em; margin: 1em 0;">')
-for (r in rings) {
-  result <- generate_puzzle(
-    type = "concentric",
-    grid = c(r),
-    size = c(200),
-    seed = 42
-  )
-  cat(sprintf('<div style="text-align: center;"><div style="font-weight: bold; margin-bottom: 0.5em;">%d rings</div>%s</div>',
-              r, result$svg_content))
-}
-cat('</div>')
+items <- lapply(rings, function(r) {
+  generate_puzzle(type = "concentric", grid = c(r), size = c(200), seed = 42)
+})
+render_puzzle_grid(items, ncol = 3, labels = paste(rings, "rings"))
 ```
 
 :::
@@ -231,25 +221,14 @@ render_puzzle_preview(result)
 
 ```{r}
 #| label: fig-conc-palettes-api
-#| results: asis
 #| echo: false
 
 # Generate all palette previews and combine into a grid
 palettes <- c("viridis", "magma", "plasma", "inferno", "cividis", "turbo")
-
-cat('<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1em; margin: 1em 0;">')
-for (pal in palettes) {
-  result <- generate_puzzle(
-    type = "concentric",
-    grid = c(3),
-    size = c(200),
-    seed = 42,
-    fill_palette = pal
-  )
-  cat(sprintf('<div style="text-align: center;"><div style="font-weight: bold; margin-bottom: 0.5em;">%s</div>%s</div>',
-              pal, result$svg_content))
-}
-cat('</div>')
+items <- lapply(palettes, function(pal) {
+  generate_puzzle(type = "concentric", grid = c(3), size = c(200), seed = 42, fill_palette = pal)
+})
+render_puzzle_grid(items, ncol = 3, labels = palettes)
 ```
 
 :::
@@ -298,25 +277,14 @@ render_puzzle_preview(result)
 
 ```{r}
 #| label: fig-conc-offset-api
-#| results: asis
 #| echo: false
 
 # Generate offset previews in a grid
 offsets <- c(0, 5, 10, 15)
-
-cat('<div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1em; margin: 1em 0;">')
-for (off in offsets) {
-  result <- generate_puzzle(
-    type = "concentric",
-    grid = c(3),
-    size = c(200),
-    seed = 42,
-    offset = off
-  )
-  cat(sprintf('<div style="text-align: center;"><div style="font-weight: bold; margin-bottom: 0.5em;">offset = %d</div>%s</div>',
-              off, result$svg_content))
-}
-cat('</div>')
+items <- lapply(offsets, function(off) {
+  generate_puzzle(type = "concentric", grid = c(3), size = c(200), seed = 42, offset = off)
+})
+render_puzzle_grid(items, ncol = 4, labels = paste("offset =", offsets))
 ```
 
 :::
