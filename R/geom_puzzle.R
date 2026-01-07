@@ -126,13 +126,12 @@ GeomPuzzle <- ggplot2::ggproto("GeomPuzzle", ggplot2::Geom,
 
       if (use_fusion_rendering) {
         # Fusion-aware rendering: fill polygon + separate edge strokes
-
-        # Pass 1: Fill polygon (no stroke)
+        # Pass 1: Fill polygon (no stroke - use NA not "transparent")
         fill_grob <- grid::polygonGrob(
           x = piece$x,
           y = piece$y,
           gp = grid::gpar(
-            col = NA,  # No stroke on fill
+            col = NA,
             fill = fill_color
           ),
           default.units = "native"

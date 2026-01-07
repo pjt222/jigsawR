@@ -3504,6 +3504,61 @@ render_puzzle_grid(items, ncol = 3, labels = paste("param =", params))
 
 ---
 
+### Insight #64: Grid Graphics col=NA vs col="transparent" for No-Stroke Polygons (2025-01-07)
+
+**Context**: ggpuzzle fusion rendering appeared not to work - internal edges between fused pieces were still visible even though debug logs confirmed edges were being skipped.
+
+**Problem**: In `R/geom_puzzle.R`, the fill polygon for fusion-aware rendering used:
+
+```r
+fill_grob <- grid::polygonGrob(
+  x = piece$x, y = piece$y,
+  gp = grid::gpar(
+    col = "transparent",  # ← WRONG
+    fill = fill_color,
+    lwd = 0
+  ),
+  default.units = "native"
+)
+```
+
+While `"transparent"` seems logically equivalent to "no stroke", in R's grid graphics system it can still produce rendering artifacts. The grid system may still allocate stroke rendering resources or apply anti-aliasing at polygon boundaries.
+
+**Solution**: Use `col = NA` which truly means "no border at all":
+
+```r
+fill_grob <- grid::polygonGrob(
+  x = piece$x, y = piece$y,
+  gp = grid::gpar(
+    col = NA,  # ← CORRECT: truly no stroke
+    fill = fill_color
+  ),
+  default.units = "native"
+)
+```
+
+**Why Debugging Was Confusing**:
+1. Debug logs confirmed `use_fusion_rendering = TRUE`
+2. Debug logs confirmed all fused edges were being skipped (`next` statement executed)
+3. Debug logs confirmed `piece_grobs count = 1` (only fill polygon, no edge strokes)
+4. Yet the rendered output still showed what looked like edges
+
+The "edges" we saw were actually **color boundaries** between adjacent pieces with different fill colors (viridis gradient). These resembled strokes but were just the natural visual boundary between two different colors meeting.
+
+**Verification**: Testing with solid colors (all fused pieces same color) made the fusion effect obvious:
+- `fusion_groups = 'center-ring1'`: Center and ring1 became one solid area ✓
+- `fusion_groups = 'ring2'`: Ring2 became one solid band ✓
+
+**Key Lesson**: In R grid graphics:
+- `col = "transparent"` - may still produce rendering artifacts
+- `col = NA` - truly means "no stroke whatsoever"
+- When debugging rendering issues, test with solid/identical colors to distinguish stroke artifacts from color boundaries
+
+**Files Changed**:
+- `R/geom_puzzle.R`: Changed `col = "transparent"` to `col = NA` in fusion fill polygon
+
+---
+
 ## Development History
 
 ### Completed Work (Archive)
