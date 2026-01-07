@@ -730,8 +730,8 @@ geom_puzzle_voronoi <- function(mapping = NULL,
 #' @param data The data to visualize. Each row maps to a puzzle piece.
 #' @param stat The statistical transformation to use (default: "puzzle").
 #' @param position Position adjustment (default: "identity").
-#' @param n_pieces Number of interior points that influence piece count.
-#'   Actual piece count depends on triangulation.
+#' @param n_interior Number of interior points that influence piece count.
+#'   Actual piece count depends on triangulation. Alias: `n_pieces` (deprecated)
 #' @param width Puzzle width in mm (default: 100).
 #' @param height Puzzle height in mm (default: 100).
 #' @param tabsize Size of the puzzle tabs (default: 10).
@@ -761,10 +761,10 @@ geom_puzzle_voronoi <- function(mapping = NULL,
 #' \dontrun{
 #' library(ggplot2)
 #'
-#' # Random shape puzzle with ~12 pieces
+#' # Random shape puzzle with ~12 interior points
 #' df <- data.frame(value = 1:12)
 #' ggplot(df, aes(fill = value)) +
-#'   geom_puzzle_random(n_pieces = 12, seed = 42) +
+#'   geom_puzzle_random(n_interior = 12, seed = 42) +
 #'   scale_fill_viridis_c() +
 #'   theme_void()
 #' }
@@ -774,7 +774,8 @@ geom_puzzle_random <- function(mapping = NULL,
                                data = NULL,
                                stat = "puzzle",
                                position = "identity",
-                               n_pieces = 12,
+                               n_interior = 12,
+                               n_pieces = NULL,  # deprecated alias
                                width = 100,
                                height = 100,
                                tabsize = 10,
@@ -796,6 +797,11 @@ geom_puzzle_random <- function(mapping = NULL,
                                show.legend = NA,
                                inherit.aes = TRUE) {
 
+  # Handle backward compatibility: n_pieces -> n_interior
+  if (!is.null(n_pieces)) {
+    n_interior <- n_pieces
+  }
+
   ggplot2::layer(
     data = ensure_puzzle_data(data),
     mapping = mapping,
@@ -806,7 +812,7 @@ geom_puzzle_random <- function(mapping = NULL,
     inherit.aes = inherit.aes,
     params = list(
       puzzle_type = "random",
-      n_pieces = n_pieces,
+      n_interior = n_interior,
       width = width,
       height = height,
       tabsize = tabsize,

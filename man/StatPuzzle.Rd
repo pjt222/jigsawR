@@ -21,7 +21,7 @@ StatPuzzle
 
 \item{n_cells}{Number of cells (voronoi only)}
 
-\item{n_pieces}{Number of interior points (random only)}
+\item{n_interior}{Number of interior points (random only). Alias: `n_pieces` (deprecated)}
 
 \item{tabsize}{Tab size parameter}
 

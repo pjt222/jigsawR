@@ -51,7 +51,7 @@ generate_puzzle(
 
 \item{grid}{For rectangular: c(rows, columns). For hexagonal/concentric: c(rings) or just rings}
 
-\item{size}{For rectangular: c(width, height) in mm. For hexagonal/concentric: c(diameter) or just diameter}
+\item{size}{For rectangular: c(height, width) in mm to match grid order. For hexagonal/concentric: c(diameter) or just diameter}
 
 \item{seed}{Random seed for reproducibility}
 

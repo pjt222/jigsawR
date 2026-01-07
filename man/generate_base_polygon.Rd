@@ -9,7 +9,7 @@ generate_base_polygon(n_corner, size, center = NULL)
 \arguments{
 \item{n_corner}{Number of corners (3=triangle, 4=rectangle, 5=pentagon, etc.)}
 
-\item{size}{Dimensions c(width, height)}
+\item{size}{Dimensions c(height, width) to match grid c(rows, cols)}
 
 \item{center}{Optional center point c(x, y)}
 }

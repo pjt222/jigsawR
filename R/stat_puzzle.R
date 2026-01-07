@@ -15,7 +15,7 @@ NULL
 #' @param cols Number of columns (rectangular only)
 #' @param rings Number of rings (hexagonal/concentric only)
 #' @param n_cells Number of cells (voronoi only)
-#' @param n_pieces Number of interior points (random only)
+#' @param n_interior Number of interior points (random only). Alias: `n_pieces` (deprecated)
 #' @param tabsize Tab size parameter
 #' @param jitter Tab jitter parameter
 #' @param seed Random seed for reproducibility
@@ -45,7 +45,11 @@ StatPuzzle <- ggplot2::ggproto("StatPuzzle", ggplot2::Stat,
     params$cols <- params$cols %||% 3
     params$rings <- params$rings %||% 3
     params$n_cells <- params$n_cells %||% 12
-    params$n_pieces <- params$n_pieces %||% 12
+    # Handle n_interior with backward compatibility for n_pieces
+    if (!is.null(params$n_pieces) && is.null(params$n_interior)) {
+      params$n_interior <- params$n_pieces
+    }
+    params$n_interior <- params$n_interior %||% 12
     params$tabsize <- params$tabsize %||% 20
     params$jitter <- params$jitter %||% 4
     params$bezier_resolution <- params$bezier_resolution %||% 20
@@ -69,7 +73,8 @@ StatPuzzle <- ggplot2::ggproto("StatPuzzle", ggplot2::Stat,
 
   compute_panel = function(data, scales, puzzle_type = "rectangular",
                            rows = 3, cols = 3, rings = 3,
-                           n_cells = 12, n_pieces = 12,
+                           n_cells = 12, n_interior = 12,
+                           n_pieces = NULL,  # deprecated alias for n_interior
                            tabsize = 20, jitter = 4, seed = NULL,
                            offset = 0,
                            bezier_resolution = 20,
@@ -85,6 +90,11 @@ StatPuzzle <- ggplot2::ggproto("StatPuzzle", ggplot2::Stat,
                            width = 100, height = 100, diameter = 100,
                            # Tab constraints
                            min_tab_size = NULL, max_tab_size = NULL) {
+
+    # Handle backward compatibility: n_pieces -> n_interior
+    if (!is.null(n_pieces)) {
+      n_interior <- n_pieces
+    }
 
     # Determine grid configuration and piece count
     # Note: size = c(height, width) to match grid = c(rows, cols)
@@ -105,9 +115,9 @@ StatPuzzle <- ggplot2::ggproto("StatPuzzle", ggplot2::Stat,
       expected_pieces <- n_cells
       size <- c(height, width)
     } else if (puzzle_type == "random") {
-      grid <- c(n_pieces)
+      grid <- c(n_interior)
       # Random puzzle piece count is approximate (depends on triangulation)
-      expected_pieces <- n_pieces * 2  # Upper bound estimate
+      expected_pieces <- n_interior * 2  # Upper bound estimate
       size <- c(height, width)
     } else {
       stop("Unknown puzzle type: ", puzzle_type, call. = FALSE)

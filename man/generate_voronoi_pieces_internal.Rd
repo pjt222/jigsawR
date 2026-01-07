@@ -24,7 +24,7 @@ generate_voronoi_pieces_internal(
 
 \item{grid}{Number of cells (single value) or grid dimensions c(cols, rows)}
 
-\item{size}{Canvas dimensions c(width, height)}
+\item{size}{Canvas dimensions c(height, width) to match grid c(rows, cols)}
 
 \item{tabsize}{Tab size percentage (default: 20)}
 

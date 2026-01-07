@@ -9,7 +9,7 @@ generate_jittered_grid_points(grid, size, seed, jitter_amount = 0.3)
 \arguments{
 \item{grid}{Grid dimensions c(cols, rows) or c(n) for auto-layout}
 
-\item{size}{Canvas dimensions c(width, height)}
+\item{size}{Canvas dimensions c(height, width)}
 
 \item{seed}{Random seed}
 

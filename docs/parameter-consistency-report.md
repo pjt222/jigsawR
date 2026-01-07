@@ -147,14 +147,16 @@ size_param <- c(input$rnd_height, input$rnd_width)
 | min_tab_size | NULL | 0 | Functionally same |
 | max_tab_size | NULL | 0 | Functionally same |
 
-### 2.3 Minor: Naming Inconsistencies
+### 2.3 Minor: Naming Inconsistencies - FIXED ✓
 
-| Concept | API | ggpuzzle | Shiny | Recommendation |
-|---------|-----|----------|-------|----------------|
-| Puzzle type | `type` | `puzzle_type` | `puzzle_type` | Consider aligning |
-| Random interior points | `grid` | `n_pieces` | `n_interior` | Standardize name |
-| Stroke width | `stroke_width` | `linewidth` | `stroke_width` | ggpuzzle uses ggplot2 convention (correct) |
-| Opacity | `opacity` | `alpha` | `opacity` | ggpuzzle uses ggplot2 convention (correct) |
+| Concept | API | ggpuzzle | Shiny | Status |
+|---------|-----|----------|-------|--------|
+| Puzzle type | `type` | `puzzle_type` | `puzzle_type` | Design choice (API is terser) |
+| Random interior points | `grid` | `n_interior` | `n_interior` | ✓ **FIXED** - unified to `n_interior` |
+| Stroke width | `stroke_width` | `linewidth` | `stroke_width` | ggplot2 convention (correct) |
+| Opacity | `opacity` | `alpha` | `opacity` | ggplot2 convention (correct) |
+
+**Note**: ggpuzzle's `n_pieces` parameter has been renamed to `n_interior` with backward compatibility (deprecated alias).
 
 ### 2.4 Missing Features
 
@@ -176,9 +178,13 @@ size_param <- c(input$rnd_height, input$rnd_width)
 
 ### 3.2 Short-term Improvements (Medium Priority)
 
-3. **Standardize "n_interior" naming**: Consider renaming Shiny's `n_interior` to match the API/ggpuzzle naming pattern.
+3. ~~**Standardize "n_interior" naming**~~: ✓ DONE - Renamed ggpuzzle's `n_pieces` to `n_interior` with backward compatibility.
 
-4. **Document default differences**: Add a note in documentation explaining why show_labels defaults differ (API = FALSE for programmatic use, Shiny = TRUE for visual exploration).
+4. ~~**Document default differences**~~: ✓ DONE - See note below on `show_labels` defaults.
+
+**Note on `show_labels` defaults**: The different defaults are intentional:
+- **API** (`show_labels = FALSE`): For programmatic use, labels are opt-in to avoid clutter
+- **Shiny** (`show_labels = TRUE`): For visual exploration, labels help identify pieces for fusion groups
 
 ### 3.3 Long-term Considerations (Low Priority)
 

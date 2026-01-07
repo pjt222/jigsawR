@@ -9,7 +9,7 @@ generate_uniform_points(n, size, seed)
 \arguments{
 \item{n}{Number of points}
 
-\item{size}{Canvas dimensions c(width, height)}
+\item{size}{Canvas dimensions c(height, width) to match grid c(rows, cols)}
 
 \item{seed}{Random seed}
 }

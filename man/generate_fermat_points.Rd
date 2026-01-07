@@ -9,7 +9,7 @@ generate_fermat_points(n, size, seed = NULL, center = NULL)
 \arguments{
 \item{n}{Number of points to generate}
 
-\item{size}{Canvas dimensions c(width, height) or c(diameter) for circular}
+\item{size}{Canvas dimensions c(height, width) to match grid c(rows, cols), or c(diameter) for circular}
 
 \item{seed}{Random seed (for small perturbation if desired)}
 

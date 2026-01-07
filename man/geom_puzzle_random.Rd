@@ -9,7 +9,8 @@ geom_puzzle_random(
   data = NULL,
   stat = "puzzle",
   position = "identity",
-  n_pieces = 12,
+  n_interior = 12,
+  n_pieces = NULL,
   width = 100,
   height = 100,
   tabsize = 10,
@@ -41,8 +42,8 @@ geom_puzzle_random(
 
 \item{position}{Position adjustment (default: "identity").}
 
-\item{n_pieces}{Number of interior points that influence piece count.
-Actual piece count depends on triangulation.}
+\item{n_interior}{Number of interior points that influence piece count.
+Actual piece count depends on triangulation. Alias: `n_pieces` (deprecated)}
 
 \item{width}{Puzzle width in mm (default: 100).}
 
@@ -98,10 +99,10 @@ Requires the 'RCDT' package to be installed.
 \dontrun{
 library(ggplot2)
 
-# Random shape puzzle with ~12 pieces
+# Random shape puzzle with ~12 interior points
 df <- data.frame(value = 1:12)
 ggplot(df, aes(fill = value)) +
-  geom_puzzle_random(n_pieces = 12, seed = 42) +
+  geom_puzzle_random(n_interior = 12, seed = 42) +
   scale_fill_viridis_c() +
   theme_void()
 }
