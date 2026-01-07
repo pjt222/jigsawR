@@ -11,14 +11,21 @@ geom_puzzle_rect(
   position = "identity",
   rows = 3,
   cols = 3,
-  tabsize = 20,
-  jitter = 4,
+  width = 100,
+  height = 100,
+  tabsize = 10,
+  jitter = 2,
+  min_tab_size = NULL,
+  max_tab_size = NULL,
   seed = NULL,
   offset = 0,
   bezier_resolution = 20,
   fusion_groups = NULL,
   fusion_style = "none",
   fusion_opacity = 0.3,
+  show_labels = FALSE,
+  label_color = "black",
+  label_size = NULL,
   ...,
   na.rm = FALSE,
   show.legend = NA,
@@ -38,9 +45,17 @@ geom_puzzle_rect(
 
 \item{cols}{Number of columns in the puzzle grid.}
 
-\item{tabsize}{Size of the puzzle tabs (default: 20).}
+\item{width}{Puzzle width in mm (default: 100).}
 
-\item{jitter}{Random variation in tab positions (default: 4).}
+\item{height}{Puzzle height in mm (default: 100).}
+
+\item{tabsize}{Size of the puzzle tabs (default: 10).}
+
+\item{jitter}{Random variation in tab positions (default: 2).}
+
+\item{min_tab_size}{Minimum tab height in mm (NULL for no constraint).}
+
+\item{max_tab_size}{Maximum tab height in mm (NULL for no constraint).}
 
 \item{seed}{Random seed for reproducible puzzle shapes.}
 
@@ -52,6 +67,12 @@ list of integer vectors, or NULL for no fusion.}
 \item{fusion_style}{Style for fused internal edges: "none" (invisible), "dashed", "solid".}
 
 \item{fusion_opacity}{Opacity for fused edges when style != "none" (0.0 to 1.0).}
+
+\item{show_labels}{Logical; if TRUE, display piece ID labels at piece centers (default: FALSE).}
+
+\item{label_color}{Color for piece labels (default: "black").}
+
+\item{label_size}{Font size for labels in points. NULL for auto-sizing based on piece dimensions.}
 
 \item{...}{Other arguments passed to layer().}
 
@@ -80,16 +101,11 @@ ggplot(df, aes(fill = value)) +
   scale_fill_viridis_c() +
   theme_void()
 
-# With categorical data
-sales <- data.frame(
-  region = c("North", "South", "East", "West"),
-  value = c(100, 150, 80, 120)
-)
-ggplot(sales, aes(fill = value)) +
-  geom_puzzle_rect(rows = 2, cols = 2, seed = 42) +
-  scale_fill_gradient(low = "white", high = "steelblue") +
-  theme_void() +
-  labs(title = "Sales by Region")
+# With piece labels
+ggplot(df, aes(fill = value)) +
+  geom_puzzle_rect(rows = 3, cols = 3, seed = 42, show_labels = TRUE) +
+  scale_fill_viridis_c() +
+  theme_void()
 
 # With fusion groups
 df <- data.frame(value = 1:9)

@@ -15,7 +15,9 @@ generate_hex_pieces_with_edge_map(
   separation_factor = 1,
   do_warp = FALSE,
   do_trunc = FALSE,
-  do_circular_border = FALSE
+  do_circular_border = FALSE,
+  min_tab_size = NULL,
+  max_tab_size = NULL
 )
 }
 \arguments{

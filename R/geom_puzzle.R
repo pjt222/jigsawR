@@ -48,15 +48,17 @@ GeomPuzzle <- ggplot2::ggproto("GeomPuzzle", ggplot2::Geom,
     alpha = NA
   ),
 
+
   # Extra params passed to draw_panel (beyond na.rm)
-  extra_params = c("na.rm", "show_labels", "label_color", "label_size",
+  # Note: ggplot2 normalizes "color" → "colour", so we use British spelling here
+  extra_params = c("na.rm", "show_labels", "label_colour", "label_size",
                    "fusion_style", "fusion_opacity", "bezier_resolution"),
 
   # Use polygon key for legend
   draw_key = ggplot2::draw_key_polygon,
 
   draw_panel = function(data, panel_params, coord,
-                        show_labels = FALSE, label_color = "black", label_size = NULL,
+                        show_labels = FALSE, label_colour = "black", label_size = NULL,
                         fusion_style = "none", fusion_opacity = 0.3,
                         bezier_resolution = 20) {
     # Handle empty data
@@ -95,9 +97,19 @@ GeomPuzzle <- ggplot2::ggproto("GeomPuzzle", ggplot2::Geom,
                      !is.null(coords$edge_paths[[1]]) &&
                      length(coords$edge_paths[[1]]) > 0
 
-    # Determine if we need fusion-aware rendering
-    # Only use complex rendering if we have fusion groups with non-"none" style
-    use_fusion_rendering <- has_edge_data && fusion_style != "none"
+    # Check if any edges are actually fused
+    has_fused_edges <- FALSE
+    if (has_edge_data && "fused_edges" %in% names(coords)) {
+      # Check first piece's fused_edges for any TRUE values
+      first_fused <- coords$fused_edges[[1]]
+      if (!is.null(first_fused) && length(first_fused) > 0) {
+        has_fused_edges <- any(unlist(first_fused))
+      }
+    }
+
+    # Use fusion-aware rendering when there are fused edges
+    # This applies regardless of fusion_style - "none" means hide fused edges
+    use_fusion_rendering <- has_edge_data && has_fused_edges
 
     grobs <- lapply(names(pieces), function(pid) {
       piece <- pieces[[pid]]
@@ -156,6 +168,10 @@ GeomPuzzle <- ggplot2::ggproto("GeomPuzzle", ggplot2::Geom,
 
             # Determine edge styling
             if (is_fused) {
+              # Fused edge: skip entirely if style is "none", otherwise style appropriately
+              if (fusion_style == "none") {
+                next  # Skip this edge - don't draw it at all
+              }
               # Fused edge: use fusion_style and fusion_opacity
               edge_col <- scales::alpha(first$colour, fusion_opacity)
               edge_lty <- if (fusion_style == "dashed") 2 else 1  # 2 = dashed
@@ -220,7 +236,7 @@ GeomPuzzle <- ggplot2::ggproto("GeomPuzzle", ggplot2::Geom,
           x = label_x,
           y = label_y,
           gp = grid::gpar(
-            col = label_color,
+            col = label_colour,
             fontsize = label_size,
             fontface = "bold"
           ),

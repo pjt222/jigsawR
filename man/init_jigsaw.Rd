@@ -14,7 +14,9 @@ init_jigsaw(
   dpi = 96,
   radius = 2,
   xn = 15,
-  yn = 10
+  yn = 10,
+  min_tab_size = NULL,
+  max_tab_size = NULL
 )
 }
 \arguments{
@@ -37,6 +39,12 @@ init_jigsaw(
 \item{xn}{Number of columns (default: 15)}
 
 \item{yn}{Number of rows (default: 10)}
+
+\item{min_tab_size}{Minimum absolute tab size in mm (default: NULL for no limit).
+Prevents tabs from becoming too small on short edges.}
+
+\item{max_tab_size}{Maximum absolute tab size in mm (default: NULL for no limit).
+Prevents tabs from becoming too large on long edges.}
 }
 \description{
 Initialize jigsaw environment with global variables

@@ -225,11 +225,12 @@ For complex debugging, spawn multiple subagents in parallel to investigate diffe
 
 - **Main API**: ✅ `generate_puzzle()` - single entry point for all types
 - **Puzzle Types**: Rectangular, Hexagonal, Concentric
-- **Shiny App**: ✅ Three puzzle types, offset slider, download buttons
-- **Test Suites**: 796+ passing tests
+- **Shiny App**: ✅ Three puzzle types, offset slider, PNG/SVG downloads
+- **Test Suites**: 430+ tests
 
-### Next Phase
-📋 **Enhancement #25**: Add PNG download capability to Shiny app
+### Open Issues
+- **#62**: Epic: Create GitHub Pages Documentation Site (Quarto) - in progress
+- **#78**: feat(ggpuzzle): Add repel layout support to geom_puzzle_rect
 
 # important-instruction-reminders
 Do what has been asked; nothing more, nothing less.

@@ -11,7 +11,9 @@ generate_puzzle_core(
   unit = "mm",
   dpi = 96,
   tabsize = 20,
-  jitter = 4
+  jitter = 4,
+  min_tab_size = NULL,
+  max_tab_size = NULL
 )
 }
 \arguments{
@@ -28,6 +30,10 @@ generate_puzzle_core(
 \item{tabsize}{Tab size as percentage (10-30)}
 
 \item{jitter}{Jitter as percentage (0-10)}
+
+\item{min_tab_size}{Minimum absolute tab size in mm (default: NULL)}
+
+\item{max_tab_size}{Maximum absolute tab size in mm (default: NULL)}
 }
 \value{
 List with puzzle data and parameters

@@ -9,7 +9,9 @@ generate_hex_bezier_edge(
   v2,
   seed,
   edge_id,
-  tab_params = list(tabsize = 27, jitter = 5)
+  tab_params = list(tabsize = 27, jitter = 5),
+  min_tab_size = NULL,
+  max_tab_size = NULL
 )
 }
 \arguments{
@@ -22,6 +24,12 @@ generate_hex_bezier_edge(
 \item{edge_id}{Unique edge identifier for deterministic tabs}
 
 \item{tab_params}{List with tabsize and jitter parameters}
+
+\item{min_tab_size}{Minimum absolute tab size in mm (default: NULL for no limit).
+Prevents tabs from becoming too small on short edges.}
+
+\item{max_tab_size}{Maximum absolute tab size in mm (default: NULL for no limit).
+Prevents tabs from becoming too large on long edges.}
 }
 \value{
 List with forward and reverse SVG paths
@@ -35,11 +43,20 @@ Uses the same bezier curve pattern as rectangular puzzles:
 - 3 cubic bezier curves (9 control points total)
 - Tab in the middle section
 - Deterministic based on seed and edge_id
+
+Tab size constraints use the formula: tab_height = 3 * t * edge_length
+If min_tab_size would require a tab wider than 70% of the edge,
+a straight line is returned instead.
 }
 \examples{
 v1 <- c(0, 0)
 v2 <- c(10, 0)
 edge <- generate_hex_bezier_edge(v1, v2, seed = 42, edge_id = 1,
                                   tab_params = list(tabsize = 27, jitter = 5))
+
+# With constraints
+edge <- generate_hex_bezier_edge(v1, v2, seed = 42, edge_id = 1,
+                                  tab_params = list(tabsize = 27, jitter = 5),
+                                  min_tab_size = 2, max_tab_size = 8)
 
 }

@@ -12,7 +12,9 @@ generate_hex_edge_map(
   jitter = 5,
   do_warp = FALSE,
   do_trunc = FALSE,
-  do_circular_border = FALSE
+  do_circular_border = FALSE,
+  min_tab_size = NULL,
+  max_tab_size = NULL
 )
 }
 \arguments{

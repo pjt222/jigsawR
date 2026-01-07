@@ -5,7 +5,7 @@
 \alias{GeomPuzzle}
 \title{Puzzle piece geom}
 \format{
-An object of class \code{GeomPuzzle} (inherits from \code{Geom}, \code{ggproto}, \code{gg}) of length 5.
+An object of class \code{GeomPuzzle} (inherits from \code{Geom}, \code{ggproto}, \code{gg}) of length 6.
 }
 \usage{
 GeomPuzzle

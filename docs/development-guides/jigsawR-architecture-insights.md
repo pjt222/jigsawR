@@ -3260,6 +3260,106 @@ render_puzzle_preview(result)
 
 ---
 
+### Insight #57: ggpuzzle Fusion Rendering Bug - Style "none" Still Drawing Edges (2025-01-07)
+
+**Context**: User reported that ggpuzzle fusion wasn't working - fused edges were still visible even with `fusion_style = "none"`.
+
+**Root Cause**: In `GeomPuzzle::draw_panel()`, the condition for fusion-aware rendering was:
+```r
+use_fusion_rendering <- has_edge_data && fusion_style != "none"
+```
+
+This meant when `fusion_style = "none"`, the code fell back to **standard polygon rendering**, which draws ALL edges including fused ones. The API's SVG renderer correctly hid fused edges because it checked for fusion regardless of style.
+
+**Fix Applied**:
+1. Changed condition to check for fused edges, not style:
+   ```r
+   use_fusion_rendering <- has_edge_data && has_fused_edges
+   ```
+2. Within fusion rendering, skip fused edges when style is "none":
+   ```r
+   if (is_fused && fusion_style == "none") {
+     next  # Skip this edge entirely
+   }
+   ```
+
+**Lesson Learned**: When porting rendering logic between backends (SVG vs ggplot2/grid), ensure the conditional logic matches. The API correctly handled "none" as "invisible" but ggplot2 layer interpreted it as "use simple rendering".
+
+**Files Changed**: `R/geom_puzzle.R`
+
+---
+
+### Insight #58: ggplot2 Parameter Name Normalization - color vs colour (2025-01-07)
+
+**Context**: Test output showed warning: `Ignoring unknown parameters: 'label_colour'` even though our code used `label_color`.
+
+**Root Cause**: ggplot2 normalizes American spellings to British:
+- `color` → `colour`
+- `gray` → `grey`
+
+When we passed `label_color = "red"` to `geom_puzzle_rect()`, ggplot2's layer machinery converted it to `label_colour`. But our `extra_params` listed `label_color`, so ggplot2 didn't recognize the normalized name.
+
+**Diagnostic Evidence**:
+```r
+layer_obj$geom_params
+# Shows: "show_labels", "label_size" (but NOT label_color or label_colour!)
+```
+
+**Fix Applied**: Use British spelling in `extra_params` since that's what ggplot2 produces after normalization:
+```r
+extra_params = c("na.rm", "show_labels", "label_colour", "label_size", ...)
+
+draw_panel = function(..., label_colour = "black", ...) {
+  # Use label_colour internally
+}
+```
+
+**Note**: The public API (`geom_puzzle_rect()`) can still accept `label_color` - ggplot2 handles the conversion. This is consistent with how ggplot2's own geoms work (accept both spellings).
+
+**Files Changed**: `R/geom_puzzle.R`
+
+---
+
+### Insight #59: API vs ggpuzzle Aesthetics Mismatch - Strokes vs Fills (2025-01-07)
+
+**Context**: Gallery showed visually different outputs for API and ggpuzzle tabs, confusing users.
+
+**Root Cause**: Different default color application:
+
+| Aspect | API (SVG) | ggpuzzle |
+|--------|-----------|----------|
+| Piece fill | `fill="none"` (transparent) | `fill=viridis_color` (solid) |
+| Stroke | `stroke="#viridis_color"` | `colour="black"` (default) |
+
+The `palette` parameter in `generate_puzzle()` only affects stroke colors, not fills.
+
+**Long-term Fix**: Added `fill_palette` convenience parameter to `generate_puzzle()`:
+```r
+generate_puzzle(
+  type = "rectangular",
+  grid = c(4, 3),
+  size = c(400, 300),
+  seed = 42,
+  fill_palette = "viridis"  # NEW: auto-generates per-piece fills
+)
+```
+
+**Implementation**:
+```r
+# Priority: fills > fill_palette > fill_color
+effective_fills <- fills
+if (is.null(effective_fills) && !is.null(fill_palette)) {
+  n_pieces <- length(positioned$pieces)
+  effective_fills <- get_puzzle_colors(n_pieces, fill_palette, invert = palette_invert)
+}
+```
+
+**Gallery Update**: All API examples in `quarto/gallery/rectangular.qmd` now use `fill_palette` for visual consistency with ggpuzzle tabs.
+
+**Files Changed**: `R/jigsawR_clean.R`, `quarto/gallery/rectangular.qmd`
+
+---
+
 ## Development History
 
 ### Completed Work (Archive)

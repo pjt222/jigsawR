@@ -12,7 +12,9 @@ generate_rect_pieces_internal(
   jitter,
   fusion_groups = NULL,
   fusion_style = "none",
-  fusion_opacity = 0.3
+  fusion_opacity = 0.3,
+  min_tab_size = NULL,
+  max_tab_size = NULL
 )
 }
 \arguments{
@@ -31,6 +33,10 @@ generate_rect_pieces_internal(
 \item{fusion_style}{Style for fused edges: "none", "dashed", "solid"}
 
 \item{fusion_opacity}{Opacity for fused edges (0.0 to 1.0)}
+
+\item{min_tab_size}{Minimum absolute tab size in mm (default: NULL)}
+
+\item{max_tab_size}{Maximum absolute tab size in mm (default: NULL)}
 }
 \value{
 Piece generation result

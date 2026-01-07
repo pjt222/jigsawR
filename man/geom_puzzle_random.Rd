@@ -10,8 +10,12 @@ geom_puzzle_random(
   stat = "puzzle",
   position = "identity",
   n_pieces = 12,
-  tabsize = 20,
-  jitter = 4,
+  width = 100,
+  height = 100,
+  tabsize = 10,
+  jitter = 2,
+  min_tab_size = NULL,
+  max_tab_size = NULL,
   seed = NULL,
   offset = 0,
   bezier_resolution = 20,
@@ -19,6 +23,9 @@ geom_puzzle_random(
   fusion_groups = NULL,
   fusion_style = "none",
   fusion_opacity = 0.3,
+  show_labels = FALSE,
+  label_color = "black",
+  label_size = NULL,
   ...,
   na.rm = FALSE,
   show.legend = NA,
@@ -37,9 +44,17 @@ geom_puzzle_random(
 \item{n_pieces}{Number of interior points that influence piece count.
 Actual piece count depends on triangulation.}
 
-\item{tabsize}{Size of the puzzle tabs (default: 20).}
+\item{width}{Puzzle width in mm (default: 100).}
 
-\item{jitter}{Random variation in tab positions (default: 4).}
+\item{height}{Puzzle height in mm (default: 100).}
+
+\item{tabsize}{Size of the puzzle tabs (default: 10).}
+
+\item{jitter}{Random variation in tab positions (default: 2).}
+
+\item{min_tab_size}{Minimum tab height in mm (NULL for no constraint).}
+
+\item{max_tab_size}{Maximum tab height in mm (NULL for no constraint).}
 
 \item{seed}{Random seed for reproducible puzzle shapes.}
 
@@ -53,6 +68,12 @@ list of integer vectors, or NULL for no fusion.}
 \item{fusion_style}{Style for fused internal edges: "none" (invisible), "dashed", "solid".}
 
 \item{fusion_opacity}{Opacity for fused edges when style != "none" (0.0 to 1.0).}
+
+\item{show_labels}{Logical; if TRUE, display piece ID labels at piece centers (default: FALSE).}
+
+\item{label_color}{Color for piece labels (default: "black").}
+
+\item{label_size}{Font size for labels in points. NULL for auto-sizing based on piece dimensions.}
 
 \item{...}{Other arguments passed to layer().}
 

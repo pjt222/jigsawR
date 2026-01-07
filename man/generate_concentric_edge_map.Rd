@@ -12,7 +12,9 @@ generate_concentric_edge_map(
   jitter = 5,
   center_shape = "hexagon",
   do_circular_border = FALSE,
-  boundary_facing = "outward"
+  boundary_facing = "outward",
+  min_tab_size = NULL,
+  max_tab_size = NULL
 )
 }
 \arguments{
@@ -32,6 +34,12 @@ generate_concentric_edge_map(
 
 \item{boundary_facing}{Direction the circular arc faces: "outward" (convex, away from center)
 or "inward" (concave, toward center). Only applies when do_circular_border = TRUE.}
+
+\item{min_tab_size}{Minimum absolute tab size in mm (default: NULL for no limit).
+Prevents tabs from becoming too small on short edges.}
+
+\item{max_tab_size}{Maximum absolute tab size in mm (default: NULL for no limit).
+Prevents tabs from becoming too large on long edges.}
 }
 \value{
 List with edge_map, piece_edges (list of edges per piece), and piece_vertices

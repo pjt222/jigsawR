@@ -10,16 +10,23 @@ geom_puzzle_conc(
   stat = "puzzle",
   position = "identity",
   rings = 3,
-  tabsize = 20,
-  jitter = 4,
+  diameter = 100,
+  tabsize = 10,
+  jitter = 2,
+  min_tab_size = NULL,
+  max_tab_size = NULL,
   seed = NULL,
   offset = 0,
   bezier_resolution = 20,
   center_shape = "hexagon",
   do_circular_border = FALSE,
+  boundary_facing = "outward",
   fusion_groups = NULL,
   fusion_style = "none",
   fusion_opacity = 0.3,
+  show_labels = FALSE,
+  label_color = "black",
+  label_size = NULL,
   ...,
   na.rm = FALSE,
   show.legend = NA,
@@ -39,9 +46,15 @@ geom_puzzle_conc(
 Piece count formula: rings * 6 + 1.
 Example: 3 rings = 19 pieces (1 center + 6 + 6 + 6).}
 
-\item{tabsize}{Size of the puzzle tabs (default: 20).}
+\item{diameter}{Puzzle diameter in mm (default: 100).}
 
-\item{jitter}{Random variation in tab positions (default: 4).}
+\item{tabsize}{Size of the puzzle tabs (default: 10).}
+
+\item{jitter}{Random variation in tab positions (default: 2).}
+
+\item{min_tab_size}{Minimum tab height in mm (NULL for no constraint).}
+
+\item{max_tab_size}{Maximum tab height in mm (NULL for no constraint).}
 
 \item{seed}{Random seed for reproducible puzzle shapes.}
 
@@ -51,12 +64,21 @@ Example: 3 rings = 19 pieces (1 center + 6 + 6 + 6).}
 
 \item{do_circular_border}{Use perfect circular arc borders (default: FALSE).}
 
+\item{boundary_facing}{Direction the circular arc faces: "outward" (convex) or "inward" (concave).
+Only applies when do_circular_border = TRUE.}
+
 \item{fusion_groups}{Piece fusion specification: PILES notation string (e.g., "1-2-3,4-5"),
 list of integer vectors, or NULL for no fusion.}
 
 \item{fusion_style}{Style for fused internal edges: "none" (invisible), "dashed", "solid".}
 
 \item{fusion_opacity}{Opacity for fused edges when style != "none" (0.0 to 1.0).}
+
+\item{show_labels}{Logical; if TRUE, display piece ID labels at piece centers (default: FALSE).}
+
+\item{label_color}{Color for piece labels (default: "black").}
+
+\item{label_size}{Font size for labels in points. NULL for auto-sizing based on piece dimensions.}
 
 \item{...}{Other arguments passed to layer().}
 

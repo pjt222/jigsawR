@@ -13,4 +13,10 @@ Logical indicating if Rcpp functions are available
 Returns TRUE if the C++ implementations are loaded and available.
 This is used internally to decide whether to use C++ or R fallback.
 }
+\details{
+Actually tests the C++ symbol, not just the R wrapper function,
+because the R wrapper exists in RcppExports.R but the C++ symbol
+may not be available (e.g., on shinyapps.io where the package
+isn't compiled with Rcpp).
+}
 \keyword{internal}

@@ -79,7 +79,8 @@ result_2x2 <- generate_puzzle(
   type = "rectangular",
   grid = c(2, 2),
   size = c(200, 200),
-  seed = 42
+  seed = 42,
+  fill_palette = "viridis"
 )
 render_puzzle_preview(result_2x2, title = "2x2")
 
@@ -87,7 +88,8 @@ result_4x3 <- generate_puzzle(
   type = "rectangular",
   grid = c(4, 3),
   size = c(400, 300),
-  seed = 42
+  seed = 42,
+  fill_palette = "viridis"
 )
 render_puzzle_preview(result_4x3, title = "4x3")
 
@@ -95,7 +97,8 @@ result_6x5 <- generate_puzzle(
   type = "rectangular",
   grid = c(6, 5),
   size = c(600, 500),
-  seed = 42
+  seed = 42,
+  fill_palette = "viridis"
 )
 render_puzzle_preview(result_6x5, title = "6x5")
 ```
@@ -142,15 +145,14 @@ print((make_palette_plot("viridis") + make_palette_plot("magma") + make_palette_
 #|   - "inferno"
 #|   - "cividis"
 #|   - "turbo"
-# API generates SVG without built-in palette coloring
-# Use ggpuzzle for palette visualization
+# API with fill_palette for colored fills matching ggpuzzle aesthetics
 for (pal in c("viridis", "magma", "plasma", "inferno", "cividis", "turbo")) {
   result <- generate_puzzle(
     type = "rectangular",
     grid = c(4, 3),
     size = c(400, 300),
     seed = 42,
-    palette = pal
+    fill_palette = pal  # Fills pieces with palette colors
   )
   print(render_puzzle_preview(result))
 }
@@ -203,7 +205,8 @@ for (off in c(0, 5, 10, 20)) {
     grid = c(3, 3),
     size = c(300, 300),
     offset = off,
-    seed = 42
+    seed = 42,
+    fill_palette = "plasma"
   )
   print(render_puzzle_preview(result))
 }
@@ -266,7 +269,8 @@ result_standard <- generate_puzzle(
   type = "rectangular",
   grid = c(4, 3),
   size = c(400, 300),
-  seed = 42
+  seed = 42,
+  fill_palette = "magma"
 )
 render_puzzle_preview(result_standard, title = "Standard")
 
@@ -276,6 +280,7 @@ result_fusion <- generate_puzzle(
   grid = c(4, 3),
   size = c(400, 300),
   seed = 42,
+  fill_palette = "magma",
   fusion_groups = "R1,R2,R3"
 )
 render_puzzle_preview(result_fusion, title = "Row fusion")

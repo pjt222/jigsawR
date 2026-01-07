@@ -6,18 +6,19 @@
 \usage{
 generate_puzzle(
   type = "rectangular",
-  grid = c(2, 2),
-  size = c(200, 200),
+  grid = c(3, 4),
+  size = c(400, 300),
   seed = NULL,
-  tabsize = 20,
-  jitter = 4,
+  tabsize = 10,
+  jitter = 2,
   offset = 0,
   layout = "grid",
   repel_margin = 2,
   repel_max_iter = 100,
   fill_color = "none",
+  fill_palette = NULL,
   fills = NULL,
-  stroke_width = 1.5,
+  stroke_width = 1,
   colors = NULL,
   palette = NULL,
   palette_invert = FALSE,
@@ -70,7 +71,11 @@ generate_puzzle(
 
 \item{fill_color}{Fill color for pieces ("none" for unfilled)}
 
-\item{fills}{Vector of per-piece fill colors (optional, overrides fill_color for palette fills)}
+\item{fill_palette}{Viridis palette name for piece fills (e.g., "viridis", "magma", "plasma").
+When specified, auto-generates per-piece fill colors matching ggpuzzle aesthetics.
+Overrides fill_color. Use with palette for matching stroke colors.}
+
+\item{fills}{Vector of per-piece fill colors (optional, overrides fill_color and fill_palette)}
 
 \item{stroke_width}{SVG stroke width (default: 1.5)}
 
@@ -118,11 +123,11 @@ generate_puzzle(
 
 \item{min_piece_size}{Minimum piece size constraint for random shape puzzles (default: NULL for auto)}
 
-\item{min_tab_size}{Minimum absolute tab size in units (default: NULL for no limit).
-Prevents tabs from becoming too small on short edges. Only applies to voronoi/random types.}
+\item{min_tab_size}{Minimum absolute tab size in mm (default: NULL for no limit).
+Prevents tabs from becoming too small on short edges. Applies to all puzzle types.}
 
-\item{max_tab_size}{Maximum absolute tab size in units (default: NULL for no limit).
-Prevents tabs from becoming too large on long edges. Only applies to voronoi/random types.}
+\item{max_tab_size}{Maximum absolute tab size in mm (default: NULL for no limit).
+Prevents tabs from becoming too large on long edges. Applies to all puzzle types.}
 
 \item{output}{DEPRECATED: Use offset parameter instead}
 }

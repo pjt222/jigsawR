@@ -23,7 +23,10 @@
 #' @param repel_margin Minimum gap between pieces for repel layout (default: 2mm)
 #' @param repel_max_iter Maximum iterations for repel algorithm (default: 100)
 #' @param fill_color Fill color for pieces ("none" for unfilled)
-#' @param fills Vector of per-piece fill colors (optional, overrides fill_color for palette fills)
+#' @param fill_palette Viridis palette name for piece fills (e.g., "viridis", "magma", "plasma").
+#'   When specified, auto-generates per-piece fill colors matching ggpuzzle aesthetics.
+#'   Overrides fill_color. Use with palette for matching stroke colors.
+#' @param fills Vector of per-piece fill colors (optional, overrides fill_color and fill_palette)
 #' @param stroke_width SVG stroke width (default: 1.5)
 #' @param colors Vector of colors for pieces (optional, overrides palette)
 #' @param palette Viridis palette name (NULL = use config default)
@@ -65,6 +68,7 @@ generate_puzzle <- function(type = "rectangular",
                             repel_margin = 2,
                             repel_max_iter = 100,
                             fill_color = "none",
+                            fill_palette = NULL,
                             fills = NULL,
                             stroke_width = 1,
                             colors = NULL,
@@ -243,11 +247,19 @@ generate_puzzle <- function(type = "rectangular",
     repel_max_iter = repel_max_iter
   )
 
-  # Step 3: Render to SVG
+  # Step 3: Generate fills from palette if requested
+  # Priority: fills > fill_palette > fill_color
+  effective_fills <- fills
+  if (is.null(effective_fills) && !is.null(fill_palette)) {
+    n_pieces <- length(positioned$pieces)
+    effective_fills <- get_puzzle_colors(n_pieces, fill_palette, invert = palette_invert)
+  }
+
+  # Step 4: Render to SVG
   svg_content <- render_puzzle_svg(
     positioned,
     fill = fill_color,
-    fills = fills,
+    fills = effective_fills,
     stroke_width = stroke_width,
     colors = colors,
     palette = palette,

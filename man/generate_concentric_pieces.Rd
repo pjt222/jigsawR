@@ -12,7 +12,9 @@ generate_concentric_pieces(
   jitter = 5,
   center_shape = "hexagon",
   do_circular_border = FALSE,
-  boundary_facing = "outward"
+  boundary_facing = "outward",
+  min_tab_size = NULL,
+  max_tab_size = NULL
 )
 }
 \arguments{

@@ -15,7 +15,9 @@ generate_hex_pieces_internal(
   do_circular_border = FALSE,
   fusion_groups = NULL,
   fusion_style = "none",
-  fusion_opacity = 0.3
+  fusion_opacity = 0.3,
+  min_tab_size = NULL,
+  max_tab_size = NULL
 )
 }
 \arguments{
