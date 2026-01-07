@@ -17,8 +17,12 @@ Random puzzles generate unique, irregular piece shapes using a randomized approa
 
 ## Piece Count Variations
 
+::: {.panel-tabset}
+
+## ggpuzzle
+
 ```{r}
-#| label: fig-rand-piece-counts
+#| label: fig-rand-piece-counts-ggpuzzle
 #| fig-align: center
 make_rand_pieces <- function(n) {
   ggplot() +
@@ -36,12 +40,55 @@ make_rand_pieces <- function(n) {
 print(make_rand_pieces(10) + make_rand_pieces(20) + make_rand_pieces(40))
 ```
 
+## API
+
+```{r}
+#| label: fig-rand-piece-counts-api
+#| results: asis
+#| echo: false
+
+# Generate piece count previews in a grid
+counts <- c(10, 20, 40)
+
+cat('<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1em; margin: 1em 0;">')
+for (n in counts) {
+  result <- generate_puzzle(
+    type = "random",
+    grid = c(n),
+    size = c(200, 200),
+    seed = 42
+  )
+  cat(sprintf('<div style="text-align: center;"><div style="font-weight: bold; margin-bottom: 0.5em;">%d pieces</div>%s</div>',
+              n, result$svg_content))
+}
+cat('</div>')
+```
+
+```{r}
+#| label: fig-rand-piece-counts-api-code
+#| eval: false
+# API with varying piece counts
+result <- generate_puzzle(
+  type = "random",
+  grid = c(20),         # Number of interior points
+  size = c(200, 200),   # height, width in mm
+  seed = 42
+)
+render_puzzle_preview(result)
+```
+
+:::
+
 ## Corner Variations
 
 The `n_corner` parameter controls the complexity of each piece's shape:
 
+::: {.panel-tabset}
+
+## ggpuzzle
+
 ```{r}
-#| label: fig-rand-corners
+#| label: fig-rand-corners-ggpuzzle
 #| fig-align: center
 
 make_rand_corners <- function(nc, label) {
@@ -62,10 +109,55 @@ print(make_rand_corners(3, "3 corners") + make_rand_corners(4, "4 corners") +
 make_rand_corners(6, "6 corners") + make_rand_corners(8, "8 corners"))
 ```
 
-## Color Palettes
+## API
 
 ```{r}
-#| label: fig-rand-palettes
+#| label: fig-rand-corners-api
+#| results: asis
+#| echo: false
+
+# Generate corner variation previews in a grid
+corners <- c(3, 4, 6, 8)
+
+cat('<div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1em; margin: 1em 0;">')
+for (nc in corners) {
+  result <- generate_puzzle(
+    type = "random",
+    grid = c(15),
+    size = c(200, 200),
+    seed = 42,
+    n_corner = nc
+  )
+  cat(sprintf('<div style="text-align: center;"><div style="font-weight: bold; margin-bottom: 0.5em;">%d corners</div>%s</div>',
+              nc, result$svg_content))
+}
+cat('</div>')
+```
+
+```{r}
+#| label: fig-rand-corners-api-code
+#| eval: false
+# API with n_corner for piece shape complexity
+result <- generate_puzzle(
+  type = "random",
+  grid = c(15),
+  size = c(200, 200),
+  seed = 42,
+  n_corner = 5  # 3-8, higher = more complex shapes
+)
+render_puzzle_preview(result)
+```
+
+:::
+
+## Color Palettes
+
+::: {.panel-tabset}
+
+## ggpuzzle
+
+```{r}
+#| label: fig-rand-palettes-ggpuzzle
 #| fig-align: center
 
 make_rand_palette <- function(pal) {
@@ -85,10 +177,55 @@ print((make_rand_palette("viridis") + make_rand_palette("magma") + make_rand_pal
 (make_rand_palette("inferno") + make_rand_palette("cividis") + make_rand_palette("turbo")))
 ```
 
-## Offset (Separation)
+## API
 
 ```{r}
-#| label: fig-rand-offset
+#| label: fig-rand-palettes-api
+#| results: asis
+#| echo: false
+
+# Generate all palette previews and combine into a grid
+palettes <- c("viridis", "magma", "plasma", "inferno", "cividis", "turbo")
+
+cat('<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1em; margin: 1em 0;">')
+for (pal in palettes) {
+  result <- generate_puzzle(
+    type = "random",
+    grid = c(20),
+    size = c(200, 200),
+    seed = 42,
+    fill_palette = pal
+  )
+  cat(sprintf('<div style="text-align: center;"><div style="font-weight: bold; margin-bottom: 0.5em;">%s</div>%s</div>',
+              pal, result$svg_content))
+}
+cat('</div>')
+```
+
+```{r}
+#| label: fig-rand-palettes-api-code
+#| eval: false
+# API with fill_palette for colored fills
+result <- generate_puzzle(
+  type = "random",
+  grid = c(20),
+  size = c(200, 200),
+  seed = 42,
+  fill_palette = "viridis"  # Options: viridis, magma, plasma, inferno, cividis, turbo
+)
+render_puzzle_preview(result)
+```
+
+:::
+
+## Offset (Separation)
+
+::: {.panel-tabset}
+
+## ggpuzzle
+
+```{r}
+#| label: fig-rand-offset-ggpuzzle
 #| fig-align: center
 
 make_rand_offset <- function(off) {
@@ -107,12 +244,57 @@ make_rand_offset <- function(off) {
 print(make_rand_offset(0) + make_rand_offset(5) + make_rand_offset(10) + make_rand_offset(20))
 ```
 
+## API
+
+```{r}
+#| label: fig-rand-offset-api
+#| results: asis
+#| echo: false
+
+# Generate offset previews in a grid
+offsets <- c(0, 5, 10, 20)
+
+cat('<div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1em; margin: 1em 0;">')
+for (off in offsets) {
+  result <- generate_puzzle(
+    type = "random",
+    grid = c(18),
+    size = c(200, 200),
+    seed = 42,
+    offset = off
+  )
+  cat(sprintf('<div style="text-align: center;"><div style="font-weight: bold; margin-bottom: 0.5em;">offset = %d</div>%s</div>',
+              off, result$svg_content))
+}
+cat('</div>')
+```
+
+```{r}
+#| label: fig-rand-offset-api-code
+#| eval: false
+# API with offset for piece separation
+result <- generate_puzzle(
+  type = "random",
+  grid = c(18),
+  size = c(200, 200),
+  offset = 10,  # Separation in mm
+  seed = 42
+)
+render_puzzle_preview(result)
+```
+
+:::
+
 ## Seed Variations
 
 Each seed creates a completely unique puzzle:
 
+::: {.panel-tabset}
+
+## ggpuzzle
+
 ```{r}
-#| label: fig-rand-seeds
+#| label: fig-rand-seeds-ggpuzzle
 #| fig-align: center
 
 make_rand_seed <- function(s) {
@@ -131,6 +313,32 @@ make_rand_seed <- function(s) {
 print(make_rand_seed(1) + make_rand_seed(42) + make_rand_seed(123) + make_rand_seed(999))
 ```
 
+## API
+
+```{r}
+#| label: fig-rand-seeds-api
+#| results: asis
+#| echo: false
+
+# Generate seed variation previews in a grid
+seeds <- c(1, 42, 123, 999)
+
+cat('<div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1em; margin: 1em 0;">')
+for (s in seeds) {
+  result <- generate_puzzle(
+    type = "random",
+    grid = c(15),
+    size = c(200, 200),
+    seed = s
+  )
+  cat(sprintf('<div style="text-align: center;"><div style="font-weight: bold; margin-bottom: 0.5em;">seed = %d</div>%s</div>',
+              s, result$svg_content))
+}
+cat('</div>')
+```
+
+:::
+
 ::: {.callout-tip}
 ## Aspect Ratios
 Random puzzles handle any aspect ratio - wide, square, or tall. See the [Aspect Ratios Tutorial](../tutorials/aspect-ratios.qmd) for examples comparing all puzzle types.
@@ -138,8 +346,12 @@ Random puzzles handle any aspect ratio - wide, square, or tall. See the [Aspect 
 
 ## Large Random Puzzle
 
+::: {.panel-tabset}
+
+## ggpuzzle
+
 ```{r}
-#| label: fig-rand-large
+#| label: fig-rand-large-ggpuzzle
 #| fig-align: center
 #| fig-width: 10
 #| fig-height: 6
@@ -155,6 +367,23 @@ ggplot() +
   theme_puzzle() +
   labs(title = "60-Piece Random Puzzle")
 ```
+
+## API
+
+```{r}
+#| label: fig-rand-large-api
+#| fig-align: center
+
+result <- generate_puzzle(
+  type = "random",
+  grid = c(60),
+  size = c(400, 300),
+  seed = 456
+)
+render_puzzle_preview(result, max_width = "600px")
+```
+
+:::
 
 ## Parameters Reference
 

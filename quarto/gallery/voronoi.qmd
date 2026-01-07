@@ -86,8 +86,12 @@ Voronoi puzzles adapt to any aspect ratio - wide, square, or tall. See the [Aspe
 
 ## Color Palettes
 
+::: {.panel-tabset}
+
+## ggpuzzle
+
 ```{r}
-#| label: fig-vor-color-palettes
+#| label: fig-vor-palettes-ggpuzzle
 #| fig-align: center
 
 make_vor_palette <- function(pal) {
@@ -106,6 +110,47 @@ make_vor_palette <- function(pal) {
 print((make_vor_palette("viridis") + make_vor_palette("magma") + make_vor_palette("plasma")) /
 (make_vor_palette("inferno") + make_vor_palette("cividis") + make_vor_palette("turbo")))
 ```
+
+## API
+
+```{r}
+#| label: fig-vor-palettes-api
+#| results: asis
+#| echo: false
+
+# Generate all palette previews and combine into a grid
+palettes <- c("viridis", "magma", "plasma", "inferno", "cividis", "turbo")
+
+cat('<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1em; margin: 1em 0;">')
+for (pal in palettes) {
+  result <- generate_puzzle(
+    type = "voronoi",
+    grid = c(20),
+    size = c(200, 200),
+    seed = 42,
+    fill_palette = pal
+  )
+  cat(sprintf('<div style="text-align: center;"><div style="font-weight: bold; margin-bottom: 0.5em;">%s</div>%s</div>',
+              pal, result$svg_content))
+}
+cat('</div>')
+```
+
+```{r}
+#| label: fig-vor-palettes-api-code
+#| eval: false
+# API with fill_palette for colored fills
+result <- generate_puzzle(
+  type = "voronoi",
+  grid = c(20),
+  size = c(200, 200),
+  seed = 42,
+  fill_palette = "viridis"  # Options: viridis, magma, plasma, inferno, cividis, turbo
+)
+render_puzzle_preview(result)
+```
+
+:::
 
 ## Offset (Separation)
 

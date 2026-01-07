@@ -205,8 +205,12 @@ render_puzzle_preview(result_warp_only)
 
 ## Color Palettes
 
+::: {.panel-tabset}
+
+## ggpuzzle
+
 ```{r}
-#| label: fig-hex-palettes
+#| label: fig-hex-palettes-ggpuzzle
 #| fig-align: center
 make_hex_palette <- function(pal) {
   ggplot() +
@@ -223,6 +227,47 @@ make_hex_palette <- function(pal) {
 print((make_hex_palette("viridis") + make_hex_palette("magma") + make_hex_palette("plasma")) /
 (make_hex_palette("inferno") + make_hex_palette("cividis") + make_hex_palette("turbo")))
 ```
+
+## API
+
+```{r}
+#| label: fig-hex-palettes-api
+#| results: asis
+#| echo: false
+
+# Generate all palette previews and combine into a grid
+palettes <- c("viridis", "magma", "plasma", "inferno", "cividis", "turbo")
+
+cat('<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1em; margin: 1em 0;">')
+for (pal in palettes) {
+  result <- generate_puzzle(
+    type = "hexagonal",
+    grid = c(3),
+    size = c(200),
+    seed = 42,
+    fill_palette = pal
+  )
+  cat(sprintf('<div style="text-align: center;"><div style="font-weight: bold; margin-bottom: 0.5em;">%s</div>%s</div>',
+              pal, result$svg_content))
+}
+cat('</div>')
+```
+
+```{r}
+#| label: fig-hex-palettes-api-code
+#| eval: false
+# API with fill_palette for colored fills
+result <- generate_puzzle(
+  type = "hexagonal",
+  grid = c(3),
+  size = c(200),
+  seed = 42,
+  fill_palette = "viridis"  # Options: viridis, magma, plasma, inferno, cividis, turbo
+)
+render_puzzle_preview(result)
+```
+
+:::
 
 ## Offset (Separation)
 

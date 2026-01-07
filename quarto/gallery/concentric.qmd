@@ -189,8 +189,12 @@ print(ggplot() +
 
 ## Color Palettes
 
+::: {.panel-tabset}
+
+## ggpuzzle
+
 ```{r}
-#| label: fig-conc-palettes
+#| label: fig-conc-palettes-ggpuzzle
 #| fig-align: center
 
 make_conc_palette <- function(pal) {
@@ -208,6 +212,47 @@ make_conc_palette <- function(pal) {
 print((make_conc_palette("viridis") + make_conc_palette("magma") + make_conc_palette("plasma")) /
 (make_conc_palette("inferno") + make_conc_palette("cividis") + make_conc_palette("turbo")))
 ```
+
+## API
+
+```{r}
+#| label: fig-conc-palettes-api
+#| results: asis
+#| echo: false
+
+# Generate all palette previews and combine into a grid
+palettes <- c("viridis", "magma", "plasma", "inferno", "cividis", "turbo")
+
+cat('<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1em; margin: 1em 0;">')
+for (pal in palettes) {
+  result <- generate_puzzle(
+    type = "concentric",
+    grid = c(3),
+    size = c(200),
+    seed = 42,
+    fill_palette = pal
+  )
+  cat(sprintf('<div style="text-align: center;"><div style="font-weight: bold; margin-bottom: 0.5em;">%s</div>%s</div>',
+              pal, result$svg_content))
+}
+cat('</div>')
+```
+
+```{r}
+#| label: fig-conc-palettes-api-code
+#| eval: false
+# API with fill_palette for colored fills
+result <- generate_puzzle(
+  type = "concentric",
+  grid = c(3),
+  size = c(200),
+  seed = 42,
+  fill_palette = "viridis"  # Options: viridis, magma, plasma, inferno, cividis, turbo
+)
+render_puzzle_preview(result)
+```
+
+:::
 
 ## Offset (Separation)
 
