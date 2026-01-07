@@ -3360,6 +3360,82 @@ if (is.null(effective_fills) && !is.null(fill_palette)) {
 
 ---
 
+### Insight #60: Size Parameter Order Consistency - c(height, width) (2025-01-07)
+
+**Context**: User reported inconsistency between `grid = c(rows, cols)` and `size = c(width, height)`.
+
+**Problem**: The parameter ordering was semantically inconsistent:
+- `grid = c(rows, cols)` - rows first (vertical), columns second (horizontal)
+- `size = c(width, height)` - width first (horizontal), height second (vertical)
+
+This made the API confusing and error-prone.
+
+**Solution**: Changed `size` to `c(height, width)` to match `grid = c(rows, cols)`:
+```r
+# Before (inconsistent)
+generate_puzzle(grid = c(3, 4), size = c(400, 300))  # 3 rows, 4 cols, but width=400, height=300?
+
+# After (consistent)
+generate_puzzle(grid = c(3, 4), size = c(300, 400))  # 3 rows (h=300), 4 cols (w=400)
+```
+
+**Rule**: First element is always vertical (rows/height), second is horizontal (cols/width).
+
+**Files Changed**: `R/jigsawR_clean.R`, `R/stat_puzzle.R`, `R/puzzle_core_clean.R`, `R/unified_piece_generation.R`, `R/voronoi_puzzle.R`, `R/tessellation_edge_generation.R`, `R/piece_positioning.R`, `R/puzzle_separation.R`
+
+---
+
+### Insight #61: Fermat Spiral Center Must Use Explicit Coordinates (2025-01-07)
+
+**Context**: After fixing size parameter order, Voronoi puzzles with rectangular dimensions produced fewer pieces than expected (13 instead of 15).
+
+**Root Cause**: The Fermat spiral center was calculated as `center <- size / 2`, which gives `c(height/2, width/2)`. But the center needs to be `c(x, y)` = `c(width/2, height/2)`.
+
+**Bug Example**:
+```r
+# With size = c(300, 200) meaning height=300, width=200
+center <- size / 2  # Gives c(150, 100) - WRONG for x,y coordinates
+# The bounding box is [0,200] x [0,300]
+# Center should be (100, 150) not (150, 100)
+```
+
+**Solution**: Use explicit coordinate extraction:
+```r
+# center is c(x, y) = c(width/2, height/2) = c(size[2]/2, size[1]/2)
+center <- c(size[2] / 2, size[1] / 2)
+```
+
+**Impact**: Points generated outside the clipping window were being lost, reducing piece count.
+
+**Files Changed**: `R/tessellation_edge_generation.R` (generate_fermat_points)
+
+---
+
+### Insight #62: Standalone Test Scripts Must Not Use source() (2025-01-07)
+
+**Context**: R CMD check was failing with errors from test scripts in `tests/` directory.
+
+**Problem**: Standalone test scripts using `source("R/file.R")` fail during R CMD check because:
+1. The working directory during check is different from the package root
+2. Package code should be accessed via the loaded package, not source()
+
+**Solution**:
+1. Created proper testthat test files in `tests/testthat/` that rely on the package being loaded
+2. Moved standalone scripts to `inst/scripts/` where they won't be executed during R CMD check
+3. Scripts in `inst/scripts/` are still available for manual visual verification
+
+**Test Count Impact**: 1856 → 1986 tests (+130 new tests in 4 files)
+
+**New testthat files created**:
+- `test-hexagonal-topology.R`: Ring mapping, Cartesian conversion
+- `test-meta-piece-fusion.R`: Fused pieces maintain relative positions
+- `test-label-positions.R`: Label generation and placement
+- `test-gradient-background.R`: Gradient and solid color fills
+
+**Files Moved**: 12 scripts from `tests/` to `inst/scripts/`
+
+---
+
 ## Development History
 
 ### Completed Work (Archive)
