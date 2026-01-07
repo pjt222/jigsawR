@@ -43,6 +43,19 @@ print(make_rand_pieces(10) + make_rand_pieces(20) + make_rand_pieces(40))
 ## API
 
 ```{r}
+#| label: fig-rand-piece-counts-api-code
+#| eval: false
+# API with varying piece counts
+result <- generate_puzzle(
+  type = "random",
+  grid = c(20),         # Number of interior points
+  size = c(200, 200),   # height, width in mm
+  seed = 42
+)
+render_puzzle_preview(result)
+```
+
+```{r}
 #| label: fig-rand-piece-counts-api
 #| results: asis
 #| echo: false
@@ -62,19 +75,6 @@ for (n in counts) {
               n, result$svg_content))
 }
 cat('</div>')
-```
-
-```{r}
-#| label: fig-rand-piece-counts-api-code
-#| eval: false
-# API with varying piece counts
-result <- generate_puzzle(
-  type = "random",
-  grid = c(20),         # Number of interior points
-  size = c(200, 200),   # height, width in mm
-  seed = 42
-)
-render_puzzle_preview(result)
 ```
 
 :::
@@ -112,6 +112,20 @@ make_rand_corners(6, "6 corners") + make_rand_corners(8, "8 corners"))
 ## API
 
 ```{r}
+#| label: fig-rand-corners-api-code
+#| eval: false
+# API with n_corner for piece shape complexity
+result <- generate_puzzle(
+  type = "random",
+  grid = c(15),
+  size = c(200, 200),
+  seed = 42,
+  n_corner = 5  # 3-8, higher = more complex shapes
+)
+render_puzzle_preview(result)
+```
+
+```{r}
 #| label: fig-rand-corners-api
 #| results: asis
 #| echo: false
@@ -132,20 +146,6 @@ for (nc in corners) {
               nc, result$svg_content))
 }
 cat('</div>')
-```
-
-```{r}
-#| label: fig-rand-corners-api-code
-#| eval: false
-# API with n_corner for piece shape complexity
-result <- generate_puzzle(
-  type = "random",
-  grid = c(15),
-  size = c(200, 200),
-  seed = 42,
-  n_corner = 5  # 3-8, higher = more complex shapes
-)
-render_puzzle_preview(result)
 ```
 
 :::
@@ -180,6 +180,20 @@ print((make_rand_palette("viridis") + make_rand_palette("magma") + make_rand_pal
 ## API
 
 ```{r}
+#| label: fig-rand-palettes-api-code
+#| eval: false
+# API with fill_palette for colored fills
+result <- generate_puzzle(
+  type = "random",
+  grid = c(20),
+  size = c(200, 200),
+  seed = 42,
+  fill_palette = "viridis"  # Options: viridis, magma, plasma, inferno, cividis, turbo
+)
+render_puzzle_preview(result)
+```
+
+```{r}
 #| label: fig-rand-palettes-api
 #| results: asis
 #| echo: false
@@ -200,20 +214,6 @@ for (pal in palettes) {
               pal, result$svg_content))
 }
 cat('</div>')
-```
-
-```{r}
-#| label: fig-rand-palettes-api-code
-#| eval: false
-# API with fill_palette for colored fills
-result <- generate_puzzle(
-  type = "random",
-  grid = c(20),
-  size = c(200, 200),
-  seed = 42,
-  fill_palette = "viridis"  # Options: viridis, magma, plasma, inferno, cividis, turbo
-)
-render_puzzle_preview(result)
 ```
 
 :::
@@ -247,6 +247,20 @@ print(make_rand_offset(0) + make_rand_offset(5) + make_rand_offset(10) + make_ra
 ## API
 
 ```{r}
+#| label: fig-rand-offset-api-code
+#| eval: false
+# API with offset for piece separation
+result <- generate_puzzle(
+  type = "random",
+  grid = c(18),
+  size = c(200, 200),
+  offset = 10,  # Separation in mm
+  seed = 42
+)
+render_puzzle_preview(result)
+```
+
+```{r}
 #| label: fig-rand-offset-api
 #| results: asis
 #| echo: false
@@ -267,20 +281,6 @@ for (off in offsets) {
               off, result$svg_content))
 }
 cat('</div>')
-```
-
-```{r}
-#| label: fig-rand-offset-api-code
-#| eval: false
-# API with offset for piece separation
-result <- generate_puzzle(
-  type = "random",
-  grid = c(18),
-  size = c(200, 200),
-  offset = 10,  # Separation in mm
-  seed = 42
-)
-render_puzzle_preview(result)
 ```
 
 :::
@@ -314,6 +314,19 @@ print(make_rand_seed(1) + make_rand_seed(42) + make_rand_seed(123) + make_rand_s
 ```
 
 ## API
+
+```{r}
+#| label: fig-rand-seeds-api-code
+#| eval: false
+# API with different seeds for unique patterns
+result <- generate_puzzle(
+  type = "random",
+  grid = c(15),
+  size = c(200, 200),
+  seed = 42  # Change seed for different patterns
+)
+render_puzzle_preview(result)
+```
 
 ```{r}
 #| label: fig-rand-seeds-api

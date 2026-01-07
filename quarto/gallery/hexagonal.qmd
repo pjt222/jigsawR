@@ -231,6 +231,20 @@ print((make_hex_palette("viridis") + make_hex_palette("magma") + make_hex_palett
 ## API
 
 ```{r}
+#| label: fig-hex-palettes-api-code
+#| eval: false
+# API with fill_palette for colored fills
+result <- generate_puzzle(
+  type = "hexagonal",
+  grid = c(3),
+  size = c(200),
+  seed = 42,
+  fill_palette = "viridis"  # Options: viridis, magma, plasma, inferno, cividis, turbo
+)
+render_puzzle_preview(result)
+```
+
+```{r}
 #| label: fig-hex-palettes-api
 #| results: asis
 #| echo: false
@@ -251,20 +265,6 @@ for (pal in palettes) {
               pal, result$svg_content))
 }
 cat('</div>')
-```
-
-```{r}
-#| label: fig-hex-palettes-api-code
-#| eval: false
-# API with fill_palette for colored fills
-result <- generate_puzzle(
-  type = "hexagonal",
-  grid = c(3),
-  size = c(200),
-  seed = 42,
-  fill_palette = "viridis"  # Options: viridis, magma, plasma, inferno, cividis, turbo
-)
-render_puzzle_preview(result)
 ```
 
 :::
@@ -298,6 +298,20 @@ print(make_hex_offset(0) + make_hex_offset(5) + make_hex_offset(10) + make_hex_o
 ## API
 
 ```{r}
+#| label: fig-hex-offset-api-code
+#| eval: false
+# API with offset for piece separation
+result <- generate_puzzle(
+  type = "hexagonal",
+  grid = c(3),
+  size = c(200),
+  offset = 10,  # Separation in mm
+  seed = 42
+)
+render_puzzle_preview(result)
+```
+
+```{r}
 #| label: fig-hex-offset-api
 #| results: asis
 #| echo: false
@@ -318,20 +332,6 @@ for (off in offsets) {
               off, result$svg_content))
 }
 cat('</div>')
-```
-
-```{r}
-#| label: fig-hex-offset-api-code
-#| eval: false
-# API with offset for piece separation
-result <- generate_puzzle(
-  type = "hexagonal",
-  grid = c(3),
-  size = c(200),
-  offset = 10,  # Separation in mm
-  seed = 42
-)
-render_puzzle_preview(result)
 ```
 
 :::
