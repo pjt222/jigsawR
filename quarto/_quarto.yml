@@ -82,6 +82,10 @@ format:
     code-copy: true
     code-overflow: wrap
     highlight-style: github
+    grid:
+      body-width: 900px
+      sidebar-width: 250px
+      margin-width: 250px
 
 execute:
   freeze: auto

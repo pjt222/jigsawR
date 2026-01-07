@@ -62,6 +62,17 @@ pre.sourceCode {
   height: auto;
 }
 
+/* Responsive SVGs in puzzle grids */
+svg {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Panel tabset content should not overflow */
+.tab-content {
+  overflow-x: auto;
+}
+
 /* Navigation improvements */
 .navbar-brand {
   font-weight: bold;

@@ -62,13 +62,28 @@ knitr::opts_chunk$set(
   dpi = 150
 )
 
+# Helper function to make SVG responsive
+# Removes fixed width/height attributes and ensures viewBox is present
+make_svg_responsive <- function(svg_content) {
+  # Remove fixed width and height attributes, keep viewBox
+  # Pattern: width="123.45" or width="123"
+  svg_content <- gsub(' width="[0-9.]+"', '', svg_content)
+  svg_content <- gsub(' height="[0-9.]+"', '', svg_content)
+
+  # Add width="100%" and height="auto" after the opening <svg tag
+  svg_content <- sub('<svg ', '<svg width="100%" height="auto" ', svg_content)
+
+  svg_content
+}
+
 # Helper function to render API puzzle result as inline SVG
 # Embeds SVG directly in HTML for best quality
 render_puzzle_preview <- function(result, width = "100%", max_width = "400px", ...) {
   # Note: ... captures unused arguments for compatibility
 
-  # Get the SVG content
-  svg_content <- result$svg_content
+  # Get the SVG content and make it responsive
+
+  svg_content <- make_svg_responsive(result$svg_content)
 
   # Wrap in a centered div with size constraints
   html_output <- sprintf(
@@ -96,9 +111,9 @@ render_puzzle_grid <- function(items, ncol = 3, labels = NULL) {
     labels <- names(items)
   }
 
-  # Build grid items
+  # Build grid items with responsive SVGs
   grid_items <- vapply(seq_along(items), function(i) {
-    svg_content <- items[[i]]$svg_content
+    svg_content <- make_svg_responsive(items[[i]]$svg_content)
     label <- if (!is.null(labels) && length(labels) >= i) {
       sprintf('<div style="font-weight: bold; margin-bottom: 0.5em;">%s</div>', labels[i])
     } else {
