@@ -3689,6 +3689,60 @@ generate_puzzle(type = "rectangular", ...)
 
 ---
 
+### Insight #68: Y-Axis Inversion Compensation for Voronoi/Random fill_direction (2025-01-08)
+
+**Context**: After implementing `fill_direction`, users reported that voronoi and random puzzles showed 180° rotated colors between ggpuzzle and API outputs for the same parameters.
+
+**Root Cause**: Three factors combined to cause the rotation:
+
+1. **SVG vs ggplot2 coordinate systems**:
+   - SVG: Y-axis increases downward (origin top-left)
+   - ggplot2: Y-axis increases upward (origin bottom-left)
+
+2. **Voronoi/random piece ordering lacks spatial structure**:
+   - Rectangular: piece_id = `(row-1)*cols + col` → spatial meaning
+   - Hexagonal/concentric: piece_id by ring → spatial meaning
+   - Voronoi/random: piece_id from `deldir::tile.list()` order → NO spatial meaning
+
+3. **Same reversal logic produces opposite visual results**:
+   ```
+   API (SVG):     Piece 1 at top    → color 1 at top
+   ggplot2:       Piece 1 at bottom → color 1 at bottom
+   Result: 180° rotation
+   ```
+
+**Solution**: Invert the fill_order logic for voronoi/random in ggpuzzle to compensate:
+
+```r
+# In stat_puzzle.R compute_panel()
+if (puzzle_type %in% c("voronoi", "random")) {
+  # Compensate for ggplot2 Y-axis inversion
+  if (fill_direction == "forward") {
+    fill_order_map <- rev(seq_len(n_pieces))  # Use reversed
+  } else {
+    fill_order_map <- seq_len(n_pieces)       # Use normal
+  }
+}
+```
+
+| fill_direction | Rectangular | Voronoi/Random |
+|----------------|-------------|----------------|
+| forward | `piece_id` | `rev(piece_id)` ← compensates |
+| reverse | `rev(piece_id)` | `piece_id` ← compensates |
+
+**Why Other Types Don't Need Compensation**:
+- Rectangular: Row/column structure provides consistent spatial ordering regardless of coordinate system
+- Hexagonal/concentric: Ring structure with center piece provides rotational symmetry
+
+**Key Lesson**: When implementing features that depend on spatial ordering, consider:
+1. Whether piece IDs have spatial meaning for that puzzle type
+2. Coordinate system differences between rendering targets (SVG vs ggplot2)
+3. Test both rendering paths with the same parameters to catch visual inconsistencies
+
+**Files Changed**: `R/stat_puzzle.R`
+
+---
+
 ## Development History
 
 ### Completed Work (Archive)
