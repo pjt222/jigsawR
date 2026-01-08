@@ -26,7 +26,7 @@ jigsawR/
 │   ├── bezier_utils.R          # Bezier curve utilities
 │   └── piles_notation.R        # PILES notation parser/serializer
 ├── inst/shiny-app/         # Shiny web application
-├── tests/testthat/         # Test suite (1065+ tests)
+├── tests/testthat/         # Test suite (1986 tests)
 ├── output/                 # Generated puzzle files
 └── docs/development-guides/  # Detailed architecture docs
 ```
@@ -104,7 +104,19 @@ R_EXE="/mnt/c/Program Files/R/R-4.5.0/bin/Rscript.exe"
 
 ## Quarto Documentation
 
-The `quarto/` directory contains the project documentation site. To render from WSL:
+The `quarto/` directory contains the project documentation site (GitHub Pages).
+
+### Render Script (Recommended)
+
+```bash
+# Fresh render (default) - clears cache, renders all pages
+bash inst/scripts/render_quarto.sh
+
+# Cached render - uses existing _freeze files (faster)
+bash inst/scripts/render_quarto.sh --cached
+```
+
+### Manual Rendering
 
 ```bash
 QUARTO_EXE="/mnt/c/Program Files/RStudio/resources/app/bin/quarto/bin/quarto.exe"
@@ -114,6 +126,9 @@ QUARTO_EXE="/mnt/c/Program Files/RStudio/resources/app/bin/quarto/bin/quarto.exe
 
 # Render single file
 "$QUARTO_EXE" render quarto/getting-started.qmd
+
+# Clear cache manually
+rm -rf quarto/_freeze quarto/_site
 ```
 
 **Key Notes:**
@@ -121,6 +136,7 @@ QUARTO_EXE="/mnt/c/Program Files/RStudio/resources/app/bin/quarto/bin/quarto.exe
 - Output goes to `quarto/_site/`
 - Freeze cache in `quarto/_freeze/` - delete to force re-render
 - All R code chunks should have `#| label:` for clean rendering output
+- **Fresh render takes ~5-7 minutes** (14 pages with R code execution)
 
 ## Development Commands
 
@@ -185,7 +201,7 @@ For in-depth technical details, see:
 This includes:
 - Hexagonal Warp/Trunc transformation details (5 boundary modes)
 - Concentric Ring Mode geometry calculations
-- 17 Key Development Insights (lessons learned)
+- 66 Key Development Insights (lessons learned)
 - Complete development history
 
 ## Important Implementation Details
@@ -226,7 +242,7 @@ For complex debugging, spawn multiple subagents in parallel to investigate diffe
 - **Main API**: ✅ `generate_puzzle()` - single entry point for all types
 - **Puzzle Types**: Rectangular, Hexagonal, Concentric
 - **Shiny App**: ✅ Three puzzle types, offset slider, PNG/SVG downloads
-- **Test Suites**: 430+ tests
+- **Test Suites**: 1986 tests
 
 ### Open Issues
 - **#62**: Epic: Create GitHub Pages Documentation Site (Quarto) - in progress

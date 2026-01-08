@@ -1,10 +1,9 @@
 #!/bin/bash
 # Render Quarto documentation site
-# Usage: ./inst/scripts/render_quarto.sh [--fresh]
+# Usage: bash inst/scripts/render_quarto.sh [--cached]
 #
-# Options:
-#   --fresh    Clear cache (_freeze and _site) before rendering
-#   --help     Show this help message
+# By default, clears cache (_freeze and _site) before rendering.
+# Use --cached to skip cache clearing and use existing freeze files.
 
 set -e
 
@@ -18,19 +17,23 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
+# Default: fresh render (clear cache)
+FRESH=true
+
 # Parse arguments
-FRESH=false
 for arg in "$@"; do
     case $arg in
-        --fresh)
-            FRESH=true
+        --cached)
+            FRESH=false
             shift
             ;;
         --help|-h)
-            echo "Usage: ./inst/scripts/render_quarto.sh [--fresh]"
+            echo "Usage: bash inst/scripts/render_quarto.sh [--cached]"
+            echo ""
+            echo "By default, clears cache and renders fresh."
             echo ""
             echo "Options:"
-            echo "  --fresh    Clear cache (_freeze and _site) before rendering"
+            echo "  --cached   Skip cache clearing, use existing _freeze files"
             echo "  --help     Show this help message"
             exit 0
             ;;
@@ -55,11 +58,13 @@ if [ ! -d "$QUARTO_DIR" ]; then
     exit 1
 fi
 
-# Clear cache if --fresh
+# Clear cache by default
 if [ "$FRESH" = true ]; then
     echo -e "${YELLOW}Clearing Quarto cache...${NC}"
     rm -rf "$QUARTO_DIR/_freeze" "$QUARTO_DIR/_site"
     echo -e "${GREEN}Cache cleared${NC}"
+else
+    echo -e "${YELLOW}Using cached freeze files...${NC}"
 fi
 
 # Render

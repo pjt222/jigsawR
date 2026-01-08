@@ -3559,6 +3559,86 @@ The "edges" we saw were actually **color boundaries** between adjacent pieces wi
 
 ---
 
+### Insight #65: Gradient vs Solid Colors for Fusion Visibility (2025-01-08)
+
+**Context**: After fixing the `col=NA` issue (#64), users testing fusion might still think it's not working because they see "edges" between fused pieces.
+
+**Problem**: When using gradient color scales (viridis, magma, plasma, etc.), adjacent pieces in a fusion group have different colors from the gradient. The color boundary between these pieces looks like an edge, even though:
+- No stroke is being rendered (`col = NA`)
+- The pieces ARE fused (share edges, grouped together)
+- The fusion IS working correctly
+
+**Visual Demonstration**:
+```
+Viridis gradient + fusion    Solid colors + fusion
+┌─────────┬─────────┐       ┌─────────────────────┐
+│ purple  │ blue    │       │                     │
+│         │         │       │     solid red       │
+├─────────┴─────────┤       │                     │
+│      green        │       └─────────────────────┘
+└───────────────────┘
+   "looks like edges"          "clearly one piece"
+```
+
+**Solution**: Document this behavior and provide debugging guidance:
+1. Added `@note` to all 5 `geom_puzzle_*` functions in roxygen docs
+2. Added "Understanding Color Scales with Fusion" section to `quarto/tutorials/fusion-groups.qmd`
+3. Side-by-side visual comparison: gradient vs solid colors
+
+**Key Lesson**: When debugging fusion rendering:
+- **Don't trust gradient colors** - color boundaries look like edges
+- **Use solid colors to verify** - `scale_fill_manual(values = c("1" = "red", "2" = "blue"))`
+- If edges disappear with solid colors, fusion is working correctly
+
+**Files Changed**:
+- `R/geom_puzzle.R`: Added `@note` block to all 5 geom functions
+- `man/geom_puzzle_*.Rd`: Regenerated with new note
+- `quarto/tutorials/fusion-groups.qmd`: New visual comparison section
+
+---
+
+### Insight #66: API vs ggpuzzle Default Outline Color Consistency (2025-01-08)
+
+**Context**: User reported inconsistency between ggpuzzle and API default outline colors.
+
+**Problem**: The two rendering paths had different defaults:
+
+| Component | Default Outline | Mechanism |
+|-----------|-----------------|-----------|
+| ggpuzzle  | Black (`"black"`) | `default_aes = aes(colour = "black")` in GeomPuzzle |
+| API       | Viridis gradient | `default_palette = "magma"` → `get_puzzle_colors()` |
+
+This caused visual inconsistency between:
+```r
+# ggpuzzle: black outlines
+ggplot() + geom_puzzle_rect(...)
+
+# API: colorful viridis outlines
+generate_puzzle(type = "rectangular", ...)
+```
+
+**Terminology Note** (ggplot2 vs SVG):
+| Concept | ggplot2 | SVG |
+|---------|---------|-----|
+| Outline color | `colour` | `stroke` |
+| Fill color | `fill` | `fill` |
+
+**Solution**: Changed API default to black to match ggpuzzle:
+- `R/config_utils.R`: `default_palette = "black"` (was "magma")
+- `inst/config.yml`: All 3 environments (default, development, production)
+- Updated test to expect "black" as default
+
+**Result**: Both rendering paths now default to black outlines:
+- ggpuzzle: `colour = "black"` (unchanged)
+- API: `stroke = "#000000"` (now matches)
+
+**Files Changed**:
+- `R/config_utils.R`: Changed fallback default and invalid palette fallback to "black"
+- `inst/config.yml`: Changed `default_palette` to "black" in all environments
+- `tests/testthat/test-utilities.R`: Updated test to expect "black"
+
+---
+
 ## Development History
 
 ### Completed Work (Archive)
