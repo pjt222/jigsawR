@@ -44,6 +44,7 @@ default:
     fill_color: "#a1a1a1"  # used when fill_type = "solid"
     fill_palette: "magma"  # used when fill_type = "palette"
     fill_palette_invert: false
+    fill_direction: "forward"  # forward or reverse - spatial color assignment order
     # Piece gradient colors (only used when fill_type = "gradient")
     piece_gradient:
       center: "#ffffff"

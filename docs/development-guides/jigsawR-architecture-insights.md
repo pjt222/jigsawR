@@ -3639,6 +3639,56 @@ generate_puzzle(type = "rectangular", ...)
 
 ---
 
+### Insight #67: Fill Direction Parameter - Spatial vs Palette Color Ordering (2025-01-08)
+
+**Context**: The ggpuzzle interface fills pieces counter-clockwise (matching piece_id numbering), while some users wanted clockwise fill order. The existing `palette_invert` parameter only reverses the dark↔light ends of the color palette, not the spatial assignment order.
+
+**Problem**: Two independent concepts were being conflated:
+- **Palette inversion**: Reverses which end of the color gradient is "first" (dark vs light)
+- **Spatial direction**: Reverses which pieces get which colors based on their position
+
+**Solution**: Added `fill_direction` parameter with values `"forward"` (default) and `"reverse"`:
+
+| Parameter | Effect | Example |
+|-----------|--------|---------|
+| `palette_invert = FALSE` | Blue → Yellow (standard viridis) | Center=blue, edge=yellow |
+| `palette_invert = TRUE` | Yellow → Blue (reversed) | Center=yellow, edge=blue |
+| `fill_direction = "forward"` | Counter-clockwise (default) | Piece 1=color 1, Piece 2=color 2, ... |
+| `fill_direction = "reverse"` | Clockwise | Spatial color order reversed |
+
+**Key Implementation Details**:
+
+1. **Ring-based reversal for hex/concentric puzzles**: Instead of simply reversing the entire color vector (which would swap center with outermost), the algorithm reverses colors **within each ring** while keeping the center unchanged.
+
+   Ring formula: Ring r has 6*r pieces, starting at position 3*r*(r-1) + 2
+   ```r
+   # Ring 0: piece 1 (center) - unchanged
+   # Ring 1: pieces 2-7 (6 pieces) - reversed within ring
+   # Ring 2: pieces 8-19 (12 pieces) - reversed within ring
+   ```
+
+2. **Puzzle type detection**: Pieces have an explicit `type` attribute ("hexagonal", "concentric", "rectangular") which is the most reliable detection method. Fallback uses structural markers (`grid_pos` vs `ring_pos`).
+
+3. **ggplot2 integration**: Added `fill_order` computed variable to StatPuzzle, allowing:
+   ```r
+   geom_puzzle_hex(..., fill_direction = "reverse") +
+     scale_fill_viridis_c(aesthetics = "fill")
+   ```
+
+**Files Changed**:
+- `R/config_utils.R`: Added `detect_puzzle_type()`, `reverse_colors_by_ring()`, `reorder_colors_for_direction()`
+- `R/unified_renderer.R`: Apply fill_direction before color assignment
+- `R/jigsawR_clean.R`: Added parameter to `generate_puzzle()`
+- `R/geom_puzzle.R`: Added parameter to all 5 geom functions
+- `R/stat_puzzle.R`: Added `fill_order` computed variable
+- `inst/shiny-app/app.R`: Added UI dropdown in Piece Fill sub-accordion
+- `inst/config.yml`: Added `fill_direction: "forward"` default
+- `tests/testthat/test-utilities.R`: Added 8 tests
+
+**Key Lesson**: When adding a parameter that interacts with existing parameters (like `palette_invert`), clearly document the orthogonal relationship. Users should understand they can combine both: `fill_direction = "reverse"` + `palette_invert = TRUE` produces a different result than either alone.
+
+---
+
 ## Development History
 
 ### Completed Work (Archive)

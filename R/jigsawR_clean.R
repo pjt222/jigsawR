@@ -31,6 +31,9 @@
 #' @param colors Vector of colors for pieces (optional, overrides palette)
 #' @param palette Viridis palette name (NULL = use config default)
 #' @param palette_invert Logical, if TRUE reverses the palette direction (default: FALSE)
+#' @param fill_direction Character, either "forward" (default) or "reverse".
+#'   Controls spatial color assignment order. For ring-based puzzles, reverses
+#'   within each ring. For rectangular, reverses entire sequence.
 #' @param background "none", "white", color name, or list(type="gradient", ...)
 #' @param opacity Opacity of puzzle pieces (0.0 to 1.0)
 #' @param save_files TRUE to save SVG files
@@ -74,6 +77,7 @@ generate_puzzle <- function(type = "rectangular",
                             colors = NULL,
                             palette = NULL,
                             palette_invert = FALSE,
+                            fill_direction = "forward",
                             background = "white",
                             opacity = 1.0,
                             save_files = FALSE,
@@ -264,6 +268,7 @@ generate_puzzle <- function(type = "rectangular",
     colors = colors,
     palette = palette,
     palette_invert = palette_invert,
+    fill_direction = fill_direction,
     background = background,
     opacity = opacity,
     show_labels = show_labels,
@@ -295,6 +300,7 @@ generate_puzzle <- function(type = "rectangular",
       stroke_width = stroke_width,
       palette = palette,
       palette_invert = palette_invert,
+      fill_direction = fill_direction,
       background = background,
       opacity = opacity,
       show_labels = show_labels,

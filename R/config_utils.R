@@ -90,6 +90,116 @@ get_puzzle_colors <- function(n, palette = NULL, invert = FALSE) {
   colors
 }
 
+#' Detect puzzle type from pieces structure
+#'
+#' Examines piece attributes to determine the puzzle type.
+#'
+#' @param pieces List of piece objects
+#' @return Character string: "rectangular", "hexagonal", "concentric", or "other"
+#' @keywords internal
+detect_puzzle_type <- function(pieces) {
+ if (length(pieces) == 0) return("other")
+
+ first_piece <- pieces[[1]]
+
+ # Check for explicit type attribute (most reliable)
+ if (!is.null(first_piece$type)) {
+   if (first_piece$type == "concentric") return("concentric")
+   if (first_piece$type == "hexagonal") return("hexagonal")
+   if (first_piece$type == "rectangular") return("rectangular")
+ }
+
+ # Fallback to structural detection
+ # Check for grid_pos (rectangular)
+ if (!is.null(first_piece$grid_pos)) {
+   return("rectangular")
+ }
+
+ # Check for ring_pos (hexagonal or concentric)
+ if (!is.null(first_piece$ring_pos)) {
+   # Concentric pieces may have trapezoid-like structure
+   if (!is.null(first_piece$is_trapezoid) || !is.null(first_piece$inner_radius)) {
+     return("concentric")
+   }
+   return("hexagonal")
+ }
+
+ # Voronoi/random don't have specific markers
+ "other"
+}
+
+#' Reverse colors within each ring for hex/concentric puzzles
+#'
+#' Keeps center piece color unchanged, reverses color order within each ring.
+#'
+#' @param colors Character vector of colors
+#' @param pieces List of piece objects (used to detect ring structure)
+#' @return Character vector of reordered colors
+#' @keywords internal
+reverse_colors_by_ring <- function(colors, pieces) {
+ n <- length(colors)
+ if (n <= 1) return(colors)
+
+ new_colors <- colors
+
+ # Calculate ring boundaries
+ # Ring 0: piece 1 (center)
+ # Ring 1: pieces 2-7 (6 pieces)
+ # Ring 2: pieces 8-19 (12 pieces)
+ # Ring r: 6*r pieces, starting at 3*r*(r-1) + 2
+
+ # Keep center piece (index 1) unchanged
+ # Reverse within each ring
+
+ ring <- 1
+ while (TRUE) {
+   pieces_in_ring <- 6 * ring
+   ring_start <- 3 * ring * (ring - 1) + 2  # 1-indexed start
+
+   if (ring_start > n) break
+
+   ring_end <- min(ring_start + pieces_in_ring - 1, n)
+
+   # Reverse colors within this ring
+   new_colors[ring_start:ring_end] <- rev(colors[ring_start:ring_end])
+
+   ring <- ring + 1
+ }
+
+ new_colors
+}
+
+#' Reorder colors based on fill direction and puzzle structure
+#'
+#' Applies spatial reversal of color assignment based on puzzle type.
+#' For ring-based puzzles, reverses within each ring. For rectangular,
+#' reverses the entire sequence. For voronoi/random, simple reversal.
+#'
+#' @param colors Character vector of colors
+#' @param pieces List of piece objects
+#' @param fill_direction Character, either "forward" (default) or "reverse"
+#' @return Character vector of reordered colors
+#' @export
+reorder_colors_for_direction <- function(colors, pieces, fill_direction = "forward") {
+ if (fill_direction == "forward") return(colors)
+ if (length(colors) <= 1) return(colors)
+
+ puzzle_type <- detect_puzzle_type(pieces)
+
+ if (puzzle_type == "rectangular") {
+   # Reverse entire sequence (column-major effect)
+   return(rev(colors))
+ }
+
+ if (puzzle_type %in% c("hexagonal", "concentric")) {
+   # Reverse within each ring, keep center
+   return(reverse_colors_by_ring(colors, pieces))
+ }
+
+ # voronoi/random: simple reversal
+ rev(colors)
+}
+
 #' Get fallback configuration
 #'
 #' Returns hardcoded defaults if config file is unavailable.
@@ -122,7 +232,8 @@ get_fallback_config <- function() {
       stroke_width = 1.5,
       opacity = 100,
       fill_type = "none",
-      fill_color = "#ffffff"
+      fill_color = "#ffffff",
+      fill_direction = "forward"
     ),
     seed = 1234,
     colors = list(

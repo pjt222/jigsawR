@@ -472,3 +472,152 @@ test_that("palette_invert works with concentric puzzles", {
   expect_type(result$svg_content, "character")
   expect_equal(result$parameters$palette_invert, TRUE)
 })
+
+# ============================================================================
+# fill_direction Tests
+# ============================================================================
+
+test_that("fill_direction parameter defaults to forward", {
+  result <- generate_puzzle(
+    type = "rectangular",
+    grid = c(2, 2),
+    seed = 42,
+    save_files = FALSE
+  )
+
+  expect_equal(result$parameters$fill_direction, "forward")
+})
+
+test_that("fill_direction reverse produces different SVG content", {
+  result_forward <- generate_puzzle(
+    type = "rectangular",
+    grid = c(2, 2),
+    seed = 42,
+    fill_palette = "viridis",
+    fill_direction = "forward",
+    save_files = FALSE
+  )
+
+  result_reverse <- generate_puzzle(
+    type = "rectangular",
+    grid = c(2, 2),
+    seed = 42,
+    fill_palette = "viridis",
+    fill_direction = "reverse",
+    save_files = FALSE
+  )
+
+  # SVG content should differ due to color direction reversal
+  expect_false(result_forward$svg_content == result_reverse$svg_content)
+})
+
+test_that("fill_direction works with hexagonal puzzles", {
+  result <- generate_puzzle(
+    type = "hexagonal",
+    grid = c(2),
+    size = c(100),
+    seed = 42,
+    fill_palette = "plasma",
+    fill_direction = "reverse",
+    save_files = FALSE
+  )
+
+  expect_type(result$svg_content, "character")
+  expect_equal(result$parameters$fill_direction, "reverse")
+})
+
+test_that("fill_direction works with concentric puzzles", {
+  result <- generate_puzzle(
+    type = "concentric",
+    grid = c(2),
+    size = c(100),
+    seed = 42,
+    fill_palette = "rocket",
+    fill_direction = "reverse",
+    save_files = FALSE
+  )
+
+  expect_type(result$svg_content, "character")
+  expect_equal(result$parameters$fill_direction, "reverse")
+})
+
+test_that("detect_puzzle_type correctly identifies puzzle types", {
+  # Test rectangular
+  rect_result <- generate_puzzle(
+    type = "rectangular",
+    grid = c(2, 2),
+    seed = 42,
+    save_files = FALSE
+  )
+  expect_equal(detect_puzzle_type(rect_result$pieces), "rectangular")
+
+  # Test hexagonal
+  hex_result <- generate_puzzle(
+    type = "hexagonal",
+    grid = c(2),
+    size = c(100),
+    seed = 42,
+    save_files = FALSE
+  )
+  expect_equal(detect_puzzle_type(hex_result$pieces), "hexagonal")
+
+  # Test concentric
+  conc_result <- generate_puzzle(
+    type = "concentric",
+    grid = c(2),
+    size = c(100),
+    seed = 42,
+    save_files = FALSE
+  )
+  expect_equal(detect_puzzle_type(conc_result$pieces), "concentric")
+})
+
+test_that("reorder_colors_for_direction forward returns unchanged colors", {
+  colors <- c("#FF0000", "#00FF00", "#0000FF", "#FFFF00")
+  # Create minimal mock pieces for rectangular puzzle
+  pieces <- list(
+    list(grid_pos = list(row = 1, col = 1)),
+    list(grid_pos = list(row = 1, col = 2)),
+    list(grid_pos = list(row = 2, col = 1)),
+    list(grid_pos = list(row = 2, col = 2))
+  )
+
+  result <- reorder_colors_for_direction(colors, pieces, "forward")
+  expect_equal(result, colors)
+})
+
+test_that("reorder_colors_for_direction reverse works for rectangular", {
+  colors <- c("#FF0000", "#00FF00", "#0000FF", "#FFFF00")
+  # Create minimal mock pieces for rectangular puzzle
+  pieces <- list(
+    list(grid_pos = list(row = 1, col = 1)),
+    list(grid_pos = list(row = 1, col = 2)),
+    list(grid_pos = list(row = 2, col = 1)),
+    list(grid_pos = list(row = 2, col = 2))
+  )
+
+  result <- reorder_colors_for_direction(colors, pieces, "reverse")
+  expect_equal(result, rev(colors))
+})
+
+test_that("reverse_colors_by_ring keeps center unchanged", {
+  # 7 colors: 1 center + 6 ring1
+  colors <- c("#CENTER", "#R1_1", "#R1_2", "#R1_3", "#R1_4", "#R1_5", "#R1_6")
+  pieces <- list(
+    list(ring_pos = list(ring = 0)),  # center
+    list(ring_pos = list(ring = 1)),
+    list(ring_pos = list(ring = 1)),
+    list(ring_pos = list(ring = 1)),
+    list(ring_pos = list(ring = 1)),
+    list(ring_pos = list(ring = 1)),
+    list(ring_pos = list(ring = 1))
+  )
+
+  result <- reverse_colors_by_ring(colors, pieces)
+
+  # Center should stay the same
+  expect_equal(result[1], "#CENTER")
+
+  # Ring 1 should be reversed
+  expect_equal(result[2:7], rev(colors[2:7]))
+})

@@ -26,6 +26,8 @@ NULL
 #' @param center_shape Center piece shape for concentric: "hexagon" or "circle"
 #' @param point_distribution Point distribution for voronoi: "fermat", "uniform", "jittered"
 #' @param n_corner Number of corners for base polygon (random only)
+#' @param fill_direction Direction for color assignment: "forward" (default) or "reverse".
+#'   When "reverse", the computed `fill_order` variable reverses the spatial ordering.
 #' @export
 StatPuzzle <- ggplot2::ggproto("StatPuzzle", ggplot2::Stat,
 
@@ -33,7 +35,8 @@ StatPuzzle <- ggplot2::ggproto("StatPuzzle", ggplot2::Stat,
   required_aes = character(),
 
   # Computed variables that will be available to the geom
-  computed_vars = c("x", "y", "piece_id", "center_x", "center_y"),
+  # fill_order can be used with aes(fill = after_stat(fill_order)) for directional fill
+  computed_vars = c("x", "y", "piece_id", "center_x", "center_y", "fill_order"),
 
   # Extra parameters that get passed to compute_panel
  default_aes = ggplot2::aes(x = ggplot2::after_stat(x), y = ggplot2::after_stat(y)),
@@ -68,6 +71,8 @@ StatPuzzle <- ggplot2::ggproto("StatPuzzle", ggplot2::Stat,
     params$fusion_groups <- params$fusion_groups %||% NULL
     params$fusion_style <- params$fusion_style %||% "none"
     params$fusion_opacity <- params$fusion_opacity %||% 0.3
+    # Fill direction
+    params$fill_direction <- params$fill_direction %||% "forward"
     params
   },
 
@@ -83,6 +88,7 @@ StatPuzzle <- ggplot2::ggproto("StatPuzzle", ggplot2::Stat,
                            boundary_facing = "outward",
                            point_distribution = "fermat",
                            n_corner = 4,
+                           fill_direction = "forward",
                            fusion_groups = NULL,
                            fusion_style = "none",
                            fusion_opacity = 0.3,
@@ -260,9 +266,65 @@ StatPuzzle <- ggplot2::ggproto("StatPuzzle", ggplot2::Stat,
       pieces_df$group <- pieces_df$piece_id
     }
 
+    # Compute fill_order based on fill_direction
+    # This allows users to use aes(fill = after_stat(fill_order)) for directional fills
+    unique_piece_ids <- sort(unique(pieces_df$piece_id))
+    n_pieces <- length(unique_piece_ids)
+
+    if (fill_direction == "reverse" && n_pieces > 1) {
+      # Create mapping from original piece_id to reversed fill_order
+      if (puzzle_type %in% c("hexagonal", "concentric")) {
+        # Reverse within each ring, keep center unchanged
+        fill_order_map <- compute_ring_reversed_order(n_pieces)
+      } else {
+        # Simple reversal for rectangular/voronoi/random
+        fill_order_map <- rev(seq_len(n_pieces))
+      }
+      # Apply mapping
+      pieces_df$fill_order <- fill_order_map[pieces_df$piece_id]
+    } else {
+      # Forward direction: fill_order equals piece_id
+      pieces_df$fill_order <- pieces_df$piece_id
+    }
+
     pieces_df
   }
 )
+
+#' Compute reversed fill order for ring-based puzzles
+#'
+#' Reverses order within each ring while keeping center piece unchanged.
+#' Ring 0: piece 1 (center)
+#' Ring 1: pieces 2-7 (6 pieces)
+#' Ring r: 6*r pieces, starting at 3*r*(r-1) + 2
+#'
+#' @param n_pieces Total number of pieces
+#' @return Integer vector mapping piece_id to fill_order
+#' @keywords internal
+compute_ring_reversed_order <- function(n_pieces) {
+  if (n_pieces <= 1) return(seq_len(n_pieces))
+
+  fill_order <- seq_len(n_pieces)
+
+  # Center piece (index 1) stays at position 1
+  # Reverse within each ring
+  ring <- 1
+  while (TRUE) {
+    pieces_in_ring <- 6 * ring
+    ring_start <- 3 * ring * (ring - 1) + 2  # 1-indexed start
+
+    if (ring_start > n_pieces) break
+
+    ring_end <- min(ring_start + pieces_in_ring - 1, n_pieces)
+
+    # Reverse the fill order values within this ring
+    fill_order[ring_start:ring_end] <- rev(fill_order[ring_start:ring_end])
+
+    ring <- ring + 1
+  }
+
+  fill_order
+}
 
 # Null-coalescing operator if not already defined
 `%||%` <- function(a, b) if (is.null(a)) b else a

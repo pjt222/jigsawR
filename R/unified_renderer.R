@@ -15,6 +15,9 @@
 #' @param colors Color palette for piece strokes (NULL = use default)
 #' @param palette Viridis palette name (NULL = use config default)
 #' @param palette_invert Logical, if TRUE reverses the palette direction (default: FALSE)
+#' @param fill_direction Character, either "forward" (default) or "reverse".
+#'   Controls spatial color assignment order. For ring-based puzzles, reverses
+#'   within each ring. For rectangular, reverses entire sequence.
 #' @param background Background specification:
 #'   - "none": No background
 #'   - "white", "#FFFFFF", etc.: Solid color background
@@ -30,6 +33,7 @@
 render_puzzle_svg <- function(positioned, fill = "none", fills = NULL,
                                stroke_width = 1.5,
                                colors = NULL, palette = NULL, palette_invert = FALSE,
+                               fill_direction = "forward",
                                background = "white", opacity = 1.0,
                                show_labels = FALSE, label_color = "black",
                                label_size = NULL, inline = FALSE) {
@@ -52,6 +56,14 @@ render_puzzle_svg <- function(positioned, fill = "none", fills = NULL,
   use_per_piece_fills <- !is.null(fills) && length(fills) > 0
   if (use_per_piece_fills && length(fills) < n_pieces) {
     fills <- rep_len(fills, n_pieces)
+  }
+
+  # Apply fill direction reordering if requested
+  if (!is.null(fill_direction) && fill_direction == "reverse") {
+    colors <- reorder_colors_for_direction(colors, positioned$pieces, fill_direction)
+    if (use_per_piece_fills) {
+      fills <- reorder_colors_for_direction(fills, positioned$pieces, fill_direction)
+    }
   }
 
   # Build SVG components

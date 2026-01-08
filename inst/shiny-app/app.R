@@ -732,7 +732,16 @@ ui <- page_fluid(
                     "Invert Fill Palette",
                     value = FALSE
                   ),
-                  "Reverse the fill palette direction."
+                  "Reverse the fill palette direction (dark↔light)."
+                ),
+                tooltip(
+                  selectInput("fill_direction", "Fill Direction:",
+                           choices = list(
+                             "Forward" = "forward",
+                             "Reverse" = "reverse"
+                           ),
+                           selected = "forward"),
+                  "Reverse the spatial order of color assignment across pieces."
                 )
               ),
               # Gradient color pickers for piece fill
@@ -1728,6 +1737,9 @@ server <- function(input, output, session) {
     pos$parameters$fusion_style <- fusion_style_current
     pos$parameters$fusion_opacity <- fusion_opacity_current
 
+    # Get fill direction (only applies to palette fill)
+    fill_direction_val <- if (is.null(input$fill_direction)) "forward" else input$fill_direction
+
     # Render SVG with current styling
     svg <- tryCatch({
       result <- render_puzzle_svg(
@@ -1738,6 +1750,7 @@ server <- function(input, output, session) {
         colors = stroke_colors_value,
         palette = stroke_palette_value,
         palette_invert = stroke_palette_invert_val,
+        fill_direction = fill_direction_val,
         background = background_value,
         opacity = input$opacity / 100,
         show_labels = show_labels_value,
@@ -2129,6 +2142,9 @@ server <- function(input, output, session) {
       min_tab_size_dl <- if (is.null(input$min_tab_size) || input$min_tab_size == 0) NULL else input$min_tab_size
       max_tab_size_dl <- if (is.null(input$max_tab_size) || input$max_tab_size == 0) NULL else input$max_tab_size
 
+      # Get fill direction
+      fill_direction_dl <- if (is.null(input$fill_direction)) "forward" else input$fill_direction
+
       result <- generate_puzzle(
         type = data$type,
         grid = grid_param,
@@ -2143,6 +2159,7 @@ server <- function(input, output, session) {
         colors = stroke_colors_dl,
         palette = stroke_palette_dl,
         palette_invert = stroke_palette_invert_dl,
+        fill_direction = fill_direction_dl,
         background = background_value,
         opacity = input$opacity / 100,
         save_files = FALSE,

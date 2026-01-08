@@ -274,6 +274,8 @@ GeomPuzzle <- ggplot2::ggproto("GeomPuzzle", ggplot2::Geom,
 #' @param max_tab_size Maximum tab height in mm (NULL for no constraint).
 #' @param seed Random seed for reproducible puzzle shapes.
 #' @param bezier_resolution Points per Bezier curve (default: 20).
+#' @param fill_direction Direction for color assignment: "forward" (default) or "reverse".
+#'   Reverses the spatial order of color assignment across pieces.
 #' @param fusion_groups Piece fusion specification: PILES notation string (e.g., "1-2-3,4-5"),
 #'   list of integer vectors, or NULL for no fusion.
 #' @param fusion_style Style for fused internal edges: "none" (invisible), "dashed", "solid".
@@ -335,6 +337,7 @@ geom_puzzle_rect <- function(mapping = NULL,
                               seed = NULL,
                               offset = 0,
                               bezier_resolution = 20,
+                              fill_direction = "forward",
                               fusion_groups = NULL,
                               fusion_style = "none",
                               fusion_opacity = 0.3,
@@ -367,6 +370,7 @@ geom_puzzle_rect <- function(mapping = NULL,
       seed = seed,
       offset = offset,
       bezier_resolution = bezier_resolution,
+      fill_direction = fill_direction,
       fusion_groups = fusion_groups,
       fusion_style = fusion_style,
       fusion_opacity = fusion_opacity,
@@ -403,6 +407,8 @@ geom_puzzle_rect <- function(mapping = NULL,
 #' @param do_warp Apply circular warping transformation (default: TRUE).
 #' @param do_trunc Truncate edge pieces at boundary (default: TRUE).
 #' @param do_circular_border Use perfect circular arc borders (default: FALSE).
+#' @param fill_direction Direction for color assignment: "forward" (default) or "reverse".
+#'   Reverses color order within each ring while keeping center piece unchanged.
 #' @param fusion_groups Piece fusion specification: PILES notation string (e.g., "1-2-3,4-5"),
 #'   list of integer vectors, or NULL for no fusion.
 #' @param fusion_style Style for fused internal edges: "none" (invisible), "dashed", "solid".
@@ -459,6 +465,7 @@ geom_puzzle_hex <- function(mapping = NULL,
                             do_warp = TRUE,
                             do_trunc = TRUE,
                             do_circular_border = FALSE,
+                            fill_direction = "forward",
                             fusion_groups = NULL,
                             fusion_style = "none",
                             fusion_opacity = 0.3,
@@ -492,6 +499,7 @@ geom_puzzle_hex <- function(mapping = NULL,
       do_warp = do_warp,
       do_trunc = do_trunc,
       do_circular_border = do_circular_border,
+      fill_direction = fill_direction,
       fusion_groups = fusion_groups,
       fusion_style = fusion_style,
       fusion_opacity = fusion_opacity,
@@ -529,6 +537,8 @@ geom_puzzle_hex <- function(mapping = NULL,
 #' @param do_circular_border Use perfect circular arc borders (default: FALSE).
 #' @param boundary_facing Direction the circular arc faces: "outward" (convex) or "inward" (concave).
 #'   Only applies when do_circular_border = TRUE.
+#' @param fill_direction Direction for color assignment: "forward" (default) or "reverse".
+#'   Reverses color order within each ring while keeping center piece unchanged.
 #' @param fusion_groups Piece fusion specification: PILES notation string (e.g., "1-2-3,4-5"),
 #'   list of integer vectors, or NULL for no fusion.
 #' @param fusion_style Style for fused internal edges: "none" (invisible), "dashed", "solid".
@@ -578,6 +588,7 @@ geom_puzzle_conc <- function(mapping = NULL,
                              center_shape = "hexagon",
                              do_circular_border = FALSE,
                              boundary_facing = "outward",
+                             fill_direction = "forward",
                              fusion_groups = NULL,
                              fusion_style = "none",
                              fusion_opacity = 0.3,
@@ -611,6 +622,7 @@ geom_puzzle_conc <- function(mapping = NULL,
       center_shape = center_shape,
       do_circular_border = do_circular_border,
       boundary_facing = boundary_facing,
+      fill_direction = fill_direction,
       fusion_groups = fusion_groups,
       fusion_style = fusion_style,
       fusion_opacity = fusion_opacity,
@@ -645,6 +657,8 @@ geom_puzzle_conc <- function(mapping = NULL,
 #' @param bezier_resolution Points per Bezier curve (default: 20).
 #' @param point_distribution How to distribute seed points:
 #'   "fermat" (default, golden angle spiral), "uniform" (random), or "jittered" (grid with noise).
+#' @param fill_direction Direction for color assignment: "forward" (default) or "reverse".
+#'   Reverses the spatial order of color assignment across pieces.
 #' @param fusion_groups Piece fusion specification: PILES notation string (e.g., "1-2-3,4-5"),
 #'   list of integer vectors, or NULL for no fusion.
 #' @param fusion_style Style for fused internal edges: "none" (invisible), "dashed", "solid".
@@ -694,6 +708,7 @@ geom_puzzle_voronoi <- function(mapping = NULL,
                                 offset = 0,
                                 bezier_resolution = 20,
                                 point_distribution = "fermat",
+                                fill_direction = "forward",
                                 fusion_groups = NULL,
                                 fusion_style = "none",
                                 fusion_opacity = 0.3,
@@ -726,6 +741,7 @@ geom_puzzle_voronoi <- function(mapping = NULL,
       offset = offset,
       bezier_resolution = bezier_resolution,
       point_distribution = point_distribution,
+      fill_direction = fill_direction,
       fusion_groups = fusion_groups,
       fusion_style = fusion_style,
       fusion_opacity = fusion_opacity,
@@ -760,6 +776,8 @@ geom_puzzle_voronoi <- function(mapping = NULL,
 #' @param seed Random seed for reproducible puzzle shapes.
 #' @param bezier_resolution Points per Bezier curve (default: 20).
 #' @param n_corner Number of corners for the base polygon (default: 4 for rectangle).
+#' @param fill_direction Direction for color assignment: "forward" (default) or "reverse".
+#'   Reverses the spatial order of color assignment across pieces.
 #' @param fusion_groups Piece fusion specification: PILES notation string (e.g., "1-2-3,4-5"),
 #'   list of integer vectors, or NULL for no fusion.
 #' @param fusion_style Style for fused internal edges: "none" (invisible), "dashed", "solid".
@@ -810,6 +828,7 @@ geom_puzzle_random <- function(mapping = NULL,
                                offset = 0,
                                bezier_resolution = 20,
                                n_corner = 4,
+                               fill_direction = "forward",
                                fusion_groups = NULL,
                                fusion_style = "none",
                                fusion_opacity = 0.3,
@@ -847,6 +866,7 @@ geom_puzzle_random <- function(mapping = NULL,
       offset = offset,
       bezier_resolution = bezier_resolution,
       n_corner = n_corner,
+      fill_direction = fill_direction,
       fusion_groups = fusion_groups,
       fusion_style = fusion_style,
       fusion_opacity = fusion_opacity,
