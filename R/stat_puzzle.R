@@ -276,15 +276,27 @@ StatPuzzle <- ggplot2::ggproto("StatPuzzle", ggplot2::Stat,
       if (puzzle_type %in% c("hexagonal", "concentric")) {
         # Reverse within each ring, keep center unchanged
         fill_order_map <- compute_ring_reversed_order(n_pieces)
+      } else if (puzzle_type %in% c("voronoi", "random")) {
+        # Voronoi/random: use normal order (compensates for ggplot2 Y-axis inversion)
+        # This ensures ggpuzzle output matches API (SVG) visual appearance
+        fill_order_map <- seq_len(n_pieces)
       } else {
-        # Simple reversal for rectangular/voronoi/random
+        # Simple reversal for rectangular
         fill_order_map <- rev(seq_len(n_pieces))
       }
       # Apply mapping
       pieces_df$fill_order <- fill_order_map[pieces_df$piece_id]
     } else {
-      # Forward direction: fill_order equals piece_id
-      pieces_df$fill_order <- pieces_df$piece_id
+      # Forward direction
+      if (puzzle_type %in% c("voronoi", "random") && n_pieces > 1) {
+        # Voronoi/random: use reversed order (compensates for ggplot2 Y-axis inversion)
+        # This ensures ggpuzzle output matches API (SVG) visual appearance
+        fill_order_map <- rev(seq_len(n_pieces))
+        pieces_df$fill_order <- fill_order_map[pieces_df$piece_id]
+      } else {
+        # Other types: fill_order equals piece_id
+        pieces_df$fill_order <- pieces_df$piece_id
+      }
     }
 
     pieces_df
