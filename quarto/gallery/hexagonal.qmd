@@ -263,6 +263,50 @@ render_puzzle_grid(items, ncol = 3, labels = palettes)
 
 :::
 
+## Fill Direction
+
+Control the spatial order of color assignment. For hexagonal puzzles, `"reverse"` reverses colors within each ring while keeping the center piece unchanged. This is distinct from `palette_invert` which reverses the dark↔light ends of the palette.
+
+::: {.panel-tabset}
+
+## ggpuzzle
+
+```{r}
+#| label: fig-hex-direction-ggpuzzle
+#| fig-align: center
+
+make_direction_plot <- function(dir) {
+  ggplot() +
+    geom_puzzle_hex(
+      aes(fill = after_stat(piece_id)),
+      rings = 3,
+      fill_direction = dir,
+      seed = 42
+    ) +
+    scale_fill_viridis_c(option = "viridis", guide = "none") +
+    coord_fixed() +
+    theme_puzzle() +
+    labs(title = paste0("fill_direction = \"", dir, "\""))
+}
+
+print(make_direction_plot("forward") + make_direction_plot("reverse"))
+```
+
+## API
+
+```{r}
+#| label: fig-hex-direction-api
+#| echo: false
+
+directions <- c("forward", "reverse")
+items <- lapply(directions, function(dir) {
+  generate_puzzle(type = "hexagonal", grid = c(3), size = c(200), seed = 42, fill_palette = "viridis", fill_direction = dir)
+})
+render_puzzle_grid(items, ncol = 2, labels = paste0("fill_direction = \"", directions, "\""))
+```
+
+:::
+
 ## Offset (Separation)
 
 ::: {.panel-tabset}

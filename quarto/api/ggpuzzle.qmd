@@ -155,10 +155,11 @@ ggplot(data) +
 
 ### Common Parameters
 
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `seed` | integer | Random seed for reproducibility |
-| `offset` | numeric | Piece separation distance |
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `seed` | integer | random | Random seed for reproducibility |
+| `offset` | numeric | 0 | Piece separation distance |
+| `fill_direction` | string | "forward" | Spatial color order: `"forward"` or `"reverse"` |
 
 ### geom_puzzle_rect()
 

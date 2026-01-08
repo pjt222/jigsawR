@@ -84,6 +84,9 @@ generate_puzzle(
 | `stroke_width` | numeric (mm) | 1 | SVG stroke width |
 | `min_tab_size` | numeric (mm) | NULL | Minimum tab size constraint (all types) |
 | `max_tab_size` | numeric (mm) | NULL | Maximum tab size constraint (all types) |
+| `fill_palette` | string | NULL | Color palette for fills: `"viridis"`, `"magma"`, `"plasma"`, etc. |
+| `fill_direction` | string | "forward" | Spatial color order: `"forward"` or `"reverse"` |
+| `palette_invert` | logical | FALSE | Invert palette (dark↔light ends) |
 
 **Hexagonal/Concentric:**
 

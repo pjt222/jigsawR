@@ -1324,6 +1324,7 @@ server <- function(input, output, session) {
     colourpicker::updateColourInput(session, "fill_color", value = cfg_style$fill_color)
     updateSelectInput(session, "fill_palette", selected = cfg_style$fill_palette)
     update_switch(id = "fill_palette_invert", value = cfg_style$fill_palette_invert, session = session)
+    updateSelectInput(session, "fill_direction", selected = cfg_style$fill_direction)
     # Background settings
     updateRadioButtons(session, "background_type", selected = cfg_bg$type)
     colourpicker::updateColourInput(session, "background_color", value = cfg_bg$solid_color)
