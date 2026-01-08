@@ -280,6 +280,11 @@ GeomPuzzle <- ggplot2::ggproto("GeomPuzzle", ggplot2::Geom,
 #' @param fusion_opacity Opacity for fused edges when style != "none" (0.0 to 1.0).
 #' @param show_labels Logical; if TRUE, display piece ID labels at piece centers (default: FALSE).
 #' @param label_color Color for piece labels (default: "black").
+#'
+#' @note When using gradient color scales (e.g., viridis), color boundaries between
+#'   adjacent pieces may still be visible even when fusion is working correctly.
+#'   These are color transitions, not stroke lines. To verify fusion is working,
+#'   test with solid colors using `scale_fill_manual()`.
 #' @param label_size Font size for labels in points. NULL for auto-sizing based on piece dimensions.
 #' @param na.rm Remove NA values? (default: FALSE).
 #' @param show.legend Include this layer in the legend? (default: NA).
@@ -404,6 +409,11 @@ geom_puzzle_rect <- function(mapping = NULL,
 #' @param fusion_opacity Opacity for fused edges when style != "none" (0.0 to 1.0).
 #' @param show_labels Logical; if TRUE, display piece ID labels at piece centers (default: FALSE).
 #' @param label_color Color for piece labels (default: "black").
+#'
+#' @note When using gradient color scales (e.g., viridis), color boundaries between
+#'   adjacent pieces may still be visible even when fusion is working correctly.
+#'   These are color transitions, not stroke lines. To verify fusion is working,
+#'   test with solid colors using `scale_fill_manual()`.
 #' @param label_size Font size for labels in points. NULL for auto-sizing based on piece dimensions.
 #' @param na.rm Remove NA values? (default: FALSE).
 #' @param show.legend Include this layer in the legend? (default: NA).
@@ -525,6 +535,11 @@ geom_puzzle_hex <- function(mapping = NULL,
 #' @param fusion_opacity Opacity for fused edges when style != "none" (0.0 to 1.0).
 #' @param show_labels Logical; if TRUE, display piece ID labels at piece centers (default: FALSE).
 #' @param label_color Color for piece labels (default: "black").
+#'
+#' @note When using gradient color scales (e.g., viridis), color boundaries between
+#'   adjacent pieces may still be visible even when fusion is working correctly.
+#'   These are color transitions, not stroke lines. To verify fusion is working,
+#'   test with solid colors using `scale_fill_manual()`.
 #' @param label_size Font size for labels in points. NULL for auto-sizing based on piece dimensions.
 #' @param na.rm Remove NA values? (default: FALSE).
 #' @param show.legend Include this layer in the legend? (default: NA).
@@ -636,6 +651,11 @@ geom_puzzle_conc <- function(mapping = NULL,
 #' @param fusion_opacity Opacity for fused edges when style != "none" (0.0 to 1.0).
 #' @param show_labels Logical; if TRUE, display piece ID labels at piece centers (default: FALSE).
 #' @param label_color Color for piece labels (default: "black").
+#'
+#' @note When using gradient color scales (e.g., viridis), color boundaries between
+#'   adjacent pieces may still be visible even when fusion is working correctly.
+#'   These are color transitions, not stroke lines. To verify fusion is working,
+#'   test with solid colors using `scale_fill_manual()`.
 #' @param label_size Font size for labels in points. NULL for auto-sizing based on piece dimensions.
 #' @param na.rm Remove NA values? (default: FALSE).
 #' @param show.legend Include this layer in the legend? (default: NA).
@@ -746,6 +766,11 @@ geom_puzzle_voronoi <- function(mapping = NULL,
 #' @param fusion_opacity Opacity for fused edges when style != "none" (0.0 to 1.0).
 #' @param show_labels Logical; if TRUE, display piece ID labels at piece centers (default: FALSE).
 #' @param label_color Color for piece labels (default: "black").
+#'
+#' @note When using gradient color scales (e.g., viridis), color boundaries between
+#'   adjacent pieces may still be visible even when fusion is working correctly.
+#'   These are color transitions, not stroke lines. To verify fusion is working,
+#'   test with solid colors using `scale_fill_manual()`.
 #' @param label_size Font size for labels in points. NULL for auto-sizing based on piece dimensions.
 #' @param na.rm Remove NA values? (default: FALSE).
 #' @param show.legend Include this layer in the legend? (default: NA).

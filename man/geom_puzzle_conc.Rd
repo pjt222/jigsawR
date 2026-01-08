@@ -96,6 +96,12 @@ Creates a concentric ring puzzle visualization where each puzzle piece
 represents a data point. The puzzle has a central piece surrounded by
 concentric rings of pieces.
 }
+\note{
+When using gradient color scales (e.g., viridis), color boundaries between
+  adjacent pieces may still be visible even when fusion is working correctly.
+  These are color transitions, not stroke lines. To verify fusion is working,
+  test with solid colors using `scale_fill_manual()`.
+}
 \examples{
 \dontrun{
 library(ggplot2)

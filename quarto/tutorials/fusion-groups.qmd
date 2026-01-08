@@ -114,6 +114,62 @@ render_puzzle_preview(result)
 
 :::
 
+## Understanding Color Scales with Fusion
+
+When verifying that fusion is working correctly, it's important to understand how different color scales affect the visual result.
+
+### Gradient vs Solid Colors
+
+With **gradient color scales** (like viridis), even when pieces are properly fused, you'll still see color boundaries between adjacent pieces. These are color transitions—not stroke lines. The fusion *is* working; you just can't easily see it because adjacent pieces have different colors in the gradient.
+
+With **solid colors**, fusion becomes visually obvious—fused pieces share the same color and have no internal boundaries.
+
+```{r}
+#| label: fusion-color-comparison
+#| layout-ncol: 2
+#| fig-cap:
+#|   - "Gradient colors: boundaries visible (color transitions)"
+#|   - "Solid colors: fusion clearly visible"
+
+# Same fusion, gradient colors - boundaries still visible
+ggplot() +
+  geom_puzzle_conc(
+    aes(fill = after_stat(group_id)),
+    rings = 3,
+    diameter = 200,
+    seed = 42,
+    fusion_groups = "center-ring1,ring2"
+  ) +
+  scale_fill_viridis_c(guide = "none") +
+  coord_fixed() +
+  theme_void() +
+  labs(title = "Viridis gradient")
+
+# Same fusion, solid colors - fusion is obvious
+ggplot() +
+  geom_puzzle_conc(
+    aes(fill = after_stat(factor(group_id))),
+    rings = 3,
+    diameter = 200,
+    seed = 42,
+    fusion_groups = "center-ring1,ring2"
+  ) +
+  scale_fill_manual(
+    values = c("1" = "#E41A1C", "2" = "#377EB8", "3" = "#4DAF4A"),
+    guide = "none"
+  ) +
+  coord_fixed() +
+  theme_void() +
+  labs(title = "Solid colors")
+```
+
+::: {.callout-tip}
+## Debugging Fusion
+
+If you're unsure whether fusion is working, temporarily switch to solid colors with `scale_fill_manual()`.
+If internal edges disappear, fusion is working correctly—the "edges" you see with gradients are just color boundaries.
+:::
+
 ## Piece Numbering
 
 Understanding how pieces are numbered is essential for fusion.
