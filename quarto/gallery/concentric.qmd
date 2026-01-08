@@ -250,7 +250,7 @@ Control the spatial order of color assignment. For concentric puzzles, `"reverse
 make_direction_plot <- function(dir) {
   ggplot() +
     geom_puzzle_conc(
-      aes(fill = after_stat(piece_id)),
+      aes(fill = after_stat(fill_order)),
       rings = 3,
       fill_direction = dir,
       seed = 42

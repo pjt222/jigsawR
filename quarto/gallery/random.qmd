@@ -201,7 +201,7 @@ Control the spatial order of color assignment. This is distinct from `palette_in
 make_direction_plot <- function(dir) {
   ggplot() +
     geom_puzzle_random(
-      aes(fill = after_stat(piece_id)),
+      aes(fill = after_stat(fill_order)),
       n_interior = 15,
       fill_direction = dir,
       seed = 42

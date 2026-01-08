@@ -278,7 +278,7 @@ Control the spatial order of color assignment. For hexagonal puzzles, `"reverse"
 make_direction_plot <- function(dir) {
   ggplot() +
     geom_puzzle_hex(
-      aes(fill = after_stat(piece_id)),
+      aes(fill = after_stat(fill_order)),
       rings = 3,
       fill_direction = dir,
       seed = 42

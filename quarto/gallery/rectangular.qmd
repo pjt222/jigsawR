@@ -178,7 +178,7 @@ Control the spatial order of color assignment. This is distinct from `palette_in
 make_direction_plot <- function(dir) {
   ggplot() +
     geom_puzzle_rect(
-      aes(fill = after_stat(piece_id)),
+      aes(fill = after_stat(fill_order)),
       cols = 3, rows = 3,
       fill_direction = dir,
       seed = 42
