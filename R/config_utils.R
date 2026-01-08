@@ -75,8 +75,8 @@ get_puzzle_colors <- function(n, palette = NULL, invert = FALSE) {
                       "mako", "rocket", "turbo")
 
   if (!palette %in% valid_palettes) {
-    log_warn("Invalid palette '{palette}', using 'magma' instead")
-    palette <- "magma"
+    log_warn("Invalid palette '{palette}', using 'black' instead")
+    palette <- "black"
   }
 
   # Generate colors using viridis
@@ -126,7 +126,7 @@ get_fallback_config <- function() {
     ),
     seed = 1234,
     colors = list(
-      default_palette = "magma",
+      default_palette = "black",
       available_palettes = c("black", "viridis", "magma", "plasma", "inferno",
                              "cividis", "mako", "rocket", "turbo")
     ),

@@ -82,15 +82,15 @@ test_that("config has independent fill palette settings", {
   expect_false(config$styling$fill_palette_invert)
 })
 
-test_that("config does not have 'black' palette", {
+test_that("config default palette is black for consistent stroke color", {
   skip_if_not(exists("get_puzzle_config"), "get_puzzle_config not available")
 
   config <- get_puzzle_config()
 
-  # "black" should not be in available palettes (use solid color instead)
+  # "black" is handled as special case, not in viridis palettes list
   expect_false("black" %in% config$colors$available_palettes)
-  # default_palette should not be "black"
-  expect_true(config$colors$default_palette != "black")
+  # default_palette should be "black" to match ggpuzzle default stroke color
+  expect_equal(config$colors$default_palette, "black")
 })
 
 test_that("get_puzzle_colors returns color vector", {

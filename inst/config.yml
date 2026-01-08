@@ -55,7 +55,7 @@ default:
 
   # Color palette configuration
   colors:
-    default_palette: "viridis"
+    default_palette: "black"
     available_palettes:
       - "viridis"
       - "magma"
@@ -181,9 +181,9 @@ development:
     tabsize: 10
     jitter: 2
   colors:
-    default_palette: "viridis"
+    default_palette: "black"
 
 # Production environment (same as default for now)
 production:
   colors:
-    default_palette: "magma"
+    default_palette: "black"
