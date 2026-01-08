@@ -62,7 +62,7 @@ render_puzzle_preview(result)
 # Generate cell count previews in a grid
 cells <- c(10, 25, 50)
 items <- lapply(cells, function(n) {
-  generate_puzzle(type = "voronoi", grid = c(n), size = c(200, 200), seed = 42)
+  generate_puzzle(type = "voronoi", grid = c(n), size = c(200, 200), seed = 42, fill_palette = "turbo")
 })
 render_puzzle_grid(items, ncol = 3, labels = paste(cells, "cells"))
 ```
@@ -180,7 +180,7 @@ render_puzzle_preview(result)
 # Generate offset previews in a grid
 offsets <- c(0, 5, 10, 20)
 items <- lapply(offsets, function(off) {
-  generate_puzzle(type = "voronoi", grid = c(20), size = c(200, 200), seed = 42, offset = off)
+  generate_puzzle(type = "voronoi", grid = c(20), size = c(200, 200), seed = 42, offset = off, fill_palette = "viridis")
 })
 render_puzzle_grid(items, ncol = 4, labels = paste("offset =", offsets))
 ```
@@ -237,7 +237,7 @@ render_puzzle_preview(result)
 # Generate seed variation previews in a grid
 seeds <- c(1, 42, 123, 999)
 items <- lapply(seeds, function(s) {
-  generate_puzzle(type = "voronoi", grid = c(15), size = c(200, 200), seed = s)
+  generate_puzzle(type = "voronoi", grid = c(15), size = c(200, 200), seed = s, fill_palette = "magma")
 })
 render_puzzle_grid(items, ncol = 4, labels = paste("seed =", seeds))
 ```
@@ -352,7 +352,8 @@ result <- generate_puzzle(
   type = "voronoi",
   grid = c(80),
   size = c(400, 300),
-  seed = 789
+  seed = 789,
+  fill_palette = "turbo"
 )
 render_puzzle_preview(result, max_width = "600px")
 ```

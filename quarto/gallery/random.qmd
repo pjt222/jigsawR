@@ -62,7 +62,7 @@ render_puzzle_preview(result)
 # Generate piece count previews in a grid
 counts <- c(10, 20, 40)
 items <- lapply(counts, function(n) {
-  generate_puzzle(type = "random", grid = c(n), size = c(200, 200), seed = 42)
+  generate_puzzle(type = "random", grid = c(n), size = c(200, 200), seed = 42, fill_palette = "inferno")
 })
 render_puzzle_grid(items, ncol = 3, labels = paste(counts, "pieces"))
 ```
@@ -122,7 +122,7 @@ render_puzzle_preview(result)
 # Generate corner variation previews in a grid
 corners <- c(3, 4, 6, 8)
 items <- lapply(corners, function(nc) {
-  generate_puzzle(type = "random", grid = c(15), size = c(200, 200), seed = 42, n_corner = nc)
+  generate_puzzle(type = "random", grid = c(15), size = c(200, 200), seed = 42, n_corner = nc, fill_palette = "plasma")
 })
 render_puzzle_grid(items, ncol = 4, labels = paste(corners, "corners"))
 ```
@@ -235,7 +235,7 @@ render_puzzle_preview(result)
 # Generate offset previews in a grid
 offsets <- c(0, 5, 10, 20)
 items <- lapply(offsets, function(off) {
-  generate_puzzle(type = "random", grid = c(18), size = c(200, 200), seed = 42, offset = off)
+  generate_puzzle(type = "random", grid = c(18), size = c(200, 200), seed = 42, offset = off, fill_palette = "cividis")
 })
 render_puzzle_grid(items, ncol = 4, labels = paste("offset =", offsets))
 ```
@@ -292,7 +292,7 @@ render_puzzle_preview(result)
 # Generate seed variation previews in a grid
 seeds <- c(1, 42, 123, 999)
 items <- lapply(seeds, function(s) {
-  generate_puzzle(type = "random", grid = c(15), size = c(200, 200), seed = s)
+  generate_puzzle(type = "random", grid = c(15), size = c(200, 200), seed = s, fill_palette = "turbo")
 })
 render_puzzle_grid(items, ncol = 4, labels = paste("seed =", seeds))
 ```
@@ -412,7 +412,8 @@ result <- generate_puzzle(
   type = "random",
   grid = c(60),
   size = c(400, 300),
-  seed = 456
+  seed = 456,
+  fill_palette = "turbo"
 )
 render_puzzle_preview(result, max_width = "600px")
 ```

@@ -82,7 +82,8 @@ result_2 <- generate_puzzle(
   size = c(200),
   seed = 42,
   do_warp = TRUE,
-  do_trunc = TRUE
+  do_trunc = TRUE,
+  fill_palette = "plasma"
 )
 render_puzzle_preview(result_2)  # 2 rings
 
@@ -93,7 +94,8 @@ result_3 <- generate_puzzle(
   size = c(200),
   seed = 42,
   do_warp = TRUE,
-  do_trunc = TRUE
+  do_trunc = TRUE,
+  fill_palette = "plasma"
 )
 render_puzzle_preview(result_3)  # 3 rings
 
@@ -104,7 +106,8 @@ result_4 <- generate_puzzle(
   size = c(200),
   seed = 42,
   do_warp = TRUE,
-  do_trunc = TRUE
+  do_trunc = TRUE,
+  fill_palette = "plasma"
 )
 render_puzzle_preview(result_4)  # 4 rings
 ```
@@ -185,7 +188,8 @@ result_warp_trunc <- generate_puzzle(
   size = c(200),
   seed = 42,
   do_warp = TRUE,
-  do_trunc = TRUE
+  do_trunc = TRUE,
+  fill_palette = "magma"
 )
 render_puzzle_preview(result_warp_trunc)
 
@@ -196,7 +200,8 @@ result_warp_only <- generate_puzzle(
   size = c(200),
   seed = 42,
   do_warp = TRUE,
-  do_trunc = FALSE
+  do_trunc = FALSE,
+  fill_palette = "magma"
 )
 render_puzzle_preview(result_warp_only)
 ```
@@ -307,7 +312,7 @@ render_puzzle_preview(result)
 # Generate offset previews in a grid
 offsets <- c(0, 5, 10, 15)
 items <- lapply(offsets, function(off) {
-  generate_puzzle(type = "hexagonal", grid = c(3), size = c(200), seed = 42, offset = off)
+  generate_puzzle(type = "hexagonal", grid = c(3), size = c(200), seed = 42, offset = off, fill_palette = "viridis")
 })
 render_puzzle_grid(items, ncol = 4, labels = paste("offset =", offsets))
 ```
@@ -371,7 +376,8 @@ result_center_ring1 <- generate_puzzle(
   grid = c(3),
   size = c(200),
   seed = 42,
-  fusion_groups = "center-ring1"
+  fusion_groups = "center-ring1",
+  fill_palette = "plasma"
 )
 render_puzzle_preview(result_center_ring1)
 
@@ -381,7 +387,8 @@ result_ring2 <- generate_puzzle(
   grid = c(3),
   size = c(200),
   seed = 42,
-  fusion_groups = "ring2"
+  fusion_groups = "ring2",
+  fill_palette = "plasma"
 )
 render_puzzle_preview(result_ring2)
 ```
@@ -422,7 +429,8 @@ result <- generate_puzzle(
   type = "hexagonal",
   grid = c(5),
   size = c(300),
-  seed = 123
+  seed = 123,
+  fill_palette = "turbo"
 )
 render_puzzle_preview(result, max_width = "500px")
 ```
