@@ -65,8 +65,9 @@ jobs:
       - name: Install RCDT (archived from CRAN, install from GitHub)
         env:
           RENV_CONFIG_SANDBOX_ENABLED: "FALSE"
+          GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          remotes::install_github("stla/RCDT", upgrade = "never")
+          pak::pak("stla/RCDT")
         shell: Rscript {0}
 
       - name: Install jigsawR
