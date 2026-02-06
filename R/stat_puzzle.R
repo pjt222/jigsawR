@@ -67,6 +67,10 @@ StatPuzzle <- ggplot2::ggproto("StatPuzzle", ggplot2::Stat,
     params$point_distribution <- params$point_distribution %||% "fermat"
     # Random parameters
     params$n_corner <- params$n_corner %||% 4
+    # SNIC parameters
+    params$image_path <- params$image_path %||% NULL
+    params$compactness <- params$compactness %||% 0.5
+    params$seed_type <- params$seed_type %||% "hexagonal"
     # Fusion parameters
     params$fusion_groups <- params$fusion_groups %||% NULL
     params$fusion_style <- params$fusion_style %||% "none"
@@ -88,6 +92,9 @@ StatPuzzle <- ggplot2::ggproto("StatPuzzle", ggplot2::Stat,
                            boundary_facing = "outward",
                            point_distribution = "fermat",
                            n_corner = 4,
+                           image_path = NULL,
+                           compactness = 0.5,
+                           seed_type = "hexagonal",
                            fill_direction = "forward",
                            fusion_groups = NULL,
                            fusion_style = "none",
@@ -125,6 +132,10 @@ StatPuzzle <- ggplot2::ggproto("StatPuzzle", ggplot2::Stat,
       # Random puzzle piece count is approximate (depends on triangulation)
       expected_pieces <- n_interior * 2  # Upper bound estimate
       size <- c(height, width)
+    } else if (puzzle_type == "snic") {
+      grid <- c(n_cells)
+      expected_pieces <- n_cells  # Approximate (actual depends on image)
+      size <- c(height, width)
     } else {
       stop("Unknown puzzle type: ", puzzle_type, call. = FALSE)
     }
@@ -153,6 +164,10 @@ StatPuzzle <- ggplot2::ggproto("StatPuzzle", ggplot2::Stat,
       point_distribution = point_distribution,
       # Random parameters
       n_corner = n_corner,
+      # SNIC parameters
+      image_path = image_path,
+      compactness = compactness,
+      seed_type = seed_type,
       # Fusion parameters
       fusion_groups = fusion_groups,
       fusion_style = fusion_style,

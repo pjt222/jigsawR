@@ -36,7 +36,8 @@ render_puzzle_svg <- function(positioned, fill = "none", fills = NULL,
                                fill_direction = "forward",
                                background = "white", opacity = 1.0,
                                show_labels = FALSE, label_color = "black",
-                               label_size = NULL, inline = FALSE) {
+                               label_size = NULL, inline = FALSE,
+                               image_path = NULL) {
 
   # Get number of pieces for color generation
   n_pieces <- length(positioned$pieces)
@@ -101,7 +102,7 @@ render_puzzle_svg <- function(positioned, fill = "none", fills = NULL,
 
   # Check if we have voronoi/random pieces that need edge-by-edge rendering
   puzzle_type <- positioned$type %||% "rectangular"
-  needs_edge_rendering <- puzzle_type %in% c("voronoi", "random")
+  needs_edge_rendering <- puzzle_type %in% c("voronoi", "random", "snic")
 
   # Render pieces (with or without fusion styling)
   # For voronoi/random, always use edge-by-edge rendering for consistent strokes
@@ -155,6 +156,21 @@ render_puzzle_svg <- function(positioned, fill = "none", fills = NULL,
       piece <- positioned$pieces[[i]]
       render_piece_label(piece, i, label_color, label_size)
     })
+  }
+
+  # Image fill rendering for SNIC puzzles
+  if (!is.null(image_path) && puzzle_type == "snic" && file.exists(image_path)) {
+    image_data_uri <- encode_image_base64(image_path)
+    # Get image dimensions from parameters
+    img_w <- positioned$parameters$image_width
+    img_h <- positioned$parameters$image_height
+    piece_elements <- render_image_filled_pieces(
+      positioned$pieces, image_data_uri, positioned$canvas_size,
+      canvas_offset = if (!is.null(positioned$canvas_offset)) positioned$canvas_offset else c(0, 0),
+      stroke_width = stroke_width, colors = colors,
+      opacity = opacity,
+      image_width = img_w, image_height = img_h
+    )
   }
 
   # Combine and close SVG
@@ -1101,8 +1117,8 @@ get_piece_edge_paths <- function(piece) {
     return(split_concentric_path_into_edges(piece$path, piece))
   } else if (piece_type == "hexagonal") {
     return(split_hex_path_into_edges(piece$path, piece))
-  } else if (piece_type %in% c("voronoi", "random")) {
-    # For voronoi/random, use edge_segments keyed by neighbor_id
+  } else if (piece_type %in% c("voronoi", "random", "snic")) {
+    # For voronoi/random/snic, use edge_segments keyed by neighbor_id
     # Returns list with neighbor_id keys -> path values
     if (is.null(piece$edge_segments) || length(piece$edge_segments) == 0) {
       return(list())
@@ -1134,8 +1150,8 @@ get_piece_edge_names <- function(piece) {
     return(c("INNER", "RIGHT", "OUTER", "LEFT"))
   } else if (piece_type == "hexagonal") {
     return(as.character(0:5))
-  } else if (piece_type %in% c("voronoi", "random")) {
-    # For voronoi/random, edge names are neighbor IDs (as strings)
+  } else if (piece_type %in% c("voronoi", "random", "snic")) {
+    # For voronoi/random/snic, edge names are neighbor IDs (as strings)
     if (is.null(piece$edge_segments) || length(piece$edge_segments) == 0) {
       return(character())
     }

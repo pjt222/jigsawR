@@ -24,6 +24,12 @@ default:
     boundary: "straight"  # straight or circle
     boundary_facing: "outward"  # outward (convex) or inward (concave) - only applies when boundary is "circle"
 
+  # SNIC superpixel puzzle defaults
+  snic:
+    n_superpixels: 50
+    compactness: 0.5
+    seed_type: "hexagonal"
+
   # Shared styling defaults (apply to all puzzle types)
   styling:
     tabsize: 10
@@ -164,6 +170,12 @@ default:
     label_size:
       min: 0  # 0 = auto-size
       max: 30
+    n_superpixels:
+      min: 10
+      max: 500
+    compactness:
+      min: 0.0
+      max: 2.0
     min_tab_size:
       min: 0   # 0 = no constraint
       max: 50

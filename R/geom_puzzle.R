@@ -878,3 +878,124 @@ geom_puzzle_random <- function(mapping = NULL,
     )
   )
 }
+
+
+#' Add SNIC superpixel puzzle layer to a ggplot
+#'
+#' Creates a puzzle visualization with image-aware pieces based on
+#' SNIC superpixel segmentation. Each puzzle piece follows natural
+#' boundaries in the source image.
+#'
+#' @param mapping Set of aesthetic mappings. Usually includes `fill`.
+#' @param data The data to visualize. Each row maps to a puzzle piece.
+#' @param stat The statistical transformation to use (default: "puzzle").
+#' @param position Position adjustment (default: "identity").
+#' @param image_path Path to the image file for SNIC segmentation.
+#' @param n_cells Target number of superpixel cells (default: 50).
+#' @param compactness SNIC compactness parameter (default: 0.5).
+#'   Higher values produce more regular shapes.
+#' @param width Puzzle width in mm (default: 100).
+#' @param height Puzzle height in mm (default: 100).
+#' @param tabsize Size of the puzzle tabs (default: 10).
+#' @param jitter Random variation in tab positions (default: 2).
+#' @param min_tab_size Minimum tab height in mm (NULL for no constraint).
+#' @param max_tab_size Maximum tab height in mm (NULL for no constraint).
+#' @param seed Random seed for reproducible puzzle shapes.
+#' @param offset Separation between pieces (0 = complete, >0 = separated).
+#' @param bezier_resolution Points per Bezier curve (default: 20).
+#' @param seed_type SNIC seed grid type: "hexagonal", "rectangular", "diamond", "random".
+#' @param fill_direction Direction for color assignment: "forward" (default) or "reverse".
+#' @param fusion_groups Piece fusion specification.
+#' @param fusion_style Style for fused internal edges: "none", "dashed", "solid".
+#' @param fusion_opacity Opacity for fused edges (0.0 to 1.0).
+#' @param show_labels Logical; if TRUE, display piece ID labels (default: FALSE).
+#' @param label_color Color for piece labels (default: "black").
+#' @param label_size Font size for labels in points. NULL for auto-sizing.
+#' @param na.rm Remove NA values? (default: FALSE).
+#' @param show.legend Include this layer in the legend? (default: NA).
+#' @param inherit.aes Inherit aesthetics from the plot? (default: TRUE).
+#' @param ... Other arguments passed to layer().
+#'
+#' @return A ggplot2 layer.
+#'
+#' @note Requires the 'snic' and 'magick' packages to be installed.
+#'   In ggplot2 context, pieces use standard fills (solid/palette),
+#'   not image fills. Use generate_puzzle() for image-filled SVG output.
+#'
+#' @examples
+#' \dontrun{
+#' library(ggplot2)
+#'
+#' # SNIC puzzle with ~20 superpixels
+#' df <- data.frame(value = 1:20)
+#' ggplot(df, aes(fill = value)) +
+#'   geom_puzzle_snic(image_path = "photo.jpg", n_cells = 20, seed = 42) +
+#'   scale_fill_viridis_c() +
+#'   theme_void()
+#' }
+#'
+#' @export
+geom_puzzle_snic <- function(mapping = NULL,
+                              data = NULL,
+                              stat = "puzzle",
+                              position = "identity",
+                              image_path = NULL,
+                              n_cells = 50,
+                              compactness = 0.5,
+                              width = 100,
+                              height = 100,
+                              tabsize = 10,
+                              jitter = 2,
+                              min_tab_size = NULL,
+                              max_tab_size = NULL,
+                              seed = NULL,
+                              offset = 0,
+                              bezier_resolution = 20,
+                              seed_type = "hexagonal",
+                              fill_direction = "forward",
+                              fusion_groups = NULL,
+                              fusion_style = "none",
+                              fusion_opacity = 0.3,
+                              show_labels = FALSE,
+                              label_color = "black",
+                              label_size = NULL,
+                              ...,
+                              na.rm = FALSE,
+                              show.legend = NA,
+                              inherit.aes = TRUE) {
+
+  ggplot2::layer(
+    data = ensure_puzzle_data(data),
+    mapping = mapping,
+    stat = StatPuzzle,
+    geom = GeomPuzzle,
+    position = position,
+    show.legend = show.legend,
+    inherit.aes = inherit.aes,
+    params = list(
+      puzzle_type = "snic",
+      n_cells = n_cells,
+      width = width,
+      height = height,
+      tabsize = tabsize,
+      jitter = jitter,
+      min_tab_size = min_tab_size,
+      max_tab_size = max_tab_size,
+      seed = seed,
+      offset = offset,
+      bezier_resolution = bezier_resolution,
+      image_path = image_path,
+      compactness = compactness,
+      seed_type = seed_type,
+      fill_direction = fill_direction,
+      fusion_groups = fusion_groups,
+      fusion_style = fusion_style,
+      fusion_opacity = fusion_opacity,
+      show_labels = show_labels,
+      label_color = label_color,
+      label_size = label_size,
+      na.rm = na.rm,
+      ...
+    )
+  )
+}

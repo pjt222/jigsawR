@@ -150,6 +150,21 @@ if (!random_available) {
   log_warn("Install with: install.packages('RCDT')")
 }
 
+# Check for SNIC puzzle dependencies (snic + magick)
+snic_available <- tryCatch({
+  snic_ok <- requireNamespace("snic", quietly = TRUE)
+  magick_ok <- requireNamespace("magick", quietly = TRUE)
+  base64enc_ok <- requireNamespace("base64enc", quietly = TRUE)
+  snic_ok && magick_ok && base64enc_ok
+}, error = function(e) {
+  log_warn("Error checking SNIC dependencies: {e$message}")
+  FALSE
+})
+if (!snic_available) {
+  log_warn("SNIC puzzle type requires 'snic', 'magick', and 'base64enc' packages")
+  log_warn("Install with: install.packages(c('snic', 'magick', 'base64enc'))")
+}
+
 # Build fill type choices based on package availability
 fill_type_choices <- list(
   "None" = "none",
@@ -345,7 +360,8 @@ ui <- page_fluid(
                                         "Hexagonal" = "hexagonal",
                                         "Concentric" = "concentric",
                                         "Voronoi" = "voronoi",
-                                        "Random" = "random"),
+                                        "Random" = "random",
+                                        "SNIC" = "snic"),
                           selected = "rectangular",
                           inline = TRUE)
             ),
@@ -524,6 +540,56 @@ ui <- page_fluid(
                 tags$small(class = "text-muted",
                   "3=Triangle, 4=Rectangle, 5=Pentagon, 6=Hexagon..."
                 )
+              ),
+
+              # SNIC superpixel puzzle type panel
+              conditionalPanel(
+                condition = "input.puzzle_type == 'snic'",
+
+                # Image upload
+                fileInput("snic_image", "Upload Image:",
+                          accept = c("image/png", "image/jpeg", "image/jpg",
+                                     "image/gif", "image/bmp")),
+
+                # Number of superpixels
+                numericInput("n_superpixels", "Superpixels:",
+                            value = 50,
+                            min = 10,
+                            max = 500),
+
+                # Size for snic
+                fluidRow(
+                  column(6,
+                    numericInput("snic_width", "Width (mm):",
+                                value = 200,
+                                min = 50,
+                                max = 1000, step = 10)
+                  ),
+                  column(6,
+                    numericInput("snic_height", "Height (mm):",
+                                value = 200,
+                                min = 50,
+                                max = 1000, step = 10)
+                  )
+                ),
+
+                # Compactness
+                sliderInput("compactness", "Compactness:",
+                            min = 0, max = 2, value = 0.5, step = 0.1),
+
+                # Seed type
+                selectInput("snic_seed_type", "Seed Type:",
+                            choices = c("hexagonal", "rectangular",
+                                        "diamond", "random"),
+                            selected = "hexagonal"),
+
+                # Availability warning
+                if (!snic_available) {
+                  tags$div(class = "alert alert-warning",
+                    tags$strong("SNIC not available."),
+                    "Install packages: snic, magick, base64enc"
+                  )
+                }
               )
             ),
 
@@ -1366,6 +1432,12 @@ server <- function(input, output, session) {
       } else if (puzzle_type == "random") {
         grid_param <- c(input$n_interior)
         size_param <- c(input$rnd_height, input$rnd_width)  # height first to match API convention
+      } else if (puzzle_type == "snic") {
+        grid_param <- c(if (is.null(input$n_superpixels)) 50 else input$n_superpixels)
+        size_param <- c(
+          if (is.null(input$snic_height)) 200 else input$snic_height,
+          if (is.null(input$snic_width)) 200 else input$snic_width
+        )
       } else {
         grid_param <- c(input$rows, input$cols)
         size_param <- c(input$height, input$width)  # height first to match API convention
@@ -1416,7 +1488,15 @@ server <- function(input, output, session) {
         # Voronoi-specific
         point_distribution = point_distribution_val,
         # Random-specific
-        n_corner = n_corner_val
+        n_corner = n_corner_val,
+        # SNIC-specific
+        image_path = if (puzzle_type == "snic" && !is.null(input$snic_image)) {
+          input$snic_image$datapath
+        } else {
+          NULL
+        },
+        compactness = if (is.null(input$compactness)) 0.5 else input$compactness,
+        seed_type = if (is.null(input$snic_seed_type)) "hexagonal" else input$snic_seed_type
       ))
 
       # Store puzzle metadata for display and downloads
@@ -1465,6 +1545,18 @@ server <- function(input, output, session) {
           n_corner = n_corner_val,
           seed = input$seed,
           total_pieces = num_pieces,
+          offset = input$offset
+        ))
+      } else if (puzzle_type == "snic") {
+        n_sp <- if (is.null(input$n_superpixels)) 50 else input$n_superpixels
+        puzzle_data(list(
+          type = "snic",
+          n_superpixels = n_sp,
+          width = if (is.null(input$snic_width)) 200 else input$snic_width,
+          height = if (is.null(input$snic_height)) 200 else input$snic_height,
+          compactness = if (is.null(input$compactness)) 0.5 else input$compactness,
+          seed = input$seed,
+          total_pieces = n_sp,
           offset = input$offset
         ))
       } else {
@@ -1587,6 +1679,22 @@ server <- function(input, output, session) {
         # Tab size constraints (applies to all puzzle types)
         min_tab_size = min_tab_size_val,
         max_tab_size = max_tab_size_val,
+        # SNIC-specific parameters
+        image_path = if (settings$type == "snic" && !is.null(settings$image_path)) {
+          settings$image_path
+        } else {
+          NULL
+        },
+        compactness = if (settings$type == "snic" && !is.null(settings$compactness)) {
+          settings$compactness
+        } else {
+          0.5
+        },
+        seed_type = if (settings$type == "snic" && !is.null(settings$seed_type)) {
+          settings$seed_type
+        } else {
+          "hexagonal"
+        },
         save_files = FALSE  # Don't auto-save in Shiny app
       )
 
@@ -1937,6 +2045,40 @@ server <- function(input, output, session) {
             theme = "warning"
           )
         )
+      } else if (data$type == "snic") {
+        # SNIC puzzle value boxes
+        pieces_val <- if (!is.null(data$total_pieces)) data$total_pieces else "?"
+        width_val <- if (!is.null(data$width)) data$width else 200
+        height_val <- if (!is.null(data$height)) data$height else 200
+        compact_val <- if (!is.null(data$compactness)) data$compactness else 0.5
+
+        layout_column_wrap(
+          width = 1/4,
+          value_box(
+            title = "Type",
+            value = "SNIC",
+            showcase = bsicons::bs_icon("image"),
+            theme = "primary"
+          ),
+          value_box(
+            title = "Superpixels",
+            value = pieces_val,
+            showcase = bsicons::bs_icon("puzzle"),
+            theme = "success"
+          ),
+          value_box(
+            title = "Size",
+            value = sprintf("%.0f x %.0f mm", width_val, height_val),
+            showcase = bsicons::bs_icon("arrows-expand"),
+            theme = "info"
+          ),
+          value_box(
+            title = "Compactness",
+            value = compact_val,
+            showcase = bsicons::bs_icon("aspect-ratio"),
+            theme = "warning"
+          )
+        )
       } else {
         # Rectangular puzzle value boxes
         effective_width <- input$width
@@ -2084,6 +2226,12 @@ server <- function(input, output, session) {
       } else if (data$type == "random") {
         grid_param <- c(input$n_interior)
         size_param <- c(input$rnd_height, input$rnd_width)  # height first to match API convention
+      } else if (data$type == "snic") {
+        grid_param <- c(if (is.null(input$n_superpixels)) 50 else input$n_superpixels)
+        size_param <- c(
+          if (is.null(input$snic_height)) 200 else input$snic_height,
+          if (is.null(input$snic_width)) 200 else input$snic_width
+        )
       } else {
         grid_param <- c(input$rows, input$cols)
         size_param <- c(input$height, input$width)  # height first to match API convention
@@ -2186,7 +2334,24 @@ server <- function(input, output, session) {
         },
         # Tab size constraints (applies to all puzzle types)
         min_tab_size = min_tab_size_dl,
-        max_tab_size = max_tab_size_dl
+        max_tab_size = max_tab_size_dl,
+        # SNIC-specific parameters
+        image_path = if (data$type == "snic") {
+          settings <- base_settings()
+          if (!is.null(settings)) settings$image_path else NULL
+        } else {
+          NULL
+        },
+        compactness = if (data$type == "snic" && !is.null(data$compactness)) {
+          data$compactness
+        } else {
+          0.5
+        },
+        seed_type = if (data$type == "snic") {
+          if (!is.null(input$snic_seed_type)) input$snic_seed_type else "hexagonal"
+        } else {
+          "hexagonal"
+        }
       )
 
       writeLines(result$svg_content, file)

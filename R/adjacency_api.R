@@ -55,6 +55,8 @@ get_piece_neighbors <- function(piece_id, puzzle_result, include_boundary = TRUE
     return(get_voronoi_neighbors(piece_id, puzzle_result, include_boundary))
   } else if (type == "random") {
     return(get_random_neighbors(piece_id, puzzle_result, include_boundary))
+  } else if (type == "snic") {
+    return(get_snic_neighbors(piece_id, puzzle_result, include_boundary))
   } else {
     stop(sprintf("Unknown puzzle type: %s", type))
   }

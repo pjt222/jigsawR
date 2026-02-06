@@ -47,7 +47,10 @@ generate_pieces_internal <- function(type = "rectangular",
                                      n_corner = 4,
                                      min_piece_size = NULL,
                                      min_tab_size = NULL,
-                                     max_tab_size = NULL) {
+                                     max_tab_size = NULL,
+                                     image_path = NULL,
+                                     compactness = 0.5,
+                                     seed_type = "hexagonal") {
 
   # Generate seed if not provided
   if (is.null(seed)) {
@@ -110,6 +113,22 @@ generate_pieces_internal <- function(type = "rectangular",
       jitter = jitter,
       n_corner = n_corner,
       min_piece_size = min_piece_size,
+      min_tab_size = min_tab_size,
+      max_tab_size = max_tab_size,
+      fusion_groups = fusion_groups,
+      fusion_style = fusion_style,
+      fusion_opacity = fusion_opacity
+    )
+  } else if (type == "snic") {
+    result <- generate_snic_pieces_internal(
+      seed = seed,
+      grid = grid,
+      size = if (length(size) == 1) c(size, size) else size,
+      image_path = image_path,
+      tabsize = tabsize,
+      jitter = jitter,
+      compactness = compactness,
+      seed_type = seed_type,
       min_tab_size = min_tab_size,
       max_tab_size = max_tab_size,
       fusion_groups = fusion_groups,
@@ -779,6 +798,7 @@ apply_fusion_to_pieces <- function(pieces_result, fusion_groups, puzzle_result) 
     "concentric" = c("INNER", "RIGHT", "OUTER", "LEFT"),
     "voronoi" = NULL,  # Uses neighbor IDs as keys
     "random" = NULL,   # Uses neighbor IDs as keys
+    "snic" = NULL,     # Uses neighbor IDs as keys
     c("N", "E", "S", "W")
   )
 
@@ -938,8 +958,8 @@ apply_fusion_to_pieces <- function(pieces_result, fusion_groups, puzzle_result) 
           }
         }
       }
-    } else if (type %in% c("voronoi", "random")) {
-      # For voronoi/random puzzles, use neighbor_id as edge key
+    } else if (type %in% c("voronoi", "random", "snic")) {
+      # For voronoi/random/snic puzzles, use neighbor_id as edge key
       # This matches the edge_segments structure which is also keyed by neighbor_id
       for (j in seq_len(nrow(neighbors))) {
         dir <- neighbors$direction[j]

@@ -48,6 +48,8 @@ apply_piece_positioning <- function(piece_result, offset = 0, layout = "grid",
     positioned <- apply_voronoi_positioning(piece_result, offset)
   } else if (piece_result$type == "random") {
     positioned <- apply_random_positioning(piece_result, offset)
+  } else if (piece_result$type == "snic") {
+    positioned <- apply_snic_positioning(piece_result, offset)
   } else {
     positioned <- apply_rect_positioning(piece_result, offset)
   }

@@ -57,6 +57,10 @@
 #'   Prevents tabs from becoming too small on short edges. Applies to all puzzle types.
 #' @param max_tab_size Maximum absolute tab size in mm (default: NULL for no limit).
 #'   Prevents tabs from becoming too large on long edges. Applies to all puzzle types.
+#' @param image_path Path to an image file for SNIC puzzles. Required when type = "snic".
+#' @param compactness SNIC compactness parameter (default: 0.5). Higher values produce
+#'   more regular/compact superpixels. Range: 0.0 to 2.0.
+#' @param seed_type SNIC seed grid type: "hexagonal" (default), "rectangular", "diamond", "random".
 #' @param output DEPRECATED: Use offset parameter instead
 #' @return List with svg_content, pieces, canvas_size, parameters, and fusion_data (if applicable)
 #' @export
@@ -99,6 +103,9 @@ generate_puzzle <- function(type = "rectangular",
                             min_piece_size = NULL,
                             min_tab_size = NULL,
                             max_tab_size = NULL,
+                            image_path = NULL,
+                            compactness = 0.5,
+                            seed_type = "hexagonal",
                             output = NULL) {
 
   # Handle deprecated 'output' parameter
@@ -125,7 +132,7 @@ generate_puzzle <- function(type = "rectangular",
   }
 
   # Validate type parameter
-  valid_types <- c("rectangular", "hexagonal", "concentric", "voronoi", "random")
+  valid_types <- c("rectangular", "hexagonal", "concentric", "voronoi", "random", "snic")
   if (!type %in% valid_types) {
     stop(sprintf("Invalid type '%s'. Must be one of: %s", type, paste(valid_types, collapse = ", ")))
   }
@@ -142,6 +149,26 @@ generate_puzzle <- function(type = "rectangular",
       "Package {.pkg RCDT} is required for random shape puzzles.",
       "i" = "Install with: {.code install.packages('RCDT')}"
     ))
+  }
+  if (type == "snic") {
+    if (!has_snic()) {
+      cli::cli_abort(c(
+        "Package {.pkg snic} is required for SNIC puzzles.",
+        "i" = "Install with: {.code install.packages('snic')}"
+      ))
+    }
+    if (!has_magick()) {
+      cli::cli_abort(c(
+        "Package {.pkg magick} is required for SNIC puzzles.",
+        "i" = "Install with: {.code install.packages('magick')}"
+      ))
+    }
+    if (is.null(image_path) || !nzchar(image_path)) {
+      cli::cli_abort("image_path is required for SNIC puzzles")
+    }
+    if (!file.exists(image_path)) {
+      cli::cli_abort("Image file not found: {.file {image_path}}")
+    }
   }
 
   # Validate tab size constraints (voronoi/random only)
@@ -172,6 +199,9 @@ generate_puzzle <- function(type = "rectangular",
     } else if (type == "random") {
       n_pieces <- if (length(grid) == 1) grid[1] else grid[1]
       filename_prefix <- sprintf("puzzle_rnd%d_seed%d", n_pieces, seed)
+    } else if (type == "snic") {
+      n_cells <- if (length(grid) == 1) grid[1] else grid[1]
+      filename_prefix <- sprintf("puzzle_snic%d_seed%d", n_cells, seed)
     } else {
       filename_prefix <- sprintf("puzzle_%dx%d_seed%d", grid[1], grid[2], seed)
     }
@@ -205,7 +235,10 @@ generate_puzzle <- function(type = "rectangular",
     n_corner = n_corner,
     min_piece_size = min_piece_size,
     min_tab_size = min_tab_size,
-    max_tab_size = max_tab_size
+    max_tab_size = max_tab_size,
+    image_path = image_path,
+    compactness = compactness,
+    seed_type = seed_type
   )
 
   # Step 1.5: Parse and apply fusion groups with full puzzle context
@@ -273,7 +306,8 @@ generate_puzzle <- function(type = "rectangular",
     opacity = opacity,
     show_labels = show_labels,
     label_color = label_color,
-    label_size = label_size
+    label_size = label_size,
+    image_path = image_path
   )
 
   # Build result
@@ -310,7 +344,10 @@ generate_puzzle <- function(type = "rectangular",
       fusion_style = fusion_style,
       fusion_opacity = fusion_opacity,
       min_tab_size = min_tab_size,
-      max_tab_size = max_tab_size
+      max_tab_size = max_tab_size,
+      image_path = image_path,
+      compactness = if (type == "snic") compactness else NULL,
+      seed_type = if (type == "snic") seed_type else NULL
     ),
     files = list(),
     fusion_data = if (!is.null(parsed_fusion_groups)) pieces_result$fusion_data else NULL
