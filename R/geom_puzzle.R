@@ -30,6 +30,75 @@ ensure_puzzle_data <- function(data) {
   }
 }
 
+# Internal factory for puzzle geom layers.
+# All geom_puzzle_*() functions delegate here.
+#
+# @param puzzle_type Puzzle type string (e.g. "rectangular", "hexagonal")
+# @param type_params Named list of type-specific parameters
+# @param mapping,data,stat,position,tabsize,jitter,min_tab_size,max_tab_size,
+#   seed,offset,bezier_resolution,fill_direction,fusion_groups,fusion_style,
+#   fusion_opacity,show_labels,label_color,label_size,na.rm,show.legend,
+#   inherit.aes Shared parameters common to all puzzle types
+# @param ... Additional arguments passed to layer()
+# @return A ggplot2 layer
+make_puzzle_layer <- function(puzzle_type,
+                              type_params = list(),
+                              mapping = NULL,
+                              data = NULL,
+                              stat = "puzzle",
+                              position = "identity",
+                              tabsize = 10,
+                              jitter = 2,
+                              min_tab_size = NULL,
+                              max_tab_size = NULL,
+                              seed = NULL,
+                              offset = 0,
+                              bezier_resolution = 20,
+                              fill_direction = "forward",
+                              fusion_groups = NULL,
+                              fusion_style = "none",
+                              fusion_opacity = 0.3,
+                              show_labels = FALSE,
+                              label_color = "black",
+                              label_size = NULL,
+                              na.rm = FALSE,
+                              show.legend = NA,
+                              inherit.aes = TRUE,
+                              ...) {
+  shared_params <- list(
+    puzzle_type = puzzle_type,
+    tabsize = tabsize,
+    jitter = jitter,
+    min_tab_size = min_tab_size,
+    max_tab_size = max_tab_size,
+    seed = seed,
+    offset = offset,
+    bezier_resolution = bezier_resolution,
+    fill_direction = fill_direction,
+    fusion_groups = fusion_groups,
+    fusion_style = fusion_style,
+    fusion_opacity = fusion_opacity,
+    show_labels = show_labels,
+    label_color = label_color,
+    label_size = label_size,
+    na.rm = na.rm
+  )
+
+  # Merge type-specific params (these override shared if names collide)
+  params <- c(shared_params, type_params, list(...))
+
+  ggplot2::layer(
+    data = ensure_puzzle_data(data),
+    mapping = mapping,
+    stat = StatPuzzle,
+    geom = GeomPuzzle,
+    position = position,
+    show.legend = show.legend,
+    inherit.aes = inherit.aes,
+    params = params
+  )
+}
+
 #' Puzzle piece geom
 #'
 #' Renders puzzle pieces as filled polygons. Works with StatPuzzle to
@@ -349,37 +418,17 @@ geom_puzzle_rect <- function(mapping = NULL,
                               show.legend = NA,
                               inherit.aes = TRUE) {
 
-  ggplot2::layer(
-    data = ensure_puzzle_data(data),
-    mapping = mapping,
-    stat = StatPuzzle,
-    geom = GeomPuzzle,
-    position = position,
-    show.legend = show.legend,
-    inherit.aes = inherit.aes,
-    params = list(
-      puzzle_type = "rectangular",
-      rows = rows,
-      cols = cols,
-      width = width,
-      height = height,
-      tabsize = tabsize,
-      jitter = jitter,
-      min_tab_size = min_tab_size,
-      max_tab_size = max_tab_size,
-      seed = seed,
-      offset = offset,
-      bezier_resolution = bezier_resolution,
-      fill_direction = fill_direction,
-      fusion_groups = fusion_groups,
-      fusion_style = fusion_style,
-      fusion_opacity = fusion_opacity,
-      show_labels = show_labels,
-      label_color = label_color,
-      label_size = label_size,
-      na.rm = na.rm,
-      ...
-    )
+  make_puzzle_layer(
+    puzzle_type = "rectangular",
+    type_params = list(rows = rows, cols = cols, width = width, height = height),
+    mapping = mapping, data = data, stat = stat, position = position,
+    tabsize = tabsize, jitter = jitter, min_tab_size = min_tab_size,
+    max_tab_size = max_tab_size, seed = seed, offset = offset,
+    bezier_resolution = bezier_resolution, fill_direction = fill_direction,
+    fusion_groups = fusion_groups, fusion_style = fusion_style,
+    fusion_opacity = fusion_opacity, show_labels = show_labels,
+    label_color = label_color, label_size = label_size,
+    na.rm = na.rm, show.legend = show.legend, inherit.aes = inherit.aes, ...
   )
 }
 
@@ -477,38 +526,19 @@ geom_puzzle_hex <- function(mapping = NULL,
                             show.legend = NA,
                             inherit.aes = TRUE) {
 
-  ggplot2::layer(
-    data = ensure_puzzle_data(data),
-    mapping = mapping,
-    stat = StatPuzzle,
-    geom = GeomPuzzle,
-    position = position,
-    show.legend = show.legend,
-    inherit.aes = inherit.aes,
-    params = list(
-      puzzle_type = "hexagonal",
-      rings = rings,
-      diameter = diameter,
-      tabsize = tabsize,
-      jitter = jitter,
-      min_tab_size = min_tab_size,
-      max_tab_size = max_tab_size,
-      seed = seed,
-      offset = offset,
-      bezier_resolution = bezier_resolution,
-      do_warp = do_warp,
-      do_trunc = do_trunc,
-      do_circular_border = do_circular_border,
-      fill_direction = fill_direction,
-      fusion_groups = fusion_groups,
-      fusion_style = fusion_style,
-      fusion_opacity = fusion_opacity,
-      show_labels = show_labels,
-      label_color = label_color,
-      label_size = label_size,
-      na.rm = na.rm,
-      ...
-    )
+  make_puzzle_layer(
+    puzzle_type = "hexagonal",
+    type_params = list(rings = rings, diameter = diameter,
+                       do_warp = do_warp, do_trunc = do_trunc,
+                       do_circular_border = do_circular_border),
+    mapping = mapping, data = data, stat = stat, position = position,
+    tabsize = tabsize, jitter = jitter, min_tab_size = min_tab_size,
+    max_tab_size = max_tab_size, seed = seed, offset = offset,
+    bezier_resolution = bezier_resolution, fill_direction = fill_direction,
+    fusion_groups = fusion_groups, fusion_style = fusion_style,
+    fusion_opacity = fusion_opacity, show_labels = show_labels,
+    label_color = label_color, label_size = label_size,
+    na.rm = na.rm, show.legend = show.legend, inherit.aes = inherit.aes, ...
   )
 }
 
@@ -600,38 +630,20 @@ geom_puzzle_conc <- function(mapping = NULL,
                              show.legend = NA,
                              inherit.aes = TRUE) {
 
-  ggplot2::layer(
-    data = ensure_puzzle_data(data),
-    mapping = mapping,
-    stat = StatPuzzle,
-    geom = GeomPuzzle,
-    position = position,
-    show.legend = show.legend,
-    inherit.aes = inherit.aes,
-    params = list(
-      puzzle_type = "concentric",
-      rings = rings,
-      diameter = diameter,
-      tabsize = tabsize,
-      jitter = jitter,
-      min_tab_size = min_tab_size,
-      max_tab_size = max_tab_size,
-      seed = seed,
-      offset = offset,
-      bezier_resolution = bezier_resolution,
-      center_shape = center_shape,
-      do_circular_border = do_circular_border,
-      boundary_facing = boundary_facing,
-      fill_direction = fill_direction,
-      fusion_groups = fusion_groups,
-      fusion_style = fusion_style,
-      fusion_opacity = fusion_opacity,
-      show_labels = show_labels,
-      label_color = label_color,
-      label_size = label_size,
-      na.rm = na.rm,
-      ...
-    )
+  make_puzzle_layer(
+    puzzle_type = "concentric",
+    type_params = list(rings = rings, diameter = diameter,
+                       center_shape = center_shape,
+                       do_circular_border = do_circular_border,
+                       boundary_facing = boundary_facing),
+    mapping = mapping, data = data, stat = stat, position = position,
+    tabsize = tabsize, jitter = jitter, min_tab_size = min_tab_size,
+    max_tab_size = max_tab_size, seed = seed, offset = offset,
+    bezier_resolution = bezier_resolution, fill_direction = fill_direction,
+    fusion_groups = fusion_groups, fusion_style = fusion_style,
+    fusion_opacity = fusion_opacity, show_labels = show_labels,
+    label_color = label_color, label_size = label_size,
+    na.rm = na.rm, show.legend = show.legend, inherit.aes = inherit.aes, ...
   )
 }
 
@@ -720,37 +732,18 @@ geom_puzzle_voronoi <- function(mapping = NULL,
                                 show.legend = NA,
                                 inherit.aes = TRUE) {
 
-  ggplot2::layer(
-    data = ensure_puzzle_data(data),
-    mapping = mapping,
-    stat = StatPuzzle,
-    geom = GeomPuzzle,
-    position = position,
-    show.legend = show.legend,
-    inherit.aes = inherit.aes,
-    params = list(
-      puzzle_type = "voronoi",
-      n_cells = n_cells,
-      width = width,
-      height = height,
-      tabsize = tabsize,
-      jitter = jitter,
-      min_tab_size = min_tab_size,
-      max_tab_size = max_tab_size,
-      seed = seed,
-      offset = offset,
-      bezier_resolution = bezier_resolution,
-      point_distribution = point_distribution,
-      fill_direction = fill_direction,
-      fusion_groups = fusion_groups,
-      fusion_style = fusion_style,
-      fusion_opacity = fusion_opacity,
-      show_labels = show_labels,
-      label_color = label_color,
-      label_size = label_size,
-      na.rm = na.rm,
-      ...
-    )
+  make_puzzle_layer(
+    puzzle_type = "voronoi",
+    type_params = list(n_cells = n_cells, width = width, height = height,
+                       point_distribution = point_distribution),
+    mapping = mapping, data = data, stat = stat, position = position,
+    tabsize = tabsize, jitter = jitter, min_tab_size = min_tab_size,
+    max_tab_size = max_tab_size, seed = seed, offset = offset,
+    bezier_resolution = bezier_resolution, fill_direction = fill_direction,
+    fusion_groups = fusion_groups, fusion_style = fusion_style,
+    fusion_opacity = fusion_opacity, show_labels = show_labels,
+    label_color = label_color, label_size = label_size,
+    na.rm = na.rm, show.legend = show.legend, inherit.aes = inherit.aes, ...
   )
 }
 
@@ -845,37 +838,18 @@ geom_puzzle_random <- function(mapping = NULL,
     n_interior <- n_pieces
   }
 
-  ggplot2::layer(
-    data = ensure_puzzle_data(data),
-    mapping = mapping,
-    stat = StatPuzzle,
-    geom = GeomPuzzle,
-    position = position,
-    show.legend = show.legend,
-    inherit.aes = inherit.aes,
-    params = list(
-      puzzle_type = "random",
-      n_interior = n_interior,
-      width = width,
-      height = height,
-      tabsize = tabsize,
-      jitter = jitter,
-      min_tab_size = min_tab_size,
-      max_tab_size = max_tab_size,
-      seed = seed,
-      offset = offset,
-      bezier_resolution = bezier_resolution,
-      n_corner = n_corner,
-      fill_direction = fill_direction,
-      fusion_groups = fusion_groups,
-      fusion_style = fusion_style,
-      fusion_opacity = fusion_opacity,
-      show_labels = show_labels,
-      label_color = label_color,
-      label_size = label_size,
-      na.rm = na.rm,
-      ...
-    )
+  make_puzzle_layer(
+    puzzle_type = "random",
+    type_params = list(n_interior = n_interior, width = width, height = height,
+                       n_corner = n_corner),
+    mapping = mapping, data = data, stat = stat, position = position,
+    tabsize = tabsize, jitter = jitter, min_tab_size = min_tab_size,
+    max_tab_size = max_tab_size, seed = seed, offset = offset,
+    bezier_resolution = bezier_resolution, fill_direction = fill_direction,
+    fusion_groups = fusion_groups, fusion_style = fusion_style,
+    fusion_opacity = fusion_opacity, show_labels = show_labels,
+    label_color = label_color, label_size = label_size,
+    na.rm = na.rm, show.legend = show.legend, inherit.aes = inherit.aes, ...
   )
 }
 
@@ -964,38 +938,18 @@ geom_puzzle_snic <- function(mapping = NULL,
                               show.legend = NA,
                               inherit.aes = TRUE) {
 
-  ggplot2::layer(
-    data = ensure_puzzle_data(data),
-    mapping = mapping,
-    stat = StatPuzzle,
-    geom = GeomPuzzle,
-    position = position,
-    show.legend = show.legend,
-    inherit.aes = inherit.aes,
-    params = list(
-      puzzle_type = "snic",
-      n_cells = n_cells,
-      width = width,
-      height = height,
-      tabsize = tabsize,
-      jitter = jitter,
-      min_tab_size = min_tab_size,
-      max_tab_size = max_tab_size,
-      seed = seed,
-      offset = offset,
-      bezier_resolution = bezier_resolution,
-      image_path = image_path,
-      compactness = compactness,
-      seed_type = seed_type,
-      fill_direction = fill_direction,
-      fusion_groups = fusion_groups,
-      fusion_style = fusion_style,
-      fusion_opacity = fusion_opacity,
-      show_labels = show_labels,
-      label_color = label_color,
-      label_size = label_size,
-      na.rm = na.rm,
-      ...
-    )
+  make_puzzle_layer(
+    puzzle_type = "snic",
+    type_params = list(image_path = image_path, n_cells = n_cells,
+                       compactness = compactness, width = width, height = height,
+                       seed_type = seed_type),
+    mapping = mapping, data = data, stat = stat, position = position,
+    tabsize = tabsize, jitter = jitter, min_tab_size = min_tab_size,
+    max_tab_size = max_tab_size, seed = seed, offset = offset,
+    bezier_resolution = bezier_resolution, fill_direction = fill_direction,
+    fusion_groups = fusion_groups, fusion_style = fusion_style,
+    fusion_opacity = fusion_opacity, show_labels = show_labels,
+    label_color = label_color, label_size = label_size,
+    na.rm = na.rm, show.legend = show.legend, inherit.aes = inherit.aes, ...
   )
 }

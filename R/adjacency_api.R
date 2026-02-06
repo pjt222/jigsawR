@@ -51,12 +51,8 @@ get_piece_neighbors <- function(piece_id, puzzle_result, include_boundary = TRUE
     return(get_hex_neighbors_unified(piece_id, puzzle_result, include_boundary))
   } else if (type == "concentric") {
     return(get_concentric_neighbors_unified(piece_id, puzzle_result, include_boundary))
-  } else if (type == "voronoi") {
-    return(get_voronoi_neighbors(piece_id, puzzle_result, include_boundary))
-  } else if (type == "random") {
-    return(get_random_neighbors(piece_id, puzzle_result, include_boundary))
-  } else if (type == "snic") {
-    return(get_snic_neighbors(piece_id, puzzle_result, include_boundary))
+  } else if (type %in% c("voronoi", "random", "snic")) {
+    return(get_tessellation_neighbors(piece_id, puzzle_result, include_boundary))
   } else {
     stop(sprintf("Unknown puzzle type: %s", type))
   }
@@ -422,6 +418,83 @@ get_concentric_neighbors_unified <- function(piece_id, puzzle_result, include_bo
   }
 
   return(neighbors)
+}
+
+# ============================================================================
+# TESSELLATION NEIGHBORS (voronoi, random, snic)
+# ============================================================================
+
+#' Get neighbors for tessellation-based puzzle types
+#'
+#' Shared implementation for voronoi, random, and snic puzzle types.
+#' Queries stored adjacency data to find neighbors and compute compass
+#' directions based on edge midpoints relative to piece centers.
+#'
+#' @param piece_id Piece/cell ID
+#' @param puzzle_result Puzzle result containing adjacency data and pieces
+#' @param include_boundary Whether to include boundary edges
+#' @return Data frame with direction, neighbor_id, is_boundary columns
+#'
+#' @keywords internal
+get_tessellation_neighbors <- function(piece_id, puzzle_result, include_boundary = TRUE) {
+  adjacency <- puzzle_result$adjacency
+
+  if (is.null(adjacency)) {
+    return(data.frame(
+      direction = character(),
+      neighbor_id = integer(),
+      is_boundary = logical()
+    ))
+  }
+
+  # Find all adjacencies involving this piece
+  cell_adj <- adjacency[adjacency$cell_a == piece_id | adjacency$cell_b == piece_id, ]
+
+  if (nrow(cell_adj) == 0) {
+    return(data.frame(
+      direction = character(),
+      neighbor_id = integer(),
+      is_boundary = logical()
+    ))
+  }
+
+  neighbors <- lapply(seq_len(nrow(cell_adj)), function(i) {
+    row <- cell_adj[i, ]
+    neighbor_id <- if (row$cell_a == piece_id) row$cell_b else row$cell_a
+    is_boundary <- neighbor_id < 0
+
+    if (!include_boundary && is_boundary) {
+      return(NULL)
+    }
+
+    # Calculate direction based on edge midpoint relative to piece center
+    edge_mid <- c((row$v1_x + row$v2_x) / 2, (row$v1_y + row$v2_y) / 2)
+    piece_center <- puzzle_result$pieces[[piece_id]]$center
+    dir_vec <- edge_mid - piece_center
+
+    # Convert to compass direction
+    angle <- atan2(dir_vec[2], dir_vec[1]) * 180 / pi
+    direction <- angle_to_direction(angle)
+
+    data.frame(
+      direction = direction,
+      neighbor_id = if (is_boundary) NA_integer_ else neighbor_id,
+      is_boundary = is_boundary,
+      stringsAsFactors = FALSE
+    )
+  })
+
+  neighbors <- neighbors[!sapply(neighbors, is.null)]
+
+  if (length(neighbors) == 0) {
+    return(data.frame(
+      direction = character(),
+      neighbor_id = integer(),
+      is_boundary = logical()
+    ))
+  }
+
+  do.call(rbind, neighbors)
 }
 
 # ============================================================================

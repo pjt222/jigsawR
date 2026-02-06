@@ -273,6 +273,75 @@ build_tessellation_edge_map <- function(adjacency, seed, tabsize = 20, jitter = 
   return(edge_map)
 }
 
+#' Build edge map for tessellation puzzle types (voronoi, random, snic)
+#'
+#' Shared implementation for building edge maps from adjacency data.
+#' Iterates adjacency rows, creates canonical edge keys, generates straight
+#' edges for boundaries and bezier tab edges for internal edges.
+#'
+#' @param adjacency Data frame with cell_a, cell_b, v1_x, v1_y, v2_x, v2_y
+#' @param seed Random seed
+#' @param tabsize Tab size percentage
+#' @param jitter Jitter percentage
+#' @param min_tab_size Minimum absolute tab size (optional)
+#' @param max_tab_size Maximum absolute tab size (optional)
+#' @param is_straight_fn Predicate function taking an adjacency row, returning
+#'   TRUE if the edge should be straight (no tab). Default checks cell_b < 0.
+#' @return Named list of edge paths with cell_a/cell_b metadata
+#'
+#' @keywords internal
+build_typed_edge_map <- function(adjacency, seed, tabsize, jitter,
+                                 min_tab_size = NULL, max_tab_size = NULL,
+                                 is_straight_fn = NULL) {
+  if (is.null(is_straight_fn)) {
+    is_straight_fn <- function(row) row$cell_b < 0
+  }
+
+  edge_map <- list()
+
+  for (i in seq_len(nrow(adjacency))) {
+    row <- adjacency[i, ]
+    cell_a <- row$cell_a
+    cell_b <- row$cell_b
+    v1 <- c(row$v1_x, row$v1_y)
+    v2 <- c(row$v2_x, row$v2_y)
+
+    # Create canonical edge key
+    if (cell_b < 0) {
+      edge_key <- sprintf("E%d-boundary-%d", cell_a, i)
+    } else {
+      min_id <- min(cell_a, cell_b)
+      max_id <- max(cell_a, cell_b)
+      edge_key <- sprintf("E%d-%d", min_id, max_id)
+    }
+
+    # Skip if already generated
+    if (!is.null(edge_map[[edge_key]])) {
+      next
+    }
+
+    if (is_straight_fn(row)) {
+      edge_map[[edge_key]] <- generate_straight_edge(v1, v2)
+      edge_map[[edge_key]]$cell_a <- cell_a
+      edge_map[[edge_key]]$cell_b <- if (cell_b < 0) -1 else cell_b
+    } else {
+      edge_id <- min(cell_a, cell_b) * 10000 + max(cell_a, cell_b)
+      edge_map[[edge_key]] <- generate_tessellation_edge(
+        v1, v2, seed, edge_id,
+        tabsize = tabsize,
+        jitter = jitter,
+        tab_direction = 1,
+        min_tab_size = min_tab_size,
+        max_tab_size = max_tab_size
+      )
+      edge_map[[edge_key]]$cell_a <- min(cell_a, cell_b)
+      edge_map[[edge_key]]$cell_b <- max(cell_a, cell_b)
+    }
+  }
+
+  edge_map
+}
+
 #' Get edge path for a cell
 #'
 #' Retrieves the appropriate edge path (forward or reverse) for a specific

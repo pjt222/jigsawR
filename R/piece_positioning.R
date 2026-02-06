@@ -44,12 +44,8 @@ apply_piece_positioning <- function(piece_result, offset = 0, layout = "grid",
     positioned <- apply_concentric_positioning(piece_result, offset)
   } else if (piece_result$type == "hexagonal") {
     positioned <- apply_hex_positioning(piece_result, offset)
-  } else if (piece_result$type == "voronoi") {
-    positioned <- apply_voronoi_positioning(piece_result, offset)
-  } else if (piece_result$type == "random") {
-    positioned <- apply_random_positioning(piece_result, offset)
-  } else if (piece_result$type == "snic") {
-    positioned <- apply_snic_positioning(piece_result, offset)
+  } else if (piece_result$type %in% c("voronoi", "random", "snic")) {
+    positioned <- apply_tessellation_positioning(piece_result, offset)
   } else {
     positioned <- apply_rect_positioning(piece_result, offset)
   }
@@ -247,122 +243,15 @@ build_effective_positions_rect <- function(pieces, fusion_data, grid) {
 #' @return Positioned result
 #' @keywords internal
 apply_concentric_positioning <- function(piece_result, offset) {
-
   params <- piece_result$parameters
-
-  # Handle both naming conventions: rings vs grid[1]
   rings <- params$rings %||% params$grid[1]
 
-  # Handle both naming conventions for piece_size
   piece_size <- params$piece_height %||% {
-    # Fallback: calculate from size if piece_height not available
     diameter <- params$diameter %||% params$size[1]
     if (!is.null(diameter) && !is.null(rings)) diameter / (4 * rings - 2) else 20
   }
 
-  # For concentric, offset acts as a separation factor
-  separation_factor <- 1.0 + (offset / piece_size)
-
-  # Build effective centers for fusion groups
-  # Fused pieces share the same effective center (group centroid)
-  effective_centers <- build_effective_centers_radial(
-    piece_result$pieces,
-    piece_result$fusion_data
-  )
-
-  # Transform each piece
-  transformed_pieces <- lapply(seq_along(piece_result$pieces), function(i) {
-    piece <- piece_result$pieces[[i]]
-    current_center <- piece$center
-
-    # Use effective center for offset calculation (handles fusion)
-    eff_center <- effective_centers[[i]]
-
-    # Calculate new position based on effective center
-    new_eff_center <- eff_center * separation_factor
-
-    # Translation is based on effective center movement
-    dx <- new_eff_center[1] - eff_center[1]
-    dy <- new_eff_center[2] - eff_center[2]
-
-    new_path <- translate_svg_path(piece$path, dx, dy)
-
-    # Update actual center with same translation
-    new_center <- current_center + c(dx, dy)
-
-    # Translate segment-level edge paths if present
-    translated_segments <- piece$fused_edge_segments
-    if (!is.null(translated_segments) && !is.null(translated_segments$OUTER)) {
-      for (seg_idx in seq_along(translated_segments$OUTER)) {
-        seg <- translated_segments$OUTER[[seg_idx]]
-        # Translate start_point and end_point
-        if (!is.null(seg$start_point)) {
-          translated_segments$OUTER[[seg_idx]]$start_point <- seg$start_point + c(dx, dy)
-        }
-        if (!is.null(seg$end_point)) {
-          translated_segments$OUTER[[seg_idx]]$end_point <- seg$end_point + c(dx, dy)
-        }
-        # Translate the bezier path
-        if (!is.null(seg$path)) {
-          translated_segments$OUTER[[seg_idx]]$path <- translate_svg_path(seg$path, dx, dy)
-        }
-      }
-    }
-
-    # Return transformed piece (preserve all metadata including fusion fields)
-    list(
-      id = piece$id,
-      path = new_path,
-      center = new_center,
-      ring_pos = piece$ring_pos,
-      type = piece$type,
-      fusion_group = if (!is.null(piece$fusion_group)) piece$fusion_group else NA,
-      fused_edges = piece$fused_edges,  # Preserve fusion edge metadata for rendering
-      fused_neighbor_ids = piece$fused_neighbor_ids,  # Preserve neighbor IDs for deduplication
-      # Segment-level fusion data for many-to-one OUTER edges
-      outer_segments_mixed = piece$outer_segments_mixed,
-      fused_edge_segments = translated_segments,
-      inner_radius = piece$inner_radius,
-      outer_radius = piece$outer_radius
-    )
-  })
-
-  # Calculate canvas size from actual transformed piece paths
-  # Uses optimized O(n) extraction instead of grow-on-append O(n²)
-  bounds <- calculate_pieces_bounds(transformed_pieces, fallback_fn = function() {
-    all_x <- sapply(transformed_pieces, function(p) p$center[1])
-    all_y <- sapply(transformed_pieces, function(p) p$center[2])
-    list(
-      min_x = min(all_x) - piece_size,
-      max_x = max(all_x) + piece_size,
-      min_y = min(all_y) - piece_size,
-      max_y = max(all_y) + piece_size
-    )
-  })
-  path_min_x <- bounds$min_x
-  path_max_x <- bounds$max_x
-  path_min_y <- bounds$min_y
-  path_max_y <- bounds$max_y
-
-  stroke_margin <- piece_size * 0.15 + offset
-  min_x <- path_min_x - stroke_margin
-  max_x <- path_max_x + stroke_margin
-  min_y <- path_min_y - stroke_margin
-  max_y <- path_max_y + stroke_margin
-
-  canvas_width <- max_x - min_x
-  canvas_height <- max_y - min_y
-
-  return(list(
-    pieces = transformed_pieces,
-    canvas_size = c(canvas_width, canvas_height),
-    canvas_offset = c(min_x, min_y),
-    offset = offset,
-    separation_factor = separation_factor,
-    type = "concentric",
-    parameters = params,
-    fusion_data = piece_result$fusion_data
-  ))
+  apply_separation_factor_positioning(piece_result, offset, piece_size)
 }
 
 
@@ -434,42 +323,151 @@ build_effective_centers_radial <- function(pieces, fusion_data) {
   return(effective_centers)
 }
 
+# ============================================================================
+# Tessellation Positioning (voronoi, random, snic)
+# ============================================================================
 
-#' Apply hexagonal piece positioning with offset
+#' Apply positioning to tessellation-based puzzles
 #'
-#' Uses topology-based separation for hexagonal pieces.
-#' Handles fusion groups by keeping fused pieces together.
+#' Shared implementation for voronoi, random, and snic puzzle types.
+#' All use radial separation from canvas center with effective centers
+#' for fusion group support.
 #'
-#' @param piece_result Output from generate_pieces_internal() for hexagonal
-#' @param offset Separation distance (multiplier for base spacing)
-#' @return Positioned result
+#' @param piece_result Result from generate_*_pieces_internal()
+#' @param offset Separation amount (0 = compact, >0 = separated)
+#' @return Positioned piece result
+#'
 #' @keywords internal
-apply_hex_positioning <- function(piece_result, offset) {
-
+apply_tessellation_positioning <- function(piece_result, offset) {
   params <- piece_result$parameters
+  pieces <- piece_result$pieces
+  size <- params$size
+  puzzle_type <- piece_result$type
 
-  # Handle both naming conventions: rings vs grid[1], diameter vs size[1]
-  rings <- params$rings %||% params$grid[1]
-
-  # Handle both regular hexagonal (piece_radius) and concentric (piece_height) modes
-  if (!is.null(params$piece_radius)) {
-    piece_size <- params$piece_radius
-  } else if (!is.null(params$piece_height)) {
-    piece_size <- params$piece_height
-  } else {
-    # Fallback: calculate from diameter and rings
-    # Handle both naming conventions: diameter vs size[1]
-    diameter <- params$diameter %||% params$size[1]
-    piece_size <- diameter / (4 * rings - 2)
+  if (offset == 0) {
+    return(piece_result)
   }
 
-  # For hexagonal, offset acts as a separation factor
-  # Base separation is determined by piece_size
-  # separation_factor = 1.0 + offset/piece_size gives proportional separation
+  # Build effective centers for fusion groups
+  effective_centers <- build_effective_centers_radial(
+    pieces,
+    piece_result$fusion_data
+  )
+
+  canvas_center <- size / 2
+
+  transformed_pieces <- lapply(seq_along(pieces), function(i) {
+    piece <- pieces[[i]]
+    eff_center <- effective_centers[[i]]
+
+    # Calculate displacement direction from canvas center
+    dir <- eff_center - canvas_center
+    dist <- sqrt(sum(dir^2))
+
+    if (dist < 0.001) {
+      dx <- 0
+      dy <- 0
+    } else {
+      dir_norm <- dir / dist
+      scale_factor <- dist / max(size) * 2
+      dx <- dir_norm[1] * offset * scale_factor
+      dy <- dir_norm[2] * offset * scale_factor
+    }
+
+    translated_path <- translate_svg_path(piece$path, dx, dy)
+
+    translated_edge_segments <- lapply(piece$edge_segments, function(seg) {
+      list(
+        path = translate_svg_path(seg$path, dx, dy),
+        neighbor_id = seg$neighbor_id,
+        is_boundary = seg$is_boundary
+      )
+    })
+
+    # Preserve the type-specific position field name
+    type_pos_name <- paste0(puzzle_type, "_pos")
+
+    result <- list(
+      id = piece$id,
+      path = translated_path,
+      parsed_segments = tryCatch(parse_svg_path(translated_path), error = function(e) NULL),
+      edge_segments = translated_edge_segments,
+      center = piece$center + c(dx, dy),
+      type = piece$type,
+      is_boundary = piece$is_boundary,
+      fusion_group = piece$fusion_group,
+      fused_edges = piece$fused_edges,
+      fused_neighbor_ids = piece$fused_neighbor_ids
+    )
+
+    # Copy the type-specific position data
+    result[[type_pos_name]] <- piece[[type_pos_name]]
+    result
+  })
+
+  # Calculate new canvas bounds
+  bounds <- calculate_tessellation_bounds(transformed_pieces)
+
+  margin <- max(size) * 0.05 + offset
+
+  result <- list(
+    pieces = transformed_pieces,
+    canvas_size = c(
+      bounds$max_x - bounds$min_x + 2 * margin,
+      bounds$max_y - bounds$min_y + 2 * margin
+    ),
+    canvas_offset = c(bounds$min_x - margin, bounds$min_y - margin),
+    offset = offset,
+    type = puzzle_type,
+    parameters = params,
+    fusion_data = piece_result$fusion_data,
+    adjacency = piece_result$adjacency,
+    edge_map = piece_result$edge_map
+  )
+
+  # Preserve triangulation for random type
+  if (!is.null(piece_result$triangulation)) {
+    result$triangulation <- piece_result$triangulation
+  }
+
+  result
+}
+
+#' Calculate bounds for tessellation pieces
+#'
+#' @param pieces List of piece objects
+#' @return List with min_x, max_x, min_y, max_y
+#'
+#' @keywords internal
+calculate_tessellation_bounds <- function(pieces) {
+  all_centers <- do.call(rbind, lapply(pieces, function(p) p$center))
+
+  list(
+    min_x = min(all_centers[, 1]) - 50,
+    max_x = max(all_centers[, 1]) + 50,
+    min_y = min(all_centers[, 2]) - 50,
+    max_y = max(all_centers[, 2]) + 50
+  )
+}
+
+
+#' Apply separation-factor-based positioning (hex, concentric)
+#'
+#' Shared implementation for hexagonal and concentric puzzle types.
+#' Both use separation_factor scaling with build_effective_centers_radial().
+#'
+#' @param piece_result Output from generate_pieces_internal()
+#' @param offset Separation distance
+#' @param piece_size Size of a single piece (for separation factor calculation)
+#' @return Positioned result
+#' @keywords internal
+apply_separation_factor_positioning <- function(piece_result, offset, piece_size) {
+  params <- piece_result$parameters
+  puzzle_type <- piece_result$type
+
   separation_factor <- 1.0 + (offset / piece_size)
 
   # Build effective centers for fusion groups
-  # Fused pieces share the same effective center (group centroid)
   effective_centers <- build_effective_centers_radial(
     piece_result$pieces,
     piece_result$fusion_data
@@ -478,25 +476,14 @@ apply_hex_positioning <- function(piece_result, offset) {
   # Transform each piece
   transformed_pieces <- lapply(seq_along(piece_result$pieces), function(i) {
     piece <- piece_result$pieces[[i]]
-
-    # Get the piece's current center (at compact position)
     current_center <- piece$center
-
-    # Use effective center for offset calculation (handles fusion)
     eff_center <- effective_centers[[i]]
 
-    # Calculate new position based on effective center
-    # Effective center determines offset, but piece keeps its relative position
     new_eff_center <- eff_center * separation_factor
-
-    # Translation is based on effective center movement
     dx <- new_eff_center[1] - eff_center[1]
     dy <- new_eff_center[2] - eff_center[2]
 
-    # Apply translation to path
     new_path <- translate_svg_path(piece$path, dx, dy)
-
-    # Update actual center with same translation
     new_center <- current_center + c(dx, dy)
 
     # Translate segment-level edge paths if present
@@ -504,21 +491,18 @@ apply_hex_positioning <- function(piece_result, offset) {
     if (!is.null(translated_segments) && !is.null(translated_segments$OUTER)) {
       for (seg_idx in seq_along(translated_segments$OUTER)) {
         seg <- translated_segments$OUTER[[seg_idx]]
-        # Translate start_point and end_point
         if (!is.null(seg$start_point)) {
           translated_segments$OUTER[[seg_idx]]$start_point <- seg$start_point + c(dx, dy)
         }
         if (!is.null(seg$end_point)) {
           translated_segments$OUTER[[seg_idx]]$end_point <- seg$end_point + c(dx, dy)
         }
-        # Translate the bezier path
         if (!is.null(seg$path)) {
           translated_segments$OUTER[[seg_idx]]$path <- translate_svg_path(seg$path, dx, dy)
         }
       }
     }
 
-    # Return transformed piece (preserve all metadata including fusion fields)
     list(
       id = piece$id,
       path = new_path,
@@ -526,9 +510,8 @@ apply_hex_positioning <- function(piece_result, offset) {
       ring_pos = piece$ring_pos,
       type = piece$type,
       fusion_group = if (!is.null(piece$fusion_group)) piece$fusion_group else NA,
-      fused_edges = piece$fused_edges,  # Preserve fusion edge metadata for rendering
-      fused_neighbor_ids = piece$fused_neighbor_ids,  # Preserve neighbor IDs for deduplication
-      # Segment-level fusion data (may be set for radial puzzles)
+      fused_edges = piece$fused_edges,
+      fused_neighbor_ids = piece$fused_neighbor_ids,
       outer_segments_mixed = piece$outer_segments_mixed,
       fused_edge_segments = translated_segments,
       inner_radius = piece$inner_radius,
@@ -537,10 +520,7 @@ apply_hex_positioning <- function(piece_result, offset) {
   })
 
   # Calculate canvas size from actual transformed piece paths
-  # This is critical when warp/trunc are enabled
-  # Uses optimized O(n) extraction instead of grow-on-append O(n²)
   bounds <- calculate_pieces_bounds(transformed_pieces, fallback_fn = function() {
-    # Fallback to center-based calculation
     all_x <- sapply(transformed_pieces, function(p) p$center[1])
     all_y <- sapply(transformed_pieces, function(p) p$center[2])
     list(
@@ -550,31 +530,47 @@ apply_hex_positioning <- function(piece_result, offset) {
       max_y = max(all_y) + piece_size
     )
   })
-  path_min_x <- bounds$min_x
-  path_max_x <- bounds$max_x
-  path_min_y <- bounds$min_y
-  path_max_y <- bounds$max_y
 
-  # Add margin for stroke width and offset
   stroke_margin <- piece_size * 0.15 + offset
-  min_x <- path_min_x - stroke_margin
-  max_x <- path_max_x + stroke_margin
-  min_y <- path_min_y - stroke_margin
-  max_y <- path_max_y + stroke_margin
-
-  canvas_width <- max_x - min_x
-  canvas_height <- max_y - min_y
+  min_x <- bounds$min_x - stroke_margin
+  max_x <- bounds$max_x + stroke_margin
+  min_y <- bounds$min_y - stroke_margin
+  max_y <- bounds$max_y + stroke_margin
 
   return(list(
     pieces = transformed_pieces,
-    canvas_size = c(canvas_width, canvas_height),
+    canvas_size = c(max_x - min_x, max_y - min_y),
     canvas_offset = c(min_x, min_y),
     offset = offset,
     separation_factor = separation_factor,
-    type = "hexagonal",
+    type = puzzle_type,
     parameters = params,
     fusion_data = piece_result$fusion_data
   ))
+}
+
+#' Apply hexagonal piece positioning with offset
+#'
+#' Uses separation-factor-based positioning for hexagonal pieces.
+#'
+#' @param piece_result Output from generate_pieces_internal() for hexagonal
+#' @param offset Separation distance (multiplier for base spacing)
+#' @return Positioned result
+#' @keywords internal
+apply_hex_positioning <- function(piece_result, offset) {
+  params <- piece_result$parameters
+  rings <- params$rings %||% params$grid[1]
+
+  if (!is.null(params$piece_radius)) {
+    piece_size <- params$piece_radius
+  } else if (!is.null(params$piece_height)) {
+    piece_size <- params$piece_height
+  } else {
+    diameter <- params$diameter %||% params$size[1]
+    piece_size <- diameter / (4 * rings - 2)
+  }
+
+  apply_separation_factor_positioning(piece_result, offset, piece_size)
 }
 
 

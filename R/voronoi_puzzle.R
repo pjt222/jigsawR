@@ -267,6 +267,7 @@ find_shared_voronoi_edge <- function(tiles, cell_a, cell_b) {
 #' Build edge map for Voronoi puzzle
 #'
 #' Creates the edge map with bezier tabs for all adjacent cell pairs.
+#' Delegates to the shared build_typed_edge_map() implementation.
 #'
 #' @param tiles tile.list from deldir
 #' @param adjacency Adjacency data frame
@@ -281,55 +282,9 @@ find_shared_voronoi_edge <- function(tiles, cell_a, cell_b) {
 #' @keywords internal
 build_voronoi_edge_map <- function(tiles, adjacency, vor, seed, tabsize, jitter,
                                     min_tab_size = NULL, max_tab_size = NULL) {
-  edge_map <- list()
-
-  for (i in seq_len(nrow(adjacency))) {
-    row <- adjacency[i, ]
-    cell_a <- row$cell_a
-    cell_b <- row$cell_b
-    v1 <- c(row$v1_x, row$v1_y)
-    v2 <- c(row$v2_x, row$v2_y)
-
-    # Create canonical edge key
-    if (cell_b < 0) {
-      # Boundary edge
-      edge_key <- sprintf("E%d-boundary-%d", cell_a, i)
-    } else {
-      min_id <- min(cell_a, cell_b)
-      max_id <- max(cell_a, cell_b)
-      edge_key <- sprintf("E%d-%d", min_id, max_id)
-    }
-
-    # Skip if already generated
-    if (!is.null(edge_map[[edge_key]])) {
-      next
-    }
-
-    # Determine edge type
-    is_boundary <- cell_b < 0
-
-    if (is_boundary) {
-      edge_map[[edge_key]] <- generate_straight_edge(v1, v2)
-      edge_map[[edge_key]]$cell_a <- cell_a
-      edge_map[[edge_key]]$cell_b <- -1
-    } else {
-      # Generate edge ID for deterministic tab
-      edge_id <- min(cell_a, cell_b) * 10000 + max(cell_a, cell_b)
-
-      edge_map[[edge_key]] <- generate_tessellation_edge(
-        v1, v2, seed, edge_id,
-        tabsize = tabsize,
-        jitter = jitter,
-        tab_direction = 1,
-        min_tab_size = min_tab_size,
-        max_tab_size = max_tab_size
-      )
-      edge_map[[edge_key]]$cell_a <- min(cell_a, cell_b)
-      edge_map[[edge_key]]$cell_b <- max(cell_a, cell_b)
-    }
-  }
-
-  edge_map
+  build_typed_edge_map(adjacency, seed, tabsize, jitter,
+                       min_tab_size = min_tab_size,
+                       max_tab_size = max_tab_size)
 }
 
 # ============================================================================
@@ -349,37 +304,58 @@ build_voronoi_edge_map <- function(tiles, adjacency, vor, seed, tabsize, jitter,
 #'
 #' @keywords internal
 assemble_voronoi_pieces <- function(tiles, edge_map, adjacency, boundary, size) {
+  assemble_tile_pieces(
+    tiles = tiles,
+    edge_map = edge_map,
+    adjacency = adjacency,
+    puzzle_type = "voronoi",
+    get_center = function(tile) c(mean(tile$x), mean(tile$y)),
+    get_type_pos = function(tile, n_verts) list(
+      seed_x = tile$pt[1], seed_y = tile$pt[2], n_vertices = n_verts
+    )
+  )
+}
+
+#' Assemble tile-based puzzle pieces (voronoi/snic)
+#'
+#' Shared implementation for assembling pieces from tile vertices.
+#' Each tile has $x, $y vertex coordinates and $bp boundary flags.
+#'
+#' @param tiles List of tiles (each with $x, $y, $bp)
+#' @param edge_map Edge map with bezier paths
+#' @param adjacency Adjacency data frame
+#' @param puzzle_type Type string ("voronoi" or "snic")
+#' @param get_center Function(tile) returning c(cx, cy)
+#' @param get_type_pos Function(tile, n_verts) returning type-specific pos list
+#' @return List of piece objects
+#'
+#' @keywords internal
+assemble_tile_pieces <- function(tiles, edge_map, adjacency, puzzle_type,
+                                 get_center, get_type_pos) {
   pieces <- list()
+  type_pos_name <- paste0(puzzle_type, "_pos")
 
   for (cell_id in seq_along(tiles)) {
     tile <- tiles[[cell_id]]
 
-    # Get tile vertices (already in anticlockwise order)
     n_verts <- length(tile$x)
     vertices <- cbind(tile$x, tile$y)
 
-    # Calculate center (centroid)
-    center <- c(mean(tile$x), mean(tile$y))
+    center <- get_center(tile)
 
     # Build SVG path by traversing edges
-    # Also track edge_segments for edge-level fusion rendering
     path <- sprintf("M %.4f %.4f ", vertices[1, 1], vertices[1, 2])
-    edge_segments <- list()  # Map neighbor_id -> path segment
+    edge_segments <- list()
 
     for (j in seq_len(n_verts)) {
       j_next <- if (j == n_verts) 1 else j + 1
       v1 <- vertices[j, ]
       v2 <- vertices[j_next, ]
 
-      # Find the edge path for this segment (returns list with path and neighbor_id)
       edge_result <- find_edge_for_segment(edge_map, cell_id, v1, v2, adjacency)
 
       if (!is.null(edge_result)) {
         path <- paste0(path, edge_result$path, " ")
-        # Store segment keyed by neighbor_id for fusion rendering
-        # Include start point to create valid SVG path with "M" command
-        # IMPORTANT: For boundary edges (neighbor_id < 0), use unique key "boundary_j"
-        # to avoid overwrites when a piece has multiple boundary edges (e.g., corner pieces)
         if (edge_result$neighbor_id < 0) {
           neighbor_key <- sprintf("boundary_%d", j)
         } else {
@@ -391,14 +367,12 @@ assemble_voronoi_pieces <- function(tiles, edge_map, adjacency, boundary, size) 
           is_boundary = edge_result$neighbor_id < 0
         )
       } else {
-        # Fallback to straight line
         fallback_path <- sprintf("L %.4f %.4f ", v2[1], v2[2])
         path <- paste0(path, fallback_path)
-        # Also store fallback in edge_segments with "boundary" as key
         boundary_key <- sprintf("boundary_%d", j)
         edge_segments[[boundary_key]] <- list(
           path = sprintf("M %.4f %.4f %s", v1[1], v1[2], fallback_path),
-          neighbor_id = -1,  # boundary indicator
+          neighbor_id = -1,
           is_boundary = TRUE
         )
       }
@@ -406,32 +380,28 @@ assemble_voronoi_pieces <- function(tiles, edge_map, adjacency, boundary, size) 
 
     path <- paste0(path, "Z")
 
-    # Parse segments for rendering
     parsed_segments <- tryCatch(
       parse_svg_path(path),
       error = function(e) NULL
     )
 
-    # Identify boundary pieces
     is_boundary_piece <- any(tile$bp)
 
-    pieces[[cell_id]] <- list(
+    piece <- list(
       id = cell_id,
       path = path,
       parsed_segments = parsed_segments,
-      edge_segments = edge_segments,  # Neighbor-keyed edge paths for fusion
+      edge_segments = edge_segments,
       center = center,
-      voronoi_pos = list(
-        seed_x = tile$pt[1],
-        seed_y = tile$pt[2],
-        n_vertices = n_verts
-      ),
-      type = "voronoi",
+      type = puzzle_type,
       is_boundary = is_boundary_piece,
       fusion_group = NA,
       fused_edges = list(),
       fused_neighbor_ids = list()
     )
+    piece[[type_pos_name]] <- get_type_pos(tile, n_verts)
+
+    pieces[[cell_id]] <- piece
   }
 
   pieces
@@ -505,146 +475,7 @@ find_edge_for_segment <- function(edge_map, cell_id, v1, v2, adjacency) {
   NULL
 }
 
-# ============================================================================
-# Positioning
-# ============================================================================
-
-#' Apply positioning to Voronoi puzzle
-#'
-#' Separates pieces based on offset parameter.
-#'
-#' @param piece_result Result from generate_voronoi_pieces_internal()
-#' @param offset Separation amount (0 = compact, >0 = separated)
-#' @return Positioned piece result
-#'
-#' @keywords internal
-apply_voronoi_positioning <- function(piece_result, offset) {
-  params <- piece_result$parameters
-  pieces <- piece_result$pieces
-  size <- params$size
-
-  if (offset == 0) {
-    # No separation needed
-    return(piece_result)
-  }
-
-  # Build effective centers for fusion groups
-  # Fused pieces share the same effective center (group centroid)
-  # This ensures fused pieces move together as a unit
-  effective_centers <- build_effective_centers_radial(
-    pieces,
-    piece_result$fusion_data
-  )
-
-  # Calculate piece positions based on effective centers
-  # Voronoi cells naturally radiate from center
-  canvas_center <- size / 2
-
-  # Separation factor based on distance from center
-  transformed_pieces <- lapply(seq_along(pieces), function(i) {
-    piece <- pieces[[i]]
-
-    # Use EFFECTIVE center for offset calculation (handles fusion)
-    # All pieces in a fusion group share the same effective center
-    eff_center <- effective_centers[[i]]
-
-    # Calculate displacement direction from canvas center using effective center
-    dir <- eff_center - canvas_center
-    dist <- sqrt(sum(dir^2))
-
-    if (dist < 0.001) {
-      # Center piece stays in place
-      dx <- 0
-      dy <- 0
-    } else {
-      # Move outward proportional to distance from center
-      dir_norm <- dir / dist
-      # Scale offset by relative position
-      scale_factor <- dist / max(size) * 2
-      dx <- dir_norm[1] * offset * scale_factor
-      dy <- dir_norm[2] * offset * scale_factor
-    }
-
-    # Translate path
-    translated_path <- translate_voronoi_path(piece$path, dx, dy)
-
-    # Translate edge_segments as well for fusion rendering
-    translated_edge_segments <- lapply(piece$edge_segments, function(seg) {
-      list(
-        path = translate_voronoi_path(seg$path, dx, dy),
-        neighbor_id = seg$neighbor_id,
-        is_boundary = seg$is_boundary
-      )
-    })
-
-    list(
-      id = piece$id,
-      path = translated_path,
-      parsed_segments = tryCatch(parse_svg_path(translated_path), error = function(e) NULL),
-      edge_segments = translated_edge_segments,
-      center = piece$center + c(dx, dy),
-      voronoi_pos = piece$voronoi_pos,
-      type = piece$type,
-      is_boundary = piece$is_boundary,
-      fusion_group = piece$fusion_group,
-      fused_edges = piece$fused_edges,
-      fused_neighbor_ids = piece$fused_neighbor_ids
-    )
-  })
-
-  # Calculate new canvas bounds
-  bounds <- calculate_voronoi_bounds(transformed_pieces)
-
-  # Add margin
-  margin <- max(size) * 0.05 + offset
-
-  list(
-    pieces = transformed_pieces,
-    canvas_size = c(
-      bounds$max_x - bounds$min_x + 2 * margin,
-      bounds$max_y - bounds$min_y + 2 * margin
-    ),
-    canvas_offset = c(bounds$min_x - margin, bounds$min_y - margin),
-    offset = offset,
-    type = "voronoi",
-    parameters = params,
-    fusion_data = piece_result$fusion_data,
-    adjacency = piece_result$adjacency,
-    edge_map = piece_result$edge_map
-  )
-}
-
-#' Translate Voronoi path by offset
-#'
-#' Uses the existing translate_svg_path function from piece_positioning.R
-#'
-#' @param path SVG path string
-#' @param dx X offset
-#' @param dy Y offset
-#' @return Translated path string
-#'
-#' @keywords internal
-translate_voronoi_path <- function(path, dx, dy) {
-  # Use the existing translate_svg_path function
-  translate_svg_path(path, dx, dy)
-}
-
-#' Calculate bounds for Voronoi pieces
-#'
-#' @param pieces List of piece objects
-#' @return List with min_x, max_x, min_y, max_y
-#'
-#' @keywords internal
-calculate_voronoi_bounds <- function(pieces) {
-  all_centers <- do.call(rbind, lapply(pieces, function(p) p$center))
-
-  list(
-    min_x = min(all_centers[, 1]) - 50,
-    max_x = max(all_centers[, 1]) + 50,
-    min_y = min(all_centers[, 2]) - 50,
-    max_y = max(all_centers[, 2]) + 50
-  )
-}
+# Voronoi positioning is now handled by apply_tessellation_positioning() in piece_positioning.R
 
 # ============================================================================
 # Fusion Support
@@ -670,76 +501,7 @@ process_voronoi_fusion <- function(puzzle_result, fusion_groups, fusion_style, f
 # Topology / Adjacency API
 # ============================================================================
 
-#' Get Voronoi cell neighbors
-#'
-#' Returns the neighbors of a Voronoi cell based on the stored adjacency data.
-#'
-#' @param piece_id Piece/cell ID
-#' @param puzzle_result Puzzle result containing adjacency data
-#' @param include_boundary Whether to include boundary edges
-#' @return Data frame with direction, neighbor_id, is_boundary columns
-#'
-#' @keywords internal
-get_voronoi_neighbors <- function(piece_id, puzzle_result, include_boundary = TRUE) {
-  adjacency <- puzzle_result$adjacency
-
-  if (is.null(adjacency)) {
-    return(data.frame(
-      direction = character(),
-      neighbor_id = integer(),
-      is_boundary = logical()
-    ))
-  }
-
-  # Find all adjacencies involving this cell
-  cell_adj <- adjacency[adjacency$cell_a == piece_id | adjacency$cell_b == piece_id, ]
-
-  if (nrow(cell_adj) == 0) {
-    return(data.frame(
-      direction = character(),
-      neighbor_id = integer(),
-      is_boundary = logical()
-    ))
-  }
-
-  neighbors <- lapply(seq_len(nrow(cell_adj)), function(i) {
-    row <- cell_adj[i, ]
-    neighbor_id <- if (row$cell_a == piece_id) row$cell_b else row$cell_a
-    is_boundary <- neighbor_id < 0
-
-    if (!include_boundary && is_boundary) {
-      return(NULL)
-    }
-
-    # Calculate direction based on edge midpoint relative to piece center
-    edge_mid <- c((row$v1_x + row$v2_x) / 2, (row$v1_y + row$v2_y) / 2)
-    piece_center <- puzzle_result$pieces[[piece_id]]$center
-    dir_vec <- edge_mid - piece_center
-
-    # Convert to compass direction
-    angle <- atan2(dir_vec[2], dir_vec[1]) * 180 / pi
-    direction <- angle_to_direction(angle)
-
-    data.frame(
-      direction = direction,
-      neighbor_id = if (is_boundary) NA_integer_ else neighbor_id,
-      is_boundary = is_boundary,
-      stringsAsFactors = FALSE
-    )
-  })
-
-  neighbors <- neighbors[!sapply(neighbors, is.null)]
-
-  if (length(neighbors) == 0) {
-    return(data.frame(
-      direction = character(),
-      neighbor_id = integer(),
-      is_boundary = logical()
-    ))
-  }
-
-  do.call(rbind, neighbors)
-}
+# Voronoi neighbors are now handled by get_tessellation_neighbors() in adjacency_api.R
 
 #' Convert angle to compass direction
 #'

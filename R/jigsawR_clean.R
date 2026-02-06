@@ -628,46 +628,10 @@ generate_puzzle_batch <- function(variations, base_dir = "output/batch",
     for (i in seq_along(variations)) {
       var <- variations[[i]]
 
-      # Set defaults for missing parameters
-      if (is.null(var$type)) var$type <- "rectangular"
-      if (is.null(var$grid)) var$grid <- c(2, 2)
-      if (is.null(var$size)) var$size <- c(200, 200)
-      if (is.null(var$tabsize)) var$tabsize <- 20
-      if (is.null(var$jitter)) var$jitter <- 4
-      if (is.null(var$offset)) var$offset <- 0
-      if (is.null(var$background)) var$background <- "white"
-      if (is.null(var$opacity)) var$opacity <- 1.0
-      if (is.null(var$stroke_width)) var$stroke_width <- 1.5
-      if (is.null(var$fill_color)) var$fill_color <- "none"
-      if (is.null(var$do_warp)) var$do_warp <- FALSE
-      if (is.null(var$do_trunc)) var$do_trunc <- FALSE
-
+      # Apply defaults via generate_one (same defaults as parallel path)
       log_subheader("Generating puzzle {i} of {n_variations}")
-      log_info("Seed: {var$seed}, Grid: {paste(var$grid, collapse='x')}, Offset: {var$offset}")
 
-      # Generate puzzle using unified pipeline
-      result <- generate_puzzle(
-        type = var$type,
-        grid = var$grid,
-        size = var$size,
-        seed = var$seed,
-        tabsize = var$tabsize,
-        jitter = var$jitter,
-        offset = var$offset,
-        fill_color = var$fill_color,
-        stroke_width = var$stroke_width,
-        colors = var$colors,
-        palette = var$palette,
-        background = var$background,
-        opacity = var$opacity,
-        save_files = TRUE,
-        output_dir = base_dir,
-        filename_prefix = var$name,
-        do_warp = var$do_warp,
-        do_trunc = var$do_trunc
-      )
-
-      results[[i]] <- result
+      results[[i]] <- generate_one(var, i, n_variations, base_dir)
     }
   }
 

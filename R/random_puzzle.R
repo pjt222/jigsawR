@@ -279,6 +279,8 @@ extract_random_adjacency <- function(tri, vertices, n_corner) {
 #' Build edge map for random shape puzzle
 #'
 #' Creates the edge map with bezier tabs for all adjacent triangle pairs.
+#' Delegates to the shared build_typed_edge_map() with a custom predicate
+#' that treats constraint edges (on the polygon boundary) as straight.
 #'
 #' @param tri RCDT triangulation
 #' @param adjacency Adjacency data frame
@@ -292,53 +294,12 @@ extract_random_adjacency <- function(tri, vertices, n_corner) {
 #' @keywords internal
 build_random_edge_map <- function(tri, adjacency, seed, tabsize, jitter,
                                    min_tab_size = NULL, max_tab_size = NULL) {
-  edge_map <- list()
-
-  for (i in seq_len(nrow(adjacency))) {
-    row <- adjacency[i, ]
-    cell_a <- row$cell_a
-    cell_b <- row$cell_b
-    v1 <- c(row$v1_x, row$v1_y)
-    v2 <- c(row$v2_x, row$v2_y)
-    is_constraint <- row$is_constraint
-
-    # Create canonical edge key
-    if (cell_b < 0) {
-      edge_key <- sprintf("E%d-boundary-%d", cell_a, i)
-    } else {
-      min_id <- min(cell_a, cell_b)
-      max_id <- max(cell_a, cell_b)
-      edge_key <- sprintf("E%d-%d", min_id, max_id)
-    }
-
-    # Skip if already generated
-    if (!is.null(edge_map[[edge_key]])) {
-      next
-    }
-
-    # Boundary edges or constraint edges (on the polygon boundary) are straight
-    if (cell_b < 0 || is_constraint) {
-      edge_map[[edge_key]] <- generate_straight_edge(v1, v2)
-      edge_map[[edge_key]]$cell_a <- cell_a
-      edge_map[[edge_key]]$cell_b <- cell_b
-    } else {
-      # Internal edge - generate tab
-      edge_id <- min(cell_a, cell_b) * 10000 + max(cell_a, cell_b)
-
-      edge_map[[edge_key]] <- generate_tessellation_edge(
-        v1, v2, seed, edge_id,
-        tabsize = tabsize,
-        jitter = jitter,
-        tab_direction = 1,
-        min_tab_size = min_tab_size,
-        max_tab_size = max_tab_size
-      )
-      edge_map[[edge_key]]$cell_a <- min(cell_a, cell_b)
-      edge_map[[edge_key]]$cell_b <- max(cell_a, cell_b)
-    }
-  }
-
-  edge_map
+  build_typed_edge_map(adjacency, seed, tabsize, jitter,
+                       min_tab_size = min_tab_size,
+                       max_tab_size = max_tab_size,
+                       is_straight_fn = function(row) {
+                         row$cell_b < 0 || isTRUE(row$is_constraint)
+                       })
 }
 
 # ============================================================================
@@ -381,7 +342,7 @@ assemble_random_pieces <- function(tri, edge_map, adjacency, vertices,
     edge_segments <- list()  # Map neighbor_id -> path segment
 
     # Edge 1: v1 -> v2
-    edge_result_1 <- find_random_edge_for_segment(edge_map, tri_id, v1, v2, adjacency)
+    edge_result_1 <- find_edge_for_segment(edge_map, tri_id, v1, v2, adjacency)
     if (!is.null(edge_result_1)) {
       path <- paste0(path, edge_result_1$path, " ")
       # IMPORTANT: For boundary edges (neighbor_id < 0), use unique key "boundary_1"
@@ -409,7 +370,7 @@ assemble_random_pieces <- function(tri, edge_map, adjacency, vertices,
     }
 
     # Edge 2: v2 -> v3
-    edge_result_2 <- find_random_edge_for_segment(edge_map, tri_id, v2, v3, adjacency)
+    edge_result_2 <- find_edge_for_segment(edge_map, tri_id, v2, v3, adjacency)
     if (!is.null(edge_result_2)) {
       path <- paste0(path, edge_result_2$path, " ")
       # IMPORTANT: For boundary edges (neighbor_id < 0), use unique key "boundary_2"
@@ -437,7 +398,7 @@ assemble_random_pieces <- function(tri, edge_map, adjacency, vertices,
     }
 
     # Edge 3: v3 -> v1
-    edge_result_3 <- find_random_edge_for_segment(edge_map, tri_id, v3, v1, adjacency)
+    edge_result_3 <- find_edge_for_segment(edge_map, tri_id, v3, v1, adjacency)
     if (!is.null(edge_result_3)) {
       path <- paste0(path, edge_result_3$path, " ")
       # IMPORTANT: For boundary edges (neighbor_id < 0), use unique key "boundary_3"
@@ -496,190 +457,7 @@ assemble_random_pieces <- function(tri, edge_map, adjacency, vertices,
   pieces
 }
 
-#' Find edge path for a triangle segment
-#'
-#' Looks up the appropriate edge path from the edge map for a specific
-#' segment of a triangle's boundary.
-#'
-#' @param edge_map Edge map
-#' @param tri_id Triangle ID
-#' @param v1 Start vertex
-#' @param v2 End vertex
-#' @param adjacency Adjacency data frame
-#' @return SVG path string or NULL
-#'
-#' @keywords internal
-find_random_edge_for_segment <- function(edge_map, tri_id, v1, v2, adjacency) {
-  # Returns list(path, neighbor_id) for edge-level fusion support
-  tolerance <- 1e-4
-
-  for (i in seq_len(nrow(adjacency))) {
-    row <- adjacency[i, ]
-
-    # Check if this adjacency row involves our triangle
-    if (row$cell_a != tri_id && row$cell_b != tri_id) {
-      next
-    }
-
-    # Check if vertices match
-    edge_v1 <- c(row$v1_x, row$v1_y)
-    edge_v2 <- c(row$v2_x, row$v2_y)
-
-    dist_forward <- sqrt(sum((v1 - edge_v1)^2)) + sqrt(sum((v2 - edge_v2)^2))
-    dist_reverse <- sqrt(sum((v1 - edge_v2)^2)) + sqrt(sum((v2 - edge_v1)^2))
-
-    if (dist_forward < tolerance || dist_reverse < tolerance) {
-      other_cell <- if (row$cell_a == tri_id) row$cell_b else row$cell_a
-
-      # Get edge key
-      if (other_cell < 0) {
-        edge_key <- sprintf("E%d-boundary-%d", tri_id, i)
-      } else {
-        min_id <- min(tri_id, other_cell)
-        max_id <- max(tri_id, other_cell)
-        edge_key <- sprintf("E%d-%d", min_id, max_id)
-      }
-
-      edge <- edge_map[[edge_key]]
-      if (is.null(edge)) {
-        return(NULL)
-      }
-
-      # Determine if we need forward or reverse path based on traversal direction
-      # The path direction is purely geometric - independent of triangle ID
-      # Return BOTH path and neighbor_id for edge-level fusion support
-      if (dist_forward < tolerance) {
-        # Traversing in same direction as stored edge (v1 → v2)
-        return(list(path = edge$forward, neighbor_id = other_cell))
-      } else {
-        # Traversing in opposite direction (v2 → v1)
-        return(list(path = edge$reverse, neighbor_id = other_cell))
-      }
-    }
-  }
-
-  NULL
-}
-
-# ============================================================================
-# Positioning
-# ============================================================================
-
-#' Apply positioning to random shape puzzle
-#'
-#' Separates pieces based on offset parameter.
-#'
-#' @param piece_result Result from generate_random_pieces_internal()
-#' @param offset Separation amount (0 = compact, >0 = separated)
-#' @return Positioned piece result
-#'
-#' @keywords internal
-apply_random_positioning <- function(piece_result, offset) {
-  params <- piece_result$parameters
-  pieces <- piece_result$pieces
-  size <- params$size
-
-  if (offset == 0) {
-    return(piece_result)
-  }
-
-  # Build effective centers for fusion groups
-  # Fused pieces share the same effective center (group centroid)
-  # This ensures fused pieces move together as a unit
-  effective_centers <- build_effective_centers_radial(
-    pieces,
-    piece_result$fusion_data
-  )
-
-  # Calculate piece positions based on effective centers
-  canvas_center <- size / 2
-
-  transformed_pieces <- lapply(seq_along(pieces), function(i) {
-    piece <- pieces[[i]]
-
-    # Use EFFECTIVE center for offset calculation (handles fusion)
-    # All pieces in a fusion group share the same effective center
-    eff_center <- effective_centers[[i]]
-
-    # Calculate displacement direction from canvas center using effective center
-    dir <- eff_center - canvas_center
-    dist <- sqrt(sum(dir^2))
-
-    if (dist < 0.001) {
-      dx <- 0
-      dy <- 0
-    } else {
-      dir_norm <- dir / dist
-      scale_factor <- dist / max(size) * 2
-      dx <- dir_norm[1] * offset * scale_factor
-      dy <- dir_norm[2] * offset * scale_factor
-    }
-
-    # Translate path
-    translated_path <- translate_svg_path(piece$path, dx, dy)
-
-    # Translate edge_segments as well for fusion rendering
-    translated_edge_segments <- lapply(piece$edge_segments, function(seg) {
-      list(
-        path = translate_svg_path(seg$path, dx, dy),
-        neighbor_id = seg$neighbor_id,
-        is_boundary = seg$is_boundary
-      )
-    })
-
-    list(
-      id = piece$id,
-      path = translated_path,
-      parsed_segments = tryCatch(parse_svg_path(translated_path), error = function(e) NULL),
-      edge_segments = translated_edge_segments,
-      center = piece$center + c(dx, dy),
-      random_pos = piece$random_pos,
-      type = piece$type,
-      is_boundary = piece$is_boundary,
-      fusion_group = piece$fusion_group,
-      fused_edges = piece$fused_edges,
-      fused_neighbor_ids = piece$fused_neighbor_ids
-    )
-  })
-
-  # Calculate new canvas bounds
-  bounds <- calculate_random_bounds(transformed_pieces)
-
-  margin <- max(size) * 0.05 + offset
-
-  list(
-    pieces = transformed_pieces,
-    canvas_size = c(
-      bounds$max_x - bounds$min_x + 2 * margin,
-      bounds$max_y - bounds$min_y + 2 * margin
-    ),
-    canvas_offset = c(bounds$min_x - margin, bounds$min_y - margin),
-    offset = offset,
-    type = "random",
-    parameters = params,
-    fusion_data = piece_result$fusion_data,
-    adjacency = piece_result$adjacency,
-    edge_map = piece_result$edge_map,
-    triangulation = piece_result$triangulation
-  )
-}
-
-#' Calculate bounds for random shape pieces
-#'
-#' @param pieces List of piece objects
-#' @return List with min_x, max_x, min_y, max_y
-#'
-#' @keywords internal
-calculate_random_bounds <- function(pieces) {
-  all_centers <- do.call(rbind, lapply(pieces, function(p) p$center))
-
-  list(
-    min_x = min(all_centers[, 1]) - 50,
-    max_x = max(all_centers[, 1]) + 50,
-    min_y = min(all_centers[, 2]) - 50,
-    max_y = max(all_centers[, 2]) + 50
-  )
-}
+# Random positioning is now handled by apply_tessellation_positioning() in piece_positioning.R
 
 # ============================================================================
 # Fusion Support
@@ -699,97 +477,5 @@ process_random_fusion <- function(puzzle_result, fusion_groups, fusion_style, fu
   NULL
 }
 
-# ============================================================================
-# Topology / Adjacency API
-# ============================================================================
+# Random neighbors are now handled by get_tessellation_neighbors() in adjacency_api.R
 
-#' Get random shape piece neighbors
-#'
-#' Returns the neighbors of a triangular piece based on stored adjacency data.
-#'
-#' @param piece_id Piece/triangle ID
-#' @param puzzle_result Puzzle result containing adjacency data
-#' @param include_boundary Whether to include boundary edges
-#' @return Data frame with direction, neighbor_id, is_boundary columns
-#'
-#' @keywords internal
-get_random_neighbors <- function(piece_id, puzzle_result, include_boundary = TRUE) {
-  adjacency <- puzzle_result$adjacency
-
-  if (is.null(adjacency)) {
-    return(data.frame(
-      direction = character(),
-      neighbor_id = integer(),
-      is_boundary = logical()
-    ))
-  }
-
-  # Find all adjacencies involving this piece
-  piece_adj <- adjacency[adjacency$cell_a == piece_id | adjacency$cell_b == piece_id, ]
-
-  if (nrow(piece_adj) == 0) {
-    return(data.frame(
-      direction = character(),
-      neighbor_id = integer(),
-      is_boundary = logical()
-    ))
-  }
-
-  neighbors <- lapply(seq_len(nrow(piece_adj)), function(i) {
-    row <- piece_adj[i, ]
-    neighbor_id <- if (row$cell_a == piece_id) row$cell_b else row$cell_a
-    is_boundary <- neighbor_id < 0
-
-    if (!include_boundary && is_boundary) {
-      return(NULL)
-    }
-
-    # Calculate direction based on edge midpoint relative to piece center
-    edge_mid <- c((row$v1_x + row$v2_x) / 2, (row$v1_y + row$v2_y) / 2)
-    piece_center <- puzzle_result$pieces[[piece_id]]$center
-    dir_vec <- edge_mid - piece_center
-
-    # Convert to compass direction
-    angle <- atan2(dir_vec[2], dir_vec[1]) * 180 / pi
-    direction <- angle_to_direction_random(angle)
-
-    data.frame(
-      direction = direction,
-      neighbor_id = if (is_boundary) NA_integer_ else neighbor_id,
-      is_boundary = is_boundary,
-      stringsAsFactors = FALSE
-    )
-  })
-
-  neighbors <- neighbors[!sapply(neighbors, is.null)]
-
-  if (length(neighbors) == 0) {
-    return(data.frame(
-      direction = character(),
-      neighbor_id = integer(),
-      is_boundary = logical()
-    ))
-  }
-
-  do.call(rbind, neighbors)
-}
-
-#' Convert angle to compass direction for random shapes
-#'
-#' @param angle Angle in degrees (-180 to 180)
-#' @return Direction string (N, NE, E, SE, S, SW, W, NW)
-#'
-#' @keywords internal
-angle_to_direction_random <- function(angle) {
-  # Normalize to 0-360
-  angle <- (angle + 360) %% 360
-
-  if (angle < 22.5 || angle >= 337.5) return("E")
-  if (angle < 67.5) return("NE")
-  if (angle < 112.5) return("N")
-  if (angle < 157.5) return("NW")
-  if (angle < 202.5) return("W")
-  if (angle < 247.5) return("SW")
-  if (angle < 292.5) return("S")
-  return("SE")
-}

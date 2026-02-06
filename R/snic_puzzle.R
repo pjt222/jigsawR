@@ -720,7 +720,7 @@ build_snic_adjacency <- function(edge_data, tiles, size) {
 #' Build edge map for SNIC puzzle
 #'
 #' Creates the edge map with bezier tabs for all adjacent cell pairs.
-#' Follows the same pattern as build_voronoi_edge_map().
+#' Delegates to the shared build_typed_edge_map() implementation.
 #'
 #' @param tiles Tile list from build_snic_tiles()
 #' @param adjacency Adjacency data frame
@@ -734,51 +734,9 @@ build_snic_adjacency <- function(edge_data, tiles, size) {
 #' @keywords internal
 build_snic_edge_map <- function(tiles, adjacency, seed, tabsize, jitter,
                                  min_tab_size = NULL, max_tab_size = NULL) {
-  edge_map <- list()
-
-  for (i in seq_len(nrow(adjacency))) {
-    row <- adjacency[i, ]
-    cell_a <- row$cell_a
-    cell_b <- row$cell_b
-    v1 <- c(row$v1_x, row$v1_y)
-    v2 <- c(row$v2_x, row$v2_y)
-
-    # Create canonical edge key
-    if (cell_b < 0) {
-      edge_key <- sprintf("E%d-boundary-%d", cell_a, i)
-    } else {
-      min_id <- min(cell_a, cell_b)
-      max_id <- max(cell_a, cell_b)
-      edge_key <- sprintf("E%d-%d", min_id, max_id)
-    }
-
-    # Skip if already generated
-    if (!is.null(edge_map[[edge_key]])) {
-      next
-    }
-
-    is_boundary <- cell_b < 0
-
-    if (is_boundary) {
-      edge_map[[edge_key]] <- generate_straight_edge(v1, v2)
-      edge_map[[edge_key]]$cell_a <- cell_a
-      edge_map[[edge_key]]$cell_b <- -1
-    } else {
-      edge_id <- min(cell_a, cell_b) * 10000 + max(cell_a, cell_b)
-      edge_map[[edge_key]] <- generate_tessellation_edge(
-        v1, v2, seed, edge_id,
-        tabsize = tabsize,
-        jitter = jitter,
-        tab_direction = 1,
-        min_tab_size = min_tab_size,
-        max_tab_size = max_tab_size
-      )
-      edge_map[[edge_key]]$cell_a <- min(cell_a, cell_b)
-      edge_map[[edge_key]]$cell_b <- max(cell_a, cell_b)
-    }
-  }
-
-  edge_map
+  build_typed_edge_map(adjacency, seed, tabsize, jitter,
+                       min_tab_size = min_tab_size,
+                       max_tab_size = max_tab_size)
 }
 
 # ============================================================================
@@ -798,180 +756,20 @@ build_snic_edge_map <- function(tiles, adjacency, seed, tabsize, jitter,
 #'
 #' @keywords internal
 assemble_snic_pieces <- function(tiles, edge_map, adjacency, size) {
-  pieces <- list()
-
-  for (cell_id in seq_along(tiles)) {
-    tile <- tiles[[cell_id]]
-
-    n_verts <- length(tile$x)
-    vertices <- cbind(tile$x, tile$y)
-
-    # Center from centroid
-    center <- c(tile$centroid_x, tile$centroid_y)
-
-    # Build SVG path by traversing edges
-    path <- sprintf("M %.4f %.4f ", vertices[1, 1], vertices[1, 2])
-    edge_segments <- list()
-
-    for (j in seq_len(n_verts)) {
-      j_next <- if (j == n_verts) 1 else j + 1
-      v1 <- vertices[j, ]
-      v2 <- vertices[j_next, ]
-
-      # Find the edge path for this segment
-      edge_result <- find_edge_for_segment(edge_map, cell_id, v1, v2, adjacency)
-
-      if (!is.null(edge_result)) {
-        path <- paste0(path, edge_result$path, " ")
-        if (edge_result$neighbor_id < 0) {
-          neighbor_key <- sprintf("boundary_%d", j)
-        } else {
-          neighbor_key <- as.character(edge_result$neighbor_id)
-        }
-        edge_segments[[neighbor_key]] <- list(
-          path = sprintf("M %.4f %.4f %s", v1[1], v1[2], edge_result$path),
-          neighbor_id = edge_result$neighbor_id,
-          is_boundary = edge_result$neighbor_id < 0
-        )
-      } else {
-        fallback_path <- sprintf("L %.4f %.4f ", v2[1], v2[2])
-        path <- paste0(path, fallback_path)
-        boundary_key <- sprintf("boundary_%d", j)
-        edge_segments[[boundary_key]] <- list(
-          path = sprintf("M %.4f %.4f %s", v1[1], v1[2], fallback_path),
-          neighbor_id = -1,
-          is_boundary = TRUE
-        )
-      }
-    }
-
-    path <- paste0(path, "Z")
-
-    parsed_segments <- tryCatch(
-      parse_svg_path(path),
-      error = function(e) NULL
+  assemble_tile_pieces(
+    tiles = tiles,
+    edge_map = edge_map,
+    adjacency = adjacency,
+    puzzle_type = "snic",
+    get_center = function(tile) c(tile$centroid_x, tile$centroid_y),
+    get_type_pos = function(tile, n_verts) list(
+      centroid_x = tile$centroid_x, centroid_y = tile$centroid_y,
+      n_vertices = n_verts, label = tile$label
     )
-
-    is_boundary_piece <- any(tile$bp)
-
-    pieces[[cell_id]] <- list(
-      id = cell_id,
-      path = path,
-      parsed_segments = parsed_segments,
-      edge_segments = edge_segments,
-      center = center,
-      snic_pos = list(
-        centroid_x = tile$centroid_x,
-        centroid_y = tile$centroid_y,
-        n_vertices = n_verts,
-        label = tile$label
-      ),
-      type = "snic",
-      is_boundary = is_boundary_piece,
-      fusion_group = NA,
-      fused_edges = list(),
-      fused_neighbor_ids = list()
-    )
-  }
-
-  pieces
-}
-
-# ============================================================================
-# Positioning
-# ============================================================================
-
-#' Apply positioning to SNIC puzzle
-#'
-#' Separates pieces based on offset parameter. Uses radial separation
-#' from canvas center, same as voronoi.
-#'
-#' @param piece_result Result from generate_snic_pieces_internal()
-#' @param offset Separation amount (0 = compact, >0 = separated)
-#' @return Positioned piece result
-#'
-#' @keywords internal
-apply_snic_positioning <- function(piece_result, offset) {
-  params <- piece_result$parameters
-  pieces <- piece_result$pieces
-  size <- params$size
-
-  if (offset == 0) {
-    return(piece_result)
-  }
-
-  # Build effective centers for fusion groups
-  effective_centers <- build_effective_centers_radial(
-    pieces,
-    piece_result$fusion_data
-  )
-
-  # Canvas center
-  canvas_center <- size / 2
-
-  # Radial separation
-  transformed_pieces <- lapply(seq_along(pieces), function(i) {
-    piece <- pieces[[i]]
-    eff_center <- effective_centers[[i]]
-
-    dir <- eff_center - canvas_center
-    dist <- sqrt(sum(dir^2))
-
-    if (dist < 0.001) {
-      dx <- 0
-      dy <- 0
-    } else {
-      dir_norm <- dir / dist
-      scale_factor <- dist / max(size) * 2
-      dx <- dir_norm[1] * offset * scale_factor
-      dy <- dir_norm[2] * offset * scale_factor
-    }
-
-    translated_path <- translate_svg_path(piece$path, dx, dy)
-
-    translated_edge_segments <- lapply(piece$edge_segments, function(seg) {
-      list(
-        path = translate_svg_path(seg$path, dx, dy),
-        neighbor_id = seg$neighbor_id,
-        is_boundary = seg$is_boundary
-      )
-    })
-
-    list(
-      id = piece$id,
-      path = translated_path,
-      parsed_segments = tryCatch(parse_svg_path(translated_path), error = function(e) NULL),
-      edge_segments = translated_edge_segments,
-      center = piece$center + c(dx, dy),
-      snic_pos = piece$snic_pos,
-      type = piece$type,
-      is_boundary = piece$is_boundary,
-      fusion_group = piece$fusion_group,
-      fused_edges = piece$fused_edges,
-      fused_neighbor_ids = piece$fused_neighbor_ids
-    )
-  })
-
-  # Calculate new canvas bounds
-  bounds <- calculate_voronoi_bounds(transformed_pieces)
-
-  margin <- max(size) * 0.05 + offset
-
-  list(
-    pieces = transformed_pieces,
-    canvas_size = c(
-      bounds$max_x - bounds$min_x + 2 * margin,
-      bounds$max_y - bounds$min_y + 2 * margin
-    ),
-    canvas_offset = c(bounds$min_x - margin, bounds$min_y - margin),
-    offset = offset,
-    type = "snic",
-    parameters = params,
-    fusion_data = piece_result$fusion_data,
-    adjacency = piece_result$adjacency,
-    edge_map = piece_result$edge_map
   )
 }
+
+# SNIC positioning is now handled by apply_tessellation_positioning() in piece_positioning.R
 
 # ============================================================================
 # Fusion Support
@@ -990,78 +788,4 @@ process_snic_fusion <- function(puzzle_result, fusion_groups, fusion_style, fusi
   NULL
 }
 
-# ============================================================================
-# Topology / Adjacency API
-# ============================================================================
-
-#' Get SNIC cell neighbors
-#'
-#' Returns the neighbors of a SNIC superpixel cell based on stored adjacency data.
-#' Follows the same pattern as get_voronoi_neighbors().
-#'
-#' @param piece_id Piece/cell ID
-#' @param puzzle_result Puzzle result containing adjacency data
-#' @param include_boundary Whether to include boundary edges
-#' @return Data frame with direction, neighbor_id, is_boundary columns
-#'
-#' @keywords internal
-get_snic_neighbors <- function(piece_id, puzzle_result, include_boundary = TRUE) {
-  adjacency <- puzzle_result$adjacency
-
-  if (is.null(adjacency)) {
-    return(data.frame(
-      direction = character(),
-      neighbor_id = integer(),
-      is_boundary = logical()
-    ))
-  }
-
-  # Find all adjacencies involving this cell
-  cell_adj <- adjacency[adjacency$cell_a == piece_id | adjacency$cell_b == piece_id, ]
-
-  if (nrow(cell_adj) == 0) {
-    return(data.frame(
-      direction = character(),
-      neighbor_id = integer(),
-      is_boundary = logical()
-    ))
-  }
-
-  neighbors <- lapply(seq_len(nrow(cell_adj)), function(i) {
-    row <- cell_adj[i, ]
-    neighbor_id <- if (row$cell_a == piece_id) row$cell_b else row$cell_a
-    is_boundary <- neighbor_id < 0
-
-    if (!include_boundary && is_boundary) {
-      return(NULL)
-    }
-
-    # Calculate direction based on edge midpoint relative to piece center
-    edge_mid <- c((row$v1_x + row$v2_x) / 2, (row$v1_y + row$v2_y) / 2)
-    piece_center <- puzzle_result$pieces[[piece_id]]$center
-    dir_vec <- edge_mid - piece_center
-
-    # Convert to compass direction
-    angle <- atan2(dir_vec[2], dir_vec[1]) * 180 / pi
-    direction <- angle_to_direction(angle)
-
-    data.frame(
-      direction = direction,
-      neighbor_id = if (is_boundary) NA_integer_ else neighbor_id,
-      is_boundary = is_boundary,
-      stringsAsFactors = FALSE
-    )
-  })
-
-  neighbors <- neighbors[!sapply(neighbors, is.null)]
-
-  if (length(neighbors) == 0) {
-    return(data.frame(
-      direction = character(),
-      neighbor_id = integer(),
-      is_boundary = logical()
-    ))
-  }
-
-  do.call(rbind, neighbors)
-}
+# SNIC neighbors are now handled by get_tessellation_neighbors() in adjacency_api.R

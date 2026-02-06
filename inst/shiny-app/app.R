@@ -1282,6 +1282,97 @@ get_conc_boundary_params <- function(boundary_choice, boundary_facing = "outward
   )
 }
 
+# ============================================================================
+# Shiny server helpers for resolving fill/background/stroke from input
+# ============================================================================
+
+# Resolve fill specification from input widgets.
+# Returns list(fill_color, fill_colors) where fill_color is a scalar spec
+# and fill_colors is a per-piece vector (for palette mode) or NULL.
+resolve_fill_spec <- function(input, n_pieces) {
+  fill_color <- "none"
+  fill_colors <- NULL
+
+  if (input$fill_type == "none") {
+    fill_color <- "none"
+  } else if (input$fill_type == "solid") {
+    fill_color <- input$fill_color
+  } else if (input$fill_type == "palette") {
+    fill_palette_val <- if (is.null(input$fill_palette)) "magma" else input$fill_palette
+    fill_colors <- get_puzzle_colors(n_pieces, fill_palette_val,
+                                      invert = isTRUE(input$fill_palette_invert))
+  } else if (input$fill_type == "gradient") {
+    fill_color <- list(
+      type = "gradient",
+      center = input$piece_gradient_center,
+      middle = input$piece_gradient_middle,
+      edge = input$piece_gradient_edge
+    )
+  } else if (input$fill_type == "noise") {
+    if (noise_available) {
+      fill_color <- noise_fill_spec(
+        noise_type = if (is.null(input$fill_noise_type)) "simplex" else input$fill_noise_type,
+        frequency = if (is.null(input$fill_noise_frequency)) 0.03 else input$fill_noise_frequency,
+        color_low = if (is.null(input$fill_noise_color_low)) "#2d2d44" else input$fill_noise_color_low,
+        color_high = if (is.null(input$fill_noise_color_high)) "#8888aa" else input$fill_noise_color_high,
+        seed = if (is.null(input$fill_noise_seed)) 123 else input$fill_noise_seed
+      )
+    } else {
+      log_warn("Noise fill requested but packages not available - using solid gray")
+      fill_color <- "#a1a1a1"
+    }
+  }
+
+  list(fill_color = fill_color, fill_colors = fill_colors)
+}
+
+# Resolve background specification from input widgets.
+resolve_background_spec <- function(input) {
+  if (input$background_type == "none") {
+    "none"
+  } else if (input$background_type == "solid") {
+    input$background_color
+  } else if (input$background_type == "gradient") {
+    list(
+      type = "gradient",
+      center = input$gradient_center,
+      middle = input$gradient_middle,
+      edge = input$gradient_edge
+    )
+  } else if (input$background_type == "noise" && noise_available) {
+    noise_fill_spec(
+      noise_type = if (is.null(input$bg_noise_type)) "perlin" else input$bg_noise_type,
+      frequency = if (is.null(input$bg_noise_frequency)) 0.02 else input$bg_noise_frequency,
+      color_low = if (is.null(input$bg_noise_color_low)) "#1a1a2e" else input$bg_noise_color_low,
+      color_high = if (is.null(input$bg_noise_color_high)) "#4a4a6e" else input$bg_noise_color_high,
+      seed = if (is.null(input$bg_noise_seed)) 42 else input$bg_noise_seed
+    )
+  } else {
+    "none"
+  }
+}
+
+# Resolve stroke specification from input widgets.
+# Returns list(stroke_width, stroke_colors, stroke_palette, stroke_palette_invert)
+resolve_stroke_spec <- function(input, n_pieces) {
+  stroke_color_type_val <- if (is.null(input$stroke_color_type)) "solid" else input$stroke_color_type
+  stroke_width <- input$stroke_width
+  stroke_colors <- NULL
+  stroke_palette <- if (is.null(input$stroke_palette)) "viridis" else input$stroke_palette
+  stroke_palette_invert <- isTRUE(input$stroke_palette_invert)
+
+  if (stroke_color_type_val == "none") {
+    stroke_width <- 0
+  } else if (stroke_color_type_val == "solid") {
+    stroke_colors <- rep(input$stroke_color, n_pieces)
+    stroke_palette <- NULL
+  }
+  # "palette" uses default behavior (colors = NULL, palette used)
+
+  list(stroke_width = stroke_width, stroke_colors = stroke_colors,
+       stroke_palette = stroke_palette, stroke_palette_invert = stroke_palette_invert)
+}
+
 # Define server logic
 server <- function(input, output, session) {
 
@@ -1752,69 +1843,12 @@ server <- function(input, output, session) {
     # Styling options (these trigger re-render, not regeneration)
     n_pieces <- length(pos$pieces)
 
-    # Handle fill based on fill_type
-    fill_color_value <- "none"
-    fill_colors_value <- NULL  # For per-piece fills (palette mode)
+    # Resolve fill, background, and stroke from input widgets
+    fill_spec <- resolve_fill_spec(input, n_pieces)
+    fill_color_value <- fill_spec$fill_color
+    fill_colors_value <- fill_spec$fill_colors
 
-    if (input$fill_type == "none") {
-      fill_color_value <- "none"
-    } else if (input$fill_type == "solid") {
-      fill_color_value <- input$fill_color
-    } else if (input$fill_type == "palette") {
-      # Generate per-piece fill colors from the fill palette
-      fill_palette_val <- if (is.null(input$fill_palette)) "magma" else input$fill_palette
-      fill_colors_value <- get_puzzle_colors(n_pieces, fill_palette_val,
-                                              invert = isTRUE(input$fill_palette_invert))
-    } else if (input$fill_type == "gradient") {
-      fill_color_value <- list(
-        type = "gradient",
-        center = input$piece_gradient_center,
-        middle = input$piece_gradient_middle,
-        edge = input$piece_gradient_edge
-      )
-    } else if (input$fill_type == "noise") {
-      # Noise fill for pieces (requires ambient package)
-      if (noise_available) {
-        fill_color_value <- noise_fill_spec(
-          noise_type = if (is.null(input$fill_noise_type)) "simplex" else input$fill_noise_type,
-          frequency = if (is.null(input$fill_noise_frequency)) 0.03 else input$fill_noise_frequency,
-          color_low = if (is.null(input$fill_noise_color_low)) "#2d2d44" else input$fill_noise_color_low,
-          color_high = if (is.null(input$fill_noise_color_high)) "#8888aa" else input$fill_noise_color_high,
-          seed = if (is.null(input$fill_noise_seed)) 123 else input$fill_noise_seed
-        )
-      } else {
-        log_warn("Noise fill requested but packages not available - using solid gray")
-        fill_color_value <- "#a1a1a1"
-      }
-    }
-
-    background_value <- if (input$background_type == "none") {
-      "none"
-    } else if (input$background_type == "solid") {
-      input$background_color
-    } else if (input$background_type == "gradient") {
-      list(
-        type = "gradient",
-        center = input$gradient_center,
-        middle = input$gradient_middle,
-        edge = input$gradient_edge
-      )
-    } else if (input$background_type == "noise") {
-      if (noise_available) {
-        noise_fill_spec(
-          noise_type = if (is.null(input$bg_noise_type)) "perlin" else input$bg_noise_type,
-          frequency = if (is.null(input$bg_noise_frequency)) 0.02 else input$bg_noise_frequency,
-          color_low = if (is.null(input$bg_noise_color_low)) "#1a1a2e" else input$bg_noise_color_low,
-          color_high = if (is.null(input$bg_noise_color_high)) "#4a4a6e" else input$bg_noise_color_high,
-          seed = if (is.null(input$bg_noise_seed)) 42 else input$bg_noise_seed
-        )
-      } else {
-        log_warn("Noise background requested but packages not available - using white")
-        "#ffffff"
-      }
-    } else {
-      "none"
-    }
+    background_value <- resolve_background_spec(input)
 
     # Get label settings
     show_labels_value <- if (is.null(input$show_labels)) FALSE else input$show_labels
@@ -1822,22 +1856,11 @@ server <- function(input, output, session) {
     # 0 means auto-size, convert to NULL for render function
     label_size_value <- if (is.null(input$label_size) || input$label_size == 0) NULL else input$label_size
 
-    # Handle stroke color based on stroke_color_type
-    stroke_color_type_val <- if (is.null(input$stroke_color_type)) "solid" else input$stroke_color_type
-    stroke_width_value <- input$stroke_width
-    stroke_colors_value <- NULL
-    stroke_palette_value <- if (is.null(input$stroke_palette)) "viridis" else input$stroke_palette
-    stroke_palette_invert_val <- isTRUE(input$stroke_palette_invert)
-
-    if (stroke_color_type_val == "none") {
-      # No stroke - set width to 0
-      stroke_width_value <- 0
-    } else if (stroke_color_type_val == "solid") {
-      # Solid color - use single color for all pieces
-      stroke_colors_value <- rep(input$stroke_color, n_pieces)
-      stroke_palette_value <- NULL
-    }
-    # "palette" uses default behavior (colors = NULL, palette used)
+    stroke_spec <- resolve_stroke_spec(input, n_pieces)
+    stroke_width_value <- stroke_spec$stroke_width
+    stroke_colors_value <- stroke_spec$stroke_colors
+    stroke_palette_value <- stroke_spec$stroke_palette
+    stroke_palette_invert_val <- stroke_spec$stroke_palette_invert
 
     # Update fusion styling from current inputs (allows changing without regeneration)
     # These are read from pos$parameters by render_puzzle_svg()
@@ -2155,63 +2178,12 @@ server <- function(input, output, session) {
       data <- puzzle_data()
       if (is.null(data)) return()
 
-      # Determine fill color value (supports none, solid, palette, gradient, noise)
-      fill_color_dl <- "none"
-      fills_dl <- NULL
+      # Resolve fill, background from input widgets
+      fill_spec_dl <- resolve_fill_spec(input, data$total_pieces)
+      fill_color_dl <- fill_spec_dl$fill_color
+      fills_dl <- fill_spec_dl$fill_colors
 
-      if (input$fill_type == "none") {
-        fill_color_dl <- "none"
-      } else if (input$fill_type == "solid") {
-        fill_color_dl <- input$fill_color
-      } else if (input$fill_type == "palette") {
-        # Generate per-piece fill colors from the fill palette
-        fill_palette_dl <- if (is.null(input$fill_palette)) "magma" else input$fill_palette
-        fills_dl <- get_puzzle_colors(data$total_pieces, fill_palette_dl,
-                                       invert = isTRUE(input$fill_palette_invert))
-      } else if (input$fill_type == "gradient") {
-        fill_color_dl <- list(
-          type = "gradient",
-          center = input$piece_gradient_center,
-          middle = input$piece_gradient_middle,
-          edge = input$piece_gradient_edge
-        )
-      } else if (input$fill_type == "noise") {
-        if (noise_available) {
-          fill_color_dl <- noise_fill_spec(
-            noise_type = if (is.null(input$fill_noise_type)) "simplex" else input$fill_noise_type,
-            frequency = if (is.null(input$fill_noise_frequency)) 0.03 else input$fill_noise_frequency,
-            color_low = if (is.null(input$fill_noise_color_low)) "#2d2d44" else input$fill_noise_color_low,
-            color_high = if (is.null(input$fill_noise_color_high)) "#8888aa" else input$fill_noise_color_high,
-            seed = if (is.null(input$fill_noise_seed)) 123 else input$fill_noise_seed
-          )
-        } else {
-          fill_color_dl <- "#a1a1a1"
-        }
-      }
-
-      # Determine background value (supports none, solid, gradient, noise)
-      background_value <- if (input$background_type == "none") {
-        "none"
-      } else if (input$background_type == "solid") {
-        input$background_color
-      } else if (input$background_type == "gradient") {
-        list(
-          type = "gradient",
-          center = input$gradient_center,
-          middle = input$gradient_middle,
-          edge = input$gradient_edge
-        )
-      } else if (input$background_type == "noise" && noise_available) {
-        noise_fill_spec(
-          noise_type = if (is.null(input$bg_noise_type)) "perlin" else input$bg_noise_type,
-          frequency = if (is.null(input$bg_noise_frequency)) 0.02 else input$bg_noise_frequency,
-          color_low = if (is.null(input$bg_noise_color_low)) "#1a1a2e" else input$bg_noise_color_low,
-          color_high = if (is.null(input$bg_noise_color_high)) "#4a4a6e" else input$bg_noise_color_high,
-          seed = if (is.null(input$bg_noise_seed)) 42 else input$bg_noise_seed
-        )
-      } else {
-        "none"
-      }
+      background_value <- resolve_background_spec(input)
 
       # Build parameters based on puzzle type
       if (data$type == "hexagonal") {
@@ -2273,19 +2245,12 @@ server <- function(input, output, session) {
       fusion_groups_str <- input$fusion_groups
       has_fusion <- !is.null(fusion_groups_str) && nchar(trimws(fusion_groups_str)) > 0
 
-      # Handle stroke color based on stroke_color_type
-      stroke_color_type_val <- if (is.null(input$stroke_color_type)) "solid" else input$stroke_color_type
-      stroke_width_dl <- input$stroke_width
-      stroke_colors_dl <- NULL
-      stroke_palette_dl <- if (is.null(input$stroke_palette)) "viridis" else input$stroke_palette
-      stroke_palette_invert_dl <- isTRUE(input$stroke_palette_invert)
-
-      if (stroke_color_type_val == "none") {
-        stroke_width_dl <- 0
-      } else if (stroke_color_type_val == "solid") {
-        stroke_colors_dl <- rep(input$stroke_color, data$total_pieces)
-        stroke_palette_dl <- NULL
-      }
+      # Resolve stroke from input widgets
+      stroke_spec_dl <- resolve_stroke_spec(input, data$total_pieces)
+      stroke_width_dl <- stroke_spec_dl$stroke_width
+      stroke_colors_dl <- stroke_spec_dl$stroke_colors
+      stroke_palette_dl <- stroke_spec_dl$stroke_palette
+      stroke_palette_invert_dl <- stroke_spec_dl$stroke_palette_invert
 
       # Get tab size constraints
       min_tab_size_dl <- if (is.null(input$min_tab_size) || input$min_tab_size == 0) NULL else input$min_tab_size
@@ -2493,81 +2458,27 @@ server <- function(input, output, session) {
       dir.create(pieces_dir, recursive = TRUE)
       on.exit(unlink(pieces_dir, recursive = TRUE), add = TRUE)
 
-      # Determine fill color/value
-      fill_value <- "none"
-      if (input$fill_type == "solid") {
-        fill_value <- input$fill_color
-      } else if (input$fill_type == "gradient") {
-        fill_value <- list(
-          type = "gradient",
-          center = input$piece_gradient_center,
-          middle = input$piece_gradient_middle,
-          edge = input$piece_gradient_edge
-        )
-      } else if (input$fill_type == "noise") {
-        # Note: Noise fill for individual pieces uses same pattern per piece
-        if (noise_available) {
-          fill_value <- noise_fill_spec(
-            noise_type = if (is.null(input$fill_noise_type)) "simplex" else input$fill_noise_type,
-            frequency = if (is.null(input$fill_noise_frequency)) 0.03 else input$fill_noise_frequency,
-            color_low = if (is.null(input$fill_noise_color_low)) "#2d2d44" else input$fill_noise_color_low,
-            color_high = if (is.null(input$fill_noise_color_high)) "#8888aa" else input$fill_noise_color_high,
-            seed = if (is.null(input$fill_noise_seed)) 123 else input$fill_noise_seed
-          )
-        } else {
-          fill_value <- "#a1a1a1"
-        }
-      }
-      # Note: For palette fill, we use per-piece colors below
+      # Resolve fill and background from input widgets
+      n_pieces <- length(pos$pieces)
+      fill_spec_pieces <- resolve_fill_spec(input, n_pieces)
+      fill_value <- fill_spec_pieces$fill_color
+      fill_colors <- fill_spec_pieces$fill_colors
 
-      # Determine background value
-      background_value <- if (input$background_type == "none") {
-        "none"
-      } else if (input$background_type == "solid") {
-        input$background_color
-      } else if (input$background_type == "gradient") {
-        list(
-          type = "gradient",
-          center = input$gradient_center,
-          middle = input$gradient_middle,
-          edge = input$gradient_edge
-        )
-      } else if (input$background_type == "noise" && noise_available) {
-        noise_fill_spec(
-          noise_type = if (is.null(input$bg_noise_type)) "perlin" else input$bg_noise_type,
-          frequency = if (is.null(input$bg_noise_frequency)) 0.02 else input$bg_noise_frequency,
-          color_low = if (is.null(input$bg_noise_color_low)) "#1a1a2e" else input$bg_noise_color_low,
-          color_high = if (is.null(input$bg_noise_color_high)) "#4a4a6e" else input$bg_noise_color_high,
-          seed = if (is.null(input$bg_noise_seed)) 42 else input$bg_noise_seed
-        )
-      } else {
-        "none"
-      }
+      background_value <- resolve_background_spec(input)
 
-      # Handle stroke color based on stroke_color_type
+      # Handle stroke color for per-piece rendering
       stroke_color_type_val <- if (is.null(input$stroke_color_type)) "solid" else input$stroke_color_type
       stroke_width_val <- input$stroke_width
       stroke_palette_val <- if (is.null(input$stroke_palette)) "viridis" else input$stroke_palette
 
-      # Generate stroke colors for all pieces
-      n_pieces <- length(pos$pieces)
       stroke_colors <- if (stroke_color_type_val == "none") {
         rep("none", n_pieces)
       } else if (stroke_color_type_val == "solid") {
         rep(input$stroke_color, n_pieces)
       } else {
-        # Palette mode
         get_puzzle_colors(n_pieces, stroke_palette_val, invert = isTRUE(input$stroke_palette_invert))
       }
 
-      # Generate fill colors for palette mode
-      fill_colors <- NULL
-      if (input$fill_type == "palette") {
-        fill_palette_val <- if (is.null(input$fill_palette)) "magma" else input$fill_palette
-        fill_colors <- get_puzzle_colors(n_pieces, fill_palette_val, invert = isTRUE(input$fill_palette_invert))
-      }
-
-      # Set stroke width to 0 for "none" mode
       if (stroke_color_type_val == "none") {
         stroke_width_val <- 0
       }
