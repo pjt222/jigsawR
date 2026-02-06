@@ -86,8 +86,8 @@ render_puzzle_preview(result_2x2, title = "2x2")
 
 result_4x3 <- generate_puzzle(
   type = "rectangular",
-  grid = c(4, 3),
-  size = c(400, 300),
+  grid = c(3, 4),
+  size = c(300, 400),
   seed = 42,
   fill_palette = "viridis"
 )
@@ -95,8 +95,8 @@ render_puzzle_preview(result_4x3, title = "4x3")
 
 result_6x5 <- generate_puzzle(
   type = "rectangular",
-  grid = c(6, 5),
-  size = c(600, 500),
+  grid = c(5, 6),
+  size = c(500, 600),
   seed = 42,
   fill_palette = "viridis"
 )
@@ -141,8 +141,8 @@ print((make_palette_plot("viridis") + make_palette_plot("magma") + make_palette_
 # API with fill_palette for colored fills
 result <- generate_puzzle(
   type = "rectangular",
-  grid = c(4, 3),
-  size = c(400, 300),
+  grid = c(3, 4),
+  size = c(300, 400),
   seed = 42,
   fill_palette = "viridis"  # Options: viridis, magma, plasma, inferno, cividis, turbo
 )
@@ -156,7 +156,7 @@ render_puzzle_preview(result)
 # Generate all palette previews and combine into a grid
 palettes <- c("viridis", "magma", "plasma", "inferno", "cividis", "turbo")
 items <- lapply(palettes, function(pal) {
-  generate_puzzle(type = "rectangular", grid = c(4, 3), size = c(400, 300), seed = 42, fill_palette = pal)
+  generate_puzzle(type = "rectangular", grid = c(3, 4), size = c(300, 400), seed = 42, fill_palette = pal)
 })
 render_puzzle_grid(items, ncol = 3, labels = palettes)
 ```
@@ -320,8 +320,8 @@ print(ggplot() +
 # Standard
 result_standard <- generate_puzzle(
   type = "rectangular",
-  grid = c(4, 3),
-  size = c(400, 300),
+  grid = c(3, 4),
+  size = c(300, 400),
   seed = 42,
   fill_palette = "magma"
 )
@@ -330,8 +330,8 @@ render_puzzle_preview(result_standard, title = "Standard")
 # With row fusion
 result_fusion <- generate_puzzle(
   type = "rectangular",
-  grid = c(4, 3),
-  size = c(400, 300),
+  grid = c(3, 4),
+  size = c(300, 400),
   seed = 42,
   fill_palette = "magma",
   fusion_groups = "R1,R2,R3"
@@ -375,8 +375,8 @@ library(jigsawR)
 # Generate puzzle
 result <- generate_puzzle(
   type = "rectangular",
-  grid = c(6, 4),      # 6 rows, 4 columns
-  size = c(600, 400),  # height=600mm, width=400mm
+  grid = c(4, 6),      # 4 rows, 6 columns
+  size = c(400, 600),  # height=400mm, width=600mm
   seed = 42,
   offset = 5           # Slight separation
 )

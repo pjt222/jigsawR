@@ -212,6 +212,14 @@ generate_puzzle <- function(type = "rectangular",
     dir.create(output_dir, recursive = TRUE)
   }
 
+  # Auto-constrain tabs for random puzzles if no explicit max set
+  if (type == "random" && is.null(max_tab_size)) {
+    puzzle_width <- if (length(size) >= 2) size[2] else size[1]
+    puzzle_height <- size[1]
+    n_pieces <- if (length(grid) == 1) grid[1] else grid[1]
+    max_tab_size <- min(puzzle_width, puzzle_height) / (n_pieces * 0.8)
+  }
+
   # === UNIFIED PIPELINE ===
 
   # Step 1: Generate pieces internally (WITHOUT fusion yet)

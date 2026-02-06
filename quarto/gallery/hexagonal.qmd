@@ -244,6 +244,8 @@ result <- generate_puzzle(
   grid = c(3),
   size = c(200),
   seed = 42,
+  do_warp = TRUE,
+  do_trunc = TRUE,
   fill_palette = "viridis"  # Options: viridis, magma, plasma, inferno, cividis, turbo
 )
 render_puzzle_preview(result)
@@ -256,7 +258,7 @@ render_puzzle_preview(result)
 # Generate all palette previews and combine into a grid
 palettes <- c("viridis", "magma", "plasma", "inferno", "cividis", "turbo")
 items <- lapply(palettes, function(pal) {
-  generate_puzzle(type = "hexagonal", grid = c(3), size = c(200), seed = 42, fill_palette = pal)
+  generate_puzzle(type = "hexagonal", grid = c(3), size = c(200), seed = 42, do_warp = TRUE, do_trunc = TRUE, fill_palette = pal)
 })
 render_puzzle_grid(items, ncol = 3, labels = palettes)
 ```
@@ -300,7 +302,7 @@ print(make_direction_plot("forward") + make_direction_plot("reverse"))
 
 directions <- c("forward", "reverse")
 items <- lapply(directions, function(dir) {
-  generate_puzzle(type = "hexagonal", grid = c(3), size = c(200), seed = 42, fill_palette = "viridis", fill_direction = dir)
+  generate_puzzle(type = "hexagonal", grid = c(3), size = c(200), seed = 42, do_warp = TRUE, do_trunc = TRUE, fill_palette = "viridis", fill_direction = dir)
 })
 render_puzzle_grid(items, ncol = 2, labels = paste0("fill_direction = \"", directions, "\""))
 ```
@@ -343,8 +345,10 @@ result <- generate_puzzle(
   type = "hexagonal",
   grid = c(3),
   size = c(200),
-  offset = 10,  # Separation in mm
-  seed = 42
+  seed = 42,
+  do_warp = TRUE,
+  do_trunc = TRUE,
+  offset = 10  # Separation in mm
 )
 render_puzzle_preview(result)
 ```
@@ -356,7 +360,7 @@ render_puzzle_preview(result)
 # Generate offset previews in a grid
 offsets <- c(0, 5, 10, 15)
 items <- lapply(offsets, function(off) {
-  generate_puzzle(type = "hexagonal", grid = c(3), size = c(200), seed = 42, offset = off, fill_palette = "viridis")
+  generate_puzzle(type = "hexagonal", grid = c(3), size = c(200), seed = 42, do_warp = TRUE, do_trunc = TRUE, offset = off, fill_palette = "viridis")
 })
 render_puzzle_grid(items, ncol = 4, labels = paste("offset =", offsets))
 ```
@@ -420,6 +424,8 @@ result_center_ring1 <- generate_puzzle(
   grid = c(3),
   size = c(200),
   seed = 42,
+  do_warp = TRUE,
+  do_trunc = TRUE,
   fusion_groups = "center-ring1",
   fill_palette = "plasma"
 )
@@ -431,6 +437,8 @@ result_ring2 <- generate_puzzle(
   grid = c(3),
   size = c(200),
   seed = 42,
+  do_warp = TRUE,
+  do_trunc = TRUE,
   fusion_groups = "ring2",
   fill_palette = "plasma"
 )
@@ -474,6 +482,8 @@ result <- generate_puzzle(
   grid = c(5),
   size = c(300),
   seed = 123,
+  do_warp = TRUE,
+  do_trunc = TRUE,
   fill_palette = "turbo"
 )
 render_puzzle_preview(result, max_width = "500px")
@@ -492,8 +502,8 @@ render_puzzle_preview(result, max_width = "500px")
 | `jitter` | numeric | 2 (%) | Randomness in tab shape as percentage |
 | `min_tab_size` | numeric | 0 (mm) | Minimum tab size in millimeters |
 | `max_tab_size` | numeric | Inf (mm) | Maximum tab size in millimeters |
-| `do_warp` | logical | TRUE | Apply circular warping |
-| `do_trunc` | logical | TRUE | Truncate to boundary |
+| `do_warp` | logical | FALSE (API) / TRUE (ggpuzzle) | Apply circular warping |
+| `do_trunc` | logical | FALSE (API) / TRUE (ggpuzzle) | Truncate to boundary |
 | `fusion_groups` | string | NULL | PILES notation for fusing pieces |
 
 ## PILES Keywords

@@ -300,7 +300,7 @@ Merge pieces together using PILES notation:
 #| label: fig-vor-fusion-ggpuzzle
 #| layout-ncol: 2
 #| fig-cap:
-#|   - "Standard 20-cell"
+#|   - "Standard 12-cell"
 #|   - "Adjacent pieces fused"
 
 # Standard
@@ -371,13 +371,14 @@ render_puzzle_preview(result_fused, title = "Pieces fused")
 ```{r}
 #| label: fig-vor-large-ggpuzzle
 #| fig-align: center
-#| fig-width: 10
+#| fig-width: 8
 #| fig-height: 6
 
 ggplot() +
   geom_puzzle_voronoi(
     aes(fill = after_stat(piece_id)),
     n_cells = 80,
+    width = 400, height = 300,
     seed = 789
   ) +
   scale_fill_viridis_c(option = "turbo", guide = "none") +
@@ -395,7 +396,7 @@ ggplot() +
 result <- generate_puzzle(
   type = "voronoi",
   grid = c(80),
-  size = c(400, 300),
+  size = c(300, 400),
   seed = 789,
   fill_palette = "turbo"
 )
@@ -441,7 +442,7 @@ library(jigsawR)
 result <- generate_puzzle(
   type = "voronoi",
   grid = c(35),          # 35 cells
-  size = c(400, 300),    # height=400mm, width=300mm
+  size = c(300, 400),    # height=300mm, width=400mm
   seed = 42,
   offset = 5
 )

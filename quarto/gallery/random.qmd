@@ -431,13 +431,14 @@ render_puzzle_preview(result_fused, title = "Pieces fused")
 ```{r}
 #| label: fig-rand-large-ggpuzzle
 #| fig-align: center
-#| fig-width: 10
+#| fig-width: 8
 #| fig-height: 6
 
 ggplot() +
   geom_puzzle_random(
     aes(fill = after_stat(piece_id)),
     n_interior = 60,
+    width = 400, height = 300,
     seed = 456
   ) +
   scale_fill_viridis_c(option = "turbo", guide = "none") +
@@ -455,7 +456,7 @@ ggplot() +
 result <- generate_puzzle(
   type = "random",
   grid = c(60),
-  size = c(400, 300),
+  size = c(300, 400),
   seed = 456,
   fill_palette = "turbo"
 )
@@ -475,7 +476,7 @@ render_puzzle_preview(result, max_width = "600px")
 | `tabsize` | numeric | 10 (%) | Tab size as percentage of piece width |
 | `jitter` | numeric | 2 (%) | Randomness in tab shape as percentage |
 | `min_tab_size` | numeric | 0 (mm) | Minimum tab size in millimeters |
-| `max_tab_size` | numeric | Inf (mm) | Maximum tab size in millimeters |
+| `max_tab_size` | numeric | auto (random) / Inf (others) | Maximum tab size in mm. Auto-calculated for random puzzles to prevent overlapping tabs |
 | `fusion_groups` | string | NULL | PILES notation for fusing pieces |
 
 ## Corner Complexity Guide
@@ -510,7 +511,7 @@ Random puzzles are perfect for:
 result <- generate_puzzle(
   type = "random",
   grid = c(30),          # 30 pieces
-  size = c(400, 300),    # height=400mm, width=300mm
+  size = c(300, 400),    # height=300mm, width=400mm
   seed = 42,
   n_corner = 5,          # Pentagonal pieces
   offset = 5
@@ -529,7 +530,7 @@ ggplot() +
   geom_puzzle_random(
     aes(fill = after_stat(piece_id)),
     n_interior = 30,
-    width = 400, height = 300,
+    width = 400, height = 300,  # width=400mm, height=300mm
     n_corner = 5,
     seed = 42, offset = 5
   ) +
