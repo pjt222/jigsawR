@@ -5,6 +5,7 @@ project:
 website:
   title: "jigsawR"
   description: "Generate Beautiful Jigsaw Puzzles in R"
+  favicon: favicon.png
   site-url: https://pjt222.github.io/jigsawR
   repo-url: https://github.com/pjt222/jigsawR
   repo-actions: [edit, issue]

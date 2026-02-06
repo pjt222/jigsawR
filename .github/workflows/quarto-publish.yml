@@ -59,6 +59,7 @@ jobs:
             any::rsvg
             any::magick
             any::zip
+            any::RCDT
 
       - name: Install jigsawR
         env:

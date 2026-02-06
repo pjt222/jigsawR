@@ -426,22 +426,6 @@ Voronoi tessellation divides a plane into regions based on distance to seed poin
 - **Natural appearance**: Resembles patterns in nature
 - **Variable sizes**: Piece sizes depend on seed point distribution
 
-### Lloyd Relaxation
-
-Applying Lloyd relaxation (setting `relaxation > 0`) moves seed points toward the center of their cells, creating more uniform piece sizes:
-
-```{r}
-#| label: fig-vor-relaxation
-#| layout-ncol: 2
-#| fig-cap:
-#|   - "No relaxation"
-#|   - "With relaxation (10 iterations)"
-#| eval: false
-
-# Note: relaxation parameter may need implementation verification
-# These examples show the conceptual difference
-```
-
 ## Code Example
 
 ::: {.panel-tabset}

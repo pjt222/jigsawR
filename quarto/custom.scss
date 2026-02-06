@@ -5,7 +5,7 @@ $link-color: #4B0082;
 /*-- scss:rules --*/
 .hero-section {
   text-align: center;
-  padding: 2rem 0;
+  padding: 3rem 0;
   margin-bottom: 2rem;
 }
 
@@ -40,6 +40,10 @@ $link-color: #4B0082;
 .feature-card:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+[data-bs-theme="dark"] .feature-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
 }
 
 .feature-icon {
@@ -78,26 +82,4 @@ $link-color: #4B0082;
   text-align: center;
   font-size: 0.9rem;
   color: var(--bs-secondary-color);
-}
-
-.install-box {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border-radius: 8px;
-  padding: 2rem;
-  margin: 2rem 0;
-}
-
-.install-box h2 {
-  color: white;
-  margin-top: 0;
-}
-
-.install-box pre {
-  background: rgba(0, 0, 0, 0.2);
-  border: none;
-}
-
-.install-box code {
-  color: #f0f0f0;
 }

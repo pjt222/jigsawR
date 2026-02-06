@@ -3,7 +3,7 @@
 /* Code block styling */
 pre.sourceCode {
   border-radius: 6px;
-  border: 1px solid #e1e4e8;
+  border: 1px solid var(--bs-border-color);
 }
 
 /* Parameter tables */
@@ -13,14 +13,14 @@ pre.sourceCode {
 }
 
 .parameter-table th {
-  background: #f6f8fa;
+  background: var(--bs-tertiary-bg);
   text-align: left;
   padding: 0.75rem;
 }
 
 .parameter-table td {
   padding: 0.75rem;
-  border-bottom: 1px solid #e1e4e8;
+  border-bottom: 1px solid var(--bs-border-color);
 }
 
 /* Gallery grid improvements */
@@ -32,22 +32,22 @@ pre.sourceCode {
 }
 
 .gallery-item {
-  border: 1px solid #e1e4e8;
+  border: 1px solid var(--bs-border-color);
   border-radius: 8px;
   overflow: hidden;
-  background: white;
+  background: var(--bs-body-bg);
 }
 
 .gallery-item img {
   width: 100%;
   aspect-ratio: 1;
   object-fit: contain;
-  background: #fafafa;
+  background: var(--bs-secondary-bg);
 }
 
 .gallery-item figcaption {
   padding: 1rem;
-  background: #f6f8fa;
+  background: var(--bs-tertiary-bg);
   font-size: 0.9rem;
 }
 
@@ -80,7 +80,7 @@ svg {
 
 /* Footer styling */
 .page-footer {
-  border-top: 1px solid #e1e4e8;
+  border-top: 1px solid var(--bs-border-color);
   margin-top: 3rem;
   padding-top: 1.5rem;
 }

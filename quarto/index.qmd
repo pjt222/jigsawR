@@ -8,8 +8,8 @@ page-layout: full
 # jigsawR {.hero-title}
 :::
 
-::: hero-section
-# Generate stunning, mathematically precise jigsaw puzzles with ease. Five puzzle types, infinite possibilities. {.hero-subtitle}
+::: {.hero-section .hero-subtitle}
+Generate stunning, mathematically precise jigsaw puzzles with ease. Five puzzle types, infinite possibilities.
 :::
 
 ```{r}
@@ -182,6 +182,22 @@ result <- generate_puzzle(
 
 # Save as SVG
 writeLines(result$svg_content, "my_puzzle.svg")
+```
+
+```{r}
+#| label: quick-start-output
+#| echo: false
+#| fig-align: center
+#| out-width: "60%"
+ggplot() +
+  geom_puzzle_rect(
+    aes(fill = after_stat(piece_id)),
+    cols = 3, rows = 4,
+    seed = 42
+  ) +
+  scale_fill_viridis_c(option = "viridis", guide = "none") +
+  coord_fixed() +
+  theme_puzzle()
 ```
 
 ## Gallery Preview

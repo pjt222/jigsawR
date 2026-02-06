@@ -134,7 +134,7 @@ The two approaches use equivalent parameters:
 |---------------------------|--------------------------------|
 | `type = "rectangular"` | Use `geom_puzzle_rect()` |
 | `grid = c(4, 3)` | `rows = 4, cols = 3` |
-| `size = c(300, 400)` | `height = 300, width = 400` |
+| `size = c(400, 300)` | `height = 400, width = 300` |
 | `seed = 42` | `seed = 42` |
 | `tabsize = 10` | `tabsize = 10` |
 | `offset = 10` | `offset = 10` |
