@@ -37,6 +37,8 @@ jobs:
 
       - name: Setup R dependencies
         uses: r-lib/actions/setup-r-dependencies@v2
+        env:
+          RENV_CONFIG_SANDBOX_ENABLED: "FALSE"
         with:
           packages: |
             any::devtools
@@ -59,7 +61,13 @@ jobs:
             any::rsvg
             any::magick
             any::zip
-            any::RCDT
+
+      - name: Install RCDT
+        env:
+          RENV_CONFIG_SANDBOX_ENABLED: "FALSE"
+        run: |
+          install.packages("RCDT")
+        shell: Rscript {0}
 
       - name: Install jigsawR
         env:
