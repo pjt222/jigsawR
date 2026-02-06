@@ -62,11 +62,11 @@ jobs:
             any::magick
             any::zip
 
-      - name: Install RCDT
+      - name: Install RCDT (archived from CRAN, install from GitHub)
         env:
           RENV_CONFIG_SANDBOX_ENABLED: "FALSE"
         run: |
-          install.packages("RCDT")
+          remotes::install_github("stla/RCDT", upgrade = "never")
         shell: Rscript {0}
 
       - name: Install jigsawR
