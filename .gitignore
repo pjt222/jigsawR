@@ -45,7 +45,7 @@ inst/shiny-app/www/pieces/
 .cache/
 
 # Claude Code settings (contains permissions but no sensitive data)
-.claude/
+.claude/settings.local.json
 
 # Debug scripts (local development)
 debug_scripts/
