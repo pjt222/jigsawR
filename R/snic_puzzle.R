@@ -153,8 +153,14 @@ generate_snic_pieces_internal <- function(seed, grid, size, image_path,
   cli::cli_progress_step("Running SNIC segmentation (compactness={compactness})...")
   snic_result <- snic::snic(arr, seeds, compactness)
 
-  # Extract label matrix
+  # Extract label matrix (ensure 2D; some platforms return 3D array)
   labels <- snic::snic_get_seg(snic_result)
+  if (is.array(labels) && length(dim(labels)) == 3) {
+    labels <- labels[, , 1]
+  }
+  if (!is.matrix(labels)) {
+    labels <- matrix(as.integer(labels), nrow = img_height, ncol = img_width)
+  }
   actual_n_cells <- length(unique(as.vector(labels)))
   cli::cli_progress_step("Segmentation complete: {actual_n_cells} superpixels")
 
