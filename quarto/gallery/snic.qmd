@@ -1,0 +1,491 @@
+---
+title: "SNIC Puzzles"
+subtitle: "Superpixel-based puzzles from image segmentation"
+---
+
+```{r}
+#| label: setup-snic
+#| include: false
+# Flexible path: works from project root (Quarto) or quarto/gallery/ (RStudio interactive)
+setup_path <- if (file.exists("quarto/_setup.R")) "quarto/_setup.R" else "../_setup.R"
+source(setup_path)
+has_snic <- requireNamespace("snic", quietly = TRUE)
+```
+
+## Overview
+
+SNIC (Simple Non-Iterative Clustering) puzzles create pieces based on superpixel segmentation. Unlike regular geometric puzzles, SNIC pieces follow the natural structure of an image, producing organic boundaries that align with visual features. When used without an image, SNIC generates regular superpixel grids ideal for artistic and abstract designs.
+
+::: {.callout-note}
+## Package Requirements
+SNIC puzzles require the `snic` package. Image-based SNIC puzzles also require the `magick` package for image processing.
+
+```r
+install.packages("snic")
+install.packages("magick")
+```
+:::
+
+## Cell Count Variations
+
+::: {.panel-tabset}
+
+## ggpuzzle
+
+```{r}
+#| label: fig-snic-cell-counts-ggpuzzle
+#| eval: !expr has_snic
+#| fig-align: center
+make_snic_cells <- function(n) {
+  ggplot() +
+    geom_puzzle_snic(
+      aes(fill = after_stat(piece_id)),
+      n_cells = n,
+      seed = 42
+    ) +
+    scale_fill_viridis_c(option = "turbo", guide = "none") +
+    coord_fixed() +
+    theme_puzzle() +
+    labs(title = paste0(n, " cells"))
+}
+
+print(make_snic_cells(10) + make_snic_cells(25) + make_snic_cells(50))
+```
+
+## API
+
+```{r}
+#| label: fig-snic-cell-counts-api-code
+#| eval: false
+# API with varying cell counts
+result <- generate_puzzle(
+  type = "snic",
+  grid = c(25),         # Number of cells
+  size = c(200, 200),   # height, width in mm
+  seed = 42
+)
+render_puzzle_preview(result)
+```
+
+```{r}
+#| label: fig-snic-cell-counts-api
+#| eval: !expr has_snic
+#| echo: false
+
+# Generate cell count previews in a grid
+cells <- c(10, 25, 50)
+items <- lapply(cells, function(n) {
+  generate_puzzle(type = "snic", grid = c(n), size = c(200, 200), seed = 42, fill_palette = "turbo")
+})
+render_puzzle_grid(items, ncol = 3, labels = paste(cells, "cells"))
+```
+
+:::
+
+## Compactness Variations
+
+The `compactness` parameter controls how regular the superpixel shapes are. Lower values produce more irregular, image-adaptive shapes; higher values produce more compact, hexagonal shapes.
+
+::: {.panel-tabset}
+
+## ggpuzzle
+
+```{r}
+#| label: fig-snic-compactness-ggpuzzle
+#| eval: !expr has_snic
+#| fig-align: center
+
+make_snic_compact <- function(c_val) {
+  ggplot() +
+    geom_puzzle_snic(
+      aes(fill = after_stat(piece_id)),
+      n_cells = 20,
+      compactness = c_val,
+      seed = 42
+    ) +
+    scale_fill_viridis_c(option = "plasma", guide = "none") +
+    coord_fixed() +
+    theme_puzzle() +
+    labs(title = paste0("compactness = ", c_val))
+}
+
+print(make_snic_compact(0.1) + make_snic_compact(0.5) + make_snic_compact(1.0) + make_snic_compact(2.0))
+```
+
+## API
+
+```{r}
+#| label: fig-snic-compactness-api-code
+#| eval: false
+# API with compactness parameter
+result <- generate_puzzle(
+  type = "snic",
+  grid = c(20),
+  size = c(200, 200),
+  seed = 42,
+  compactness = 0.5  # Range: 0.0 to 2.0
+)
+render_puzzle_preview(result)
+```
+
+```{r}
+#| label: fig-snic-compactness-api
+#| eval: !expr has_snic
+#| echo: false
+
+compactness_vals <- c(0.1, 0.5, 1.0, 2.0)
+items <- lapply(compactness_vals, function(c_val) {
+  generate_puzzle(type = "snic", grid = c(20), size = c(200, 200), seed = 42,
+                  compactness = c_val, fill_palette = "plasma")
+})
+render_puzzle_grid(items, ncol = 4, labels = paste("compactness =", compactness_vals))
+```
+
+:::
+
+## Color Palettes
+
+::: {.panel-tabset}
+
+## ggpuzzle
+
+```{r}
+#| label: fig-snic-palettes-ggpuzzle
+#| eval: !expr has_snic
+#| fig-align: center
+
+make_snic_palette <- function(pal) {
+  ggplot() +
+    geom_puzzle_snic(
+      aes(fill = after_stat(piece_id)),
+      n_cells = 20,
+      seed = 42
+    ) +
+    scale_fill_viridis_c(option = pal, guide = "none") +
+    coord_fixed() +
+    theme_puzzle() +
+    labs(title = pal)
+}
+
+print((make_snic_palette("viridis") + make_snic_palette("magma") + make_snic_palette("plasma")) /
+(make_snic_palette("inferno") + make_snic_palette("cividis") + make_snic_palette("turbo")))
+```
+
+## API
+
+```{r}
+#| label: fig-snic-palettes-api-code
+#| eval: false
+# API with fill_palette for colored fills
+result <- generate_puzzle(
+  type = "snic",
+  grid = c(20),
+  size = c(200, 200),
+  seed = 42,
+  fill_palette = "viridis"  # Options: viridis, magma, plasma, inferno, cividis, turbo
+)
+render_puzzle_preview(result)
+```
+
+```{r}
+#| label: fig-snic-palettes-api
+#| eval: !expr has_snic
+#| echo: false
+
+# Generate all palette previews and combine into a grid
+palettes <- c("viridis", "magma", "plasma", "inferno", "cividis", "turbo")
+items <- lapply(palettes, function(pal) {
+  generate_puzzle(type = "snic", grid = c(20), size = c(200, 200), seed = 42, fill_palette = pal)
+})
+render_puzzle_grid(items, ncol = 3, labels = palettes)
+```
+
+:::
+
+## Offset (Separation)
+
+::: {.panel-tabset}
+
+## ggpuzzle
+
+```{r}
+#| label: fig-snic-offset-ggpuzzle
+#| eval: !expr has_snic
+#| fig-align: center
+
+make_snic_offset <- function(off) {
+  ggplot() +
+    geom_puzzle_snic(
+      aes(fill = after_stat(piece_id)),
+      n_cells = 20,
+      offset = off, seed = 42
+    ) +
+    scale_fill_viridis_c(option = "viridis", guide = "none") +
+    coord_fixed() +
+    theme_puzzle() +
+    labs(title = paste0("offset = ", off))
+}
+
+print(make_snic_offset(0) + make_snic_offset(5) + make_snic_offset(10) + make_snic_offset(20))
+```
+
+## API
+
+```{r}
+#| label: fig-snic-offset-api-code
+#| eval: false
+# API with offset for piece separation
+result <- generate_puzzle(
+  type = "snic",
+  grid = c(20),
+  size = c(200, 200),
+  offset = 10,  # Separation in mm
+  seed = 42
+)
+render_puzzle_preview(result)
+```
+
+```{r}
+#| label: fig-snic-offset-api
+#| eval: !expr has_snic
+#| echo: false
+
+# Generate offset previews in a grid
+offsets <- c(0, 5, 10, 20)
+items <- lapply(offsets, function(off) {
+  generate_puzzle(type = "snic", grid = c(20), size = c(200, 200), seed = 42, offset = off, fill_palette = "viridis")
+})
+render_puzzle_grid(items, ncol = 4, labels = paste("offset =", offsets))
+```
+
+:::
+
+## Seed Type Variations
+
+SNIC supports different seed grid patterns that control the initial placement of superpixel centers:
+
+::: {.panel-tabset}
+
+## ggpuzzle
+
+```{r}
+#| label: fig-snic-seed-types-ggpuzzle
+#| eval: !expr has_snic
+#| fig-align: center
+
+make_snic_seed_type <- function(st) {
+  ggplot() +
+    geom_puzzle_snic(
+      aes(fill = after_stat(piece_id)),
+      n_cells = 20,
+      seed_type = st,
+      seed = 42
+    ) +
+    scale_fill_viridis_c(option = "magma", guide = "none") +
+    coord_fixed() +
+    theme_puzzle() +
+    labs(title = st)
+}
+
+print(make_snic_seed_type("hexagonal") + make_snic_seed_type("rectangular") +
+make_snic_seed_type("diamond") + make_snic_seed_type("random"))
+```
+
+## API
+
+```{r}
+#| label: fig-snic-seed-types-api-code
+#| eval: false
+# API with seed_type for different grid patterns
+result <- generate_puzzle(
+  type = "snic",
+  grid = c(20),
+  size = c(200, 200),
+  seed = 42,
+  seed_type = "hexagonal"  # Options: hexagonal, rectangular, diamond, random
+)
+render_puzzle_preview(result)
+```
+
+```{r}
+#| label: fig-snic-seed-types-api
+#| eval: !expr has_snic
+#| echo: false
+
+seed_types <- c("hexagonal", "rectangular", "diamond", "random")
+items <- lapply(seed_types, function(st) {
+  generate_puzzle(type = "snic", grid = c(20), size = c(200, 200), seed = 42,
+                  seed_type = st, fill_palette = "magma")
+})
+render_puzzle_grid(items, ncol = 4, labels = seed_types)
+```
+
+:::
+
+## Seed Variations
+
+Different seeds create completely different segmentation patterns:
+
+::: {.panel-tabset}
+
+## ggpuzzle
+
+```{r}
+#| label: fig-snic-seeds-ggpuzzle
+#| eval: !expr has_snic
+#| fig-align: center
+
+make_snic_seed <- function(s) {
+  ggplot() +
+    geom_puzzle_snic(
+      aes(fill = after_stat(piece_id)),
+      n_cells = 15,
+      seed = s
+    ) +
+    scale_fill_viridis_c(option = "cividis", guide = "none") +
+    coord_fixed() +
+    theme_puzzle() +
+    labs(title = paste0("seed = ", s))
+}
+
+print(make_snic_seed(1) + make_snic_seed(42) + make_snic_seed(123) + make_snic_seed(999))
+```
+
+## API
+
+```{r}
+#| label: fig-snic-seeds-api-code
+#| eval: false
+# API with different seeds for unique patterns
+result <- generate_puzzle(
+  type = "snic",
+  grid = c(15),
+  size = c(200, 200),
+  seed = 42
+)
+render_puzzle_preview(result)
+```
+
+```{r}
+#| label: fig-snic-seeds-api
+#| eval: !expr has_snic
+#| echo: false
+
+seeds <- c(1, 42, 123, 999)
+items <- lapply(seeds, function(s) {
+  generate_puzzle(type = "snic", grid = c(15), size = c(200, 200), seed = s, fill_palette = "cividis")
+})
+render_puzzle_grid(items, ncol = 4, labels = paste("seed =", seeds))
+```
+
+:::
+
+## Image-Based Usage
+
+When provided with an image, SNIC creates pieces that follow the image's visual structure:
+
+```{r}
+#| label: snic-image-usage
+#| eval: false
+library(jigsawR)
+
+# Generate SNIC puzzle from an image
+result <- generate_puzzle(
+  type = "snic",
+  grid = c(30),
+  size = c(300, 400),
+  seed = 42,
+  image_path = "photo.jpg",   # Path to your image
+  compactness = 0.5,
+  seed_type = "hexagonal"
+)
+
+# Save SVG
+writeLines(result$svg_content, "snic_puzzle.svg")
+
+# Preview
+render_puzzle_preview(result)
+```
+
+::: {.callout-tip}
+Image-based SNIC puzzles adapt piece boundaries to follow edges and features in the image, creating pieces that feel natural and meaningful rather than arbitrary.
+:::
+
+## Parameters Reference
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `n_cells` | integer | 50 | Number of superpixel cells (pieces) |
+| `compactness` | numeric | 0.5 | Superpixel compactness (0.0-2.0). Higher = more regular shapes |
+| `seed_type` | string | "hexagonal" | Seed grid pattern: `"hexagonal"`, `"rectangular"`, `"diamond"`, `"random"` |
+| `image_path` | string | NULL | Path to image file (optional; enables image-based segmentation) |
+| `seed` | integer | random | Random seed for reproducibility |
+| `offset` | numeric | 0 (mm) | Piece separation distance |
+| `tabsize` | numeric | 10 (%) | Tab size as percentage of piece width |
+| `jitter` | numeric | 2 (%) | Randomness in tab shape as percentage |
+| `min_tab_size` | numeric | 0 (mm) | Minimum tab size in millimeters |
+| `max_tab_size` | numeric | Inf (mm) | Maximum tab size in millimeters |
+| `fusion_groups` | string | NULL | PILES notation for fusing pieces |
+
+## Code Example
+
+::: {.panel-tabset}
+
+## ggpuzzle
+
+```{r}
+#| label: demo-snic-ggpuzzle
+#| eval: false
+library(jigsawR)
+library(ggplot2)
+
+ggplot() +
+  geom_puzzle_snic(
+    aes(fill = after_stat(piece_id)),
+    n_cells = 30,
+    width = 400, height = 300,
+    compactness = 0.5,
+    seed_type = "hexagonal",
+    seed = 42,
+    offset = 5
+  ) +
+  scale_fill_viridis_c(option = "turbo", guide = "none") +
+  coord_fixed() +
+  theme_puzzle()
+```
+
+## API
+
+```{r}
+#| label: demo-snic-api
+#| eval: false
+library(jigsawR)
+
+# Generate puzzle
+result <- generate_puzzle(
+  type = "snic",
+  grid = c(30),          # 30 cells
+  size = c(300, 400),    # height=300mm, width=400mm
+  seed = 42,
+  compactness = 0.5,
+  seed_type = "hexagonal",
+  offset = 5
+)
+
+# Save SVG
+writeLines(result$svg_content, "snic_puzzle.svg")
+
+# Preview
+render_puzzle_preview(result)
+```
+
+:::
+
+## When to Use SNIC
+
+SNIC puzzles are ideal for:
+
+- **Photo puzzles**: Pieces follow image features for a natural feel
+- **Artistic designs**: Organic superpixel shapes create unique patterns
+- **Variable regularity**: Compactness controls shape uniformity
+- **Grid pattern variety**: Four seed types offer distinct visual styles

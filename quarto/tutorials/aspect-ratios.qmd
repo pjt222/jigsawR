@@ -68,13 +68,13 @@ print(ggplot() +
 print(ggplot() +
   geom_puzzle_random(
     aes(fill = after_stat(piece_id)),
-    n_interior = 25,
+    n_interior = 12,
     seed = 42
   ) +
   scale_fill_viridis_c(option = "viridis", guide = "none") +
   coord_fixed() +
   theme_puzzle() +
-  labs(title = "25 pieces"))
+  labs(title = "12 pieces"))
 ```
 
 ### Square Format (1:1)
@@ -115,13 +115,13 @@ print(ggplot() +
 print(ggplot() +
   geom_puzzle_random(
     aes(fill = after_stat(piece_id)),
-    n_interior = 20,
+    n_interior = 10,
     seed = 42
   ) +
   scale_fill_viridis_c(option = "plasma", guide = "none") +
   coord_fixed() +
   theme_puzzle() +
-  labs(title = "20 pieces"))
+  labs(title = "10 pieces"))
 ```
 
 ### Tall Format (9:16)
@@ -162,13 +162,13 @@ print(ggplot() +
 print(ggplot() +
   geom_puzzle_random(
     aes(fill = after_stat(piece_id)),
-    n_interior = 25,
+    n_interior = 12,
     seed = 42
   ) +
   scale_fill_viridis_c(option = "magma", guide = "none") +
   coord_fixed() +
   theme_puzzle() +
-  labs(title = "25 pieces"))
+  labs(title = "12 pieces"))
 ```
 
 ## Technical Notes

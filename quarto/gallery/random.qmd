@@ -37,7 +37,7 @@ make_rand_pieces <- function(n) {
     labs(title = paste0(n, " pieces"))
 }
 
-print(make_rand_pieces(10) + make_rand_pieces(20) + make_rand_pieces(40))
+print(make_rand_pieces(5) + make_rand_pieces(10) + make_rand_pieces(20))
 ```
 
 ## API
@@ -48,7 +48,7 @@ print(make_rand_pieces(10) + make_rand_pieces(20) + make_rand_pieces(40))
 # API with varying piece counts
 result <- generate_puzzle(
   type = "random",
-  grid = c(20),         # Number of interior points
+  grid = c(10),         # Number of interior points
   size = c(200, 200),   # height, width in mm
   seed = 42
 )
@@ -60,7 +60,7 @@ render_puzzle_preview(result)
 #| echo: false
 
 # Generate piece count previews in a grid
-counts <- c(10, 20, 40)
+counts <- c(5, 10, 20)
 items <- lapply(counts, function(n) {
   generate_puzzle(type = "random", grid = c(n), size = c(200, 200), seed = 42, fill_palette = "inferno")
 })
@@ -85,7 +85,7 @@ make_rand_corners <- function(nc, label) {
   ggplot() +
     geom_puzzle_random(
       aes(fill = after_stat(piece_id)),
-      n_interior = 15,
+      n_interior = 8,
       n_corner = nc,
       seed = 42
     ) +
@@ -107,7 +107,7 @@ make_rand_corners(6, "6 corners") + make_rand_corners(8, "8 corners"))
 # API with n_corner for piece shape complexity
 result <- generate_puzzle(
   type = "random",
-  grid = c(15),
+  grid = c(8),
   size = c(200, 200),
   seed = 42,
   n_corner = 5  # 3-8, higher = more complex shapes
@@ -122,7 +122,7 @@ render_puzzle_preview(result)
 # Generate corner variation previews in a grid
 corners <- c(3, 4, 6, 8)
 items <- lapply(corners, function(nc) {
-  generate_puzzle(type = "random", grid = c(15), size = c(200, 200), seed = 42, n_corner = nc, fill_palette = "plasma")
+  generate_puzzle(type = "random", grid = c(8), size = c(200, 200), seed = 42, n_corner = nc, fill_palette = "plasma")
 })
 render_puzzle_grid(items, ncol = 4, labels = paste(corners, "corners"))
 ```
@@ -143,7 +143,7 @@ make_rand_palette <- function(pal) {
   ggplot() +
     geom_puzzle_random(
       aes(fill = after_stat(piece_id)),
-      n_interior = 20,
+      n_interior = 10,
       seed = 42
     ) +
     scale_fill_viridis_c(option = pal, guide = "none") +
@@ -164,7 +164,7 @@ print((make_rand_palette("viridis") + make_rand_palette("magma") + make_rand_pal
 # API with fill_palette for colored fills
 result <- generate_puzzle(
   type = "random",
-  grid = c(20),
+  grid = c(10),
   size = c(200, 200),
   seed = 42,
   fill_palette = "viridis"  # Options: viridis, magma, plasma, inferno, cividis, turbo
@@ -179,7 +179,7 @@ render_puzzle_preview(result)
 # Generate all palette previews and combine into a grid
 palettes <- c("viridis", "magma", "plasma", "inferno", "cividis", "turbo")
 items <- lapply(palettes, function(pal) {
-  generate_puzzle(type = "random", grid = c(20), size = c(200, 200), seed = 42, fill_palette = pal)
+  generate_puzzle(type = "random", grid = c(10), size = c(200, 200), seed = 42, fill_palette = pal)
 })
 render_puzzle_grid(items, ncol = 3, labels = palettes)
 ```
@@ -202,7 +202,7 @@ make_direction_plot <- function(dir) {
   ggplot() +
     geom_puzzle_random(
       aes(fill = after_stat(fill_order)),
-      n_interior = 15,
+      n_interior = 8,
       fill_direction = dir,
       seed = 42
     ) +
@@ -223,7 +223,7 @@ print(make_direction_plot("forward") + make_direction_plot("reverse"))
 
 directions <- c("forward", "reverse")
 items <- lapply(directions, function(dir) {
-  generate_puzzle(type = "random", grid = c(15), size = c(200, 200), seed = 42, fill_palette = "viridis", fill_direction = dir)
+  generate_puzzle(type = "random", grid = c(8), size = c(200, 200), seed = 42, fill_palette = "viridis", fill_direction = dir)
 })
 render_puzzle_grid(items, ncol = 2, labels = paste0("fill_direction = \"", directions, "\""))
 ```
@@ -244,7 +244,7 @@ make_rand_offset <- function(off) {
   ggplot() +
     geom_puzzle_random(
       aes(fill = after_stat(piece_id)),
-      n_interior = 18,
+      n_interior = 9,
       offset = off, seed = 42
     ) +
     scale_fill_viridis_c(option = "cividis", guide = "none") +
@@ -264,7 +264,7 @@ print(make_rand_offset(0) + make_rand_offset(5) + make_rand_offset(10) + make_ra
 # API with offset for piece separation
 result <- generate_puzzle(
   type = "random",
-  grid = c(18),
+  grid = c(9),
   size = c(200, 200),
   offset = 10,  # Separation in mm
   seed = 42
@@ -279,7 +279,7 @@ render_puzzle_preview(result)
 # Generate offset previews in a grid
 offsets <- c(0, 5, 10, 20)
 items <- lapply(offsets, function(off) {
-  generate_puzzle(type = "random", grid = c(18), size = c(200, 200), seed = 42, offset = off, fill_palette = "cividis")
+  generate_puzzle(type = "random", grid = c(9), size = c(200, 200), seed = 42, offset = off, fill_palette = "cividis")
 })
 render_puzzle_grid(items, ncol = 4, labels = paste("offset =", offsets))
 ```
@@ -302,7 +302,7 @@ make_rand_seed <- function(s) {
   ggplot() +
     geom_puzzle_random(
       aes(fill = after_stat(piece_id)),
-      n_interior = 15,
+      n_interior = 8,
       seed = s
     ) +
     scale_fill_viridis_c(option = "turbo", guide = "none") +
@@ -322,7 +322,7 @@ print(make_rand_seed(1) + make_rand_seed(42) + make_rand_seed(123) + make_rand_s
 # API with different seeds for unique patterns
 result <- generate_puzzle(
   type = "random",
-  grid = c(15),
+  grid = c(8),
   size = c(200, 200),
   seed = 42  # Change seed for different patterns
 )
@@ -336,7 +336,7 @@ render_puzzle_preview(result)
 # Generate seed variation previews in a grid
 seeds <- c(1, 42, 123, 999)
 items <- lapply(seeds, function(s) {
-  generate_puzzle(type = "random", grid = c(15), size = c(200, 200), seed = s, fill_palette = "turbo")
+  generate_puzzle(type = "random", grid = c(8), size = c(200, 200), seed = s, fill_palette = "turbo")
 })
 render_puzzle_grid(items, ncol = 4, labels = paste("seed =", seeds))
 ```
@@ -367,7 +367,7 @@ Merge pieces together using PILES notation:
 print(ggplot() +
   geom_puzzle_random(
     aes(fill = after_stat(piece_id)),
-    n_interior = 12,
+    n_interior = 6,
     seed = 42
   ) +
   scale_fill_viridis_c(option = "magma", guide = "none") +
@@ -379,7 +379,7 @@ print(ggplot() +
 print(ggplot() +
   geom_puzzle_random(
     aes(fill = after_stat(piece_id)),
-    n_interior = 12,
+    n_interior = 6,
     seed = 42,
     fusion_groups = "1-2-3,5-6"
   ) +
@@ -401,7 +401,7 @@ print(ggplot() +
 # Standard
 result_standard <- generate_puzzle(
   type = "random",
-  grid = c(12),
+  grid = c(6),
   size = c(200, 200),
   seed = 42,
   fill_palette = "magma"
@@ -411,7 +411,7 @@ render_puzzle_preview(result_standard, title = "Standard")
 # Adjacent pieces fused
 result_fused <- generate_puzzle(
   type = "random",
-  grid = c(12),
+  grid = c(6),
   size = c(200, 200),
   seed = 42,
   fill_palette = "magma",
@@ -437,14 +437,14 @@ render_puzzle_preview(result_fused, title = "Pieces fused")
 ggplot() +
   geom_puzzle_random(
     aes(fill = after_stat(piece_id)),
-    n_interior = 60,
+    n_interior = 30,
     width = 400, height = 300,
     seed = 456
   ) +
   scale_fill_viridis_c(option = "turbo", guide = "none") +
   coord_fixed() +
   theme_puzzle() +
-  labs(title = "60-Piece Random Puzzle")
+  labs(title = "30-Piece Random Puzzle")
 ```
 
 ## API
@@ -455,7 +455,7 @@ ggplot() +
 
 result <- generate_puzzle(
   type = "random",
-  grid = c(60),
+  grid = c(30),
   size = c(300, 400),
   seed = 456,
   fill_palette = "turbo"
@@ -502,24 +502,6 @@ Random puzzles are perfect for:
 
 ::: {.panel-tabset}
 
-## API
-
-```{r}
-#| label: demo-rand-api
-#| fig-align: center
-
-result <- generate_puzzle(
-  type = "random",
-  grid = c(30),          # 30 pieces
-  size = c(300, 400),    # height=300mm, width=400mm
-  seed = 42,
-  n_corner = 5,          # Pentagonal pieces
-  offset = 5
-)
-
-render_puzzle_preview(result)
-```
-
 ## ggpuzzle
 
 ```{r}
@@ -529,7 +511,7 @@ render_puzzle_preview(result)
 ggplot() +
   geom_puzzle_random(
     aes(fill = after_stat(piece_id)),
-    n_interior = 30,
+    n_interior = 15,
     width = 400, height = 300,  # width=400mm, height=300mm
     n_corner = 5,
     seed = 42, offset = 5
@@ -537,6 +519,24 @@ ggplot() +
   scale_fill_viridis_c(option = "inferno", guide = "none") +
   coord_fixed() +
   theme_puzzle()
+```
+
+## API
+
+```{r}
+#| label: demo-rand-api
+#| fig-align: center
+
+result <- generate_puzzle(
+  type = "random",
+  grid = c(15),          # 15 pieces
+  size = c(300, 400),    # height=300mm, width=400mm
+  seed = 42,
+  n_corner = 5,          # Pentagonal pieces
+  offset = 5
+)
+
+render_puzzle_preview(result)
 ```
 
 :::

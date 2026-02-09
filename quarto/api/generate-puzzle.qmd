@@ -13,7 +13,7 @@ source(setup_path)
 
 ## Description
 
-`generate_puzzle()` is the unified entry point for creating all puzzle types in jigsawR. It handles rectangular, hexagonal, concentric, voronoi, and random puzzles through a single consistent interface.
+`generate_puzzle()` is the unified entry point for creating all puzzle types in jigsawR. It handles rectangular, hexagonal, concentric, voronoi, random, and SNIC puzzles through a single consistent interface.
 
 ## Usage
 
@@ -38,7 +38,7 @@ generate_puzzle(
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
-| `type` | string | Puzzle type: `"rectangular"`, `"hexagonal"`, `"concentric"`, `"voronoi"`, `"random"` |
+| `type` | string | Puzzle type: `"rectangular"`, `"hexagonal"`, `"concentric"`, `"voronoi"`, `"random"`, `"snic"` |
 | `grid` | numeric vector | Grid dimensions (interpretation depends on type) |
 | `size` | numeric vector | Physical dimensions in mm |
 
@@ -50,7 +50,8 @@ generate_puzzle(
 | hexagonal | `c(rings)` | `c(3)` = 3 rings |
 | concentric | `c(rings)` | `c(4)` = 4 rings |
 | voronoi | `c(n_cells)` | `c(25)` = 25 cells |
-| random | `c(n_interior)` | `c(20)` = 20 interior points |
+| random | `c(n_interior)` | `c(10)` = 10 interior points |
+| snic | `c(n_cells)` | `c(30)` = 30 superpixel cells |
 
 ### Size Parameter by Type
 
@@ -61,6 +62,7 @@ generate_puzzle(
 | concentric | `c(diameter)` | `c(200)` |
 | voronoi | `c(height, width)` | `c(300, 400)` = 300mm tall, 400mm wide |
 | random | `c(height, width)` | `c(300, 400)` = 300mm tall, 400mm wide |
+| snic | `c(height, width)` | `c(300, 400)` = 300mm tall, 400mm wide |
 
 ### Optional Parameters
 
@@ -69,6 +71,8 @@ generate_puzzle(
 | `seed` | integer | random | Random seed for reproducibility |
 | `offset` | numeric (mm) | 0 | Piece separation distance |
 | `layout` | string | "grid" | Layout algorithm: `"grid"` or `"repel"` |
+| `repel_margin` | numeric (mm) | 2 | Minimum margin between pieces when `layout = "repel"` |
+| `repel_max_iter` | integer | 100 | Maximum iterations for repel layout algorithm |
 | `fusion_groups` | string | NULL | PILES notation for merging pieces |
 | `save_files` | logical | FALSE | Whether to save SVG files |
 | `output_dir` | string | "output" | Directory for saved files |
@@ -107,6 +111,14 @@ generate_puzzle(
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `n_corner` | integer | 5 | Corners per piece (3-8) |
+
+**SNIC:**
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `image_path` | string | NULL | Path to image file (enables image-based segmentation) |
+| `compactness` | numeric | 0.5 | Superpixel compactness (0.0-2.0) |
+| `seed_type` | string | "hexagonal" | Seed grid: `"hexagonal"`, `"rectangular"`, `"diamond"`, `"random"` |
 
 ## Return Value
 
@@ -254,3 +266,4 @@ writeLines(result$svg_content, "puzzle.svg")
 - [ggpuzzle Extension](ggpuzzle.qmd) - ggplot2 integration
 - [Gallery: Rectangular](../gallery/rectangular.qmd)
 - [Gallery: Hexagonal](../gallery/hexagonal.qmd)
+- [Gallery: SNIC](../gallery/snic.qmd)

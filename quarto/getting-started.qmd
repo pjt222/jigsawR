@@ -45,7 +45,36 @@ jigsawR offers two ways to create puzzles:
 
 ::: {.panel-tabset}
 
-## API Approach
+## ggpuzzle
+
+```{r}
+#| label: first-puzzle-ggpuzzle
+#| fig-align: center
+#| message: false
+library(ggplot2)
+library(viridis)
+
+ggplot() +
+  geom_puzzle_rect(
+    aes(fill = after_stat(piece_id)),
+    rows = 4, cols = 3,    # Same as grid = c(4, 3)
+    width = 400, height = 300,
+    seed = 42
+  ) +
+  scale_fill_viridis_c(option = "viridis", guide = "none") +
+  coord_fixed() +
+  theme_puzzle() +
+  labs(title = "4x3 Rectangular Puzzle")
+```
+
+**Save your puzzle:**
+
+```r
+# Save as PNG with ggsave
+ggsave("my_puzzle.png", width = 8, height = 6, dpi = 300)
+```
+
+## API
 
 ```{r}
 #| label: first-puzzle-api
@@ -86,35 +115,6 @@ writeLines(result$svg_content, "my_puzzle.svg")
 
 # Save as PNG (requires rsvg)
 rsvg::rsvg_png(charToRaw(result$svg_content), "my_puzzle.png", width = 800)
-```
-
-## ggpuzzle Approach
-
-```{r}
-#| label: first-puzzle-ggpuzzle
-#| fig-align: center
-#| message: false
-library(ggplot2)
-library(viridis)
-
-ggplot() +
-  geom_puzzle_rect(
-    aes(fill = after_stat(piece_id)),
-    rows = 4, cols = 3,    # Same as grid = c(4, 3)
-    width = 400, height = 300,
-    seed = 42
-  ) +
-  scale_fill_viridis_c(option = "viridis", guide = "none") +
-  coord_fixed() +
-  theme_puzzle() +
-  labs(title = "4x3 Rectangular Puzzle")
-```
-
-**Save your puzzle:**
-
-```r
-# Save as PNG with ggsave
-ggsave("my_puzzle.png", width = 8, height = 6, dpi = 300)
 ```
 
 :::
@@ -228,13 +228,33 @@ Unique random shapes with configurable corners.
 ggplot() +
   geom_puzzle_random(
     aes(fill = after_stat(piece_id)),
-    n_interior = 15,
+    n_interior = 8,
     seed = 202
   ) +
   scale_fill_viridis_c(option = "inferno", guide = "none") +
   coord_fixed() +
   theme_puzzle() +
-  labs(title = "15-Piece Random Puzzle")
+  labs(title = "8-Piece Random Puzzle")
+```
+
+### 6. SNIC
+
+Superpixel-based pieces from image segmentation.
+
+```{r}
+#| label: type-snic
+#| eval: !expr requireNamespace("snic", quietly = TRUE)
+#| fig-align: center
+ggplot() +
+  geom_puzzle_snic(
+    aes(fill = after_stat(piece_id)),
+    n_cells = 20,
+    seed = 303
+  ) +
+  scale_fill_viridis_c(option = "turbo", guide = "none") +
+  coord_fixed() +
+  theme_puzzle() +
+  labs(title = "20-Cell SNIC Puzzle")
 ```
 
 ## Key Parameters
@@ -271,6 +291,13 @@ ggplot() +
 
 - `n_interior`: Number of interior points (influences piece count)
 - `n_corner`: Corners for base polygon (default: 4)
+
+**SNIC:**
+
+- `n_cells`: Number of superpixel cells
+- `compactness`: Shape regularity (0.0-2.0)
+- `seed_type`: Grid pattern (`"hexagonal"`, `"rectangular"`, `"diamond"`, `"random"`)
+- `image_path`: Optional image for image-based segmentation
 
 ## Separation Modes
 

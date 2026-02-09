@@ -24,6 +24,7 @@ jigsawR provides native ggplot2 geoms for each puzzle type, enabling seamless in
 | `geom_puzzle_conc()` | Concentric ring puzzles |
 | `geom_puzzle_voronoi()` | Voronoi tessellation puzzles |
 | `geom_puzzle_random()` | Random shape puzzles |
+| `geom_puzzle_snic()` | SNIC superpixel puzzles |
 
 ## Basic Usage
 
@@ -100,7 +101,7 @@ ggplot() +
 ggplot() +
   geom_puzzle_random(
     aes(fill = after_stat(piece_id)),
-    n_interior = 20,
+    n_interior = 10,
     n_corner = 5,
     seed = 42
   ) +
@@ -108,6 +109,27 @@ ggplot() +
   coord_fixed() +
   theme_minimal()
 ```
+
+### geom_puzzle_snic()
+
+```{r}
+#| label: geom-snic
+#| eval: !expr requireNamespace("snic", quietly = TRUE)
+#| fig-align: center
+ggplot() +
+  geom_puzzle_snic(
+    aes(fill = after_stat(piece_id)),
+    n_cells = 25,
+    seed = 42
+  ) +
+  scale_fill_viridis_c(option = "turbo", name = "Cell") +
+  coord_fixed() +
+  theme_minimal()
+```
+
+::: {.callout-note}
+SNIC puzzles require the `snic` package. Image-based usage additionally requires `magick`.
+:::
 
 ## Aesthetic Mappings
 
@@ -159,6 +181,10 @@ ggplot(data) +
 |-----------|------|---------|-------------|
 | `seed` | integer | random | Random seed for reproducibility |
 | `offset` | numeric | 0 | Piece separation distance |
+| `layout` | string | "grid" | Layout algorithm: `"grid"` or `"repel"` |
+| `repel_margin` | numeric | 2 | Minimum margin between pieces when `layout = "repel"` |
+| `repel_max_iter` | integer | 100 | Maximum iterations for repel layout |
+| `bezier_resolution` | integer | 20 | Points per bezier curve segment |
 | `fill_direction` | string | "forward" | Spatial color order: `"forward"` or `"reverse"` |
 
 ### geom_puzzle_rect()
@@ -180,6 +206,7 @@ ggplot(data) +
 | `diameter` | numeric | required | Outer diameter in mm |
 | `do_warp` | logical | TRUE | Apply circular warping |
 | `do_trunc` | logical | TRUE | Truncate to boundary |
+| `do_circular_border` | logical | FALSE | Use perfect circular arc borders |
 | `tabsize` | numeric | 10 | Tab size (% of piece) |
 | `jitter` | numeric | 2 | Tab randomness (% of piece) |
 
@@ -190,6 +217,8 @@ ggplot(data) +
 | `rings` | integer | required | Number of rings |
 | `diameter` | numeric | required | Outer diameter in mm |
 | `center_shape` | string | "hexagon" | Center: "hexagon" or "circle" |
+| `do_circular_border` | logical | FALSE | Use perfect circular arc borders |
+| `boundary_facing` | string | "inward" | Boundary tab facing direction |
 
 ### geom_puzzle_voronoi()
 
@@ -199,6 +228,7 @@ ggplot(data) +
 | `width` | numeric | required | Canvas width in mm |
 | `height` | numeric | required | Canvas height in mm |
 | `relaxation` | integer | 0 | Lloyd relaxation iterations |
+| `point_distribution` | string | "fermat" | Seed point distribution method |
 
 ### geom_puzzle_random()
 
@@ -208,6 +238,17 @@ ggplot(data) +
 | `width` | numeric | 100 | Canvas width in mm |
 | `height` | numeric | 100 | Canvas height in mm |
 | `n_corner` | integer | 4 | Corners for base polygon (3-8) |
+
+### geom_puzzle_snic()
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `n_cells` | integer | 50 | Number of superpixel cells |
+| `width` | numeric | 100 | Canvas width in mm |
+| `height` | numeric | 100 | Canvas height in mm |
+| `compactness` | numeric | 0.5 | Superpixel compactness (0.0-2.0) |
+| `seed_type` | string | "hexagonal" | Seed grid: `"hexagonal"`, `"rectangular"`, `"diamond"`, `"random"` |
+| `image_path` | string | NULL | Path to image file (optional) |
 
 ## Combining with Other Geoms
 

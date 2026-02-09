@@ -168,17 +168,16 @@ generate_puzzle <- function(type = "rectangular",
         "i" = "Install with: {.code install.packages('snic')}"
       ))
     }
-    if (!has_magick()) {
-      cli::cli_abort(c(
-        "Package {.pkg magick} is required for SNIC puzzles.",
-        "i" = "Install with: {.code install.packages('magick')}"
-      ))
-    }
-    if (is.null(image_path) || !nzchar(image_path)) {
-      cli::cli_abort("image_path is required for SNIC puzzles")
-    }
-    if (!file.exists(image_path)) {
-      cli::cli_abort("Image file not found: {.file {image_path}}")
+    if (!is.null(image_path) && nzchar(image_path)) {
+      if (!has_magick()) {
+        cli::cli_abort(c(
+          "Package {.pkg magick} is required for image-based SNIC puzzles.",
+          "i" = "Install with: {.code install.packages('magick')}"
+        ))
+      }
+      if (!file.exists(image_path)) {
+        cli::cli_abort("Image file not found: {.file {image_path}}")
+      }
     }
   }
 

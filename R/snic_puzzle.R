@@ -116,17 +116,6 @@ generate_snic_pieces_internal <- function(seed, grid, size, image_path,
       "i" = "Install with: {.code install.packages('snic')}"
     ))
   }
-  if (!has_magick()) {
-    cli::cli_abort(c(
-      "Package {.pkg magick} is required for SNIC puzzles.",
-      "i" = "Install with: {.code install.packages('magick')}"
-    ))
-  }
-
-  if (is.null(image_path) || !nzchar(image_path)) {
-    cli::cli_abort("image_path is required for SNIC puzzles")
-  }
-
   # Determine target superpixel count
   n_target <- if (length(grid) == 1) grid[1] else grid[1]
 
@@ -135,12 +124,27 @@ generate_snic_pieces_internal <- function(seed, grid, size, image_path,
     size <- c(size, size)
   }
 
-  # Load image
-  cli::cli_progress_step("Loading image: {.file {basename(image_path)}}")
-  img_data <- load_image_for_snic(image_path)
-  img_height <- img_data$height
-  img_width <- img_data$width
-  arr <- img_data$array
+  if (is.null(image_path) || !nzchar(image_path)) {
+    # Synthetic mode: uniform canvas -> regular superpixel grid
+    # Use 2 pixels per mm for reasonable resolution
+    px_per_mm <- 2
+    img_height <- max(round(size[1] * px_per_mm), 20)
+    img_width  <- max(round(size[2] * px_per_mm), 20)
+    arr <- array(0.5, dim = c(img_height, img_width, 3))
+  } else {
+    # Image mode: load actual image
+    if (!has_magick()) {
+      cli::cli_abort(c(
+        "Package {.pkg magick} is required for image-based SNIC puzzles.",
+        "i" = "Install with: {.code install.packages('magick')}"
+      ))
+    }
+    cli::cli_progress_step("Loading image: {.file {basename(image_path)}}")
+    img_data <- load_image_for_snic(image_path)
+    img_height <- img_data$height
+    img_width  <- img_data$width
+    arr <- img_data$array
+  }
 
   # Compute SNIC spacing from target piece count
   spacing <- round(sqrt(img_width * img_height / n_target))
