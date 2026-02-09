@@ -19,7 +19,6 @@
 #' @param min_tab_size Minimum absolute tab size in mm (default: NULL)
 #' @param max_tab_size Maximum absolute tab size in mm (default: NULL)
 #' @return List with puzzle data and parameters
-#' @export
 generate_puzzle_core <- function(seed = 1234,
                                 grid = c(2, 2),
                                 size = c(200, 200),
@@ -242,7 +241,6 @@ generate_edge_segment <- function(start_point, end_point, vertical = FALSE) {
 #' @param yi Row index (0-based)
 #' @param puzzle_structure Output from generate_puzzle_core()
 #' @return SVG path string for the piece
-#' @export
 generate_single_piece <- function(xi, yi, puzzle_structure) {
   
   xn <- puzzle_structure$grid[2]
@@ -433,7 +431,6 @@ blend_colors <- function(color1, color2) {
 #' @param palette Viridis palette name (if colors is NULL)
 #' @param opacity Opacity of puzzle pieces (0.0 to 1.0, default 1.0 = fully opaque)
 #' @return SVG string
-#' @export
 generate_puzzle_svg <- function(puzzle_structure, mode = "complete", colors = NULL, background = "white", stroke_width = 1.5, palette = NULL, opacity = 1.0) {
 
   xn <- puzzle_structure$grid[2]

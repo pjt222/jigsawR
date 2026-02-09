@@ -43,6 +43,7 @@ This creates a proper hexagonal tiling where:
 - Center piece is at (0, 0)
 }
 \examples{
+\dontrun{
 # Position for piece 1 (center) with 20mm piece radius
 pos1 <- calculate_hex_piece_position(
   piece_id = 1, rings = 3, piece_radius = 20
@@ -53,4 +54,5 @@ pos1 <- calculate_hex_piece_position(
 pos5 <- calculate_hex_piece_position(
   piece_id = 5, rings = 3, piece_radius = 20, separation_factor = 1.5
 )
+}
 }

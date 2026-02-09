@@ -20,6 +20,9 @@ geom_puzzle_snic(
   max_tab_size = NULL,
   seed = NULL,
   offset = 0,
+  layout = "grid",
+  repel_margin = 2,
+  repel_max_iter = 100,
   bezier_resolution = 20,
   seed_type = "hexagonal",
   fill_direction = "forward",
@@ -66,6 +69,13 @@ Higher values produce more regular shapes.}
 \item{seed}{Random seed for reproducible puzzle shapes.}
 
 \item{offset}{Separation between pieces (0 = complete, >0 = separated).}
+
+\item{layout}{Layout algorithm: "grid" (default) or "repel". Repel layout
+applies force-directed separation to avoid piece overlap when offset > 0.}
+
+\item{repel_margin}{Minimum gap between pieces for repel layout (default: 2).}
+
+\item{repel_max_iter}{Maximum iterations for repel layout convergence (default: 100).}
 
 \item{bezier_resolution}{Points per Bezier curve (default: 20).}
 

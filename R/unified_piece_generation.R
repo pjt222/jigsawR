@@ -35,7 +35,6 @@
 #'   - type: "rectangular", "hexagonal", or "concentric"
 #'   - parameters: Generation parameters used
 #'   - fusion_data: Fusion edge data (if fusion_groups provided)
-#' @export
 generate_pieces_internal <- function(type = "rectangular",
                                      seed = NULL,
                                      grid = c(2, 2),
@@ -535,12 +534,6 @@ generate_concentric_pieces_internal <- function(seed, rings, diameter, tabsize, 
   # Calculate total pieces for progress reporting
   num_pieces <- 3 * rings * (rings - 1) + 1
 
-  # Source concentric modules if needed
-  if (!exists("generate_concentric_pieces")) {
-    source("R/concentric_geometry.R")
-    source("R/concentric_edge_generation.R")
-  }
-
   # Generate pieces using concentric edge generation
   cli::cli_progress_step("Generating {num_pieces} concentric pieces...")
   concentric_result <- generate_concentric_pieces(
@@ -705,7 +698,6 @@ generate_concentric_pieces_internal <- function(seed, rings, diameter, tabsize, 
 #' @param type "rectangular", "hexagonal", or "concentric"
 #' @param grid For rectangular: c(rows, cols). For hexagonal/concentric: c(rings) or rings
 #' @return Number of pieces
-#' @export
 get_piece_count <- function(type, grid) {
   if (type == "hexagonal" || type == "concentric") {
     rings <- if (length(grid) == 1) grid else grid[1]
@@ -739,7 +731,6 @@ validate_piece_path <- function(piece) {
 #'
 #' @param result Output from generate_pieces_internal()
 #' @return TRUE if all valid, stops with error otherwise
-#' @export
 validate_pieces <- function(result) {
   if (is.null(result$pieces) || length(result$pieces) == 0) {
     stop("No pieces generated")
@@ -781,7 +772,6 @@ validate_pieces <- function(result) {
 #' @param fusion_groups List of integer vectors (resolved piece IDs)
 #' @param puzzle_result Puzzle result structure for adjacency lookup
 #' @return Updated pieces_result with fusion data applied
-#' @export
 apply_fusion_to_pieces <- function(pieces_result, fusion_groups, puzzle_result) {
   if (is.null(fusion_groups) || length(fusion_groups) == 0) {
     return(pieces_result)

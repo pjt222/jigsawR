@@ -9,7 +9,6 @@
 #'
 #' @param rings Number of rings (including center)
 #' @return Total number of pieces
-#' @export
 get_concentric_piece_count <- function(rings) {
   # Same formula as hexagonal: 1 + 6 + 12 + 18 + ... = 3*n*(n-1) + 1
   3 * rings * (rings - 1) + 1
@@ -20,7 +19,6 @@ get_concentric_piece_count <- function(rings) {
 #' @param diameter Puzzle diameter
 #' @param rings Number of rings
 #' @return Piece height in same units as diameter
-#' @export
 get_concentric_piece_height <- function(diameter, rings) {
 
   diameter / (2 * rings)
@@ -31,7 +29,6 @@ get_concentric_piece_height <- function(diameter, rings) {
 #' @param piece_id Piece ID (1-based)
 #' @param rings Total number of rings
 #' @return List with ring (0-based) and position (0-based within ring)
-#' @export
 map_concentric_piece_id <- function(piece_id, rings) {
   if (piece_id == 1) {
     return(list(ring = 0, position = 0, pieces_in_ring = 1))
@@ -58,7 +55,6 @@ map_concentric_piece_id <- function(piece_id, rings) {
 #' @param diameter Puzzle diameter
 #' @param center_shape "hexagon" or "circle" (only affects center piece)
 #' @return List with type ("hexagon", "circle", or "trapezoid") and vertices
-#' @export
 calculate_concentric_vertices <- function(piece_id, rings, diameter,
                                           center_shape = "hexagon") {
   piece_height <- get_concentric_piece_height(diameter, rings)
@@ -147,7 +143,6 @@ calculate_concentric_vertices <- function(piece_id, rings, diameter,
 #' @param edge_index Edge index (1=inner, 2=right, 3=outer, 4=left)
 #' @param rings Total rings
 #' @return List with neighbor_id (NA if boundary) and neighbor_edge
-#' @export
 get_concentric_neighbor <- function(piece_id, edge_index, rings) {
   info <- map_concentric_piece_id(piece_id, rings)
   ring <- info$ring
@@ -240,7 +235,6 @@ get_concentric_neighbor <- function(piece_id, edge_index, rings) {
 #' @param piece_id Piece ID
 #' @param rings Total rings
 #' @return Vector of neighbor piece IDs (empty if boundary or center piece)
-#' @export
 get_all_concentric_outer_neighbors <- function(piece_id, rings) {
   info <- map_concentric_piece_id(piece_id, rings)
   ring <- info$ring
@@ -295,7 +289,6 @@ get_all_concentric_outer_neighbors <- function(piece_id, rings) {
 #' @param rings Total rings
 #' @return List of segments, each with start_angle, end_angle, neighbor_id.
 #'   Returns empty list for center piece or boundary pieces.
-#' @export
 get_outer_edge_segments <- function(piece_id, rings) {
   info <- map_concentric_piece_id(piece_id, rings)
   ring <- info$ring
@@ -354,7 +347,6 @@ get_outer_edge_segments <- function(piece_id, rings) {
 #' @param diameter Puzzle diameter
 #' @param center_shape "hexagon" or "circle"
 #' @return List of piece vertex data
-#' @export
 get_all_concentric_vertices <- function(rings, diameter, center_shape = "hexagon") {
   num_pieces <- get_concentric_piece_count(rings)
   pieces <- list()

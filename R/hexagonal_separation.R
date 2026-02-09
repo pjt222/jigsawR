@@ -14,19 +14,9 @@
 #' @param do_warp Apply circular warping
 #' @param do_trunc Truncate edge pieces
 #' @return List with puzzle structure
-#' @export
 extract_hexagonal_puzzle_structure <- function(rings, seed, diameter = 240,
                                               tabsize = 27, jitter = 5,
                                               do_warp = FALSE, do_trunc = FALSE) {
-
-  # Source hexagonal functions if needed
-  if (!exists("init_hex_jigsaw")) {
-    if (file.exists("R/hexagonal_puzzle.R")) {
-      source("R/hexagonal_puzzle.R")
-    } else if (file.exists("hexagonal_puzzle.R")) {
-      source("hexagonal_puzzle.R")
-    }
-  }
 
   # Generate complete puzzle
   puzzle_result <- generate_hex_jigsaw_svg(
@@ -78,7 +68,6 @@ extract_hexagonal_puzzle_structure <- function(rings, seed, diameter = 240,
 #' @param fill_color Fill color for pieces ("none" for transparent, or any CSS color)
 #' @param opacity Opacity of puzzle pieces (0.0 to 1.0, default 1.0 = fully opaque)
 #' @return SVG content as string
-#' @export
 #' @note DEPRECATED: Use generate_puzzle(type = 'hexagonal', offset = X) instead.
 #'   This function will be removed in a future version.
 generate_separated_hexagonal_svg <- function(rings = 3, seed = NULL,
@@ -103,13 +92,6 @@ generate_separated_hexagonal_svg <- function(rings = 3, seed = NULL,
 
   if (is.null(seed)) {
     seed <- as.integer(runif(1) * 10000)
-  }
-
-  # Source hexagonal functions if needed
-  if (!exists("init_hex_jigsaw")) {
-    if (file.exists("R/hexagonal_puzzle.R")) {
-      source("R/hexagonal_puzzle.R")
-    }
   }
 
   # Initialize hexagonal puzzle
@@ -218,16 +200,6 @@ generate_separated_hexagonal_svg <- function(rings = 3, seed = NULL,
     # Generate real puzzle pieces with complementary edges
     cat("Generating pieces with bezier curves and tabs...\n")
 
-    # Source dependencies
-    if (!exists("generate_hex_pieces_with_edge_map")) {
-      if (file.exists("R/hexagonal_edge_generation_fixed.R")) {
-        source("R/hexagonal_topology.R")
-        source("R/hexagonal_neighbors.R")
-        source("R/hexagonal_bezier_generation.R")
-        source("R/hexagonal_edge_generation_fixed.R")
-      }
-    }
-
     # Calculate spacing based on arrangement
     if (arrangement == "rectangular") {
       # For rectangular, use offset directly (pieces spaced in grid)
@@ -294,13 +266,6 @@ generate_separated_hexagonal_svg <- function(rings = 3, seed = NULL,
       center_y <- offset + row * (2 * piece_radius + offset) + piece_radius
     } else {
       # Hexagonal arrangement (topology-based with center at origin)
-
-      # Source topology utilities if needed
-      if (!exists("calculate_hex_piece_position")) {
-        if (file.exists("R/hexagonal_topology.R")) {
-          source("R/hexagonal_topology.R")
-        }
-      }
 
       # Calculate spacing parameters
       base_spacing <- piece_radius * 2

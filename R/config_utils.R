@@ -179,7 +179,6 @@ reverse_colors_by_ring <- function(colors, pieces) {
 #' @param pieces List of piece objects
 #' @param fill_direction Character, either "forward" (default) or "reverse"
 #' @return Character vector of reordered colors
-#' @export
 reorder_colors_for_direction <- function(colors, pieces, fill_direction = "forward") {
  if (fill_direction == "forward") return(colors)
  if (length(colors) <= 1) return(colors)

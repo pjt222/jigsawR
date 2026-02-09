@@ -25,7 +25,9 @@ Uses De Casteljau's algorithm to approximate a cubic Bezier curve
 as a series of line segments suitable for polygon rendering.
 }
 \examples{
+\dontrun{
 # Simple S-curve
 pts <- bezier_to_points(c(0, 0), c(0, 1), c(1, 0), c(1, 1))
 plot(pts$x, pts$y, type = "l")
+}
 }

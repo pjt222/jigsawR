@@ -35,6 +35,7 @@ For flat-top hexagons with pointy vertices on left/right:
 The center hexagon (q=0, r=0) is at (0, 0).
 }
 \examples{
+\dontrun{
 # Center hexagon
 center <- axial_to_cartesian(q = 0, r = 0, hex_size = 10)
 # Returns: list(x = 0, y = 0)
@@ -46,4 +47,5 @@ right <- axial_to_cartesian(q = 1, r = 0, hex_size = 10)
 # Hexagon below-right (q=1, r=-1)
 below_right <- axial_to_cartesian(q = 1, r = -1, hex_size = 10)
 # Returns: list(x = 15, y = -17.32)
+}
 }

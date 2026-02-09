@@ -19,7 +19,6 @@
 #' @param color_high Color for highest noise values (default: "#eaeaea")
 #' @param color_mid Optional middle color for 3-stop gradient (default: NULL)
 #' @return Base64-encoded PNG string (data URI format)
-#' @export
 #'
 #' @examples
 #' \dontrun{
@@ -227,7 +226,6 @@ is_noise_fill_spec <- function(x) {
 #' @param pattern_units SVG patternUnits attribute: "userSpaceOnUse" or
 #'   "objectBoundingBox" (default: "userSpaceOnUse")
 #' @return SVG defs string containing the pattern definition
-#' @export
 create_noise_pattern_defs <- function(noise_data_uri,
                                        pattern_id = "noisePattern",
                                        width = 256,
@@ -450,7 +448,6 @@ generate_per_piece_noise_fills <- function(n_pieces, noise_spec) {
 #' Returns a named vector of available noise types with descriptions.
 #'
 #' @return Named character vector of noise types
-#' @export
 get_noise_types <- function() {
   c(
     "perlin" = "Perlin noise - smooth, organic patterns",

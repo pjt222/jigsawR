@@ -2,15 +2,13 @@
 # Part of the jigsawR package
 
 #' Create circular gradient background
-#' @import ggplot2
-#' @import ggforce
-#' @import ggfx
-#' @import viridis
+#' @importFrom ggplot2 ggplot aes geom_polygon annotation_raster coord_fixed
+#'   theme_void theme element_rect margin ggsave
+#' @importFrom ggfx as_reference with_mask ch_alpha
 #' @param size_px Size in pixels for output
 #' @param diameter Puzzle diameter in mm (optional, for size matching)
 #' @param palette Viridis palette name (NULL = use config default)
 #' @return ggplot2 object with gradient background
-#' @export
 create_gradient_circle_png <- function(size_px = NULL, diameter = NULL, palette = NULL) {
 
   # Load config defaults
@@ -104,7 +102,6 @@ create_gradient_circle_png <- function(size_px = NULL, diameter = NULL, palette 
 #' @param gradient_plot ggplot2 object from create_gradient_circle_png()
 #' @param background_file Output filename for background
 #' @param size_px Size in pixels (NULL = use config default)
-#' @export
 save_gradient_background <- function(gradient_plot, background_file, size_px = NULL) {
 
   # Load config defaults

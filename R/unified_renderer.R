@@ -443,22 +443,19 @@ calculate_path_bounding_box_center <- function(path, piece = NULL) {
     parse_svg_path(path)
   }
 
-  xs <- c()
-  ys <- c()
-
-  for (seg in segments) {
+  coord_lists <- lapply(segments, function(seg) {
     if (seg$type %in% c("M", "L")) {
-      xs <- c(xs, seg$x)
-      ys <- c(ys, seg$y)
+      list(x = seg$x, y = seg$y)
     } else if (seg$type == "C") {
-      # For cubic bezier, include control points for accurate bounds
-      xs <- c(xs, seg$cp1x, seg$cp2x, seg$x)
-      ys <- c(ys, seg$cp1y, seg$cp2y, seg$y)
+      list(x = c(seg$cp1x, seg$cp2x, seg$x), y = c(seg$cp1y, seg$cp2y, seg$y))
     } else if (seg$type == "A") {
-      xs <- c(xs, seg$x)
-      ys <- c(ys, seg$y)
+      list(x = seg$x, y = seg$y)
+    } else {
+      list(x = numeric(0), y = numeric(0))
     }
-  }
+  })
+  xs <- unlist(lapply(coord_lists, `[[`, "x"), use.names = FALSE)
+  ys <- unlist(lapply(coord_lists, `[[`, "y"), use.names = FALSE)
 
   if (length(xs) == 0 || length(ys) == 0) {
     return(c(x = 0, y = 0))
@@ -506,7 +503,6 @@ render_piece_label <- function(piece, index, color, font_size) {
 #' @param filename Output filename
 #' @param output_dir Output directory (default: "output")
 #' @return Invisible path to saved file
-#' @export
 save_puzzle_svg <- function(svg_content, filename, output_dir = "output") {
 
   # Ensure output directory exists
@@ -1210,8 +1206,16 @@ generate_arc_segment_path <- function(radius, start_angle, end_angle, center = c
 #' @keywords internal
 render_pieces_with_fusion_styled <- function(pieces, colors, fill, stroke_width, opacity,
                                               fusion_style, fusion_opacity) {
-  elements <- character()
   n_pieces <- length(pieces)
+  element_list <- vector("list", n_pieces * 8L)  # pre-allocate generously
+  element_idx <- 0L
+  add_element <- function(el) {
+    element_idx <<- element_idx + 1L
+    if (element_idx > length(element_list)) {
+      element_list[[element_idx * 2L]] <<- NULL  # grow if needed
+    }
+    element_list[[element_idx]] <<- el
+  }
 
   # Build piece_id lookup hash map for O(1) neighbor lookup (instead of O(n) loops)
   piece_lookup <- new.env(hash = TRUE, parent = emptyenv())
@@ -1239,7 +1243,7 @@ render_pieces_with_fusion_styled <- function(pieces, colors, fill, stroke_width,
       '<path d="%s" fill="%s" stroke="none"%s/>',
       piece$path, piece_fill, opacity_attr
     )
-    elements <- c(elements, fill_element)
+    add_element(fill_element)
   }
 
   # Pass 2: Draw non-fused edges with normal stroke
@@ -1259,7 +1263,7 @@ render_pieces_with_fusion_styled <- function(pieces, colors, fill, stroke_width,
         '<path d="%s" fill="none" stroke="%s" stroke-width="%.2f" stroke-linecap="round" stroke-linejoin="round"/>',
         piece$path, color, stroke_width
       )
-      elements <- c(elements, edge_element)
+      add_element(edge_element)
       next
     }
 
@@ -1280,7 +1284,7 @@ render_pieces_with_fusion_styled <- function(pieces, colors, fill, stroke_width,
           '<path d="%s" fill="none" stroke="%s" stroke-width="%.2f" stroke-linecap="round" stroke-linejoin="round"/>',
           edge_path, color, stroke_width
         )
-        elements <- c(elements, edge_element)
+        add_element(edge_element)
       }
     }
   }
@@ -1289,7 +1293,7 @@ render_pieces_with_fusion_styled <- function(pieces, colors, fill, stroke_width,
   # Each fused edge is shared by two pieces - draw it only ONCE
   # Use piece ID + edge name for deduplication (works with offset > 0)
   # Key format: "min_id-edge|max_id-edge" where ids are sorted
-  drawn_fused_edges <- character()
+  drawn_fused_edges <- new.env(hash = TRUE, parent = emptyenv())
 
   # Build style attributes for fused edges
   dash_attr <- ""
@@ -1356,12 +1360,12 @@ render_pieces_with_fusion_styled <- function(pieces, colors, fill, stroke_width,
         # Get neighbor info from the fused_edges structure
         # For now, use a simple approach: track drawn edges by this_edge_key
         # and its complement (which will have format "neighbor_id-opposite_edge")
-        if (this_edge_key %in% drawn_fused_edges) {
+        if (exists(this_edge_key, envir = drawn_fused_edges, inherits = FALSE)) {
           next
         }
 
         # Mark this edge as drawn
-        drawn_fused_edges <- c(drawn_fused_edges, this_edge_key)
+        drawn_fused_edges[[this_edge_key]] <- TRUE
 
         # Also mark the complementary edge as drawn to prevent double-drawing
         # We find the neighbor piece and mark ALL of their fused edges that point to us
@@ -1394,7 +1398,7 @@ render_pieces_with_fusion_styled <- function(pieces, colors, fill, stroke_width,
               for (n_edge in names(neighbor_piece$fused_neighbor_ids)) {
                 if (neighbor_piece$fused_neighbor_ids[[n_edge]] == piece_id) {
                   comp_edge_key <- sprintf("%d-%s", neighbor_id, n_edge)
-                  drawn_fused_edges <- c(drawn_fused_edges, comp_edge_key)
+                  drawn_fused_edges[[comp_edge_key]] <- TRUE
                 }
               }
             }
@@ -1405,7 +1409,7 @@ render_pieces_with_fusion_styled <- function(pieces, colors, fill, stroke_width,
           '<path d="%s" fill="none" stroke="%s" stroke-width="%.2f" stroke-linecap="round" stroke-linejoin="round"%s%s/>',
           edge_path, color, stroke_width, dash_attr, fusion_opacity_attr
         )
-        elements <- c(elements, edge_element)
+        add_element(edge_element)
       }
     }
   }
@@ -1413,7 +1417,7 @@ render_pieces_with_fusion_styled <- function(pieces, colors, fill, stroke_width,
   # Pass 3.5: Draw segment-level fused OUTER edges for concentric puzzles
   # This handles many-to-one relationships where different segments of an
   # OUTER edge have different fusion status (some fused, some not)
-  drawn_segment_keys <- character()
+  drawn_segment_keys <- new.env(hash = TRUE, parent = emptyenv())
 
   for (i in seq_along(pieces)) {
     piece <- pieces[[i]]
@@ -1444,16 +1448,16 @@ render_pieces_with_fusion_styled <- function(pieces, colors, fill, stroke_width,
       neighbor_id <- seg$neighbor_id
       seg_key <- sprintf("%d-%d", min(piece_id, neighbor_id), max(piece_id, neighbor_id))
 
-      if (seg_key %in% drawn_segment_keys) {
+      if (exists(seg_key, envir = drawn_segment_keys, inherits = FALSE)) {
         next
       }
-      drawn_segment_keys <- c(drawn_segment_keys, seg_key)
+      drawn_segment_keys[[seg_key]] <- TRUE
 
       # IMPORTANT: Also mark the neighbor's complementary edge as drawn in
       # drawn_fused_edges so Pass 3 doesn't draw it again.
       # The neighbor's INNER edge points to this piece.
       neighbor_inner_key <- sprintf("%d-INNER", neighbor_id)
-      drawn_fused_edges <- c(drawn_fused_edges, neighbor_inner_key)
+      drawn_fused_edges[[neighbor_inner_key]] <- TRUE
 
       # Use the actual edge path with bezier tabs if available,
       # otherwise fall back to arc generation
@@ -1485,11 +1489,11 @@ render_pieces_with_fusion_styled <- function(pieces, colors, fill, stroke_width,
           edge_path, color, stroke_width
         )
       }
-      elements <- c(elements, edge_element)
+      add_element(edge_element)
     }
   }
 
-  return(elements)
+  return(unlist(element_list[seq_len(element_idx)], use.names = FALSE))
 }
 
 
@@ -1510,7 +1514,6 @@ render_pieces_with_fusion_styled <- function(pieces, colors, fill, stroke_width,
 #' @param filename Output filename (NULL = don't save)
 #' @param ... Additional arguments passed to generate_pieces_internal()
 #' @return List with svg, pieces, and parameters
-#' @export
 generate_and_render_puzzle <- function(type = "rectangular",
                                         seed = NULL,
                                         grid = c(3, 4),

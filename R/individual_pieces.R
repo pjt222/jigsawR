@@ -31,7 +31,6 @@
 #'        or a list with type="gradient" and center/middle/edge colors.
 #' @param opacity Opacity of puzzle pieces (0.0 to 1.0, default 1.0 = fully opaque)
 #' @return List containing piece paths and metadata
-#' @export
 #' @note DEPRECATED: Use generate_puzzle() and access result$pieces instead.
 #'   This function will be removed in a future version.
 generate_individual_pieces <- function(seed = 42, xn = 2, yn = 2,
@@ -58,18 +57,6 @@ generate_individual_pieces <- function(seed = 42, xn = 2, yn = 2,
   # Ensure output directory exists
   if (!dir.exists(output_dir)) {
     dir.create(output_dir, recursive = TRUE)
-  }
-
-  # Source required functions if not in package context
-  if (!exists("init_jigsaw")) {
-    if (file.exists("R/rectangular_puzzle.R")) {
-      source("R/rectangular_puzzle.R")
-    }
-  }
-  if (!exists("generate_all_edges")) {
-    if (file.exists("R/puzzle_core_clean.R")) {
-      source("R/puzzle_core_clean.R")
-    }
   }
 
   log_info("Generating {xn}x{yn} puzzle (seed: {seed})...")
@@ -363,16 +350,8 @@ save_combined_pieces_svg <- function(pieces, width, height, output_dir, palette 
 #' @param width Puzzle width in mm (default: 300)
 #' @param height Puzzle height in mm (default: 200)
 #' @return List containing tab/blank data for all dividers
-#' @export
 extract_tab_data <- function(seed, xn, yn, tabsize = 20, jitter = 4,
                             width = 300, height = 200) {
-
-  # Source required functions if not in package context
-  if (!exists("init_jigsaw")) {
-    if (file.exists("R/rectangular_puzzle.R")) {
-      source("R/rectangular_puzzle.R")
-    }
-  }
 
   # Initialize environment
   init_jigsaw(seed = seed, tabsize = tabsize, jitter = jitter,

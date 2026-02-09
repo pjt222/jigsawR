@@ -62,6 +62,7 @@
 #'
 #' @seealso \code{\link[ggplot2]{theme_void}}, \code{\link[ggplot2]{theme}}
 #'
+#' @importFrom ggplot2 %+replace%
 #' @export
 theme_puzzle <- function(base_size = 11,
                          base_family = "",

@@ -95,7 +95,6 @@ neighbors <- get_piece_neighbors(id_a, puzzle_result, include_boundary = FALSE)
 #'     \item{components}{If invalid, list of disconnected components}
 #'   }
 #'
-#' @export
 validate_fusion_group <- function(piece_ids, puzzle_result) {
   if (length(piece_ids) < 2) {
     return(list(valid = TRUE, message = "Single piece or empty group"))
@@ -517,7 +516,6 @@ get_tessellation_neighbors <- function(piece_id, puzzle_result, include_boundary
 #' merge_fusion_groups(list(c(1,2), c(3,4)))    # -> list(c(1,2), c(3,4))
 #' }
 #'
-#' @export
 merge_fusion_groups <- function(fusion_groups) {
   if (is.null(fusion_groups) || length(fusion_groups) == 0) {
     return(list())
@@ -674,7 +672,6 @@ parse_fusion_input <- function(input, puzzle_result = NULL, auto_merge = TRUE) {
 #'
 #' @return List with valid (TRUE/FALSE), message, and details
 #'
-#' @export
 validate_all_fusion_groups <- function(fusion_groups, puzzle_result) {
   if (is.null(fusion_groups) || length(fusion_groups) == 0) {
     return(list(valid = TRUE, message = "No fusion groups"))
@@ -877,7 +874,6 @@ get_complementary_edge_key <- function(edge_key, puzzle_result) {
 #'     \item{piece_to_group}{Named list mapping piece IDs to fusion group index}
 #'   }
 #'
-#' @export
 compute_fused_edges <- function(fusion_groups, puzzle_result) {
   if (is.null(fusion_groups) || length(fusion_groups) == 0) {
     return(list(
@@ -988,7 +984,6 @@ compute_fused_edges <- function(fusion_groups, puzzle_result) {
 #'
 #' @return TRUE if edge is fused (internal to a meta-piece), FALSE otherwise
 #'
-#' @export
 is_edge_fused <- function(piece_id, direction, fused_edge_data) {
   if (is.null(fused_edge_data)) {
     return(FALSE)
@@ -1032,7 +1027,6 @@ get_piece_fusion_group <- function(piece_id, fused_edge_data) {
 #'
 #' @return Vector of piece IDs in the group
 #'
-#' @export
 get_fusion_group_pieces <- function(group_idx, fusion_groups) {
   if (is.null(fusion_groups) || group_idx < 1 || group_idx > length(fusion_groups)) {
     return(integer())
@@ -1050,7 +1044,6 @@ get_fusion_group_pieces <- function(group_idx, fusion_groups) {
 #'
 #' @return Character vector of edge keys
 #'
-#' @export
 get_group_internal_edges <- function(group_idx, fused_edge_data) {
   if (is.null(fused_edge_data)) {
     return(character())
@@ -1076,7 +1069,6 @@ get_group_internal_edges <- function(group_idx, fused_edge_data) {
 #'
 #' @return Data frame with piece_id, direction, neighbor_id (NA if puzzle boundary)
 #'
-#' @export
 get_group_boundary_edges <- function(fusion_group, puzzle_result, fused_edge_data) {
   # Pre-collect all boundary edges using lists (optimized - no rbind)
   results <- vector("list", length(fusion_group))
@@ -1130,7 +1122,6 @@ get_group_boundary_edges <- function(fusion_group, puzzle_result, fused_edge_dat
 #' @param piece_id Piece ID (1-based)
 #' @param rings Number of rings in puzzle
 #' @return Data frame with direction, neighbor_id, is_boundary
-#' @export
 get_concentric_neighbors <- function(piece_id, rings) {
   info <- map_concentric_piece_id(piece_id, rings)
   ring <- info$ring
@@ -1173,7 +1164,6 @@ get_concentric_neighbors <- function(piece_id, rings) {
 #'
 #' @param direction Edge direction (INNER/RIGHT/OUTER/LEFT or 1-6 for center)
 #' @return Opposite direction
-#' @export
 get_concentric_complementary_direction <- function(direction) {
   # Trapezoid edges
   if (direction == "INNER") return("OUTER")
@@ -1207,7 +1197,6 @@ get_concentric_complementary_direction <- function(direction) {
 #'   - fused_edges: Character vector of edge keys that are internal
 #'   - edge_to_group: Named list mapping edge keys to group indices
 #'   - piece_to_group: Named list mapping piece IDs to group indices
-#' @export
 compute_concentric_fused_edges <- function(fusion_groups, puzzle_result) {
   if (is.null(fusion_groups) || length(fusion_groups) == 0) {
     return(NULL)
@@ -1385,7 +1374,6 @@ get_hex_neighbor_data <- function(rings) {
 
 #' Clear hexagonal neighbor cache
 #'
-#' @export
 clear_hex_neighbor_cache <- function() {
   rm(list = ls(envir = .hex_neighbor_cache), envir = .hex_neighbor_cache)
 }
@@ -1411,7 +1399,6 @@ get_hex_topo_neighbor_matrix <- function(rings) {
 #' @param piece_id Piece ID (1-based)
 #' @param rings Number of rings in puzzle
 #' @return Data frame with side (0-5), neighbor_id, is_boundary
-#' @export
 get_hex_neighbors_for_fusion <- function(piece_id, rings) {
   # Use cached topology matrix for O(1) lookup
   topo_matrix <- get_hex_topo_neighbor_matrix(rings)
@@ -1437,7 +1424,6 @@ get_hex_neighbors_for_fusion <- function(piece_id, rings) {
 #'
 #' @param side Side number (0-5) as character or integer
 #' @return Opposite side number as character
-#' @export
 get_hex_complementary_side <- function(side) {
   side_num <- as.integer(side)
   opposite <- (side_num + 3) %% 6
@@ -1458,7 +1444,6 @@ get_hex_complementary_side <- function(side) {
 #'   - fused_edges: Character vector of edge keys that are internal
 #'   - edge_to_group: Named list mapping edge keys to group indices
 #'   - piece_to_group: Named list mapping piece IDs to group indices
-#' @export
 compute_hex_fused_edges <- function(fusion_groups, puzzle_result) {
   if (is.null(fusion_groups) || length(fusion_groups) == 0) {
     return(NULL)

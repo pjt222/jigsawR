@@ -31,8 +31,9 @@ Uses the formula:
 Where golden_angle = pi * (3 - sqrt(5)) radians
 }
 \examples{
+\dontrun{
 # Generate 50 points in a 300x300 area
 pts <- generate_fermat_points(50, c(300, 300))
 plot(pts$x, pts$y, asp = 1)
-
+}
 }

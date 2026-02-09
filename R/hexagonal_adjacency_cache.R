@@ -13,7 +13,6 @@
 #'
 #' @param rings Number of rings in puzzle
 #' @return Matrix where adj_matrix[piece_id, side+1] = neighbor_id (or NA for boundary)
-#' @export
 get_hex_adjacency_matrix <- function(rings) {
   cache_key <- as.character(rings)
 
@@ -87,7 +86,6 @@ get_hex_adjacency_matrix <- function(rings) {
 #' @param side Side number (0-5)
 #' @param rings Number of rings in puzzle
 #' @return Neighbor piece ID or NA if boundary
-#' @export
 get_hex_neighbor_fast <- function(piece_id, side, rings) {
   adj_matrix <- get_hex_adjacency_matrix(rings)
   return(adj_matrix[piece_id, side + 1])
@@ -101,7 +99,6 @@ get_hex_neighbor_fast <- function(piece_id, side, rings) {
 #' @param piece_id Piece ID (1 to num_pieces)
 #' @param rings Number of rings in puzzle
 #' @return Data frame with direction, neighbor_id, is_boundary
-#' @export
 get_hex_neighbors_fast <- function(piece_id, rings) {
   adj_matrix <- get_hex_adjacency_matrix(rings)
 
@@ -120,7 +117,6 @@ get_hex_neighbors_fast <- function(piece_id, rings) {
 #'
 #' Useful for testing or when memory is constrained.
 #'
-#' @export
 clear_hex_adjacency_cache <- function() {
   rm(list = ls(envir = .hex_adjacency_cache), envir = .hex_adjacency_cache)
 }
@@ -139,7 +135,6 @@ clear_hex_adjacency_cache <- function() {
 #' @param fusion_groups List of piece ID vectors
 #' @param rings Number of rings in puzzle
 #' @return List with fused_edges, edge_to_group, piece_to_group
-#' @export
 compute_hex_fused_edges_fast <- function(fusion_groups, rings) {
   if (is.null(fusion_groups) || length(fusion_groups) == 0) {
     return(NULL)

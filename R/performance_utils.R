@@ -36,7 +36,6 @@ has_parallel <- function() {
 #' @param verbose Print configuration info
 #' @return Invisible number of threads configured
 #'
-#' @export
 configure_data_table <- function(threads = NULL, verbose = FALSE) {
   if (!has_data_table()) {
     if (verbose) {
@@ -70,7 +69,6 @@ configure_data_table <- function(threads = NULL, verbose = FALSE) {
 #' @param rings Number of rings in hexagonal puzzle
 #' @return data.frame (or data.table if available) with piece_id, side, neighbor_id
 #'
-#' @export
 build_hex_neighbor_map_fast <- function(rings) {
   num_pieces <- 3 * rings * (rings - 1) + 1
   n_rows <- num_pieces * 6L
@@ -122,7 +120,6 @@ build_hex_neighbor_map_fast <- function(rings) {
 #'
 #' @return List of puzzle results
 #'
-#' @export
 generate_puzzles_parallel <- function(n_puzzles, type, grid, size,
                                       seeds = seq_len(n_puzzles),
                                       n_workers = NULL, ...) {
@@ -214,7 +211,6 @@ build_svg_path <- function(commands) {
 #'
 #' @return List with configuration details
 #'
-#' @export
 get_performance_config <- function() {
   list(
     data_table = list(
@@ -232,7 +228,6 @@ get_performance_config <- function() {
 
 #' Print performance configuration
 #'
-#' @export
 print_performance_config <- function() {
   config <- get_performance_config()
 

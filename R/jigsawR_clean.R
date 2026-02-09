@@ -411,7 +411,6 @@ generate_puzzle <- function(type = "rectangular",
 #' @param filename_prefix Prefix for output files
 #' @param colors Optional vector of colors
 #' @param stroke_width Line width for SVG strokes (default: 1.5)
-#' @export
 save_individual_pieces <- function(puzzle_structure, output_dir, filename_prefix, colors = NULL, stroke_width = 1.5) {
 
   xn <- puzzle_structure$grid[2]
@@ -666,7 +665,6 @@ generate_puzzle_batch <- function(variations, base_dir = "output/batch",
 #' 
 #' @param puzzle_structure Output from generate_puzzle_core()
 #' @return TRUE if valid, otherwise stops with error
-#' @export
 validate_puzzle_fit <- function(puzzle_structure) {
   
   xn <- puzzle_structure$grid[2]

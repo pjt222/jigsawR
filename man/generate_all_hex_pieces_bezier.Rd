@@ -39,7 +39,8 @@ List of piece objects
 Convenience function to generate all pieces in a puzzle.
 }
 \examples{
+\dontrun{
 # Generate all pieces for 3-ring puzzle
 pieces <- generate_all_hex_pieces_bezier(rings = 3, seed = 42)
-
+}
 }

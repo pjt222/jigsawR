@@ -21,7 +21,6 @@
 #' @param background Background color for pieces (default: "none")
 #' @param opacity Opacity of puzzle pieces (0.0 to 1.0, default 1.0 = fully opaque)
 #' @return List containing piece paths and metadata
-#' @export
 generate_hexagonal_individual_pieces <- function(rings = 3, seed = NULL,
                                                  diameter = 240,
                                                  tabsize = 27, jitter = 5,
@@ -42,16 +41,6 @@ generate_hexagonal_individual_pieces <- function(rings = 3, seed = NULL,
   # Ensure output directory exists
   if (!dir.exists(output_dir)) {
     dir.create(output_dir, recursive = TRUE)
-  }
-
-  # Source required functions if not in package context
-  if (!exists("generate_hex_pieces_with_edge_map")) {
-    if (file.exists("R/hexagonal_edge_generation_fixed.R")) {
-      source("R/hexagonal_topology.R")
-      source("R/hexagonal_neighbors.R")
-      source("R/hexagonal_bezier_generation.R")
-      source("R/hexagonal_edge_generation_fixed.R")
-    }
   }
 
   # Calculate number of pieces
@@ -386,7 +375,6 @@ calculate_pieces_viewbox <- function(pieces, piece_radius) {
 #' @param stroke_width Line width
 #' @param opacity Opacity of puzzle pieces (0.0 to 1.0, default 1.0 = fully opaque)
 #' @return SVG content as string
-#' @export
 create_hexagonal_individual_pieces_svg <- function(rings = 3, seed = NULL,
                                                    diameter = 240,
                                                    tabsize = 27, jitter = 5,
@@ -396,16 +384,6 @@ create_hexagonal_individual_pieces_svg <- function(rings = 3, seed = NULL,
 
   if (is.null(seed)) {
     seed <- as.integer(runif(1) * 10000)
-  }
-
-  # Source required functions
-  if (!exists("generate_hex_pieces_with_edge_map")) {
-    if (file.exists("R/hexagonal_edge_generation_fixed.R")) {
-      source("R/hexagonal_topology.R")
-      source("R/hexagonal_neighbors.R")
-      source("R/hexagonal_bezier_generation.R")
-      source("R/hexagonal_edge_generation_fixed.R")
-    }
   }
 
   # Generate pieces

@@ -148,7 +148,6 @@ get_inner_neighbor <- function(piece_id, rings) {
 #' @param max_tab_size Maximum absolute tab size in mm (default: NULL for no limit).
 #'   Prevents tabs from becoming too large on long edges.
 #' @return List with edge_map, piece_edges (list of edges per piece), and piece_vertices
-#' @export
 generate_concentric_edge_map <- function(rings, seed, diameter,
                                           tabsize = 27, jitter = 5,
                                           center_shape = "hexagon",
@@ -156,11 +155,6 @@ generate_concentric_edge_map <- function(rings, seed, diameter,
                                           boundary_facing = "outward",
                                           min_tab_size = NULL,
                                           max_tab_size = NULL) {
-  # Source dependencies
-  if (!exists("generate_hex_bezier_edge")) {
-    source("R/hexagonal_bezier_generation.R")
-  }
-
   num_pieces <- get_concentric_piece_count(rings)
   piece_height <- get_concentric_piece_height(diameter, rings)
   tab_params <- list(tabsize = tabsize, jitter = jitter)
@@ -555,7 +549,6 @@ generate_concentric_edge_map <- function(rings, seed, diameter,
 #' @param piece_id Piece ID
 #' @param edge_data Edge map data from generate_concentric_edge_map
 #' @return SVG path string
-#' @export
 build_concentric_piece_path <- function(piece_id, edge_data) {
   piece_info <- edge_data$piece_vertices[[piece_id]]
   piece_edge_list <- edge_data$piece_edges[[piece_id]]
@@ -783,7 +776,6 @@ build_concentric_piece_path <- function(piece_id, edge_data) {
 #' @param min_tab_size Minimum absolute tab size in mm (NULL for no limit)
 #' @param max_tab_size Maximum absolute tab size in mm (NULL for no limit)
 #' @return List with pieces and metadata
-#' @export
 generate_concentric_pieces <- function(rings, seed, diameter,
                                         tabsize = 27, jitter = 5,
                                         center_shape = "hexagon",

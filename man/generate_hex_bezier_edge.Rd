@@ -49,6 +49,7 @@ If min_tab_size would require a tab wider than 70% of the edge,
 a straight line is returned instead.
 }
 \examples{
+\dontrun{
 v1 <- c(0, 0)
 v2 <- c(10, 0)
 edge <- generate_hex_bezier_edge(v1, v2, seed = 42, edge_id = 1,
@@ -58,5 +59,5 @@ edge <- generate_hex_bezier_edge(v1, v2, seed = 42, edge_id = 1,
 edge <- generate_hex_bezier_edge(v1, v2, seed = 42, edge_id = 1,
                                   tab_params = list(tabsize = 27, jitter = 5),
                                   min_tab_size = 2, max_tab_size = 8)
-
+}
 }

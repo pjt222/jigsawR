@@ -20,13 +20,7 @@
 #' - Side 4: Lower-left (240°)
 #' - Side 5: Lower-right (300°)
 #'
-#' @export
 get_hex_neighbor <- function(piece_id, side, rings) {
-  # Source topology if needed
-  if (!exists("map_piece_id_to_ring")) {
-    source("R/hexagonal_topology.R")
-  }
-
   ring_info <- map_piece_id_to_ring(piece_id, rings)
   num_pieces <- 3 * rings * (rings - 1) + 1
 
@@ -211,7 +205,6 @@ get_inner_ring_neighbor <- function(piece_id, side, ring_info, rings) {
 #' @param rings Number of rings
 #' @return Data frame with piece_id, side, neighbor_id
 #'
-#' @export
 build_hex_neighbor_map <- function(rings) {
   num_pieces <- 3 * rings * (rings - 1) + 1
 

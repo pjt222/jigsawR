@@ -22,13 +22,13 @@ LinkingTo: Rcpp
 Imports:
     Rcpp,
     ggplot2,
-    ggforce,
     ggfx,
     viridis,
     config,
     cli
 Suggests:
     testthat (>= 3.0.0),
+    ggforce,
     knitr,
     rmarkdown,
     data.table,

@@ -53,6 +53,7 @@
 #'   straight lines instead of tabs
 #'
 #' @examples
+#' \dontrun{
 #' # Horizontal edge
 #' edge <- generate_tessellation_edge(c(0, 0), c(100, 0), seed = 42, edge_id = 1)
 #' cat(edge$forward)
@@ -60,8 +61,7 @@
 #' # Diagonal edge with tab size constraints
 #' edge <- generate_tessellation_edge(c(0, 0), c(70, 70), seed = 42, edge_id = 2,
 #'                                     min_tab_size = 10, max_tab_size = 30)
-#'
-#' @export
+#' }
 generate_tessellation_edge <- function(v1, v2, seed, edge_id,
                                         tabsize = 20, jitter = 4,
                                         tab_direction = 1,
@@ -195,7 +195,6 @@ generate_tessellation_edge <- function(v1, v2, seed, edge_id,
 #' @param v2 End vertex c(x, y)
 #' @return List with forward and reverse SVG paths
 #'
-#' @export
 generate_straight_edge <- function(v1, v2) {
   list(
     forward = sprintf("L %.4f %.4f", v2[1], v2[2]),
@@ -228,7 +227,6 @@ generate_straight_edge <- function(v1, v2) {
 #' Edge keys use the pattern \code{"E<smaller_id>-<larger_id>"} to ensure
 #' consistent lookup regardless of which cell queries the edge.
 #'
-#' @export
 build_tessellation_edge_map <- function(adjacency, seed, tabsize = 20, jitter = 4,
                                          boundary_cells = NULL) {
   edge_map <- list()
@@ -352,7 +350,6 @@ build_typed_edge_map <- function(adjacency, seed, tabsize, jitter,
 #' @param neighbor_id ID of the adjacent cell (or -1 for boundary)
 #' @return SVG path string for the edge
 #'
-#' @export
 get_edge_path <- function(edge_map, cell_id, neighbor_id) {
   # Handle boundary edges
   if (is.na(neighbor_id) || neighbor_id < 0) {
@@ -406,11 +403,11 @@ get_edge_path <- function(edge_map, cell_id, neighbor_id) {
 #' Where golden_angle = pi * (3 - sqrt(5)) radians
 #'
 #' @examples
+#' \dontrun{
 #' # Generate 50 points in a 300x300 area
 #' pts <- generate_fermat_points(50, c(300, 300))
 #' plot(pts$x, pts$y, asp = 1)
-#'
-#' @export
+#' }
 generate_fermat_points <- function(n, size, seed = NULL, center = NULL) {
   if (!is.null(seed)) {
     set.seed(seed)
@@ -458,7 +455,6 @@ generate_fermat_points <- function(n, size, seed = NULL, center = NULL) {
 #' @param seed Random seed
 #' @return Data frame with x and y columns
 #'
-#' @export
 generate_uniform_points <- function(n, size, seed) {
   set.seed(seed)
   # size = c(height, width), so width = size[2], height = size[1]
@@ -480,7 +476,6 @@ generate_uniform_points <- function(n, size, seed) {
 #' @param jitter_amount Jitter as fraction of cell size (default: 0.3)
 #' @return Data frame with x and y columns
 #'
-#' @export
 generate_jittered_grid_points <- function(grid, size, seed, jitter_amount = 0.3) {
   set.seed(seed)
   # size = c(height, width), so width = size[2], height = size[1]
@@ -542,7 +537,6 @@ generate_jittered_grid_points <- function(grid, size, seed, jitter_amount = 0.3)
 #' For n_corner = 4, creates a rectangle (not a rotated square).
 #' For other values, creates a regular polygon inscribed in an ellipse.
 #'
-#' @export
 generate_base_polygon <- function(n_corner, size, center = NULL) {
   # size = c(height, width), so width = size[2], height = size[1]
   width <- size[2]
@@ -604,7 +598,6 @@ generate_base_polygon <- function(n_corner, size, center = NULL) {
 #' Points are guaranteed to be inside the boundary and at least
 #' min_distance apart (Poisson disk sampling variant).
 #'
-#' @export
 generate_interior_points <- function(n_points, boundary, seed,
                                       min_distance = NULL) {
   set.seed(seed)

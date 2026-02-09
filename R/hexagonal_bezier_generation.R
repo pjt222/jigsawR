@@ -28,6 +28,7 @@
 #' a straight line is returned instead.
 #'
 #' @examples
+#' \dontrun{
 #' v1 <- c(0, 0)
 #' v2 <- c(10, 0)
 #' edge <- generate_hex_bezier_edge(v1, v2, seed = 42, edge_id = 1,
@@ -37,8 +38,7 @@
 #' edge <- generate_hex_bezier_edge(v1, v2, seed = 42, edge_id = 1,
 #'                                   tab_params = list(tabsize = 27, jitter = 5),
 #'                                   min_tab_size = 2, max_tab_size = 8)
-#'
-#' @export
+#' }
 generate_hex_bezier_edge <- function(v1, v2, seed, edge_id,
                                       tab_params = list(tabsize = 27, jitter = 5),
                                       min_tab_size = NULL,
@@ -157,24 +157,19 @@ generate_hex_bezier_edge <- function(v1, v2, seed, edge_id,
 #' @return List with piece SVG path and metadata
 #'
 #' @examples
+#' \dontrun{
 #' # Generate center piece
 #' piece1 <- generate_hex_piece_bezier(1, rings = 3, seed = 42, diameter = 240)
 #'
 #' # Generate separated outer piece
 #' piece8 <- generate_hex_piece_bezier(8, rings = 3, seed = 42, diameter = 240,
 #'                                      separated = TRUE, base_spacing = 60)
-#'
-#' @export
+#' }
 generate_hex_piece_bezier <- function(piece_id, rings, seed, diameter = 240,
                                        tabsize = 27, jitter = 5,
                                        separated = TRUE,
                                        base_spacing = NULL,
                                        separation_factor = 1.0) {
-
-  # Source dependencies if needed
-  if (!exists("map_piece_id_to_ring")) {
-    source("R/hexagonal_topology.R")
-  }
 
   # Get topology information
   ring_info <- map_piece_id_to_ring(piece_id, rings)
@@ -298,10 +293,10 @@ generate_hex_piece_bezier <- function(piece_id, rings, seed, diameter = 240,
 #' @return List of piece objects
 #'
 #' @examples
+#' \dontrun{
 #' # Generate all pieces for 3-ring puzzle
 #' pieces <- generate_all_hex_pieces_bezier(rings = 3, seed = 42)
-#'
-#' @export
+#' }
 generate_all_hex_pieces_bezier <- function(rings, seed, diameter = 240,
                                             tabsize = 27, jitter = 5,
                                             separated = TRUE,

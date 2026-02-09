@@ -26,6 +26,7 @@ Piece numbering:
 - etc.
 }
 \examples{
+\dontrun{
 # Get coordinates for piece 5 in a 3-ring puzzle
 info <- map_piece_id_to_axial(piece_id = 5, rings = 3)
 # Returns: list(q = ..., r = ..., ring = 1, position = 3)
@@ -35,4 +36,5 @@ num_pieces <- 3 * 3 * (3 - 1) + 1  # 19 pieces for 3 rings
 all_info <- lapply(1:num_pieces, function(i) {
   map_piece_id_to_axial(i, rings = 3)
 })
+}
 }

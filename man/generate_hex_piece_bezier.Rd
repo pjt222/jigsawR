@@ -43,11 +43,12 @@ Creates a hexagonal puzzle piece with 6 edges, each having bezier curves with ta
 All pieces use honeycomb orientation (flat-top, no rotation).
 }
 \examples{
+\dontrun{
 # Generate center piece
 piece1 <- generate_hex_piece_bezier(1, rings = 3, seed = 42, diameter = 240)
 
 # Generate separated outer piece
 piece8 <- generate_hex_piece_bezier(8, rings = 3, seed = 42, diameter = 240,
                                      separated = TRUE, base_spacing = 60)
-
+}
 }

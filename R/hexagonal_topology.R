@@ -17,6 +17,7 @@
 #' @param rings Number of rings in the puzzle
 #' @return Named list with q, r (axial coordinates), ring, and position
 #' @examples
+#' \dontrun{
 #' # Get coordinates for piece 5 in a 3-ring puzzle
 #' info <- map_piece_id_to_axial(piece_id = 5, rings = 3)
 #' # Returns: list(q = ..., r = ..., ring = 1, position = 3)
@@ -26,7 +27,7 @@
 #' all_info <- lapply(1:num_pieces, function(i) {
 #'   map_piece_id_to_axial(i, rings = 3)
 #' })
-#' @export
+#' }
 map_piece_id_to_axial <- function(piece_id, rings) {
   num_pieces <- 3 * rings * (rings - 1) + 1
 
@@ -147,6 +148,7 @@ map_piece_id_to_ring <- function(piece_id, rings) {
 #'
 #' The center hexagon (q=0, r=0) is at (0, 0).
 #' @examples
+#' \dontrun{
 #' # Center hexagon
 #' center <- axial_to_cartesian(q = 0, r = 0, hex_size = 10)
 #' # Returns: list(x = 0, y = 0)
@@ -158,7 +160,7 @@ map_piece_id_to_ring <- function(piece_id, rings) {
 #' # Hexagon below-right (q=1, r=-1)
 #' below_right <- axial_to_cartesian(q = 1, r = -1, hex_size = 10)
 #' # Returns: list(x = 15, y = -17.32)
-#' @export
+#' }
 axial_to_cartesian <- function(q, r, hex_size) {
   x <- hex_size * (3/2 * q)
   y <- hex_size * (sqrt(3)/2 * q + sqrt(3) * r)
@@ -214,6 +216,7 @@ hex_ring_to_cartesian <- function(ring, angle, ring_spacing = 1.0) {
 #' - Center piece is at (0, 0)
 #'
 #' @examples
+#' \dontrun{
 #' # Position for piece 1 (center) with 20mm piece radius
 #' pos1 <- calculate_hex_piece_position(
 #'   piece_id = 1, rings = 3, piece_radius = 20
@@ -224,7 +227,7 @@ hex_ring_to_cartesian <- function(ring, angle, ring_spacing = 1.0) {
 #' pos5 <- calculate_hex_piece_position(
 #'   piece_id = 5, rings = 3, piece_radius = 20, separation_factor = 1.5
 #' )
-#' @export
+#' }
 calculate_hex_piece_position <- function(piece_id, rings, piece_radius = NULL,
                                          base_spacing = NULL,
                                          separation_factor = 1.0) {
@@ -291,12 +294,13 @@ calculate_hex_piece_position <- function(piece_id, rings, piece_radius = NULL,
 #' - Pushing edge midpoints outward (l<1 means divide increases distance)
 #'
 #' @examples
+#' \dontrun{
 #' # At 0 degrees (hexagon edge midpoint): no change
 #' edge_mid <- apply_hex_warp(50, 0)  # Returns same point
 #'
 #' # At 30 degrees (between corner and edge): pushed outward
 #' between <- apply_hex_warp(43.3, 25)
-#' @export
+#' }
 apply_hex_warp <- function(x, y) {
 
   # Handle origin case
@@ -340,7 +344,6 @@ apply_hex_warp <- function(x, y) {
 #' @param y Y coordinate of the vertex
 #' @param target_radius The radius of the truncation hexagon (distance to corners)
 #' @return List with x and y coordinates projected onto hexagon boundary
-#' @export
 apply_hex_trunc <- function(x, y, target_radius) {
 
   # Handle origin case
@@ -397,7 +400,6 @@ apply_hex_trunc <- function(x, y, target_radius) {
 #' @param puzzle_radius The outer radius of the puzzle (diameter/2)
 #' @param tolerance Tolerance for floating point comparison (default: 0.01)
 #' @return TRUE if vertex is on outer boundary, FALSE otherwise
-#' @export
 is_boundary_vertex <- function(x, y, puzzle_radius, tolerance = 0.01) {
   # Calculate distance from center
 
@@ -428,7 +430,6 @@ is_boundary_vertex <- function(x, y, puzzle_radius, tolerance = 0.01) {
 #' @param large_arc Use large arc (1) or small arc (0), default 0
 #' @param sweep Sweep direction: 1 for clockwise, 0 for counter-clockwise
 #' @return SVG arc command string "A rx ry rotation large-arc sweep x y"
-#' @export
 svg_arc_command <- function(x1, y1, x2, y2, radius, large_arc = 0, sweep = 1) {
   # SVG arc: A rx ry x-axis-rotation large-arc-flag sweep-flag x y
   # For a circle: rx = ry = radius, rotation = 0

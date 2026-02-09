@@ -7,7 +7,6 @@
 #' @param width_px Width in pixels
 #' @param height_px Height in pixels
 #' @return TRUE if successful, FALSE otherwise
-#' @export
 convert_svg_to_png <- function(svg_content, output_file, width_px = 2000, height_px = 2000) {
   
   # Ensure parent directory exists
@@ -56,11 +55,14 @@ convert_svg_to_png <- function(svg_content, output_file, width_px = 2000, height
   inkscape_cmd <- Sys.which("inkscape")
   if (nzchar(inkscape_cmd)) {
     log_info("Using Inkscape command line...")
-    cmd <- sprintf('"%s" --export-type=png --export-filename="%s" --export-width=%d --export-height=%d "%s"',
-                   inkscape_cmd, output_file, width_px, height_px, temp_svg)
-
     result <- tryCatch({
-      system(cmd, intern = TRUE)
+      system2(inkscape_cmd,
+              args = c("--export-type=png",
+                       paste0("--export-filename=", output_file),
+                       paste0("--export-width=", width_px),
+                       paste0("--export-height=", height_px),
+                       temp_svg),
+              stdout = TRUE, stderr = TRUE)
       file.exists(output_file)
     }, error = function(e) FALSE)
 
@@ -74,11 +76,12 @@ convert_svg_to_png <- function(svg_content, output_file, width_px = 2000, height
   convert_cmd <- Sys.which("convert")
   if (nzchar(convert_cmd)) {
     log_info("Using ImageMagick convert...")
-    cmd <- sprintf('"%s" -density 300 -resize %dx%d "%s" "%s"',
-                   convert_cmd, width_px, height_px, temp_svg, output_file)
-
     result <- tryCatch({
-      system(cmd, intern = TRUE)
+      system2(convert_cmd,
+              args = c("-density", "300",
+                       "-resize", paste0(width_px, "x", height_px),
+                       temp_svg, output_file),
+              stdout = TRUE, stderr = TRUE)
       file.exists(output_file)
     }, error = function(e) FALSE)
 
@@ -101,7 +104,6 @@ convert_svg_to_png <- function(svg_content, output_file, width_px = 2000, height
 #' @param combined_file Output path for combined image
 #' @param transparent_background Logical, whether to make final background transparent
 #' @return TRUE if successful, FALSE otherwise
-#' @export
 combine_image_layers <- function(background_file, overlay_file, combined_file, transparent_background = FALSE) {
   
   # Ensure parent directory exists
@@ -163,7 +165,6 @@ combine_image_layers <- function(background_file, overlay_file, combined_file, t
 
 #' Check available conversion tools and report status
 #' @return List of available tools
-#' @export
 check_conversion_tools <- function() {
 
   log_subheader("Checking available conversion tools")

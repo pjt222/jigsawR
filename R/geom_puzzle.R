@@ -2,8 +2,6 @@
 # Part of the jigsawR ggpuzzle extension
 
 #' @include stat_puzzle.R
-#' @import ggplot2
-#' @import grid
 NULL
 
 # Helper function to ensure data has at least one row
@@ -53,6 +51,9 @@ make_puzzle_layer <- function(puzzle_type,
                               max_tab_size = NULL,
                               seed = NULL,
                               offset = 0,
+                              layout = "grid",
+                              repel_margin = 2,
+                              repel_max_iter = 100,
                               bezier_resolution = 20,
                               fill_direction = "forward",
                               fusion_groups = NULL,
@@ -73,6 +74,9 @@ make_puzzle_layer <- function(puzzle_type,
     max_tab_size = max_tab_size,
     seed = seed,
     offset = offset,
+    layout = layout,
+    repel_margin = repel_margin,
+    repel_max_iter = repel_max_iter,
     bezier_resolution = bezier_resolution,
     fill_direction = fill_direction,
     fusion_groups = fusion_groups,
@@ -343,6 +347,10 @@ GeomPuzzle <- ggplot2::ggproto("GeomPuzzle", ggplot2::Geom,
 #' @param max_tab_size Maximum tab height in mm (NULL for no constraint).
 #' @param seed Random seed for reproducible puzzle shapes.
 #' @param offset Separation offset between pieces (0 = complete puzzle, >0 = separated).
+#' @param layout Layout algorithm: "grid" (default) or "repel". Repel layout
+#'   applies force-directed separation to avoid piece overlap when offset > 0.
+#' @param repel_margin Minimum gap between pieces for repel layout (default: 2).
+#' @param repel_max_iter Maximum iterations for repel layout convergence (default: 100).
 #' @param bezier_resolution Points per Bezier curve (default: 20).
 #' @param fill_direction Direction for color assignment: "forward" (default) or "reverse".
 #'   Reverses the spatial order of color assignment across pieces.
@@ -406,6 +414,9 @@ geom_puzzle_rect <- function(mapping = NULL,
                               max_tab_size = NULL,
                               seed = NULL,
                               offset = 0,
+                              layout = "grid",
+                              repel_margin = 2,
+                              repel_max_iter = 100,
                               bezier_resolution = 20,
                               fill_direction = "forward",
                               fusion_groups = NULL,
@@ -425,6 +436,7 @@ geom_puzzle_rect <- function(mapping = NULL,
     mapping = mapping, data = data, stat = stat, position = position,
     tabsize = tabsize, jitter = jitter, min_tab_size = min_tab_size,
     max_tab_size = max_tab_size, seed = seed, offset = offset,
+    layout = layout, repel_margin = repel_margin, repel_max_iter = repel_max_iter,
     bezier_resolution = bezier_resolution, fill_direction = fill_direction,
     fusion_groups = fusion_groups, fusion_style = fusion_style,
     fusion_opacity = fusion_opacity, show_labels = show_labels,
@@ -454,6 +466,10 @@ geom_puzzle_rect <- function(mapping = NULL,
 #' @param max_tab_size Maximum tab height in mm (NULL for no constraint).
 #' @param seed Random seed for reproducible puzzle shapes.
 #' @param offset Separation offset between pieces (0 = complete puzzle, >0 = separated).
+#' @param layout Layout algorithm: "grid" (default) or "repel". Repel layout
+#'   applies force-directed separation to avoid piece overlap when offset > 0.
+#' @param repel_margin Minimum gap between pieces for repel layout (default: 2).
+#' @param repel_max_iter Maximum iterations for repel layout convergence (default: 100).
 #' @param bezier_resolution Points per Bezier curve (default: 20).
 #' @param do_warp Apply circular warping transformation (default: TRUE).
 #' @param do_trunc Truncate edge pieces at boundary (default: TRUE).
@@ -512,6 +528,9 @@ geom_puzzle_hex <- function(mapping = NULL,
                             max_tab_size = NULL,
                             seed = NULL,
                             offset = 0,
+                            layout = "grid",
+                            repel_margin = 2,
+                            repel_max_iter = 100,
                             bezier_resolution = 20,
                             do_warp = TRUE,
                             do_trunc = TRUE,
@@ -536,6 +555,7 @@ geom_puzzle_hex <- function(mapping = NULL,
     mapping = mapping, data = data, stat = stat, position = position,
     tabsize = tabsize, jitter = jitter, min_tab_size = min_tab_size,
     max_tab_size = max_tab_size, seed = seed, offset = offset,
+    layout = layout, repel_margin = repel_margin, repel_max_iter = repel_max_iter,
     bezier_resolution = bezier_resolution, fill_direction = fill_direction,
     fusion_groups = fusion_groups, fusion_style = fusion_style,
     fusion_opacity = fusion_opacity, show_labels = show_labels,
@@ -565,6 +585,10 @@ geom_puzzle_hex <- function(mapping = NULL,
 #' @param max_tab_size Maximum tab height in mm (NULL for no constraint).
 #' @param seed Random seed for reproducible puzzle shapes.
 #' @param offset Separation offset between pieces (0 = complete puzzle, >0 = separated).
+#' @param layout Layout algorithm: "grid" (default) or "repel". Repel layout
+#'   applies force-directed separation to avoid piece overlap when offset > 0.
+#' @param repel_margin Minimum gap between pieces for repel layout (default: 2).
+#' @param repel_max_iter Maximum iterations for repel layout convergence (default: 100).
 #' @param bezier_resolution Points per Bezier curve (default: 20).
 #' @param center_shape Shape of the center piece: "hexagon" or "circle".
 #' @param do_circular_border Use perfect circular arc borders (default: FALSE).
@@ -617,6 +641,9 @@ geom_puzzle_conc <- function(mapping = NULL,
                              max_tab_size = NULL,
                              seed = NULL,
                              offset = 0,
+                             layout = "grid",
+                             repel_margin = 2,
+                             repel_max_iter = 100,
                              bezier_resolution = 20,
                              center_shape = "hexagon",
                              do_circular_border = FALSE,
@@ -642,6 +669,7 @@ geom_puzzle_conc <- function(mapping = NULL,
     mapping = mapping, data = data, stat = stat, position = position,
     tabsize = tabsize, jitter = jitter, min_tab_size = min_tab_size,
     max_tab_size = max_tab_size, seed = seed, offset = offset,
+    layout = layout, repel_margin = repel_margin, repel_max_iter = repel_max_iter,
     bezier_resolution = bezier_resolution, fill_direction = fill_direction,
     fusion_groups = fusion_groups, fusion_style = fusion_style,
     fusion_opacity = fusion_opacity, show_labels = show_labels,
@@ -670,6 +698,10 @@ geom_puzzle_conc <- function(mapping = NULL,
 #' @param max_tab_size Maximum tab height in mm (NULL for no constraint).
 #' @param seed Random seed for reproducible puzzle shapes.
 #' @param offset Separation offset between pieces (0 = complete puzzle, >0 = separated).
+#' @param layout Layout algorithm: "grid" (default) or "repel". Repel layout
+#'   applies force-directed separation to avoid piece overlap when offset > 0.
+#' @param repel_margin Minimum gap between pieces for repel layout (default: 2).
+#' @param repel_max_iter Maximum iterations for repel layout convergence (default: 100).
 #' @param bezier_resolution Points per Bezier curve (default: 20).
 #' @param point_distribution How to distribute seed points:
 #'   "fermat" (default, golden angle spiral), "uniform" (random), or "jittered" (grid with noise).
@@ -722,6 +754,9 @@ geom_puzzle_voronoi <- function(mapping = NULL,
                                 max_tab_size = NULL,
                                 seed = NULL,
                                 offset = 0,
+                                layout = "grid",
+                                repel_margin = 2,
+                                repel_max_iter = 100,
                                 bezier_resolution = 20,
                                 point_distribution = "fermat",
                                 fill_direction = "forward",
@@ -743,6 +778,7 @@ geom_puzzle_voronoi <- function(mapping = NULL,
     mapping = mapping, data = data, stat = stat, position = position,
     tabsize = tabsize, jitter = jitter, min_tab_size = min_tab_size,
     max_tab_size = max_tab_size, seed = seed, offset = offset,
+    layout = layout, repel_margin = repel_margin, repel_max_iter = repel_max_iter,
     bezier_resolution = bezier_resolution, fill_direction = fill_direction,
     fusion_groups = fusion_groups, fusion_style = fusion_style,
     fusion_opacity = fusion_opacity, show_labels = show_labels,
@@ -773,6 +809,10 @@ geom_puzzle_voronoi <- function(mapping = NULL,
 #' @param max_tab_size Maximum tab height in mm (NULL for no constraint).
 #' @param seed Random seed for reproducible puzzle shapes.
 #' @param offset Separation offset between pieces (0 = complete puzzle, >0 = separated).
+#' @param layout Layout algorithm: "grid" (default) or "repel". Repel layout
+#'   applies force-directed separation to avoid piece overlap when offset > 0.
+#' @param repel_margin Minimum gap between pieces for repel layout (default: 2).
+#' @param repel_max_iter Maximum iterations for repel layout convergence (default: 100).
 #' @param bezier_resolution Points per Bezier curve (default: 20).
 #' @param n_corner Number of corners for the base polygon (default: 4 for rectangle).
 #' @param fill_direction Direction for color assignment: "forward" (default) or "reverse".
@@ -825,6 +865,9 @@ geom_puzzle_random <- function(mapping = NULL,
                                max_tab_size = NULL,
                                seed = NULL,
                                offset = 0,
+                               layout = "grid",
+                               repel_margin = 2,
+                               repel_max_iter = 100,
                                bezier_resolution = 20,
                                n_corner = 4,
                                fill_direction = "forward",
@@ -851,6 +894,7 @@ geom_puzzle_random <- function(mapping = NULL,
     mapping = mapping, data = data, stat = stat, position = position,
     tabsize = tabsize, jitter = jitter, min_tab_size = min_tab_size,
     max_tab_size = max_tab_size, seed = seed, offset = offset,
+    layout = layout, repel_margin = repel_margin, repel_max_iter = repel_max_iter,
     bezier_resolution = bezier_resolution, fill_direction = fill_direction,
     fusion_groups = fusion_groups, fusion_style = fusion_style,
     fusion_opacity = fusion_opacity, show_labels = show_labels,
@@ -882,6 +926,10 @@ geom_puzzle_random <- function(mapping = NULL,
 #' @param max_tab_size Maximum tab height in mm (NULL for no constraint).
 #' @param seed Random seed for reproducible puzzle shapes.
 #' @param offset Separation between pieces (0 = complete, >0 = separated).
+#' @param layout Layout algorithm: "grid" (default) or "repel". Repel layout
+#'   applies force-directed separation to avoid piece overlap when offset > 0.
+#' @param repel_margin Minimum gap between pieces for repel layout (default: 2).
+#' @param repel_max_iter Maximum iterations for repel layout convergence (default: 100).
 #' @param bezier_resolution Points per Bezier curve (default: 20).
 #' @param seed_type SNIC seed grid type: "hexagonal", "rectangular", "diamond", "random".
 #' @param fill_direction Direction for color assignment: "forward" (default) or "reverse".
@@ -930,6 +978,9 @@ geom_puzzle_snic <- function(mapping = NULL,
                               max_tab_size = NULL,
                               seed = NULL,
                               offset = 0,
+                              layout = "grid",
+                              repel_margin = 2,
+                              repel_max_iter = 100,
                               bezier_resolution = 20,
                               seed_type = "hexagonal",
                               fill_direction = "forward",
@@ -952,6 +1003,7 @@ geom_puzzle_snic <- function(mapping = NULL,
     mapping = mapping, data = data, stat = stat, position = position,
     tabsize = tabsize, jitter = jitter, min_tab_size = min_tab_size,
     max_tab_size = max_tab_size, seed = seed, offset = offset,
+    layout = layout, repel_margin = repel_margin, repel_max_iter = repel_max_iter,
     bezier_resolution = bezier_resolution, fill_direction = fill_direction,
     fusion_groups = fusion_groups, fusion_style = fusion_style,
     fusion_opacity = fusion_opacity, show_labels = show_labels,

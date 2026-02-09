@@ -10,8 +10,7 @@
 #' @param line_color Color for puzzle lines
 #' @param line_width Width for puzzle lines
 #' @return Enhanced SVG content
-#' @export
-create_enhanced_puzzle_svg <- function(seed = 1234, diameter = 240, rings = 4, 
+create_enhanced_puzzle_svg <- function(seed = 1234, diameter = 240, rings = 4,
                                       tabsize = 27, jitter = 5, 
                                       line_color = "black", line_width = 2.0) {
   
@@ -69,7 +68,6 @@ create_enhanced_puzzle_svg <- function(seed = 1234, diameter = 240, rings = 4,
 #' Save SVG content to file
 #' @param svg_content SVG content string
 #' @param svg_file Output filename for SVG
-#' @export
 save_enhanced_svg <- function(svg_content, svg_file) {
   # Ensure parent directory exists
   output_parent <- dirname(svg_file)

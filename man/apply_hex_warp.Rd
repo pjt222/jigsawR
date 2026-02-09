@@ -39,9 +39,11 @@ This maps a hexagonal grid onto a circle by:
 - Pushing edge midpoints outward (l<1 means divide increases distance)
 }
 \examples{
+\dontrun{
 # At 0 degrees (hexagon edge midpoint): no change
 edge_mid <- apply_hex_warp(50, 0)  # Returns same point
 
 # At 30 degrees (between corner and edge): pushed outward
 between <- apply_hex_warp(43.3, 25)
+}
 }

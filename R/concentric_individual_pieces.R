@@ -22,7 +22,6 @@
 #' @param background Background color for pieces (default: "none")
 #' @param opacity Opacity of puzzle pieces (0.0 to 1.0, default 1.0 = fully opaque)
 #' @return List containing piece paths and metadata
-#' @export
 generate_concentric_individual_pieces <- function(rings = 3, seed = NULL,
                                                   diameter = 240,
                                                   tabsize = 27, jitter = 5,
@@ -44,14 +43,6 @@ generate_concentric_individual_pieces <- function(rings = 3, seed = NULL,
   # Ensure output directory exists
   if (!dir.exists(output_dir)) {
     dir.create(output_dir, recursive = TRUE)
-  }
-
-  # Source required functions if not in package context
-  if (!exists("generate_concentric_pieces")) {
-    if (file.exists("R/concentric_edge_generation.R")) {
-      source("R/concentric_geometry.R")
-      source("R/concentric_edge_generation.R")
-    }
   }
 
   # Calculate number of pieces

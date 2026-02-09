@@ -80,6 +80,10 @@ StatPuzzle <- ggplot2::ggproto("StatPuzzle", ggplot2::Stat,
     params$fusion_opacity <- params$fusion_opacity %||% 0.3
     # Fill direction
     params$fill_direction <- params$fill_direction %||% "forward"
+    # Layout parameters
+    params$layout <- params$layout %||% "grid"
+    params$repel_margin <- params$repel_margin %||% 2
+    params$repel_max_iter <- params$repel_max_iter %||% 100
     params
   },
 
@@ -89,6 +93,9 @@ StatPuzzle <- ggplot2::ggproto("StatPuzzle", ggplot2::Stat,
                            n_pieces = NULL,  # deprecated alias for n_interior
                            tabsize = 20, jitter = 4, seed = NULL,
                            offset = 0,
+                           layout = "grid",
+                           repel_margin = 2,
+                           repel_max_iter = 100,
                            bezier_resolution = 20,
                            do_warp = TRUE, do_trunc = TRUE, do_circular_border = FALSE,
                            center_shape = "hexagon",
@@ -152,6 +159,9 @@ StatPuzzle <- ggplot2::ggproto("StatPuzzle", ggplot2::Stat,
       tabsize = tabsize,
       jitter = jitter,
       offset = offset,
+      layout = layout,
+      repel_margin = repel_margin,
+      repel_max_iter = repel_max_iter,
       save_files = FALSE,
       # Tab constraints
       min_tab_size = min_tab_size,
@@ -355,6 +365,3 @@ compute_ring_reversed_order <- function(n_pieces) {
 
   fill_order
 }
-
-# Null-coalescing operator if not already defined
-`%||%` <- function(a, b) if (is.null(a)) b else a

@@ -37,7 +37,6 @@ calculate_piece_offset <- function(xi, yi, offset, piece_width, piece_height) {
 #' @param palette Viridis palette name (NULL = use config default, only used if colors is NULL)
 #' @param opacity Opacity of puzzle pieces (0.0 to 1.0, default 1.0 = fully opaque)
 #' @return SVG string with separated pieces
-#' @export
 #' @note DEPRECATED: Use generate_puzzle(..., offset = X) instead.
 #'   This function will be removed in a future version.
 generate_separated_puzzle_svg <- function(puzzle_structure,
@@ -193,7 +192,6 @@ generate_separated_puzzle_svg <- function(puzzle_structure,
 #' @param background Background color for SVG (default "white")
 #' @param palette Viridis palette name (NULL = use config default, only used if colors is NULL)
 #' @return SVG string
-#' @export
 generate_puzzle_svg_enhanced <- function(puzzle_structure,
                                         mode = "complete",
                                         colors = NULL,
@@ -212,11 +210,6 @@ generate_puzzle_svg_enhanced <- function(puzzle_structure,
   }
   
   if (puzzle_type == "hexagonal") {
-    # Source hexagonal functions if not already loaded
-    if (!exists("generate_separated_hexagonal_svg")) {
-      source(system.file("R", "hexagonal_separation.R", package = "jigsawR"))
-    }
-    
     if (mode == "separated" || (mode == "individual" && offset > 0)) {
       # Use hexagonal separation function
       return(generate_separated_hexagonal_svg(
@@ -282,8 +275,7 @@ generate_puzzle_svg_enhanced <- function(puzzle_structure,
 #' @param kerf Laser kerf width (material removed by cutting)
 #' @param min_separation Minimum separation between pieces
 #' @return Recommended offset value
-#' @export
-calculate_optimal_offset <- function(piece_width, piece_height, 
+calculate_optimal_offset <- function(piece_width, piece_height,
                                     kerf = 0.2, min_separation = 2) {
   # Minimum offset should account for:
   # 1. Kerf (material removed)

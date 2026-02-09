@@ -66,6 +66,7 @@ the tab fraction. With min/max constraints:
   straight lines instead of tabs
 }
 \examples{
+\dontrun{
 # Horizontal edge
 edge <- generate_tessellation_edge(c(0, 0), c(100, 0), seed = 42, edge_id = 1)
 cat(edge$forward)
@@ -73,5 +74,5 @@ cat(edge$forward)
 # Diagonal edge with tab size constraints
 edge <- generate_tessellation_edge(c(0, 0), c(70, 70), seed = 42, edge_id = 2,
                                     min_tab_size = 10, max_tab_size = 30)
-
+}
 }

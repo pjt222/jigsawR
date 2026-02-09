@@ -4,7 +4,6 @@
 #' 
 #' @param path_string SVG path d attribute string
 #' @return List of path segments
-#' @export
 parse_svg_path <- function(path_string) {
   # Remove extra whitespace and split by commands
   path_string <- gsub("\\s+", " ", trimws(path_string))
@@ -60,7 +59,6 @@ parse_svg_path <- function(path_string) {
 #' @param segments List of parsed path segments to reverse
 #' @param start_point Starting point for the reversed path
 #' @return Reversed SVG path string
-#' @export
 reverse_path_segments <- function(segments, start_point) {
   # Filter to just the bezier curves
   bezier_segments <- segments[sapply(segments, function(s) s$type == "C")]
@@ -103,7 +101,6 @@ reverse_path_segments <- function(segments, start_point) {
 #' @param flip_axis "x" or "y" axis to flip around
 #' @param center Center point for flipping (default 100)
 #' @return Transformed SVG path string
-#' @export
 flip_path_segments <- function(segments, flip_axis = "x", center = 100) {
   flipped <- character()
   
@@ -132,7 +129,6 @@ flip_path_segments <- function(segments, flip_axis = "x", center = 100) {
 #' @param start_y Y-coordinate to start extraction
 #' @param end_y Y-coordinate to end extraction
 #' @return Extracted path segment
-#' @export
 extract_vertical_segment <- function(full_path, start_y, end_y) {
   segments <- parse_svg_path(full_path)
   
@@ -308,7 +304,6 @@ calculate_pieces_bounds <- function(pieces, fallback_fn = NULL) {
 #' @param direction "horizontal" or "vertical"
 #' @param reverse Whether to reverse the path direction
 #' @return Complementary edge path string
-#' @export
 create_complementary_edge <- function(edge_segments, direction = "horizontal", reverse = TRUE) {
   if (length(edge_segments) == 0) {
     return("")
@@ -356,11 +351,12 @@ create_complementary_edge <- function(edge_segments, direction = "horizontal", r
 #' @param p1 End point as c(x, y)
 #' @param n_points Number of points to generate (default 20)
 #' @return Data frame with x and y columns
-#' @export
 #' @examples
+#' \dontrun{
 #' # Simple S-curve
 #' pts <- bezier_to_points(c(0, 0), c(0, 1), c(1, 0), c(1, 1))
 #' plot(pts$x, pts$y, type = "l")
+#' }
 bezier_to_points <- function(p0, cp1, cp2, p1, n_points = 20) {
   # Delegate to bezier_batch which uses C++ when available
   bezier_batch(p0, cp1, cp2, p1, n_points)
@@ -376,12 +372,13 @@ bezier_to_points <- function(p0, cp1, cp2, p1, n_points = 20) {
 #' @param path SVG path string (d attribute)
 #' @param bezier_resolution Number of points per Bezier curve (default 20)
 #' @return Data frame with x and y columns
-#' @export
 #' @examples
+#' \dontrun{
 #' # Simple rectangle
 #' path <- "M 0 0 L 100 0 L 100 100 L 0 100 Z"
 #' poly <- svg_path_to_polygon(path)
 #' plot(poly$x, poly$y, type = "l")
+#' }
 svg_path_to_polygon <- function(path, bezier_resolution = 20) {
   segments <- parse_svg_path(path)
 

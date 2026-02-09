@@ -5,7 +5,6 @@
 #'
 #' @param svg_path Complete SVG path string
 #' @return List of individual path segments with their data
-#' @export
 split_path_by_move <- function(svg_path) {
   # Split by M commands while keeping the M
   # Pattern: M followed by coordinates, then other commands until next M
@@ -185,7 +184,6 @@ extract_unique_endpoints <- function(segments, tolerance = 0.1) {
 #' @param border_path Complete border path
 #' @param rings Number of rings
 #' @return List of individual pieces with their paths
-#' @export
 extract_hex_pieces_from_paths <- function(horizontal_path, vertical_path, border_path, rings) {
 
   cat("Extracting hexagonal pieces from complete paths...\n")
@@ -251,7 +249,6 @@ extract_hex_pieces_from_paths <- function(horizontal_path, vertical_path, border
 #' @param colors Piece colors
 #' @param stroke_width Line width
 #' @return SVG content with separated real pieces
-#' @export
 generate_separated_hex_real <- function(rings = 3, seed = NULL,
                                        diameter = 240, offset = 10,
                                        tabsize = 27, jitter = 5,
@@ -260,13 +257,6 @@ generate_separated_hex_real <- function(rings = 3, seed = NULL,
 
   if (is.null(seed)) {
     seed <- as.integer(runif(1) * 10000)
-  }
-
-  # Source required functions
-  if (!exists("init_hex_jigsaw")) {
-    if (file.exists("R/hexagonal_puzzle.R")) {
-      source("R/hexagonal_puzzle.R")
-    }
   }
 
   cat(sprintf("Generating separated hexagonal puzzle (real pieces)...\n"))

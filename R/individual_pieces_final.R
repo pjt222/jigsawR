@@ -14,8 +14,7 @@
 #' @param width Puzzle width in mm (default: 300)
 #' @param height Puzzle height in mm (default: 200)
 #' @return List containing tab/blank data for all dividers
-#' @export
-extract_puzzle_tab_data <- function(seed, xn, yn, tabsize = 20, jitter = 4, 
+extract_puzzle_tab_data <- function(seed, xn, yn, tabsize = 20, jitter = 4,
                                     width = 300, height = 200) {
   
   # Initialize environment (reuse existing initialization)
@@ -103,7 +102,6 @@ extract_puzzle_tab_data <- function(seed, xn, yn, tabsize = 20, jitter = 4,
 #' @param xn Total number of columns
 #' @param yn Total number of rows
 #' @return SVG path string for the individual piece
-#' @export
 generate_individual_piece_path <- function(piece_xi, piece_yi, tab_data, xn, yn) {
   
   # Calculate piece boundaries
@@ -196,8 +194,7 @@ generate_individual_piece_path <- function(piece_xi, piece_yi, tab_data, xn, yn)
 #' @param do_warp Apply circular warping for hexagonal puzzles (default: FALSE)
 #' @param do_trunc Truncate edges for hexagonal puzzles (default: FALSE)
 #' @return List containing SVG content and piece metadata
-#' @export
-generate_individual_pieces_svg <- function(seed = 1234, xn = 5, yn = 4, 
+generate_individual_pieces_svg <- function(seed = 1234, xn = 5, yn = 4,
                                            tabsize = 20, jitter = 4,
                                            width = 300, height = 200,
                                            stroke_width = 1.5,
@@ -209,11 +206,6 @@ generate_individual_pieces_svg <- function(seed = 1234, xn = 5, yn = 4,
   
   # Route to appropriate function based on puzzle type
   if (type == "hexagonal") {
-    # Source hexagonal functions if not already loaded
-    if (!exists("generate_hexagonal_individual_pieces")) {
-      source(system.file("R", "hexagonal_individual_pieces.R", package = "jigsawR"))
-    }
-    
     # For hexagonal puzzles, xn represents rings
     return(generate_hexagonal_individual_pieces(
       rings = xn,

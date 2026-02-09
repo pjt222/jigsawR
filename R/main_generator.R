@@ -13,7 +13,6 @@
 #' @param line_width Width for puzzle lines
 #' @param transparent_background Logical, whether to make combined image background transparent
 #' @return List with file paths and parameters, or NULL if failed
-#' @export
 generate_svg_puzzle_layers <- function(seed = 1234, diameter = 240, rings = 4,
                                       tabsize = 27, jitter = 5, 
                                       base_filename = "svg_puzzle", 
@@ -123,6 +122,3 @@ generate_puzzle_variations <- function(variations) {
   
   return(results)
 }
-
-# Helper function for default values (R equivalent of JavaScript's || operator)
-`%||%` <- function(a, b) if (is.null(a)) b else a

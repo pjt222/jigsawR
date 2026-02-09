@@ -20,8 +20,10 @@ for rendering with ggplot2's geom_polygon or grid's polygonGrob.
 Bezier curves are approximated as line segments.
 }
 \examples{
+\dontrun{
 # Simple rectangle
 path <- "M 0 0 L 100 0 L 100 100 L 0 100 Z"
 poly <- svg_path_to_polygon(path)
 plot(poly$x, poly$y, type = "l")
+}
 }

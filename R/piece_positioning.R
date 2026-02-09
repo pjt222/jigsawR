@@ -19,7 +19,6 @@
 #'   - canvas_size: c(width, height) for the new layout
 #'   - canvas_offset: c(x, y) viewBox offset
 #'   - offset: The offset value used
-#' @export
 apply_piece_positioning <- function(piece_result, offset = 0, layout = "grid",
                                      repel_margin = 2, repel_max_iter = 100) {
 
@@ -588,7 +587,6 @@ apply_hex_positioning <- function(piece_result, offset) {
 #' @param dx X translation
 #' @param dy Y translation
 #' @return Translated SVG path string
-#' @export
 translate_svg_path <- function(path_string, dx, dy) {
   # Delegate to svg_translate which uses C++ when available
   svg_translate(path_string, dx, dy)
@@ -630,7 +628,6 @@ calculate_separated_canvas <- function(positioned) {
 #' @param step_size How far to push pieces apart per iteration (default: 1.0)
 #' @param compact If TRUE, pull pieces toward center after repelling (default: FALSE
 #' @return Updated positioned result with non-overlapping pieces
-#' @export
 apply_repel_layout <- function(positioned, margin = 2, max_iterations = 100,
                                 step_size = 1.0, compact = FALSE) {
 

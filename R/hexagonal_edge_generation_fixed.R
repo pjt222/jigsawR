@@ -38,22 +38,10 @@ make_vertex_key <- function(x, y) {
 #' @param max_tab_size Maximum absolute tab size in mm (NULL for no limit)
 #' @return List with edge_map (unique edges) and piece_edges (piece-to-edge mapping)
 #'
-#' @export
 generate_hex_edge_map <- function(rings, seed, diameter, tabsize = 27, jitter = 5,
                                   do_warp = FALSE, do_trunc = FALSE,
                                   do_circular_border = FALSE,
                                   min_tab_size = NULL, max_tab_size = NULL) {
-  # Source dependencies
-  if (!exists("map_piece_id_to_ring")) {
-    source("R/hexagonal_topology.R")
-  }
-  if (!exists("get_hex_neighbor")) {
-    source("R/hexagonal_neighbors.R")
-  }
-  if (!exists("generate_hex_bezier_edge")) {
-    source("R/hexagonal_bezier_generation.R")
-  }
-
   num_pieces <- 3 * rings * (rings - 1) + 1
   # Correct formula: diameter / (4 * rings - 2)
   # This ensures that after warp transformation, boundary vertices reach diameter/2
@@ -441,7 +429,6 @@ generate_hex_edge_map <- function(rings, seed, diameter, tabsize = 27, jitter = 
 #' @param max_tab_size Maximum absolute tab size in mm (NULL for no limit)
 #' @return List of piece objects
 #'
-#' @export
 generate_hex_pieces_with_edge_map <- function(rings, seed, diameter = 240,
                                                tabsize = 27, jitter = 5,
                                                separated = TRUE,
@@ -452,11 +439,6 @@ generate_hex_pieces_with_edge_map <- function(rings, seed, diameter = 240,
                                                do_circular_border = FALSE,
                                                min_tab_size = NULL,
                                                max_tab_size = NULL) {
-  # Source dependencies
-  if (!exists("map_piece_id_to_ring")) {
-    source("R/hexagonal_topology.R")
-  }
-
   # Generate edge mapping
  edge_data <- generate_hex_edge_map(rings, seed, diameter, tabsize, jitter,
                                       do_warp, do_trunc, do_circular_border,
