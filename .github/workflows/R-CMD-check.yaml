@@ -28,7 +28,7 @@ jobs:
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
       R_KEEP_PKG_SOURCE: yes
-      RENV_CONFIG_SANDBOX_ENABLED: "FALSE"
+      RENV_CONFIG_AUTOLOADER_ENABLED: "FALSE"
 
     steps:
       - uses: actions/checkout@v4
@@ -45,11 +45,6 @@ jobs:
         with:
           extra-packages: any::rcmdcheck
           needs: check
-
-      - name: Install RCDT from GitHub (archived from CRAN)
-        run: |
-          pak::pak("stla/RCDT")
-        shell: Rscript {0}
 
       - uses: r-lib/actions/check-r-package@v2
         with:

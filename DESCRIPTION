@@ -50,6 +50,8 @@ Suggests:
     rsvg,
     magick,
     zip
+Remotes:
+    stla/RCDT
 VignetteBuilder: knitr
 Collate:
     'RcppExports.R'
