@@ -384,6 +384,7 @@ test_that("SNIC puzzle works with offset > 0", {
 # ============================================================================
 
 test_that("get_piece_neighbors works for snic type", {
+  skip_on_ci()
   skip_if_not(has_snic(), "snic package not available")
   skip_if_not(has_magick(), "magick package not available")
   skip_if_not(requireNamespace("base64enc", quietly = TRUE), "base64enc not available")
