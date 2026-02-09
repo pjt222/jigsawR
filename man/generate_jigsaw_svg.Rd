@@ -28,6 +28,10 @@ generate_jigsaw_svg(
 
 \item{height}{Puzzle height in mm}
 
+\item{unit}{Measurement unit (default "mm")}
+
+\item{dpi}{Resolution in dots per inch (default 96)}
+
 \item{radius}{Corner radius in mm}
 
 \item{xn}{Number of columns}

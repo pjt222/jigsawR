@@ -21,6 +21,7 @@ geom_puzzle_hex(
   do_warp = TRUE,
   do_trunc = TRUE,
   do_circular_border = FALSE,
+  fill_direction = "forward",
   fusion_groups = NULL,
   fusion_style = "none",
   fusion_opacity = 0.3,
@@ -58,6 +59,8 @@ Example: 3 rings = 19 pieces.}
 
 \item{seed}{Random seed for reproducible puzzle shapes.}
 
+\item{offset}{Separation offset between pieces (0 = complete puzzle, >0 = separated).}
+
 \item{bezier_resolution}{Points per Bezier curve (default: 20).}
 
 \item{do_warp}{Apply circular warping transformation (default: TRUE).}
@@ -65,6 +68,9 @@ Example: 3 rings = 19 pieces.}
 \item{do_trunc}{Truncate edge pieces at boundary (default: TRUE).}
 
 \item{do_circular_border}{Use perfect circular arc borders (default: FALSE).}
+
+\item{fill_direction}{Direction for color assignment: "forward" (default) or "reverse".
+Reverses color order within each ring while keeping center piece unchanged.}
 
 \item{fusion_groups}{Piece fusion specification: PILES notation string (e.g., "1-2-3,4-5"),
 list of integer vectors, or NULL for no fusion.}

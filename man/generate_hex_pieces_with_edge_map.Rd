@@ -42,6 +42,10 @@ generate_hex_pieces_with_edge_map(
 \item{do_trunc}{Truncate boundary to clean geometric shape (default: FALSE)}
 
 \item{do_circular_border}{Use perfect circular arc borders (requires do_warp=TRUE)}
+
+\item{min_tab_size}{Minimum absolute tab size in mm (NULL for no limit)}
+
+\item{max_tab_size}{Maximum absolute tab size in mm (NULL for no limit)}
 }
 \value{
 List of piece objects

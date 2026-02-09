@@ -780,6 +780,8 @@ build_concentric_piece_path <- function(piece_id, edge_data) {
 #' @param center_shape "hexagon" or "circle"
 #' @param do_circular_border If TRUE, use arc commands for perfect circular boundary
 #' @param boundary_facing Direction the circular arc faces: "outward" or "inward"
+#' @param min_tab_size Minimum absolute tab size in mm (NULL for no limit)
+#' @param max_tab_size Maximum absolute tab size in mm (NULL for no limit)
 #' @return List with pieces and metadata
 #' @export
 generate_concentric_pieces <- function(rings, seed, diameter,

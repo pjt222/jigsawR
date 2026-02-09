@@ -15,7 +15,6 @@ apply_hex_positioning(piece_result, offset)
 Positioned result
 }
 \description{
-Uses topology-based separation for hexagonal pieces.
-Handles fusion groups by keeping fused pieces together.
+Uses separation-factor-based positioning for hexagonal pieces.
 }
 \keyword{internal}

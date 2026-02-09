@@ -10,24 +10,27 @@ NULL
 #' Each row in the input data is mapped to a puzzle piece, with recycling
 #' if there are fewer data rows than puzzle pieces.
 #'
-#' @param puzzle_type Type of puzzle ("rectangular", "hexagonal", "concentric", "voronoi", "random")
-#' @param rows Number of rows (rectangular only)
-#' @param cols Number of columns (rectangular only)
-#' @param rings Number of rings (hexagonal/concentric only)
-#' @param n_cells Number of cells (voronoi only)
-#' @param n_interior Number of interior points (random only). Alias: `n_pieces` (deprecated)
-#' @param tabsize Tab size parameter
-#' @param jitter Tab jitter parameter
-#' @param seed Random seed for reproducibility
-#' @param bezier_resolution Points per Bezier curve approximation
-#' @param do_warp Apply circular warping (hexagonal only)
-#' @param do_trunc Truncate edge pieces (hexagonal only)
-#' @param do_circular_border Use perfect circular arc borders (hexagonal/concentric)
-#' @param center_shape Center piece shape for concentric: "hexagon" or "circle"
-#' @param point_distribution Point distribution for voronoi: "fermat", "uniform", "jittered"
-#' @param n_corner Number of corners for base polygon (random only)
-#' @param fill_direction Direction for color assignment: "forward" (default) or "reverse".
-#'   When "reverse", the computed `fill_order` variable reverses the spatial ordering.
+#' @details
+#' Parameters passed via the geom layer functions include:
+#' \describe{
+#'   \item{puzzle_type}{Type of puzzle ("rectangular", "hexagonal", "concentric", "voronoi", "random")}
+#'   \item{rows, cols}{Grid dimensions (rectangular only)}
+#'   \item{rings}{Number of rings (hexagonal/concentric only)}
+#'   \item{n_cells}{Number of cells (voronoi only)}
+#'   \item{n_interior}{Number of interior points (random only)}
+#'   \item{tabsize, jitter}{Tab shape and jitter parameters}
+#'   \item{seed}{Random seed for reproducibility}
+#'   \item{offset}{Separation offset between pieces}
+#'   \item{bezier_resolution}{Points per Bezier curve approximation}
+#'   \item{do_warp, do_trunc}{Circular warping and truncation (hexagonal only)}
+#'   \item{do_circular_border}{Use perfect circular arc borders}
+#'   \item{center_shape}{Center piece shape for concentric: "hexagon" or "circle"}
+#'   \item{point_distribution}{Point distribution for voronoi: "fermat", "uniform", "jittered"}
+#'   \item{n_corner}{Number of corners for base polygon (random only)}
+#'   \item{fill_direction}{Direction for color assignment: "forward" or "reverse"}
+#' }
+#'
+#' @format A ggplot2 Stat ggproto object.
 #' @export
 StatPuzzle <- ggplot2::ggproto("StatPuzzle", ggplot2::Stat,
 

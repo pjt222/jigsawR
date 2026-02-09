@@ -7,7 +7,7 @@
 log_info(msg, .envir = parent.frame())
 }
 \arguments{
-\item{msg}{Message to log (can use cli inline markup like {.path}, {.file}, etc.)}
+\item{msg}{Message to log (can use cli inline markup like \code{\{.path\}}, \code{\{.file\}}, etc.)}
 
 \item{.envir}{Environment for variable lookup (defaults to parent frame)}
 }

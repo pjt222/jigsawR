@@ -23,7 +23,10 @@ generate_pieces_internal(
   n_corner = 4,
   min_piece_size = NULL,
   min_tab_size = NULL,
-  max_tab_size = NULL
+  max_tab_size = NULL,
+  image_path = NULL,
+  compactness = 0.5,
+  seed_type = "hexagonal"
 )
 }
 \arguments{
@@ -56,6 +59,20 @@ generate_pieces_internal(
 \item{fusion_opacity}{Opacity for fused edges when style != "none" (0.0 to 1.0)}
 
 \item{point_distribution}{Point distribution method for voronoi puzzles: "fermat", "uniform", or "jittered"}
+
+\item{n_corner}{Number of corners for base polygon in random shape puzzles (default: 4)}
+
+\item{min_piece_size}{Minimum piece size constraint for random shape puzzles (NULL for auto)}
+
+\item{min_tab_size}{Minimum absolute tab size in mm (NULL for no limit)}
+
+\item{max_tab_size}{Maximum absolute tab size in mm (NULL for no limit)}
+
+\item{image_path}{Path to an image file for SNIC puzzles}
+
+\item{compactness}{SNIC compactness parameter (default: 0.5)}
+
+\item{seed_type}{SNIC seed grid type: "hexagonal", "rectangular", "diamond", "random"}
 }
 \value{
 List with:

@@ -342,6 +342,7 @@ GeomPuzzle <- ggplot2::ggproto("GeomPuzzle", ggplot2::Geom,
 #' @param min_tab_size Minimum tab height in mm (NULL for no constraint).
 #' @param max_tab_size Maximum tab height in mm (NULL for no constraint).
 #' @param seed Random seed for reproducible puzzle shapes.
+#' @param offset Separation offset between pieces (0 = complete puzzle, >0 = separated).
 #' @param bezier_resolution Points per Bezier curve (default: 20).
 #' @param fill_direction Direction for color assignment: "forward" (default) or "reverse".
 #'   Reverses the spatial order of color assignment across pieces.
@@ -452,6 +453,7 @@ geom_puzzle_rect <- function(mapping = NULL,
 #' @param min_tab_size Minimum tab height in mm (NULL for no constraint).
 #' @param max_tab_size Maximum tab height in mm (NULL for no constraint).
 #' @param seed Random seed for reproducible puzzle shapes.
+#' @param offset Separation offset between pieces (0 = complete puzzle, >0 = separated).
 #' @param bezier_resolution Points per Bezier curve (default: 20).
 #' @param do_warp Apply circular warping transformation (default: TRUE).
 #' @param do_trunc Truncate edge pieces at boundary (default: TRUE).
@@ -562,6 +564,7 @@ geom_puzzle_hex <- function(mapping = NULL,
 #' @param min_tab_size Minimum tab height in mm (NULL for no constraint).
 #' @param max_tab_size Maximum tab height in mm (NULL for no constraint).
 #' @param seed Random seed for reproducible puzzle shapes.
+#' @param offset Separation offset between pieces (0 = complete puzzle, >0 = separated).
 #' @param bezier_resolution Points per Bezier curve (default: 20).
 #' @param center_shape Shape of the center piece: "hexagon" or "circle".
 #' @param do_circular_border Use perfect circular arc borders (default: FALSE).
@@ -666,6 +669,7 @@ geom_puzzle_conc <- function(mapping = NULL,
 #' @param min_tab_size Minimum tab height in mm (NULL for no constraint).
 #' @param max_tab_size Maximum tab height in mm (NULL for no constraint).
 #' @param seed Random seed for reproducible puzzle shapes.
+#' @param offset Separation offset between pieces (0 = complete puzzle, >0 = separated).
 #' @param bezier_resolution Points per Bezier curve (default: 20).
 #' @param point_distribution How to distribute seed points:
 #'   "fermat" (default, golden angle spiral), "uniform" (random), or "jittered" (grid with noise).
@@ -759,7 +763,8 @@ geom_puzzle_voronoi <- function(mapping = NULL,
 #' @param stat The statistical transformation to use (default: "puzzle").
 #' @param position Position adjustment (default: "identity").
 #' @param n_interior Number of interior points that influence piece count.
-#'   Actual piece count depends on triangulation. Alias: `n_pieces` (deprecated)
+#'   Actual piece count depends on triangulation.
+#' @param n_pieces Deprecated alias for n_interior.
 #' @param width Puzzle width in mm (default: 100).
 #' @param height Puzzle height in mm (default: 100).
 #' @param tabsize Size of the puzzle tabs (default: 10).
@@ -767,6 +772,7 @@ geom_puzzle_voronoi <- function(mapping = NULL,
 #' @param min_tab_size Minimum tab height in mm (NULL for no constraint).
 #' @param max_tab_size Maximum tab height in mm (NULL for no constraint).
 #' @param seed Random seed for reproducible puzzle shapes.
+#' @param offset Separation offset between pieces (0 = complete puzzle, >0 = separated).
 #' @param bezier_resolution Points per Bezier curve (default: 20).
 #' @param n_corner Number of corners for the base polygon (default: 4 for rectangle).
 #' @param fill_direction Direction for color assignment: "forward" (default) or "reverse".

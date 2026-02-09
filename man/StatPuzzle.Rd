@@ -5,47 +5,34 @@
 \alias{StatPuzzle}
 \title{Compute puzzle piece geometry from data}
 \format{
-An object of class \code{StatPuzzle} (inherits from \code{Stat}, \code{ggproto}, \code{gg}) of length 6.
+A ggplot2 Stat ggproto object.
 }
 \usage{
 StatPuzzle
-}
-\arguments{
-\item{puzzle_type}{Type of puzzle ("rectangular", "hexagonal", "concentric", "voronoi", "random")}
-
-\item{rows}{Number of rows (rectangular only)}
-
-\item{cols}{Number of columns (rectangular only)}
-
-\item{rings}{Number of rings (hexagonal/concentric only)}
-
-\item{n_cells}{Number of cells (voronoi only)}
-
-\item{n_interior}{Number of interior points (random only). Alias: `n_pieces` (deprecated)}
-
-\item{tabsize}{Tab size parameter}
-
-\item{jitter}{Tab jitter parameter}
-
-\item{seed}{Random seed for reproducibility}
-
-\item{bezier_resolution}{Points per Bezier curve approximation}
-
-\item{do_warp}{Apply circular warping (hexagonal only)}
-
-\item{do_trunc}{Truncate edge pieces (hexagonal only)}
-
-\item{do_circular_border}{Use perfect circular arc borders (hexagonal/concentric)}
-
-\item{center_shape}{Center piece shape for concentric: "hexagon" or "circle"}
-
-\item{point_distribution}{Point distribution for voronoi: "fermat", "uniform", "jittered"}
-
-\item{n_corner}{Number of corners for base polygon (random only)}
 }
 \description{
 This stat generates puzzle piece polygon coordinates from input data.
 Each row in the input data is mapped to a puzzle piece, with recycling
 if there are fewer data rows than puzzle pieces.
+}
+\details{
+Parameters passed via the geom layer functions include:
+\describe{
+  \item{puzzle_type}{Type of puzzle ("rectangular", "hexagonal", "concentric", "voronoi", "random")}
+  \item{rows, cols}{Grid dimensions (rectangular only)}
+  \item{rings}{Number of rings (hexagonal/concentric only)}
+  \item{n_cells}{Number of cells (voronoi only)}
+  \item{n_interior}{Number of interior points (random only)}
+  \item{tabsize, jitter}{Tab shape and jitter parameters}
+  \item{seed}{Random seed for reproducibility}
+  \item{offset}{Separation offset between pieces}
+  \item{bezier_resolution}{Points per Bezier curve approximation}
+  \item{do_warp, do_trunc}{Circular warping and truncation (hexagonal only)}
+  \item{do_circular_border}{Use perfect circular arc borders}
+  \item{center_shape}{Center piece shape for concentric: "hexagon" or "circle"}
+  \item{point_distribution}{Point distribution for voronoi: "fermat", "uniform", "jittered"}
+  \item{n_corner}{Number of corners for base polygon (random only)}
+  \item{fill_direction}{Direction for color assignment: "forward" or "reverse"}
+}
 }
 \keyword{datasets}

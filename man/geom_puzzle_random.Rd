@@ -21,6 +21,7 @@ geom_puzzle_random(
   offset = 0,
   bezier_resolution = 20,
   n_corner = 4,
+  fill_direction = "forward",
   fusion_groups = NULL,
   fusion_style = "none",
   fusion_opacity = 0.3,
@@ -43,7 +44,9 @@ geom_puzzle_random(
 \item{position}{Position adjustment (default: "identity").}
 
 \item{n_interior}{Number of interior points that influence piece count.
-Actual piece count depends on triangulation. Alias: `n_pieces` (deprecated)}
+Actual piece count depends on triangulation.}
+
+\item{n_pieces}{Deprecated alias for n_interior.}
 
 \item{width}{Puzzle width in mm (default: 100).}
 
@@ -59,9 +62,14 @@ Actual piece count depends on triangulation. Alias: `n_pieces` (deprecated)}
 
 \item{seed}{Random seed for reproducible puzzle shapes.}
 
+\item{offset}{Separation offset between pieces (0 = complete puzzle, >0 = separated).}
+
 \item{bezier_resolution}{Points per Bezier curve (default: 20).}
 
 \item{n_corner}{Number of corners for the base polygon (default: 4 for rectangle).}
+
+\item{fill_direction}{Direction for color assignment: "forward" (default) or "reverse".
+Reverses the spatial order of color assignment across pieces.}
 
 \item{fusion_groups}{Piece fusion specification: PILES notation string (e.g., "1-2-3,4-5"),
 list of integer vectors, or NULL for no fusion.}

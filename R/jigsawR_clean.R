@@ -63,6 +63,17 @@
 #' @param seed_type SNIC seed grid type: "hexagonal" (default), "rectangular", "diamond", "random".
 #' @param output DEPRECATED: Use offset parameter instead
 #' @return List with svg_content, pieces, canvas_size, parameters, and fusion_data (if applicable)
+#'
+#' @examples
+#' # Generate a simple 3x4 rectangular puzzle
+#' result <- generate_puzzle(type = "rectangular", seed = 42,
+#'                           grid = c(3, 4), size = c(400, 300))
+#' cat(substr(result$svg_content, 1, 80))
+#'
+#' # Hexagonal puzzle with 2 rings
+#' hex <- generate_puzzle(type = "hexagonal", seed = 42,
+#'                        grid = c(2), size = c(200))
+#'
 #' @export
 generate_puzzle <- function(type = "rectangular",
                             grid = c(3, 4),

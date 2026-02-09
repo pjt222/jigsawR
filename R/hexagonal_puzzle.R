@@ -418,16 +418,12 @@ generate_hex_jigsaw_svg <- function(seed = NULL, tabsize = 27, jitter = 5,
 #' @param puzzle_data Output from generate_hex_jigsaw_svg()
 #' @param filename Output filename (default: "hex_jigsaw.svg")
 save_hex_jigsaw_svg <- function(puzzle_data, filename = "hex_jigsaw.svg") {
-  # Ensure output directory exists
-  if (!dir.exists("output")) {
-    dir.create("output", recursive = TRUE)
+  # Ensure parent directory exists
+  output_parent <- dirname(filename)
+  if (nzchar(output_parent) && output_parent != "." && !dir.exists(output_parent)) {
+    dir.create(output_parent, recursive = TRUE)
   }
-  
-  # Add output/ prefix if not already present
-  if (!grepl("^output/", filename)) {
-    filename <- file.path("output", filename)
-  }
-  
+
   writeLines(puzzle_data$svg, filename)
   log_success("Saved hexagonal jigsaw puzzle to: {.file {filename}}")
 }

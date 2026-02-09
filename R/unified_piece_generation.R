@@ -22,6 +22,13 @@
 #' @param fusion_style Style for fused internal edges: "none" (invisible), "dashed", "solid"
 #' @param fusion_opacity Opacity for fused edges when style != "none" (0.0 to 1.0)
 #' @param point_distribution Point distribution method for voronoi puzzles: "fermat", "uniform", or "jittered"
+#' @param n_corner Number of corners for base polygon in random shape puzzles (default: 4)
+#' @param min_piece_size Minimum piece size constraint for random shape puzzles (NULL for auto)
+#' @param min_tab_size Minimum absolute tab size in mm (NULL for no limit)
+#' @param max_tab_size Maximum absolute tab size in mm (NULL for no limit)
+#' @param image_path Path to an image file for SNIC puzzles
+#' @param compactness SNIC compactness parameter (default: 0.5)
+#' @param seed_type SNIC seed grid type: "hexagonal", "rectangular", "diamond", "random"
 #' @return List with:
 #'   - pieces: List of piece objects with id, path, center, grid_pos/ring_pos
 #'   - canvas_size: c(width, height) for compact (offset=0) layout

@@ -71,16 +71,12 @@ create_enhanced_puzzle_svg <- function(seed = 1234, diameter = 240, rings = 4,
 #' @param svg_file Output filename for SVG
 #' @export
 save_enhanced_svg <- function(svg_content, svg_file) {
-  # Ensure output directory exists
-  if (!dir.exists("output")) {
-    dir.create("output", recursive = TRUE)
+  # Ensure parent directory exists
+  output_parent <- dirname(svg_file)
+  if (nzchar(output_parent) && output_parent != "." && !dir.exists(output_parent)) {
+    dir.create(output_parent, recursive = TRUE)
   }
-  
-  # Add output/ prefix if not already present
-  if (!grepl("^output/", svg_file)) {
-    svg_file <- file.path("output", svg_file)
-  }
-  
+
   writeLines(svg_content, svg_file)
   log_success("SVG saved: {.file {svg_file}}")
 }

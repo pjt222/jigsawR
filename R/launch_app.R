@@ -28,13 +28,15 @@ launch_jigsaw_app <- function(port = NULL,
                              host = "127.0.0.1",
                              ...) {
   
-  # Check if shiny is installed
-  if (!requireNamespace("shiny", quietly = TRUE)) {
-    stop("Package 'shiny' is required to run the app. Please install it with: install.packages('shiny')")
-  }
-  
-  if (!requireNamespace("shinyjs", quietly = TRUE)) {
-    stop("Package 'shinyjs' is required to run the app. Please install it with: install.packages('shinyjs')")
+  # Check required Shiny app packages (in Suggests, not Imports)
+  shiny_pkgs <- c("shiny", "bslib", "bsicons", "shinyjs", "colourpicker", "waiter")
+  missing_pkgs <- shiny_pkgs[!vapply(shiny_pkgs, requireNamespace, logical(1), quietly = TRUE)]
+  if (length(missing_pkgs) > 0) {
+    cli::cli_abort(c(
+      "The Shiny app requires additional packages that are not installed.",
+      "i" = "Missing: {.pkg {missing_pkgs}}",
+      "i" = 'Install with: {.code install.packages(c({paste0(\'"\', missing_pkgs, \'"\', collapse = ", ")}))}'
+    ))
   }
   
   # Find the app directory
@@ -88,8 +90,8 @@ jigsawR_app <- function(...) {
 #' @return Logical indicating if all dependencies are met
 #' @export
 check_app_dependencies <- function() {
-  required_packages <- c("shiny", "shinyjs")
-  optional_packages <- c("zip")  # For individual pieces download
+  required_packages <- c("shiny", "bslib", "bsicons", "shinyjs", "colourpicker", "waiter")
+  optional_packages <- c("zip", "rsvg", "magick")  # For downloads and image processing
 
   required_installed <- sapply(required_packages, requireNamespace, quietly = TRUE)
   optional_installed <- sapply(optional_packages, requireNamespace, quietly = TRUE)

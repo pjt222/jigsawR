@@ -25,7 +25,7 @@ Each row represents an edge between two adjacent cells}
 \item{boundary_cells}{Optional vector of cell IDs that are on boundary}
 }
 \value{
-Named list of edge paths, keyed by "E{min_id}-{max_id}"
+Named list of edge paths, keyed by \code{"E<min_id>-<max_id>"}
 }
 \description{
 Creates a map of all shared edges between adjacent cells in a tessellation.
@@ -33,6 +33,6 @@ Each edge is generated once and stored with both forward and reverse paths
 for use by the two adjacent cells.
 }
 \details{
-Edge keys use the pattern "E{smaller_id}-{larger_id}" to ensure
+Edge keys use the pattern \code{"E<smaller_id>-<larger_id>"} to ensure
 consistent lookup regardless of which cell queries the edge.
 }

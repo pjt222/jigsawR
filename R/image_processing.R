@@ -10,16 +10,12 @@
 #' @export
 convert_svg_to_png <- function(svg_content, output_file, width_px = 2000, height_px = 2000) {
   
-  # Ensure output directory exists
-  if (!dir.exists("output")) {
-    dir.create("output", recursive = TRUE)
+  # Ensure parent directory exists
+  output_parent <- dirname(output_file)
+  if (nzchar(output_parent) && output_parent != "." && !dir.exists(output_parent)) {
+    dir.create(output_parent, recursive = TRUE)
   }
-  
-  # Add output/ prefix if not already present
-  if (!grepl("^output/", output_file)) {
-    output_file <- file.path("output", output_file)
-  }
-  
+
   # Save SVG to temporary file
   temp_svg <- tempfile(fileext = ".svg")
   writeLines(svg_content, temp_svg)
@@ -108,15 +104,12 @@ convert_svg_to_png <- function(svg_content, output_file, width_px = 2000, height
 #' @export
 combine_image_layers <- function(background_file, overlay_file, combined_file, transparent_background = FALSE) {
   
-  # Ensure output directory exists and add prefix if needed
-  if (!dir.exists("output")) {
-    dir.create("output", recursive = TRUE)
+  # Ensure parent directory exists
+  output_parent <- dirname(combined_file)
+  if (nzchar(output_parent) && output_parent != "." && !dir.exists(output_parent)) {
+    dir.create(output_parent, recursive = TRUE)
   }
-  
-  if (!grepl("^output/", combined_file)) {
-    combined_file <- file.path("output", combined_file)
-  }
-  
+
   if (requireNamespace("magick", quietly = TRUE)) {
     log_info("Combining layers...")
 

@@ -34,5 +34,7 @@ Named list of edge paths
 }
 \description{
 Creates the edge map with bezier tabs for all adjacent triangle pairs.
+Delegates to the shared build_typed_edge_map() with a custom predicate
+that treats constraint edges (on the polygon boundary) as straight.
 }
 \keyword{internal}

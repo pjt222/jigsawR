@@ -756,20 +756,13 @@ normalize_piece_id <- function(piece_id, puzzle_result) {
   stop(sprintf("Cannot parse piece ID: %s", piece_id))
 }
 
-#' Get total piece count from puzzle result
-#'
-#' @param puzzle_result Output from generate_puzzle()
-#'
-#' @return Integer piece count
-#'
-#' @keywords internal
-get_piece_count <- function(puzzle_result) {
+# Internal helper: get piece count from result object
+# Note: the exported get_piece_count(type, grid) is in unified_piece_generation.R
+get_piece_count_from_result <- function(puzzle_result) {
   length(puzzle_result$pieces)
 }
 
-#' Null-coalescing operator
-#'
-#' @keywords internal
+# Null-coalescing operator
 `%||%` <- function(a, b) {
   if (is.null(a)) b else a
 }

@@ -22,6 +22,7 @@ generate_puzzle(
   colors = NULL,
   palette = NULL,
   palette_invert = FALSE,
+  fill_direction = "forward",
   background = "white",
   opacity = 1,
   save_files = FALSE,
@@ -43,6 +44,9 @@ generate_puzzle(
   min_piece_size = NULL,
   min_tab_size = NULL,
   max_tab_size = NULL,
+  image_path = NULL,
+  compactness = 0.5,
+  seed_type = "hexagonal",
   output = NULL
 )
 }
@@ -84,6 +88,10 @@ Overrides fill_color. Use with palette for matching stroke colors.}
 \item{palette}{Viridis palette name (NULL = use config default)}
 
 \item{palette_invert}{Logical, if TRUE reverses the palette direction (default: FALSE)}
+
+\item{fill_direction}{Character, either "forward" (default) or "reverse".
+Controls spatial color assignment order. For ring-based puzzles, reverses
+within each ring. For rectangular, reverses entire sequence.}
 
 \item{background}{"none", "white", color name, or list(type="gradient", ...)}
 
@@ -129,6 +137,13 @@ Prevents tabs from becoming too small on short edges. Applies to all puzzle type
 \item{max_tab_size}{Maximum absolute tab size in mm (default: NULL for no limit).
 Prevents tabs from becoming too large on long edges. Applies to all puzzle types.}
 
+\item{image_path}{Path to an image file for SNIC puzzles. Required when type = "snic".}
+
+\item{compactness}{SNIC compactness parameter (default: 0.5). Higher values produce
+more regular/compact superpixels. Range: 0.0 to 2.0.}
+
+\item{seed_type}{SNIC seed grid type: "hexagonal" (default), "rectangular", "diamond", "random".}
+
 \item{output}{DEPRECATED: Use offset parameter instead}
 }
 \value{
@@ -137,4 +152,15 @@ List with svg_content, pieces, canvas_size, parameters, and fusion_data (if appl
 \description{
 Single entry point for all puzzle generation with clean, reproducible output.
 Uses the unified pipeline: piece generation -> positioning -> rendering.
+}
+\examples{
+# Generate a simple 3x4 rectangular puzzle
+result <- generate_puzzle(type = "rectangular", seed = 42,
+                          grid = c(3, 4), size = c(400, 300))
+cat(substr(result$svg_content, 1, 80))
+
+# Hexagonal puzzle with 2 rings
+hex <- generate_puzzle(type = "hexagonal", seed = 42,
+                       grid = c(2), size = c(200))
+
 }

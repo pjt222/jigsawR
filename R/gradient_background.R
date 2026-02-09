@@ -117,14 +117,10 @@ save_gradient_background <- function(gradient_plot, background_file, size_px = N
   # Calculate dimensions in inches for high DPI
   size_inches <- size_px / cfg$gradient$dpi
 
-  # Ensure output directory exists
-  if (!dir.exists("output")) {
-    dir.create("output", recursive = TRUE)
-  }
-
-  # Add output/ prefix if not already present
-  if (!grepl("^output/", background_file)) {
-    background_file <- file.path("output", background_file)
+  # Ensure parent directory exists
+  output_parent <- dirname(background_file)
+  if (nzchar(output_parent) && output_parent != "." && !dir.exists(output_parent)) {
+    dir.create(output_parent, recursive = TRUE)
   }
 
   ggsave(

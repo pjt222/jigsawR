@@ -13,7 +13,7 @@ NULL
 #' Uses cli for formatted output with proper variable interpolation.
 #' Variables in the message are automatically captured from the calling environment.
 #'
-#' @param msg Message to log (can use cli inline markup like {.path}, {.file}, etc.)
+#' @param msg Message to log (can use cli inline markup like \code{\{.path\}}, \code{\{.file\}}, etc.)
 #' @param .envir Environment for variable lookup (defaults to parent frame)
 #' @keywords internal
 #' @examples

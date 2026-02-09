@@ -12,12 +12,14 @@ render_puzzle_svg(
   colors = NULL,
   palette = NULL,
   palette_invert = FALSE,
+  fill_direction = "forward",
   background = "white",
   opacity = 1,
   show_labels = FALSE,
   label_color = "black",
   label_size = NULL,
-  inline = FALSE
+  inline = FALSE,
+  image_path = NULL
 )
 }
 \arguments{
@@ -36,6 +38,10 @@ When provided, each piece gets its own fill color from this vector.}
 
 \item{palette_invert}{Logical, if TRUE reverses the palette direction (default: FALSE)}
 
+\item{fill_direction}{Character, either "forward" (default) or "reverse".
+Controls spatial color assignment order. For ring-based puzzles, reverses
+within each ring. For rectangular, reverses entire sequence.}
+
 \item{background}{Background specification:
 - "none": No background
 - "white", "#FFFFFF", etc.: Solid color background
@@ -51,6 +57,8 @@ When provided, each piece gets its own fill color from this vector.}
 
 \item{inline}{Logical; if TRUE, omit XML declaration for inline HTML embedding.
 Use TRUE when embedding SVG in HTML (e.g., Shiny apps). Default: FALSE.}
+
+\item{image_path}{Path to an image file for SNIC image-fill rendering (NULL for no image)}
 }
 \value{
 Complete SVG string

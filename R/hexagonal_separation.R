@@ -141,7 +141,7 @@ generate_separated_hexagonal_svg <- function(rings = 3, seed = NULL,
     # Hexagonal arrangement (topology-based, centered at origin)
 
     # Calculate actual extent of pieces
-    # For n rings, outermost pieces are at grid coordinates ~(±n, ±n)
+    # For n rings, outermost pieces are at grid coordinates ~(+/-n, +/-n)
     base_spacing <- piece_radius * 2
     separation_factor <- 1.0 + (offset / base_spacing)
 
@@ -324,7 +324,7 @@ generate_separated_hexagonal_svg <- function(rings = 3, seed = NULL,
 
       # Debug logging for first 3 pieces
       if (i <= 3) {
-        cat(sprintf("Piece %d: (x=%.1f, y=%.1f, rot=%.2f°)\n",
+        cat(sprintf("Piece %d: (x=%.1f, y=%.1f, rot=%.2f deg)\n",
                     i, center_x, center_y, piece_rotation * 180 / pi))
       }
     }
@@ -359,7 +359,7 @@ generate_separated_hexagonal_svg <- function(rings = 3, seed = NULL,
 #' @return SVG path string
 create_hex_placeholder <- function(cx, cy, radius, rotation = 0) {
   # Create regular hexagon with rotation
-  # Add π/6 offset for flat-top orientation (edges horizontal)
+  # Add pi/6 offset for flat-top orientation (edges horizontal)
   # Without offset: pointy-top (vertices at top/bottom)
   # With offset: flat-top (edges at top/bottom)
   base_offset <- pi / 6

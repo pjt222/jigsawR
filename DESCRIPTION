@@ -2,9 +2,7 @@ Package: jigsawR
 Type: Package
 Title: R Translations of JavaScript Jigsaw Puzzle Generators
 Version: 0.1.0
-Author: Philipp Thoss [aut, cre] (0000-0002-4672-2792)
-Maintainer: Philipp Thoss <ph.thoss@gmx.de>
-Authors@R: 
+Authors@R:
     person("Philipp", "Thoss", , "ph.thoss@gmx.de", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0002-4672-2792"))
 Description: R translations of Draradech's JavaScript jigsaw puzzle generators
@@ -14,12 +12,12 @@ Description: R translations of Draradech's JavaScript jigsaw puzzle generators
     separation. Direct ports of the original JavaScript algorithms maintaining
     mathematical precision while adding R-based visualization, tessellation,
     and image-aware segmentation capabilities.
-License: GPL-3
+License: GPL-3 + file LICENSE
 URL: https://github.com/pjt222/jigsawR
 BugReports: https://github.com/pjt222/jigsawR/issues
 Encoding: UTF-8
-LazyData: true
 RoxygenNote: 7.3.3
+Config/testthat/edition: 3
 LinkingTo: Rcpp
 Imports:
     Rcpp,
@@ -28,15 +26,6 @@ Imports:
     ggfx,
     viridis,
     config,
-    shiny,
-    bslib,
-    bsicons,
-    shinyjs,
-    colourpicker,
-    waiter,
-    rsvg,
-    magick,
-    zip,
     cli
 Suggests:
     testthat (>= 3.0.0),
@@ -51,9 +40,18 @@ Suggests:
     base64enc,
     deldir,
     RCDT,
-    snic
+    snic,
+    shiny,
+    bslib,
+    bsicons,
+    shinyjs,
+    colourpicker,
+    waiter,
+    rsvg,
+    magick,
+    zip
 VignetteBuilder: knitr
-Collate: 
+Collate:
     'RcppExports.R'
     'adjacency_api.R'
     'bezier_utils.R'
@@ -77,6 +75,7 @@ Collate:
     'image_processing.R'
     'individual_pieces.R'
     'individual_pieces_final.R'
+    'jigsawR-package.R'
     'jigsawR_clean.R'
     'launch_app.R'
     'logging.R'

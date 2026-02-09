@@ -20,6 +20,7 @@ geom_puzzle_voronoi(
   offset = 0,
   bezier_resolution = 20,
   point_distribution = "fermat",
+  fill_direction = "forward",
   fusion_groups = NULL,
   fusion_style = "none",
   fusion_opacity = 0.3,
@@ -57,10 +58,15 @@ geom_puzzle_voronoi(
 
 \item{seed}{Random seed for reproducible puzzle shapes.}
 
+\item{offset}{Separation offset between pieces (0 = complete puzzle, >0 = separated).}
+
 \item{bezier_resolution}{Points per Bezier curve (default: 20).}
 
 \item{point_distribution}{How to distribute seed points:
 "fermat" (default, golden angle spiral), "uniform" (random), or "jittered" (grid with noise).}
+
+\item{fill_direction}{Direction for color assignment: "forward" (default) or "reverse".
+Reverses the spatial order of color assignment across pieces.}
 
 \item{fusion_groups}{Piece fusion specification: PILES notation string (e.g., "1-2-3,4-5"),
 list of integer vectors, or NULL for no fusion.}

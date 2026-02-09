@@ -34,6 +34,8 @@ make_vertex_key <- function(x, y) {
 #' @param do_warp Apply circular warp transformation to border edges (default: FALSE)
 #' @param do_trunc Truncate boundary to clean geometric shape (default: FALSE)
 #' @param do_circular_border Use perfect circular arc borders (requires do_warp=TRUE)
+#' @param min_tab_size Minimum absolute tab size in mm (NULL for no limit)
+#' @param max_tab_size Maximum absolute tab size in mm (NULL for no limit)
 #' @return List with edge_map (unique edges) and piece_edges (piece-to-edge mapping)
 #'
 #' @export
@@ -435,6 +437,8 @@ generate_hex_edge_map <- function(rings, seed, diameter, tabsize = 27, jitter = 
 #' @param do_warp Apply circular warp transformation to border edges (default: FALSE)
 #' @param do_trunc Truncate boundary to clean geometric shape (default: FALSE)
 #' @param do_circular_border Use perfect circular arc borders (requires do_warp=TRUE)
+#' @param min_tab_size Minimum absolute tab size in mm (NULL for no limit)
+#' @param max_tab_size Maximum absolute tab size in mm (NULL for no limit)
 #' @return List of piece objects
 #'
 #' @export

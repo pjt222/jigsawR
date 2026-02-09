@@ -33,6 +33,10 @@ generate_concentric_pieces(
 \item{do_circular_border}{If TRUE, use arc commands for perfect circular boundary}
 
 \item{boundary_facing}{Direction the circular arc faces: "outward" or "inward"}
+
+\item{min_tab_size}{Minimum absolute tab size in mm (NULL for no limit)}
+
+\item{max_tab_size}{Maximum absolute tab size in mm (NULL for no limit)}
 }
 \value{
 List with pieces and metadata

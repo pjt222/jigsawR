@@ -37,5 +37,6 @@ Named list of edge paths
 }
 \description{
 Creates the edge map with bezier tabs for all adjacent cell pairs.
+Delegates to the shared build_typed_edge_map() implementation.
 }
 \keyword{internal}

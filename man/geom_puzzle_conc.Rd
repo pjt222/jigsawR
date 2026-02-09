@@ -21,6 +21,7 @@ geom_puzzle_conc(
   center_shape = "hexagon",
   do_circular_border = FALSE,
   boundary_facing = "outward",
+  fill_direction = "forward",
   fusion_groups = NULL,
   fusion_style = "none",
   fusion_opacity = 0.3,
@@ -58,6 +59,8 @@ Example: 3 rings = 19 pieces (1 center + 6 + 6 + 6).}
 
 \item{seed}{Random seed for reproducible puzzle shapes.}
 
+\item{offset}{Separation offset between pieces (0 = complete puzzle, >0 = separated).}
+
 \item{bezier_resolution}{Points per Bezier curve (default: 20).}
 
 \item{center_shape}{Shape of the center piece: "hexagon" or "circle".}
@@ -66,6 +69,9 @@ Example: 3 rings = 19 pieces (1 center + 6 + 6 + 6).}
 
 \item{boundary_facing}{Direction the circular arc faces: "outward" (convex) or "inward" (concave).
 Only applies when do_circular_border = TRUE.}
+
+\item{fill_direction}{Direction for color assignment: "forward" (default) or "reverse".
+Reverses color order within each ring while keeping center piece unchanged.}
 
 \item{fusion_groups}{Piece fusion specification: PILES notation string (e.g., "1-2-3,4-5"),
 list of integer vectors, or NULL for no fusion.}
