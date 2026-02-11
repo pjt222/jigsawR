@@ -78,6 +78,13 @@ svg {
   font-weight: bold;
 }
 
+/* Dark mode: prevent white backgrounds on plot images */
+[data-bs-theme="dark"] .cell-output-display img {
+  background: var(--bs-body-bg);
+  border-radius: 6px;
+  padding: 4px;
+}
+
 /* Footer styling */
 .page-footer {
   border-top: 1px solid var(--bs-border-color);

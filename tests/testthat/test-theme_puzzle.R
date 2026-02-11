@@ -10,7 +10,7 @@ test_that("theme_puzzle sets explicit plot background", {
   t <- theme_puzzle()
 
   expect_s3_class(t$plot.background, "element_rect")
-  expect_equal(t$plot.background$fill, "white")
+  expect_equal(t$plot.background$fill, "transparent")
   expect_true(is.na(t$plot.background$colour))
 })
 

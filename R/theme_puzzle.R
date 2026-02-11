@@ -12,16 +12,16 @@
 #'
 #' \code{theme_puzzle()} fixes this by:
 #' \itemize{
-#'   \item Setting an explicit background color (default: white)
+#'   \item Setting an explicit background color (default: transparent)
 #'   \item Adding a small plot margin for proper dimension calculation
 #' }
 #'
 #' @param base_size Base font size (default 11)
 #' @param base_family Base font family (default "")
-#' @param background Background color. Use \code{"white"} for a white background
-#'   (default), \code{"transparent"} or \code{NA} for a transparent background.
-#'   Note that transparent backgrounds may cause rendering issues in some
-#'   contexts when combined with \code{guide = "none"}.
+#' @param background Background color. Use \code{"transparent"} or \code{NA}
+#'   for a transparent background (default), or \code{"white"} for an opaque
+#'   white background. Transparent backgrounds blend with the page in both
+#'   light and dark mode.
 #' @param margin Plot margin. Default is \code{margin(2, 2, 2, 2, "pt")} which
 #'   provides minimal spacing while ensuring proper rendering.
 #'
@@ -66,7 +66,7 @@
 #' @export
 theme_puzzle <- function(base_size = 11,
                          base_family = "",
-                         background = "white",
+                         background = "transparent",
                          margin = ggplot2::margin(2, 2, 2, 2, "pt")) {
 
 

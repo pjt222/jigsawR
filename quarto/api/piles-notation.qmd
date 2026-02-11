@@ -303,4 +303,4 @@ print(notation)
 
 - [generate_puzzle()](generate-puzzle.qmd) - Main API with fusion parameter
 - [ggpuzzle Extension](ggpuzzle.qmd) - ggplot2 integration
-- [PILES Documentation](../../docs/PILES-notation.md) - Full specification
+- [PILES Documentation](https://github.com/pjt222/jigsawR/blob/main/docs/PILES-notation.md) - Full specification

@@ -27,6 +27,8 @@ website:
             href: gallery/voronoi.qmd
           - text: "Random"
             href: gallery/random.qmd
+          - text: "SNIC"
+            href: gallery/snic.qmd
       - text: "API"
         menu:
           - text: "generate_puzzle()"
@@ -59,6 +61,7 @@ website:
         - gallery/concentric.qmd
         - gallery/voronoi.qmd
         - gallery/random.qmd
+        - gallery/snic.qmd
 
     - title: "API Reference"
       contents:
@@ -98,5 +101,7 @@ knitr:
     fig.align: center
     comment: "#>"
     collapse: true
+    dev.args:
+      bg: transparent
   opts_knit:
     root.dir: ".."
