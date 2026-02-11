@@ -32,15 +32,15 @@
 #' v1 <- c(0, 0)
 #' v2 <- c(10, 0)
 #' edge <- generate_hex_bezier_edge(v1, v2, seed = 42, edge_id = 1,
-#'                                   tab_params = list(tabsize = 27, jitter = 5))
+#'                                   tab_params = list(tabsize = 6, jitter = 5))
 #'
 #' # With constraints
 #' edge <- generate_hex_bezier_edge(v1, v2, seed = 42, edge_id = 1,
-#'                                   tab_params = list(tabsize = 27, jitter = 5),
+#'                                   tab_params = list(tabsize = 6, jitter = 5),
 #'                                   min_tab_size = 2, max_tab_size = 8)
 #' }
 generate_hex_bezier_edge <- function(v1, v2, seed, edge_id,
-                                      tab_params = list(tabsize = 27, jitter = 5),
+                                      tab_params = list(tabsize = 6, jitter = 5),
                                       min_tab_size = NULL,
                                       max_tab_size = NULL) {
 
@@ -149,7 +149,7 @@ generate_hex_bezier_edge <- function(v1, v2, seed, edge_id,
 #' @param rings Number of rings in puzzle
 #' @param seed Random seed for deterministic generation
 #' @param diameter Puzzle diameter in mm
-#' @param tabsize Tab size percentage (10-30, default: 27)
+#' @param tabsize Tab size as percentage (0-100). Default: 6.
 #' @param jitter Jitter percentage (0-10, default: 5)
 #' @param separated Generate separated layout (default: TRUE)
 #' @param base_spacing Base spacing for separation (default: NULL, auto-calculated)
@@ -166,7 +166,7 @@ generate_hex_bezier_edge <- function(v1, v2, seed, edge_id,
 #'                                      separated = TRUE, base_spacing = 60)
 #' }
 generate_hex_piece_bezier <- function(piece_id, rings, seed, diameter = 240,
-                                       tabsize = 27, jitter = 5,
+                                       tabsize = 6, jitter = 5,
                                        separated = TRUE,
                                        base_spacing = NULL,
                                        separation_factor = 1.0) {
@@ -285,7 +285,7 @@ generate_hex_piece_bezier <- function(piece_id, rings, seed, diameter = 240,
 #' @param rings Number of rings
 #' @param seed Random seed
 #' @param diameter Puzzle diameter (default: 240)
-#' @param tabsize Tab size percentage (default: 27)
+#' @param tabsize Tab size as percentage (0-100). Default: 6.
 #' @param jitter Jitter percentage (default: 5)
 #' @param separated Generate separated layout (default: TRUE)
 #' @param base_spacing Base spacing for separation (default: NULL)
@@ -298,7 +298,7 @@ generate_hex_piece_bezier <- function(piece_id, rings, seed, diameter = 240,
 #' pieces <- generate_all_hex_pieces_bezier(rings = 3, seed = 42)
 #' }
 generate_all_hex_pieces_bezier <- function(rings, seed, diameter = 240,
-                                            tabsize = 27, jitter = 5,
+                                            tabsize = 6, jitter = 5,
                                             separated = TRUE,
                                             base_spacing = NULL,
                                             separation_factor = 1.0) {

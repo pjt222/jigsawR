@@ -10,7 +10,7 @@
 #' @param rings Number of rings (2-6)
 #' @param seed Random seed for reproducibility
 #' @param diameter Puzzle diameter in mm
-#' @param tabsize Tab size percentage (10-40, default: 27)
+#' @param tabsize Tab size as percentage (0-100). Default: 6.
 #' @param jitter Jitter percentage (0-15, default: 5)
 #' @param output_dir Directory to save individual piece SVGs
 #' @param save_combined Whether to save a combined view (default: TRUE)
@@ -23,7 +23,7 @@
 #' @return List containing piece paths and metadata
 generate_hexagonal_individual_pieces <- function(rings = 3, seed = NULL,
                                                  diameter = 240,
-                                                 tabsize = 27, jitter = 5,
+                                                 tabsize = 6, jitter = 5,
                                                  output_dir = "output",
                                                  save_combined = TRUE,
                                                  save_individual = TRUE,
@@ -377,7 +377,7 @@ calculate_pieces_viewbox <- function(pieces, piece_radius) {
 #' @return SVG content as string
 create_hexagonal_individual_pieces_svg <- function(rings = 3, seed = NULL,
                                                    diameter = 240,
-                                                   tabsize = 27, jitter = 5,
+                                                   tabsize = 6, jitter = 5,
                                                    colors = NULL,
                                                    stroke_width = 1.5,
                                                    opacity = 1.0) {

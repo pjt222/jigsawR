@@ -38,7 +38,7 @@ make_vertex_key <- function(x, y) {
 #' @param max_tab_size Maximum absolute tab size in mm (NULL for no limit)
 #' @return List with edge_map (unique edges) and piece_edges (piece-to-edge mapping)
 #'
-generate_hex_edge_map <- function(rings, seed, diameter, tabsize = 27, jitter = 5,
+generate_hex_edge_map <- function(rings, seed, diameter, tabsize = 6, jitter = 5,
                                   do_warp = FALSE, do_trunc = FALSE,
                                   do_circular_border = FALSE,
                                   min_tab_size = NULL, max_tab_size = NULL) {
@@ -430,7 +430,7 @@ generate_hex_edge_map <- function(rings, seed, diameter, tabsize = 27, jitter = 
 #' @return List of piece objects
 #'
 generate_hex_pieces_with_edge_map <- function(rings, seed, diameter = 240,
-                                               tabsize = 27, jitter = 5,
+                                               tabsize = 6, jitter = 5,
                                                separated = TRUE,
                                                base_spacing = NULL,
                                                separation_factor = 1.0,

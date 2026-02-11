@@ -17,7 +17,7 @@
 #' @param seed Random seed for reproducibility
 #' @param grid Number of cells (single value) or grid dimensions c(cols, rows)
 #' @param size Canvas dimensions c(height, width) to match grid c(rows, cols)
-#' @param tabsize Tab size percentage (default: 20)
+#' @param tabsize Tab size as percentage (0-100). Default: 6.
 #' @param jitter Jitter percentage for tabs (default: 4)
 #' @param boundary Boundary type: "rectangular" or "circular" (default: "rectangular
 #' @param point_distribution Point distribution method: "fermat", "uniform", or "jittered"

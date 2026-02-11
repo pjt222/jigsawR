@@ -10,13 +10,13 @@
 
 #' Initialize hexagonal jigsaw environment
 #' @param seed Random seed (default: random)
-#' @param tabsize Tab size percentage (default: 27)
+#' @param tabsize Tab size as percentage (0-100). Default: 6.
 #' @param jitter Jitter percentage (default: 5)
 #' @param diameter Puzzle diameter in mm (default: 240)
 #' @param rings Number of rings (default: 6)
 #' @param do_warp Circle warp (default: FALSE)
 #' @param do_trunc Truncate edge pieces (default: FALSE)
-init_hex_jigsaw <- function(seed = NULL, tabsize = 27, jitter = 5,
+init_hex_jigsaw <- function(seed = NULL, tabsize = 6, jitter = 5,
                             diameter = 240, rings = 6, do_warp = FALSE, do_trunc = FALSE) {
 
   if (is.null(seed)) {
@@ -34,7 +34,7 @@ init_hex_jigsaw <- function(seed = NULL, tabsize = 27, jitter = 5,
   .hex_jigsaw_env$do_trunc <- do_trunc
 
   # Parse input (equivalent to parse_input() in JS)
-  .hex_jigsaw_env$t <- tabsize / 200.0
+  .hex_jigsaw_env$t <- tabsize / 100.0  # Normalized: same formula as all puzzle types
   .hex_jigsaw_env$j <- jitter / 100.0
   .hex_jigsaw_env$n <- rings
 
@@ -297,7 +297,7 @@ hex_gen_db <- function() {
 
 #' Generate hexagonal jigsaw puzzle SVG (main function)
 #' @param seed Random seed
-#' @param tabsize Tab size percentage (15-35)
+#' @param tabsize Tab size as percentage (0-100). Default: 6.
 #' @param jitter Jitter percentage (0-13)
 #' @param diameter Puzzle diameter in mm
 #' @param rings Number of rings
@@ -308,7 +308,7 @@ hex_gen_db <- function() {
 #' @param background Background color or "none" (default: "none")
 #' @param opacity Opacity of puzzle pieces (0.0 to 1.0, default 1.0 = fully opaque)
 #' @return List containing SVG path data
-generate_hex_jigsaw_svg <- function(seed = NULL, tabsize = 27, jitter = 5,
+generate_hex_jigsaw_svg <- function(seed = NULL, tabsize = 6, jitter = 5,
                                     diameter = 240, rings = 6,
                                     do_warp = FALSE, do_trunc = FALSE,
                                     stroke_color = "black", stroke_width = 1,
@@ -459,7 +459,7 @@ if (FALSE) {
   # Generate standard hexagonal puzzle
   hex_puzzle <- generate_hex_jigsaw_svg(
     seed = 1234,
-    tabsize = 27,   # 27% (JS default)
+    tabsize = 6,   # 6% (normalized default)
     jitter = 5,     # 5% (JS default)
     diameter = 240, # 240mm (JS default)
     rings = 6,      # 6 rings (JS default)
@@ -473,7 +473,7 @@ if (FALSE) {
   # Generate circular puzzle with warp
   circular_puzzle <- generate_hex_jigsaw_svg(
     seed = 5678,
-    tabsize = 30,
+    tabsize = 6,
     jitter =3,
     diameter = 200,
     rings = 3,

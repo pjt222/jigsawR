@@ -251,7 +251,7 @@ extract_hex_pieces_from_paths <- function(horizontal_path, vertical_path, border
 #' @return SVG content with separated real pieces
 generate_separated_hex_real <- function(rings = 3, seed = NULL,
                                        diameter = 240, offset = 10,
-                                       tabsize = 27, jitter = 5,
+                                       tabsize = 6, jitter = 5,
                                        do_warp = FALSE, do_trunc = FALSE,
                                        colors = NULL, stroke_width = 1.5) {
 

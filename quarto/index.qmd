@@ -9,7 +9,7 @@ page-layout: full
 :::
 
 ::: {.hero-section .hero-subtitle}
-Generate stunning, mathematically precise jigsaw puzzles with ease. Five puzzle types, infinite possibilities.
+Generate stunning, mathematically precise jigsaw puzzles with ease. Six puzzle types, infinite possibilities.
 :::
 
 ```{r}
@@ -44,7 +44,7 @@ ggplot() +
     # === Puzzle Geometry ===
     rings = 3,                      # Number of rings (pieces = 3*r*(r-1)+1)
     diameter = 222,                 # Puzzle diameter in mm
-    tabsize = 11,                   # Tab size percentage (default: 20)
+    tabsize = 11,                   # Tab size percentage (default: 6)
     jitter = 10,                     # Tab position randomness (default: 4)
     min_tab_size = NULL,            # Minimum tab height in mm (NULL = no limit)
     max_tab_size = NULL,            # Maximum tab height in mm (NULL = no limit)
@@ -98,10 +98,10 @@ devtools::install_github("pjt222/jigsawR")
 :::
 
 ::: feature-title
-5 Puzzle Types
+6 Puzzle Types
 :::
 
-Rectangular, Hexagonal, Concentric, Voronoi, and Random shapes
+Rectangular, Hexagonal, Concentric, Voronoi, Random, and SNIC shapes
 :::::
 
 ::::: feature-card

@@ -412,7 +412,7 @@ render_puzzle_preview(result, max_width = "600px")
 | `n_cells` | integer | 12 | Number of Voronoi cells (pieces) |
 | `seed` | integer | random | Random seed for reproducibility |
 | `offset` | numeric | 0 (mm) | Piece separation distance |
-| `tabsize` | numeric | 10 (%) | Tab size as percentage of piece width |
+| `tabsize` | numeric | 6 (%) | Tab size as percentage of edge length |
 | `jitter` | numeric | 2 (%) | Randomness in tab shape as percentage |
 | `min_tab_size` | numeric | 0 (mm) | Minimum tab size in millimeters |
 | `max_tab_size` | numeric | Inf (mm) | Maximum tab size in millimeters |
@@ -430,6 +430,27 @@ Voronoi tessellation divides a plane into regions based on distance to seed poin
 ## Code Example
 
 ::: {.panel-tabset}
+
+## ggpuzzle
+
+```{r}
+#| label: demo-vor-code-ggpuzzle
+#| eval: false
+library(jigsawR)
+library(ggplot2)
+
+ggplot() +
+  geom_puzzle_voronoi(
+    aes(fill = after_stat(piece_id)),
+    n_cells = 35,
+    width = 400, height = 300,
+    seed = 42,
+    offset = 5
+  ) +
+  scale_fill_viridis_c(option = "turbo", guide = "none") +
+  coord_fixed() +
+  theme_puzzle()
+```
 
 ## API
 
@@ -452,27 +473,6 @@ writeLines(result$svg_content, "voronoi_puzzle.svg")
 
 # Preview
 render_puzzle_preview(result)
-```
-
-## ggpuzzle
-
-```{r}
-#| label: demo-vor-code-ggpuzzle
-#| eval: false
-library(jigsawR)
-library(ggplot2)
-
-ggplot() +
-  geom_puzzle_voronoi(
-    aes(fill = after_stat(piece_id)),
-    n_cells = 35,
-    width = 400, height = 300,
-    seed = 42,
-    offset = 5
-  ) +
-  scale_fill_viridis_c(option = "turbo", guide = "none") +
-  coord_fixed() +
-  theme_puzzle()
 ```
 
 :::

@@ -83,7 +83,7 @@ generate_puzzle(
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `tabsize` | numeric (%) | 10 | Tab size as percentage of edge length |
+| `tabsize` | numeric (%) | 6 | Tab size as percentage of edge length |
 | `jitter` | numeric (%) | 2 | Randomness in tab shape as percentage |
 | `stroke_width` | numeric (mm) | 1 | SVG stroke width |
 | `min_tab_size` | numeric (mm) | NULL | Minimum tab size constraint (all types) |

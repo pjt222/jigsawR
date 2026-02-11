@@ -23,7 +23,7 @@
 #' @param v2 End vertex c(x, y)
 #' @param seed Random seed for reproducibility
 #' @param edge_id Unique edge identifier
-#' @param tabsize Tab size percentage (default: 20)
+#' @param tabsize Tab size as percentage (0-100). Default: 6.
 #' @param jitter Jitter percentage (default: 4)
 #' @param tab_direction 1 for tab pointing "left" of edge direction,
 #'   -1 for "right" (default: 1)
@@ -63,7 +63,7 @@
 #'                                     min_tab_size = 10, max_tab_size = 30)
 #' }
 generate_tessellation_edge <- function(v1, v2, seed, edge_id,
-                                        tabsize = 20, jitter = 4,
+                                        tabsize = 6, jitter = 4,
                                         tab_direction = 1,
                                         min_tab_size = NULL,
                                         max_tab_size = NULL) {
@@ -227,7 +227,7 @@ generate_straight_edge <- function(v1, v2) {
 #' Edge keys use the pattern \code{"E<smaller_id>-<larger_id>"} to ensure
 #' consistent lookup regardless of which cell queries the edge.
 #'
-build_tessellation_edge_map <- function(adjacency, seed, tabsize = 20, jitter = 4,
+build_tessellation_edge_map <- function(adjacency, seed, tabsize = 6, jitter = 4,
                                          boundary_cells = NULL) {
   edge_map <- list()
 

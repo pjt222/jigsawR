@@ -470,7 +470,7 @@ render_puzzle_preview(result, max_width = "500px")
 | `center_shape` | string | "hexagon" | Center shape: "hexagon" or "circle" |
 | `seed` | integer | random | Random seed for reproducibility |
 | `offset` | numeric | 0 (mm) | Piece separation distance |
-| `tabsize` | numeric | 10 (%) | Tab size as percentage of piece width |
+| `tabsize` | numeric | 6 (%) | Tab size as percentage of edge length |
 | `jitter` | numeric | 2 (%) | Randomness in tab shape as percentage |
 | `min_tab_size` | numeric | 0 (mm) | Minimum tab size in millimeters |
 | `max_tab_size` | numeric | Inf (mm) | Maximum tab size in millimeters |
@@ -489,30 +489,6 @@ When using ggplot2 with concentric puzzles, you can map these variables:
 ## Code Example
 
 ::: {.panel-tabset}
-
-## API
-
-```{r}
-#| label: demo-conc-api
-#| eval: false
-library(jigsawR)
-
-# Generate puzzle
-result <- generate_puzzle(
-  type = "concentric",
-  grid = c(4),           # 4 rings
-  size = c(280),         # 280mm diameter
-  seed = 42,
-  center_shape = "hexagon",
-  offset = 5
-)
-
-# Save SVG
-writeLines(result$svg_content, "concentric_puzzle.svg")
-
-# Preview the puzzle
-render_puzzle_preview(result)
-```
 
 ## ggpuzzle
 
@@ -536,6 +512,30 @@ ggplot() +
   coord_fixed() +
   theme_puzzle() +
   labs(title = "4-Ring Concentric Puzzle")
+```
+
+## API
+
+```{r}
+#| label: demo-conc-api
+#| eval: false
+library(jigsawR)
+
+# Generate puzzle
+result <- generate_puzzle(
+  type = "concentric",
+  grid = c(4),           # 4 rings
+  size = c(280),         # 280mm diameter
+  seed = 42,
+  center_shape = "hexagon",
+  offset = 5
+)
+
+# Save SVG
+writeLines(result$svg_content, "concentric_puzzle.svg")
+
+# Preview the puzzle
+render_puzzle_preview(result)
 ```
 
 :::

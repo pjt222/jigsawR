@@ -149,7 +149,7 @@ get_inner_neighbor <- function(piece_id, rings) {
 #'   Prevents tabs from becoming too large on long edges.
 #' @return List with edge_map, piece_edges (list of edges per piece), and piece_vertices
 generate_concentric_edge_map <- function(rings, seed, diameter,
-                                          tabsize = 27, jitter = 5,
+                                          tabsize = 6, jitter = 5,
                                           center_shape = "hexagon",
                                           do_circular_border = FALSE,
                                           boundary_facing = "outward",
@@ -777,7 +777,7 @@ build_concentric_piece_path <- function(piece_id, edge_data) {
 #' @param max_tab_size Maximum absolute tab size in mm (NULL for no limit)
 #' @return List with pieces and metadata
 generate_concentric_pieces <- function(rings, seed, diameter,
-                                        tabsize = 27, jitter = 5,
+                                        tabsize = 6, jitter = 5,
                                         center_shape = "hexagon",
                                         do_circular_border = FALSE,
                                         boundary_facing = "outward",

@@ -11,7 +11,7 @@
 #' @param seed Random seed for reproducibility
 #' @param grid For rectangular: c(rows, cols). For hexagonal/concentric: c(rings) or just rings
 #' @param size For rectangular: c(width, height). For hexagonal/concentric: c(diameter) or just diameter
-#' @param tabsize Tab size as percentage (10-40, default: 20)
+#' @param tabsize Tab size as percentage (0-100). Default: 6.
 #' @param jitter Jitter as percentage (0-15, default: 4)
 #' @param do_warp Apply circular warp (hexagonal only, default: FALSE)
 #' @param do_trunc Truncate boundary (hexagonal only, default: FALSE)
@@ -39,7 +39,7 @@ generate_pieces_internal <- function(type = "rectangular",
                                      seed = NULL,
                                      grid = c(2, 2),
                                      size = c(200, 200),
-                                     tabsize = 20,
+                                     tabsize = 6,
                                      jitter = 4,
                                      do_warp = FALSE,
                                      do_trunc = FALSE,
