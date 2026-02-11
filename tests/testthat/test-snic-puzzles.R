@@ -183,14 +183,12 @@ test_that("has_magick returns logical", {
 # Error Handling Tests
 # ============================================================================
 
-test_that("generate_puzzle with snic type requires image_path", {
+test_that("generate_puzzle with snic type works without image_path (synthetic mode)", {
   skip_if_not(has_snic(), "snic package not available")
-  skip_if_not(has_magick(), "magick package not available")
 
-  expect_error(
-    generate_puzzle(type = "snic", grid = c(10), size = c(100, 100), seed = 42),
-    "image_path"
-  )
+  result <- generate_puzzle(type = "snic", grid = c(10), size = c(100, 100), seed = 42)
+  expect_type(result, "list")
+  expect_true(nchar(result$svg_content) > 0)
 })
 
 test_that("generate_puzzle with snic type rejects non-existent file", {

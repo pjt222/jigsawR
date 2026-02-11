@@ -57,7 +57,8 @@
 #'   Prevents tabs from becoming too small on short edges. Applies to all puzzle types.
 #' @param max_tab_size Maximum absolute tab size in mm (default: NULL for no limit).
 #'   Prevents tabs from becoming too large on long edges. Applies to all puzzle types.
-#' @param image_path Path to an image file for SNIC puzzles. Required when type = "snic".
+#' @param image_path Path to an image file for SNIC puzzles. Optional; when NULL,
+#'   synthetic mode generates color-filled pieces without an image.
 #' @param compactness SNIC compactness parameter (default: 0.5). Higher values produce
 #'   more regular/compact superpixels. Range: 0.0 to 2.0.
 #' @param seed_type SNIC seed grid type: "hexagonal" (default), "rectangular", "diamond", "random".
