@@ -32,7 +32,7 @@ default:
 
   # Shared styling defaults (apply to all puzzle types)
   styling:
-    tabsize: 10
+    tabsize: 6
     jitter: 2
     offset: 0
     layout: "grid"        # grid or repel
@@ -191,7 +191,7 @@ default:
 # Development environment (for testing)
 development:
   styling:
-    tabsize: 10
+    tabsize: 6
     jitter: 2
   colors:
     default_palette: "black"

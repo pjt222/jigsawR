@@ -354,7 +354,7 @@ Rectangular puzzles handle any aspect ratio - wide, square, or tall. See the [As
 | `rows` | integer | 3 | Number of rows |
 | `seed` | integer | random | Random seed for reproducibility |
 | `offset` | numeric | 0 (mm) | Piece separation distance |
-| `tabsize` | numeric | 10 (%) | Tab size as percentage of piece width |
+| `tabsize` | numeric | 6 (%) | Tab size as percentage of piece width |
 | `jitter` | numeric | 2 (%) | Randomness in tab shape as percentage |
 | `min_tab_size` | numeric | 0 (mm) | Minimum tab size in millimeters |
 | `max_tab_size` | numeric | Inf (mm) | Maximum tab size in millimeters |
@@ -364,26 +364,6 @@ Rectangular puzzles handle any aspect ratio - wide, square, or tall. See the [As
 ## Code Example
 
 ::: {.panel-tabset}
-
-## API
-
-```{r}
-#| label: demo-rect-usage-api
-#| eval: false
-library(jigsawR)
-
-# Generate puzzle
-result <- generate_puzzle(
-  type = "rectangular",
-  grid = c(4, 6),      # 4 rows, 6 columns
-  size = c(400, 600),  # height=400mm, width=600mm
-  seed = 42,
-  offset = 5           # Slight separation
-)
-
-# Save SVG
-writeLines(result$svg_content, "rectangular_puzzle.svg")
-```
 
 ## ggpuzzle
 
@@ -406,6 +386,26 @@ ggplot() +
 
 # Save as PNG
 ggsave("rectangular_puzzle.png", width = 10, height = 8, dpi = 300)
+```
+
+## API
+
+```{r}
+#| label: demo-rect-usage-api
+#| eval: false
+library(jigsawR)
+
+# Generate puzzle
+result <- generate_puzzle(
+  type = "rectangular",
+  grid = c(4, 6),      # 4 rows, 6 columns
+  size = c(400, 600),  # height=400mm, width=600mm
+  seed = 42,
+  offset = 5           # Slight separation
+)
+
+# Save SVG
+writeLines(result$svg_content, "rectangular_puzzle.svg")
 ```
 
 :::

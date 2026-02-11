@@ -99,7 +99,7 @@ load_image_for_snic <- function(image_path) {
 #'
 #' @keywords internal
 generate_snic_pieces_internal <- function(seed, grid, size, image_path,
-                                           tabsize = 10, jitter = 2,
+                                           tabsize = 6, jitter = 2,
                                            compactness = 0.5,
                                            seed_type = "hexagonal",
                                            min_tab_size = NULL,

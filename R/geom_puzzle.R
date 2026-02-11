@@ -45,7 +45,7 @@ make_puzzle_layer <- function(puzzle_type,
                               data = NULL,
                               stat = "puzzle",
                               position = "identity",
-                              tabsize = 10,
+                              tabsize = 6,
                               jitter = 2,
                               min_tab_size = NULL,
                               max_tab_size = NULL,
@@ -341,7 +341,7 @@ GeomPuzzle <- ggplot2::ggproto("GeomPuzzle", ggplot2::Geom,
 #' @param cols Number of columns in the puzzle grid.
 #' @param width Puzzle width in mm (default: 100).
 #' @param height Puzzle height in mm (default: 100).
-#' @param tabsize Size of the puzzle tabs (default: 10).
+#' @param tabsize Tab size as percentage (0-100). Default: 6.
 #' @param jitter Random variation in tab positions (default: 2).
 #' @param min_tab_size Minimum tab height in mm (NULL for no constraint).
 #' @param max_tab_size Maximum tab height in mm (NULL for no constraint).
@@ -408,7 +408,7 @@ geom_puzzle_rect <- function(mapping = NULL,
                               cols = 3,
                               width = 100,
                               height = 100,
-                              tabsize = 10,
+                              tabsize = 6,
                               jitter = 2,
                               min_tab_size = NULL,
                               max_tab_size = NULL,
@@ -460,7 +460,7 @@ geom_puzzle_rect <- function(mapping = NULL,
 #'   Piece count formula: 3 * rings * (rings - 1) + 1.
 #'   Example: 3 rings = 19 pieces.
 #' @param diameter Puzzle diameter in mm (default: 100).
-#' @param tabsize Size of the puzzle tabs (default: 10).
+#' @param tabsize Tab size as percentage (0-100). Default: 6.
 #' @param jitter Random variation in tab positions (default: 2).
 #' @param min_tab_size Minimum tab height in mm (NULL for no constraint).
 #' @param max_tab_size Maximum tab height in mm (NULL for no constraint).
@@ -522,7 +522,7 @@ geom_puzzle_hex <- function(mapping = NULL,
                             position = "identity",
                             rings = 3,
                             diameter = 100,
-                            tabsize = 10,
+                            tabsize = 6,
                             jitter = 2,
                             min_tab_size = NULL,
                             max_tab_size = NULL,
@@ -579,7 +579,7 @@ geom_puzzle_hex <- function(mapping = NULL,
 #'   Piece count formula: rings * 6 + 1.
 #'   Example: 3 rings = 19 pieces (1 center + 6 + 6 + 6).
 #' @param diameter Puzzle diameter in mm (default: 100).
-#' @param tabsize Size of the puzzle tabs (default: 10).
+#' @param tabsize Tab size as percentage (0-100). Default: 6.
 #' @param jitter Random variation in tab positions (default: 2).
 #' @param min_tab_size Minimum tab height in mm (NULL for no constraint).
 #' @param max_tab_size Maximum tab height in mm (NULL for no constraint).
@@ -635,7 +635,7 @@ geom_puzzle_conc <- function(mapping = NULL,
                              position = "identity",
                              rings = 3,
                              diameter = 100,
-                             tabsize = 10,
+                             tabsize = 6,
                              jitter = 2,
                              min_tab_size = NULL,
                              max_tab_size = NULL,
@@ -692,7 +692,7 @@ geom_puzzle_conc <- function(mapping = NULL,
 #' @param n_cells Number of Voronoi cells (pieces) in the puzzle.
 #' @param width Puzzle width in mm (default: 100).
 #' @param height Puzzle height in mm (default: 100).
-#' @param tabsize Size of the puzzle tabs (default: 10).
+#' @param tabsize Tab size as percentage (0-100). Default: 6.
 #' @param jitter Random variation in tab positions (default: 2).
 #' @param min_tab_size Minimum tab height in mm (NULL for no constraint).
 #' @param max_tab_size Maximum tab height in mm (NULL for no constraint).
@@ -748,7 +748,7 @@ geom_puzzle_voronoi <- function(mapping = NULL,
                                 n_cells = 12,
                                 width = 100,
                                 height = 100,
-                                tabsize = 10,
+                                tabsize = 6,
                                 jitter = 2,
                                 min_tab_size = NULL,
                                 max_tab_size = NULL,
@@ -803,7 +803,7 @@ geom_puzzle_voronoi <- function(mapping = NULL,
 #' @param n_pieces Deprecated alias for n_interior.
 #' @param width Puzzle width in mm (default: 100).
 #' @param height Puzzle height in mm (default: 100).
-#' @param tabsize Size of the puzzle tabs (default: 10).
+#' @param tabsize Tab size as percentage (0-100). Default: 6.
 #' @param jitter Random variation in tab positions (default: 2).
 #' @param min_tab_size Minimum tab height in mm (NULL for no constraint).
 #' @param max_tab_size Maximum tab height in mm (NULL for no constraint).
@@ -859,7 +859,7 @@ geom_puzzle_random <- function(mapping = NULL,
                                n_pieces = NULL,  # deprecated alias
                                width = 100,
                                height = 100,
-                               tabsize = 10,
+                               tabsize = 6,
                                jitter = 2,
                                min_tab_size = NULL,
                                max_tab_size = NULL,
@@ -920,7 +920,7 @@ geom_puzzle_random <- function(mapping = NULL,
 #'   Higher values produce more regular shapes.
 #' @param width Puzzle width in mm (default: 100).
 #' @param height Puzzle height in mm (default: 100).
-#' @param tabsize Size of the puzzle tabs (default: 10).
+#' @param tabsize Tab size as percentage (0-100). Default: 6.
 #' @param jitter Random variation in tab positions (default: 2).
 #' @param min_tab_size Minimum tab height in mm (NULL for no constraint).
 #' @param max_tab_size Maximum tab height in mm (NULL for no constraint).
@@ -972,7 +972,7 @@ geom_puzzle_snic <- function(mapping = NULL,
                               compactness = 0.5,
                               width = 100,
                               height = 100,
-                              tabsize = 10,
+                              tabsize = 6,
                               jitter = 2,
                               min_tab_size = NULL,
                               max_tab_size = NULL,

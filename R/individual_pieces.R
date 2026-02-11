@@ -35,7 +35,7 @@
 #'   This function will be removed in a future version.
 generate_individual_pieces <- function(seed = 42, xn = 2, yn = 2,
                                       width = 200, height = 200,
-                                      tabsize = 20, jitter = 4,
+                                      tabsize = 6, jitter = 4,
                                       output_dir = "output",
                                       corner_radius = 2,
                                       save_combined = TRUE,
@@ -350,7 +350,7 @@ save_combined_pieces_svg <- function(pieces, width, height, output_dir, palette 
 #' @param width Puzzle width in mm (default: 300)
 #' @param height Puzzle height in mm (default: 200)
 #' @return List containing tab/blank data for all dividers
-extract_tab_data <- function(seed, xn, yn, tabsize = 20, jitter = 4,
+extract_tab_data <- function(seed, xn, yn, tabsize = 6, jitter = 4,
                             width = 300, height = 200) {
 
   # Initialize environment

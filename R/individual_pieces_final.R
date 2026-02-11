@@ -14,7 +14,7 @@
 #' @param width Puzzle width in mm (default: 300)
 #' @param height Puzzle height in mm (default: 200)
 #' @return List containing tab/blank data for all dividers
-extract_puzzle_tab_data <- function(seed, xn, yn, tabsize = 20, jitter = 4,
+extract_puzzle_tab_data <- function(seed, xn, yn, tabsize = 6, jitter = 4,
                                     width = 300, height = 200) {
   
   # Initialize environment (reuse existing initialization)
@@ -195,7 +195,7 @@ generate_individual_piece_path <- function(piece_xi, piece_yi, tab_data, xn, yn)
 #' @param do_trunc Truncate edges for hexagonal puzzles (default: FALSE)
 #' @return List containing SVG content and piece metadata
 generate_individual_pieces_svg <- function(seed = 1234, xn = 5, yn = 4,
-                                           tabsize = 20, jitter = 4,
+                                           tabsize = 6, jitter = 4,
                                            width = 300, height = 200,
                                            stroke_width = 1.5,
                                            piece_colors = NULL,

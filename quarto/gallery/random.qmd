@@ -473,7 +473,7 @@ render_puzzle_preview(result, max_width = "600px")
 | `n_corner` | integer | 4 | Corners per piece (3-8) |
 | `seed` | integer | random | Random seed for reproducibility |
 | `offset` | numeric | 0 (mm) | Piece separation distance |
-| `tabsize` | numeric | 10 (%) | Tab size as percentage of piece width |
+| `tabsize` | numeric | 6 (%) | Tab size as percentage of piece width |
 | `jitter` | numeric | 2 (%) | Randomness in tab shape as percentage |
 | `min_tab_size` | numeric | 0 (mm) | Minimum tab size in millimeters |
 | `max_tab_size` | numeric | auto (random) / Inf (others) | Maximum tab size in mm. Auto-calculated for random puzzles to prevent overlapping tabs |

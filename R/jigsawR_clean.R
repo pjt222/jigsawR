@@ -14,7 +14,7 @@
 #' @param grid For rectangular: c(rows, columns). For hexagonal/concentric: c(rings) or just rings
 #' @param size For rectangular: c(height, width) in mm to match grid order. For hexagonal/concentric: c(diameter) or just diameter
 #' @param seed Random seed for reproducibility
-#' @param tabsize Tab size as percentage (10-40)
+#' @param tabsize Tab size as percentage (0-100). Default: 6.
 #' @param jitter Jitter as percentage (0-15)
 #' @param offset Separation offset (0 = complete puzzle, >0 = separated pieces)
 #' @param layout Layout algorithm: "grid" (default) or "repel".
@@ -79,7 +79,7 @@ generate_puzzle <- function(type = "rectangular",
                             grid = c(3, 4),
                             size = c(400, 300),
                             seed = NULL,
-                            tabsize = 10,
+                            tabsize = 6,
                             jitter = 2,
                             offset = 0,
                             layout = "grid",

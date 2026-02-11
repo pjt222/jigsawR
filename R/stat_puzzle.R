@@ -91,7 +91,7 @@ StatPuzzle <- ggplot2::ggproto("StatPuzzle", ggplot2::Stat,
                            rows = 3, cols = 3, rings = 3,
                            n_cells = 12, n_interior = 12,
                            n_pieces = NULL,  # deprecated alias for n_interior
-                           tabsize = 20, jitter = 4, seed = NULL,
+                           tabsize = 6, jitter = 4, seed = NULL,
                            offset = 0,
                            layout = "grid",
                            repel_margin = 2,

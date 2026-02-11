@@ -10,7 +10,7 @@
 
 #' Initialize jigsaw environment with global variables
 #' @param seed Random seed (default: random)
-#' @param tabsize Tab size percentage (default: 20)
+#' @param tabsize Tab size as percentage (0-100). Default: 6.
 #' @param jitter Jitter percentage (default: 4)
 #' @param width Puzzle width in mm (default: 300)
 #' @param height Puzzle height in mm (default: 200)
@@ -23,7 +23,7 @@
 #'   Prevents tabs from becoming too small on short edges.
 #' @param max_tab_size Maximum absolute tab size in mm (default: NULL for no limit).
 #'   Prevents tabs from becoming too large on long edges.
-init_jigsaw <- function(seed = NULL, tabsize = 20, jitter = 4,
+init_jigsaw <- function(seed = NULL, tabsize = 6, jitter = 4,
                         width = 300, height = 200,
                         unit = "mm", dpi = 96, radius = 2.0,
                         xn = 15, yn = 10,
@@ -52,7 +52,7 @@ init_jigsaw <- function(seed = NULL, tabsize = 20, jitter = 4,
   .jigsaw_env$max_tab_size <- max_tab_size
 
   # Parse input (equivalent to parse_input() in JS)
-  .jigsaw_env$t_base <- tabsize / 200.0  # Base t value before constraints
+  .jigsaw_env$t_base <- tabsize / 100.0  # Normalized: same formula as all puzzle types
   .jigsaw_env$t <- .jigsaw_env$t_base     # Effective t (may be adjusted per edge)
   .jigsaw_env$j <- jitter / 100.0
 
@@ -265,7 +265,7 @@ gen_db <- function() {
 #' @param xn Number of columns
 #' @param yn Number of rows
 #' @return List containing SVG path data
-generate_jigsaw_svg <- function(seed = NULL, tabsize = 20, jitter = 4,
+generate_jigsaw_svg <- function(seed = NULL, tabsize = 6, jitter = 4,
                                 width = 300, height = 200, 
                                 unit = "mm", dpi = 96, radius = 2.0,
                                 xn = 15, yn = 10) {

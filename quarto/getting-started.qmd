@@ -136,7 +136,7 @@ The two approaches use equivalent parameters:
 | `grid = c(4, 3)` | `rows = 4, cols = 3` |
 | `size = c(400, 300)` | `height = 400, width = 300` |
 | `seed = 42` | `seed = 42` |
-| `tabsize = 10` | `tabsize = 10` |
+| `tabsize = 6` | `tabsize = 6` |
 | `offset = 10` | `offset = 10` |
 
 ## Puzzle Types

@@ -15,7 +15,7 @@
 #' @param do_trunc Truncate edge pieces
 #' @return List with puzzle structure
 extract_hexagonal_puzzle_structure <- function(rings, seed, diameter = 240,
-                                              tabsize = 27, jitter = 5,
+                                              tabsize = 6, jitter = 5,
                                               do_warp = FALSE, do_trunc = FALSE) {
 
   # Generate complete puzzle
@@ -74,7 +74,7 @@ generate_separated_hexagonal_svg <- function(rings = 3, seed = NULL,
                                             diameter = 240, offset = 10,
                                             arrangement = "rectangular",
                                             use_bezier = FALSE,
-                                            tabsize = 27, jitter = 5,
+                                            tabsize = 6, jitter = 5,
                                             do_warp = FALSE, do_trunc = FALSE,
                                             colors = NULL, stroke_width = 1,
                                             background = "none",

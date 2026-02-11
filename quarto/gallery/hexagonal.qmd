@@ -498,7 +498,7 @@ render_puzzle_preview(result, max_width = "500px")
 | `rings` | integer | 3 | Number of concentric rings |
 | `seed` | integer | random | Random seed for reproducibility |
 | `offset` | numeric | 0 (mm) | Piece separation distance |
-| `tabsize` | numeric | 10 (%) | Tab size as percentage of piece width |
+| `tabsize` | numeric | 6 (%) | Tab size as percentage of piece width |
 | `jitter` | numeric | 2 (%) | Randomness in tab shape as percentage |
 | `min_tab_size` | numeric | 0 (mm) | Minimum tab size in millimeters |
 | `max_tab_size` | numeric | Inf (mm) | Maximum tab size in millimeters |

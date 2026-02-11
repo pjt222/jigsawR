@@ -225,7 +225,7 @@ get_fallback_config <- function() {
       center_shape = "hexagon"
     ),
     styling = list(
-      tabsize = 20,
+      tabsize = 6,
       jitter = 4,
       offset = 0,
       stroke_width = 1.5,

@@ -195,7 +195,7 @@ ggplot(data) +
 | `rows` | integer | required | Number of rows |
 | `width` | numeric | required | Total width in mm |
 | `height` | numeric | required | Total height in mm |
-| `tabsize` | numeric | 10 | Tab size (% of piece) |
+| `tabsize` | numeric | 6 | Tab size (% of piece) |
 | `jitter` | numeric | 2 | Tab randomness (% of piece) |
 
 ### geom_puzzle_hex()
@@ -207,7 +207,7 @@ ggplot(data) +
 | `do_warp` | logical | TRUE | Apply circular warping |
 | `do_trunc` | logical | TRUE | Truncate to boundary |
 | `do_circular_border` | logical | FALSE | Use perfect circular arc borders |
-| `tabsize` | numeric | 10 | Tab size (% of piece) |
+| `tabsize` | numeric | 6 | Tab size (% of piece) |
 | `jitter` | numeric | 2 | Tab randomness (% of piece) |
 
 ### geom_puzzle_conc()

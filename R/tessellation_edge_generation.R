@@ -63,7 +63,7 @@
 #'                                     min_tab_size = 10, max_tab_size = 30)
 #' }
 generate_tessellation_edge <- function(v1, v2, seed, edge_id,
-                                        tabsize = 20, jitter = 4,
+                                        tabsize = 6, jitter = 4,
                                         tab_direction = 1,
                                         min_tab_size = NULL,
                                         max_tab_size = NULL) {
@@ -227,7 +227,7 @@ generate_straight_edge <- function(v1, v2) {
 #' Edge keys use the pattern \code{"E<smaller_id>-<larger_id>"} to ensure
 #' consistent lookup regardless of which cell queries the edge.
 #'
-build_tessellation_edge_map <- function(adjacency, seed, tabsize = 20, jitter = 4,
+build_tessellation_edge_map <- function(adjacency, seed, tabsize = 6, jitter = 4,
                                          boundary_cells = NULL) {
   edge_map <- list()
 

@@ -14,7 +14,7 @@
 #' @param transparent_background Logical, whether to make combined image background transparent
 #' @return List with file paths and parameters, or NULL if failed
 generate_svg_puzzle_layers <- function(seed = 1234, diameter = 240, rings = 4,
-                                      tabsize = 27, jitter = 5, 
+                                      tabsize = 6, jitter = 5,
                                       base_filename = "svg_puzzle", 
                                       size_px = 2000,
                                       line_color = "black", line_width = 2.0,

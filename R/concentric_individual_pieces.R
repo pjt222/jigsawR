@@ -24,7 +24,7 @@
 #' @return List containing piece paths and metadata
 generate_concentric_individual_pieces <- function(rings = 3, seed = NULL,
                                                   diameter = 240,
-                                                  tabsize = 27, jitter = 5,
+                                                  tabsize = 6, jitter = 5,
                                                   center_shape = "hexagon",
                                                   output_dir = "output",
                                                   save_combined = TRUE,
