@@ -9,7 +9,7 @@
 #' @param seed Random seed for puzzle generation
 #' @param xn Number of columns  
 #' @param yn Number of rows
-#' @param tabsize Tab size percentage (default: 20)
+#' @param tabsize Tab size as percentage (0-100). Default: 6.
 #' @param jitter Jitter percentage (default: 4)
 #' @param width Puzzle width in mm (default: 300)
 #' @param height Puzzle height in mm (default: 200)
@@ -183,7 +183,7 @@ generate_individual_piece_path <- function(piece_xi, piece_yi, tab_data, xn, yn)
 #' @param seed Random seed for puzzle generation
 #' @param xn Number of columns (default: 5)
 #' @param yn Number of rows (default: 4) 
-#' @param tabsize Tab size percentage (default: 20)
+#' @param tabsize Tab size as percentage (0-100). Default: 6.
 #' @param jitter Jitter percentage (default: 4)
 #' @param width Puzzle width in mm (default: 300)
 #' @param height Puzzle height in mm (default: 200)
@@ -211,8 +211,8 @@ generate_individual_pieces_svg <- function(seed = 1234, xn = 5, yn = 4,
       rings = xn,
       seed = seed,
       diameter = diameter,
-      tabsize = ifelse(tabsize == 20, 27, tabsize),  # Use hex default if rect default
-      jitter = ifelse(jitter == 4, 5, jitter),
+      tabsize = tabsize,
+      jitter = jitter,
       do_warp = do_warp,
       do_trunc = do_trunc,
       colors = piece_colors,

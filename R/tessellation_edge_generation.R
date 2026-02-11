@@ -23,7 +23,7 @@
 #' @param v2 End vertex c(x, y)
 #' @param seed Random seed for reproducibility
 #' @param edge_id Unique edge identifier
-#' @param tabsize Tab size percentage (default: 20)
+#' @param tabsize Tab size as percentage (0-100). Default: 6.
 #' @param jitter Jitter percentage (default: 4)
 #' @param tab_direction 1 for tab pointing "left" of edge direction,
 #'   -1 for "right" (default: 1)

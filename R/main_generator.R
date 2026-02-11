@@ -100,7 +100,7 @@ generate_puzzle_variations <- function(variations) {
       seed = variation$seed %||% 1234,
       rings = variation$rings %||% 4,
       diameter = variation$diameter %||% 200,
-      tabsize = variation$tabsize %||% 27,
+      tabsize = variation$tabsize %||% 6,
       jitter = variation$jitter %||% 5,
       base_filename = variation$base_filename %||% paste0("svg_puzzle_", i),
       size_px = variation$size_px %||% 2000,

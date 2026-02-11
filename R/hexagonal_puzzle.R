@@ -297,7 +297,7 @@ hex_gen_db <- function() {
 
 #' Generate hexagonal jigsaw puzzle SVG (main function)
 #' @param seed Random seed
-#' @param tabsize Tab size percentage (15-35)
+#' @param tabsize Tab size as percentage (0-100). Default: 6.
 #' @param jitter Jitter percentage (0-13)
 #' @param diameter Puzzle diameter in mm
 #' @param rings Number of rings
@@ -459,7 +459,7 @@ if (FALSE) {
   # Generate standard hexagonal puzzle
   hex_puzzle <- generate_hex_jigsaw_svg(
     seed = 1234,
-    tabsize = 6,   # 27% (JS default)
+    tabsize = 6,   # 6% (normalized default)
     jitter = 5,     # 5% (JS default)
     diameter = 240, # 240mm (JS default)
     rings = 6,      # 6 rings (JS default)

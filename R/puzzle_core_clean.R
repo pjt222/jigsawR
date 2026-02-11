@@ -14,7 +14,7 @@
 #' @param size Vector c(width, height) in specified units
 #' @param unit Unit specification: "mm" (millimeters) or "px" (pixels)
 #' @param dpi DPI for pixel/mm conversion (96=screen, 300=print quality)
-#' @param tabsize Tab size as percentage (10-30)
+#' @param tabsize Tab size as percentage (0-100). Default: 6.
 #' @param jitter Jitter as percentage (0-10)
 #' @param min_tab_size Minimum absolute tab size in mm (default: NULL)
 #' @param max_tab_size Maximum absolute tab size in mm (default: NULL)

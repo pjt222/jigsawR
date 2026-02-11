@@ -86,7 +86,7 @@ load_image_for_snic <- function(image_path) {
 #' @param grid Number of target superpixels (single value)
 #' @param size Canvas dimensions c(height, width) in mm
 #' @param image_path Path to the image file
-#' @param tabsize Tab size percentage (default: 10)
+#' @param tabsize Tab size as percentage (0-100). Default: 6.
 #' @param jitter Jitter percentage for tabs (default: 2)
 #' @param compactness SNIC compactness parameter (higher = more regular shapes)
 #' @param seed_type Seed grid type: "hexagonal", "rectangular", "diamond", "random"

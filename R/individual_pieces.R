@@ -18,7 +18,7 @@
 #' @param yn Number of rows
 #' @param width Puzzle width in mm
 #' @param height Puzzle height in mm
-#' @param tabsize Tab size percentage (10-30, default: 20)
+#' @param tabsize Tab size as percentage (0-100). Default: 6.
 #' @param jitter Jitter percentage (0-10, default: 4)
 #' @param output_dir Directory to save individual piece SVGs
 #' @param corner_radius Corner radius for border pieces (default: 2)

@@ -255,7 +255,7 @@ gen_db <- function() {
 
 #' Generate jigsaw puzzle SVG (main function)
 #' @param seed Random seed
-#' @param tabsize Tab size percentage (10-30)
+#' @param tabsize Tab size as percentage (0-100). Default: 6.
 #' @param jitter Jitter percentage (0-13)
 #' @param width Puzzle width in mm
 #' @param height Puzzle height in mm

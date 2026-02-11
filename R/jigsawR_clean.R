@@ -562,7 +562,7 @@ generate_puzzle_batch <- function(variations, base_dir = "output/batch",
     if (is.null(var$type)) var$type <- "rectangular"
     if (is.null(var$grid)) var$grid <- c(2, 2)
     if (is.null(var$size)) var$size <- c(200, 200)
-    if (is.null(var$tabsize)) var$tabsize <- 20
+    if (is.null(var$tabsize)) var$tabsize <- 6
     if (is.null(var$jitter)) var$jitter <- 4
     if (is.null(var$offset)) var$offset <- 0
     if (is.null(var$background)) var$background <- "white"

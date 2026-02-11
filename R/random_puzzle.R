@@ -19,7 +19,7 @@
 #' @param seed Random seed for reproducibility
 #' @param grid Number of interior points (single value) that determines piece count
 #' @param size Canvas dimensions c(width, height)
-#' @param tabsize Tab size percentage (default: 20)
+#' @param tabsize Tab size as percentage (0-100). Default: 6.
 #' @param jitter Jitter percentage for tabs (default: 4)
 #' @param n_corner Number of base polygon corners (default: 4 for rectangle)
 #' @param min_piece_size Minimum piece dimension constraint (default: NULL for auto)

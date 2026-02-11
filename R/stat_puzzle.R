@@ -56,7 +56,7 @@ StatPuzzle <- ggplot2::ggproto("StatPuzzle", ggplot2::Stat,
       params$n_interior <- params$n_pieces
     }
     params$n_interior <- params$n_interior %||% 12
-    params$tabsize <- params$tabsize %||% 20
+    params$tabsize <- params$tabsize %||% 6
     params$jitter <- params$jitter %||% 4
     params$bezier_resolution <- params$bezier_resolution %||% 20
     # Hexagonal parameters
