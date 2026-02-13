@@ -23,7 +23,7 @@ geom_puzzle_rect(
   ) +
   scale_fill_viridis_c(option = "plasma", guide = "none") +
   coord_fixed() +
-  theme_void() +
+  theme_puzzle() +
   labs(title = "Rectangular")
 
 p_hex <- ggplot() +
@@ -33,7 +33,7 @@ p_hex <- ggplot() +
   ) +
   scale_fill_viridis_c(option = "viridis", guide = "none") +
   coord_fixed() +
-  theme_void() +
+  theme_puzzle() +
   labs(title = "Hexagonal")
 
 p_conc <- ggplot() +
@@ -43,7 +43,7 @@ p_conc <- ggplot() +
   ) +
   scale_fill_viridis_c(option = "magma", guide = "none") +
   coord_fixed() +
-  theme_void() +
+  theme_puzzle() +
   labs(title = "Concentric")
 
 p_vor <- ggplot() +
@@ -53,7 +53,7 @@ p_vor <- ggplot() +
   ) +
   scale_fill_viridis_c(option = "turbo", guide = "none") +
   coord_fixed() +
-  theme_void() +
+  theme_puzzle() +
   labs(title = "Voronoi")
 
 hero <- (p_rect | p_hex) / (p_conc | p_vor) +
@@ -80,7 +80,7 @@ p_quickstart <- ggplot() +
   ) +
   scale_fill_viridis_c(option = "plasma", guide = "none") +
   coord_fixed() +
-  theme_void()
+  theme_puzzle()
 
 ggsave(
   file.path(out_dir, "readme-quickstart.png"),
@@ -99,7 +99,7 @@ p_ggpuzzle <- ggplot() +
   ) +
   scale_fill_viridis_c(option = "turbo") +
   coord_fixed() +
-  theme_void() +
+  theme_puzzle() +
   theme(legend.position = "right")
 
 ggsave(
@@ -116,27 +116,27 @@ thumbnails <- list(
   rectangular = ggplot() +
     geom_puzzle_rect(aes(fill = after_stat(piece_id)), cols = 4, rows = 3, seed = 42) +
     scale_fill_viridis_c(option = "plasma", guide = "none") +
-    coord_fixed() + theme_void(),
+    coord_fixed() + theme_puzzle(),
 
   hexagonal = ggplot() +
     geom_puzzle_hex(aes(fill = after_stat(piece_id)), rings = 3, seed = 42) +
     scale_fill_viridis_c(option = "viridis", guide = "none") +
-    coord_fixed() + theme_void(),
+    coord_fixed() + theme_puzzle(),
 
   concentric = ggplot() +
     geom_puzzle_conc(aes(fill = after_stat(ring)), rings = 3, seed = 42) +
     scale_fill_viridis_c(option = "magma", guide = "none") +
-    coord_fixed() + theme_void(),
+    coord_fixed() + theme_puzzle(),
 
   voronoi = ggplot() +
     geom_puzzle_voronoi(aes(fill = after_stat(piece_id)), n_cells = 20, seed = 42) +
     scale_fill_viridis_c(option = "turbo", guide = "none") +
-    coord_fixed() + theme_void(),
+    coord_fixed() + theme_puzzle(),
 
   random = ggplot() +
     geom_puzzle_random(aes(fill = after_stat(piece_id)), n_pieces = 15, seed = 42) +
     scale_fill_viridis_c(option = "inferno", guide = "none") +
-    coord_fixed() + theme_void()
+    coord_fixed() + theme_puzzle()
 )
 
 for (name in names(thumbnails)) {
