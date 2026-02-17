@@ -26,7 +26,8 @@ Imports:
     ggfx,
     viridis,
     config,
-    cli
+    cli,
+    rlang
 Suggests:
     testthat (>= 3.0.0),
     ggforce,

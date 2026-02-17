@@ -767,10 +767,6 @@ get_piece_count_from_result <- function(puzzle_result) {
   length(puzzle_result$pieces)
 }
 
-# Null-coalescing operator
-`%||%` <- function(a, b) {
-  if (is.null(a)) b else a
-}
 
 # ============================================================================
 # EDGE FUSION MECHANISM

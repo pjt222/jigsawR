@@ -23,3 +23,15 @@
   50% { transform: scale(1.1); }
   100% { transform: scale(1); }
 }
+
+/* Respect reduced motion preferences (WCAG 2.3.3) */
+@media (prefers-reduced-motion: reduce) {
+  .fa-puzzle-piece {
+    animation: none;
+  }
+}
+
+/* Improve text-muted contrast for dark theme (WCAG 1.4.3 — 4.5:1 minimum) */
+.text-muted {
+  color: #b0b0b0 !important;
+}
