@@ -17,3 +17,9 @@ Loads configuration from inst/config.yml. This function searches for the
 config file in multiple locations to work both in package context and
 when running from the Shiny app directory.
 }
+\examples{
+cfg <- get_puzzle_config()
+cfg$seed
+cfg$styling$tabsize
+
+}

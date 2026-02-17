@@ -11,7 +11,7 @@ geom_puzzle_hex(
   position = "identity",
   rings = 3,
   diameter = 100,
-  tabsize = 10,
+  tabsize = 6,
   jitter = 2,
   min_tab_size = NULL,
   max_tab_size = NULL,
@@ -52,7 +52,7 @@ Example: 3 rings = 19 pieces.}
 
 \item{diameter}{Puzzle diameter in mm (default: 100).}
 
-\item{tabsize}{Size of the puzzle tabs (default: 10).}
+\item{tabsize}{Tab size as percentage (0-100). Default: 6.}
 
 \item{jitter}{Random variation in tab positions (default: 2).}
 
@@ -118,7 +118,7 @@ When using gradient color scales (e.g., viridis), color boundaries between
   test with solid colors using `scale_fill_manual()`.
 }
 \examples{
-\dontrun{
+\donttest{
 library(ggplot2)
 
 # Hexagonal puzzle with 3 rings (19 pieces)

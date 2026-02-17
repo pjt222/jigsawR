@@ -8,7 +8,7 @@ generate_concentric_individual_pieces(
   rings = 3,
   seed = NULL,
   diameter = 240,
-  tabsize = 27,
+  tabsize = 6,
   jitter = 5,
   center_shape = "hexagon",
   output_dir = "output",
@@ -28,7 +28,7 @@ generate_concentric_individual_pieces(
 
 \item{diameter}{Puzzle diameter in mm}
 
-\item{tabsize}{Tab size percentage (10-40, default: 27)}
+\item{tabsize}{Tab size as percentage (0-100). Default: 6.}
 
 \item{jitter}{Jitter percentage (0-15, default: 5)}
 

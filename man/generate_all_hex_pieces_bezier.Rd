@@ -8,7 +8,7 @@ generate_all_hex_pieces_bezier(
   rings,
   seed,
   diameter = 240,
-  tabsize = 27,
+  tabsize = 6,
   jitter = 5,
   separated = TRUE,
   base_spacing = NULL,
@@ -22,7 +22,7 @@ generate_all_hex_pieces_bezier(
 
 \item{diameter}{Puzzle diameter (default: 240)}
 
-\item{tabsize}{Tab size percentage (default: 27)}
+\item{tabsize}{Tab size as percentage (0-100). Default: 6.}
 
 \item{jitter}{Jitter percentage (default: 5)}
 

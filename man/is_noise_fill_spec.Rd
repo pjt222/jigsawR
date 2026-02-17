@@ -15,3 +15,9 @@ TRUE if x is a noise fill spec, FALSE otherwise
 \description{
 Check if object is a noise fill specification
 }
+\examples{
+is_noise_fill_spec(list(type = "noise", noise_type = "perlin"))
+is_noise_fill_spec("#FF0000")
+is_noise_fill_spec(list(type = "gradient"))
+
+}

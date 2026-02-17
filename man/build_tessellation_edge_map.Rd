@@ -7,7 +7,7 @@
 build_tessellation_edge_map(
   adjacency,
   seed,
-  tabsize = 20,
+  tabsize = 6,
   jitter = 4,
   boundary_cells = NULL
 )

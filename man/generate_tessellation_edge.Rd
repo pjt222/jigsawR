@@ -9,7 +9,7 @@ generate_tessellation_edge(
   v2,
   seed,
   edge_id,
-  tabsize = 20,
+  tabsize = 6,
   jitter = 4,
   tab_direction = 1,
   min_tab_size = NULL,
@@ -25,7 +25,7 @@ generate_tessellation_edge(
 
 \item{edge_id}{Unique edge identifier}
 
-\item{tabsize}{Tab size percentage (default: 20)}
+\item{tabsize}{Tab size as percentage (0-100). Default: 6.}
 
 \item{jitter}{Jitter percentage (default: 4)}
 

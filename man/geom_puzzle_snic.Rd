@@ -14,7 +14,7 @@ geom_puzzle_snic(
   compactness = 0.5,
   width = 100,
   height = 100,
-  tabsize = 10,
+  tabsize = 6,
   jitter = 2,
   min_tab_size = NULL,
   max_tab_size = NULL,
@@ -58,7 +58,7 @@ Higher values produce more regular shapes.}
 
 \item{height}{Puzzle height in mm (default: 100).}
 
-\item{tabsize}{Size of the puzzle tabs (default: 10).}
+\item{tabsize}{Tab size as percentage (0-100). Default: 6.}
 
 \item{jitter}{Random variation in tab positions (default: 2).}
 
@@ -117,7 +117,7 @@ Requires the 'snic' and 'magick' packages to be installed.
   not image fills. Use generate_puzzle() for image-filled SVG output.
 }
 \examples{
-\dontrun{
+\donttest{
 library(ggplot2)
 
 # SNIC puzzle with ~20 superpixels

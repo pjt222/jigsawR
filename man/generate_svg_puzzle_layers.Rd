@@ -8,7 +8,7 @@ generate_svg_puzzle_layers(
   seed = 1234,
   diameter = 240,
   rings = 4,
-  tabsize = 27,
+  tabsize = 6,
   jitter = 5,
   base_filename = "svg_puzzle",
   size_px = 2000,

@@ -9,7 +9,7 @@ generate_snic_pieces_internal(
   grid,
   size,
   image_path,
-  tabsize = 10,
+  tabsize = 6,
   jitter = 2,
   compactness = 0.5,
   seed_type = "hexagonal",
@@ -29,7 +29,7 @@ generate_snic_pieces_internal(
 
 \item{image_path}{Path to the image file}
 
-\item{tabsize}{Tab size percentage (default: 10)}
+\item{tabsize}{Tab size as percentage (0-100). Default: 6.}
 
 \item{jitter}{Jitter percentage for tabs (default: 2)}
 

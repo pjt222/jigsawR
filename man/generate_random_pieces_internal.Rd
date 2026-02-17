@@ -26,7 +26,7 @@ generate_random_pieces_internal(
 
 \item{size}{Canvas dimensions c(width, height)}
 
-\item{tabsize}{Tab size percentage (default: 20)}
+\item{tabsize}{Tab size as percentage (0-100). Default: 6.}
 
 \item{jitter}{Jitter percentage for tabs (default: 4)}
 

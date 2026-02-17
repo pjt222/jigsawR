@@ -11,7 +11,7 @@ generate_separated_hexagonal_svg(
   offset = 10,
   arrangement = "rectangular",
   use_bezier = FALSE,
-  tabsize = 27,
+  tabsize = 6,
   jitter = 5,
   do_warp = FALSE,
   do_trunc = FALSE,

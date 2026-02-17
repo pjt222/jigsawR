@@ -25,3 +25,14 @@ List of integer vectors (fusion groups)
 Extended version of parse_fusion_input that also accepts PILES notation.
 Automatically detects format based on input.
 }
+\examples{
+# PILES notation
+parse_fusion("1-2-3,4-5")
+
+# Legacy parenthesized format
+parse_fusion("(1,2),(3,4)")
+
+# List input (pass-through)
+parse_fusion(list(c(1, 2), c(3, 4)))
+
+}

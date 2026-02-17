@@ -9,7 +9,7 @@ generate_hex_bezier_edge(
   v2,
   seed,
   edge_id,
-  tab_params = list(tabsize = 27, jitter = 5),
+  tab_params = list(tabsize = 6, jitter = 5),
   min_tab_size = NULL,
   max_tab_size = NULL
 )
@@ -53,11 +53,11 @@ a straight line is returned instead.
 v1 <- c(0, 0)
 v2 <- c(10, 0)
 edge <- generate_hex_bezier_edge(v1, v2, seed = 42, edge_id = 1,
-                                  tab_params = list(tabsize = 27, jitter = 5))
+                                  tab_params = list(tabsize = 6, jitter = 5))
 
 # With constraints
 edge <- generate_hex_bezier_edge(v1, v2, seed = 42, edge_id = 1,
-                                  tab_params = list(tabsize = 27, jitter = 5),
+                                  tab_params = list(tabsize = 6, jitter = 5),
                                   min_tab_size = 2, max_tab_size = 8)
 }
 }

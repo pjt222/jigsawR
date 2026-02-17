@@ -8,7 +8,7 @@ generate_individual_pieces_svg(
   seed = 1234,
   xn = 5,
   yn = 4,
-  tabsize = 20,
+  tabsize = 6,
   jitter = 4,
   width = 300,
   height = 200,
@@ -27,7 +27,7 @@ generate_individual_pieces_svg(
 
 \item{yn}{Number of rows (default: 4)}
 
-\item{tabsize}{Tab size percentage (default: 20)}
+\item{tabsize}{Tab size as percentage (0-100). Default: 6.}
 
 \item{jitter}{Jitter percentage (default: 4)}
 

@@ -8,7 +8,7 @@ create_enhanced_puzzle_svg(
   seed = 1234,
   diameter = 240,
   rings = 4,
-  tabsize = 27,
+  tabsize = 6,
   jitter = 5,
   line_color = "black",
   line_width = 2

@@ -8,7 +8,7 @@ generate_concentric_pieces(
   rings,
   seed,
   diameter,
-  tabsize = 27,
+  tabsize = 6,
   jitter = 5,
   center_shape = "hexagon",
   do_circular_border = FALSE,

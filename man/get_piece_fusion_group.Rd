@@ -17,3 +17,14 @@ Fusion group index (integer), or NA if piece is not in any group
 \description{
 Get fusion group for a piece
 }
+\examples{
+\donttest{
+result <- generate_puzzle(type = "rectangular", grid = c(3, 3),
+                          size = c(200, 200), seed = 42, save_files = FALSE,
+                          fusion_groups = "1-2-3")
+fused <- compute_fused_edges(list(c(1, 2, 3)), result)
+get_piece_fusion_group(1, fused)  # 1 (in first fusion group)
+get_piece_fusion_group(5, fused)  # NA (not in any group)
+}
+
+}

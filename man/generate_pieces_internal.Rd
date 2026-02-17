@@ -9,7 +9,7 @@ generate_pieces_internal(
   seed = NULL,
   grid = c(2, 2),
   size = c(200, 200),
-  tabsize = 20,
+  tabsize = 6,
   jitter = 4,
   do_warp = FALSE,
   do_trunc = FALSE,
@@ -38,7 +38,7 @@ generate_pieces_internal(
 
 \item{size}{For rectangular: c(width, height). For hexagonal/concentric: c(diameter) or just diameter}
 
-\item{tabsize}{Tab size as percentage (10-40, default: 20)}
+\item{tabsize}{Tab size as percentage (0-100). Default: 6.}
 
 \item{jitter}{Jitter as percentage (0-15, default: 4)}
 

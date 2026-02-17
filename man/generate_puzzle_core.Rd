@@ -10,7 +10,7 @@ generate_puzzle_core(
   size = c(200, 200),
   unit = "mm",
   dpi = 96,
-  tabsize = 20,
+  tabsize = 6,
   jitter = 4,
   min_tab_size = NULL,
   max_tab_size = NULL
@@ -27,7 +27,7 @@ generate_puzzle_core(
 
 \item{dpi}{DPI for pixel/mm conversion (96=screen, 300=print quality)}
 
-\item{tabsize}{Tab size as percentage (10-30)}
+\item{tabsize}{Tab size as percentage (0-100). Default: 6.}
 
 \item{jitter}{Jitter as percentage (0-10)}
 

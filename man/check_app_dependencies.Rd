@@ -12,3 +12,7 @@ Logical indicating if all dependencies are met
 \description{
 Checks if all required packages for the Shiny app are installed
 }
+\examples{
+check_app_dependencies()
+
+}

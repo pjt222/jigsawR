@@ -8,7 +8,7 @@ create_hexagonal_individual_pieces_svg(
   rings = 3,
   seed = NULL,
   diameter = 240,
-  tabsize = 27,
+  tabsize = 6,
   jitter = 5,
   colors = NULL,
   stroke_width = 1.5,

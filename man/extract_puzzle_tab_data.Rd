@@ -8,7 +8,7 @@ extract_puzzle_tab_data(
   seed,
   xn,
   yn,
-  tabsize = 20,
+  tabsize = 6,
   jitter = 4,
   width = 300,
   height = 200
@@ -21,7 +21,7 @@ extract_puzzle_tab_data(
 
 \item{yn}{Number of rows}
 
-\item{tabsize}{Tab size percentage (default: 20)}
+\item{tabsize}{Tab size as percentage (0-100). Default: 6.}
 
 \item{jitter}{Jitter percentage (default: 4)}
 

@@ -8,7 +8,7 @@ extract_tab_data(
   seed,
   xn,
   yn,
-  tabsize = 20,
+  tabsize = 6,
   jitter = 4,
   width = 300,
   height = 200

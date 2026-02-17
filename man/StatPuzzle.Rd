@@ -35,4 +35,15 @@ Parameters passed via the geom layer functions include:
   \item{fill_direction}{Direction for color assignment: "forward" or "reverse"}
 }
 }
+\examples{
+\donttest{
+library(ggplot2)
+df <- data.frame(value = 1:4)
+ggplot(df, aes(fill = value)) +
+  geom_puzzle_rect(rows = 2, cols = 2, seed = 42) +
+  scale_fill_viridis_c() +
+  theme_void()
+}
+
+}
 \keyword{datasets}

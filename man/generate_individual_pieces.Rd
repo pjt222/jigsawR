@@ -10,7 +10,7 @@ generate_individual_pieces(
   yn = 2,
   width = 200,
   height = 200,
-  tabsize = 20,
+  tabsize = 6,
   jitter = 4,
   output_dir = "output",
   corner_radius = 2,
@@ -33,7 +33,7 @@ generate_individual_pieces(
 
 \item{height}{Puzzle height in mm}
 
-\item{tabsize}{Tab size percentage (10-30, default: 20)}
+\item{tabsize}{Tab size as percentage (0-100). Default: 6.}
 
 \item{jitter}{Jitter percentage (0-10, default: 4)}
 

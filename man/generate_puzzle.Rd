@@ -9,7 +9,7 @@ generate_puzzle(
   grid = c(3, 4),
   size = c(400, 300),
   seed = NULL,
-  tabsize = 10,
+  tabsize = 6,
   jitter = 2,
   offset = 0,
   layout = "grid",
@@ -59,7 +59,7 @@ generate_puzzle(
 
 \item{seed}{Random seed for reproducibility}
 
-\item{tabsize}{Tab size as percentage (10-40)}
+\item{tabsize}{Tab size as percentage (0-100). Default: 6.}
 
 \item{jitter}{Jitter as percentage (0-15)}
 
@@ -137,7 +137,8 @@ Prevents tabs from becoming too small on short edges. Applies to all puzzle type
 \item{max_tab_size}{Maximum absolute tab size in mm (default: NULL for no limit).
 Prevents tabs from becoming too large on long edges. Applies to all puzzle types.}
 
-\item{image_path}{Path to an image file for SNIC puzzles. Required when type = "snic".}
+\item{image_path}{Path to an image file for SNIC puzzles. Optional; when NULL,
+synthetic mode generates color-filled pieces without an image.}
 
 \item{compactness}{SNIC compactness parameter (default: 0.5). Higher values produce
 more regular/compact superpixels. Range: 0.0 to 2.0.}

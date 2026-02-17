@@ -8,7 +8,7 @@ generate_hex_pieces_with_edge_map(
   rings,
   seed,
   diameter = 240,
-  tabsize = 27,
+  tabsize = 6,
   jitter = 5,
   separated = TRUE,
   base_spacing = NULL,

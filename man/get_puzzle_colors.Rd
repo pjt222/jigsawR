@@ -19,3 +19,14 @@ Character vector of hex colors
 \description{
 Returns colors from specified viridis palette
 }
+\examples{
+# Get 5 colors from the default palette
+get_puzzle_colors(5)
+
+# Use a specific viridis palette
+get_puzzle_colors(8, palette = "viridis")
+
+# Inverted palette direction
+get_puzzle_colors(4, palette = "plasma", invert = TRUE)
+
+}

@@ -20,3 +20,10 @@ List with:
 \description{
 Checks if a PILES string has valid syntax without evaluating special keywords.
 }
+\examples{
+validate_piles_syntax("1-2-3,4-5")
+validate_piles_syntax("1:6")
+validate_piles_syntax("1-2(-3)-4")
+validate_piles_syntax("((unbalanced")
+
+}

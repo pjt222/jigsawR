@@ -6,7 +6,7 @@
 \usage{
 init_hex_jigsaw(
   seed = NULL,
-  tabsize = 27,
+  tabsize = 6,
   jitter = 5,
   diameter = 240,
   rings = 6,
@@ -17,7 +17,7 @@ init_hex_jigsaw(
 \arguments{
 \item{seed}{Random seed (default: random)}
 
-\item{tabsize}{Tab size percentage (default: 27)}
+\item{tabsize}{Tab size as percentage (0-100). Default: 6.}
 
 \item{jitter}{Jitter percentage (default: 5)}
 

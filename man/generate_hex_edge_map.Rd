@@ -8,7 +8,7 @@ generate_hex_edge_map(
   rings,
   seed,
   diameter,
-  tabsize = 27,
+  tabsize = 6,
   jitter = 5,
   do_warp = FALSE,
   do_trunc = FALSE,

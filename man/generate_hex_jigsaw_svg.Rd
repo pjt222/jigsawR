@@ -6,7 +6,7 @@
 \usage{
 generate_hex_jigsaw_svg(
   seed = NULL,
-  tabsize = 27,
+  tabsize = 6,
   jitter = 5,
   diameter = 240,
   rings = 6,
@@ -21,7 +21,7 @@ generate_hex_jigsaw_svg(
 \arguments{
 \item{seed}{Random seed}
 
-\item{tabsize}{Tab size percentage (15-35)}
+\item{tabsize}{Tab size as percentage (0-100). Default: 6.}
 
 \item{jitter}{Jitter percentage (0-13)}
 

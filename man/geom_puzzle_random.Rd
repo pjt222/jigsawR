@@ -13,7 +13,7 @@ geom_puzzle_random(
   n_pieces = NULL,
   width = 100,
   height = 100,
-  tabsize = 10,
+  tabsize = 6,
   jitter = 2,
   min_tab_size = NULL,
   max_tab_size = NULL,
@@ -55,7 +55,7 @@ Actual piece count depends on triangulation.}
 
 \item{height}{Puzzle height in mm (default: 100).}
 
-\item{tabsize}{Size of the puzzle tabs (default: 10).}
+\item{tabsize}{Tab size as percentage (0-100). Default: 6.}
 
 \item{jitter}{Random variation in tab positions (default: 2).}
 
@@ -119,7 +119,7 @@ When using gradient color scales (e.g., viridis), color boundaries between
 Requires the 'RCDT' package to be installed.
 }
 \examples{
-\dontrun{
+\donttest{
 library(ggplot2)
 
 # Random shape puzzle with ~12 interior points

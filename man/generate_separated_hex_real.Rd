@@ -9,7 +9,7 @@ generate_separated_hex_real(
   seed = NULL,
   diameter = 240,
   offset = 10,
-  tabsize = 27,
+  tabsize = 6,
   jitter = 5,
   do_warp = FALSE,
   do_trunc = FALSE,

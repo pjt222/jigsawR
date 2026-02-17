@@ -19,3 +19,12 @@ TRUE if pieces share an edge, FALSE otherwise
 \description{
 Check if two pieces are adjacent
 }
+\examples{
+\donttest{
+result <- generate_puzzle(type = "rectangular", grid = c(3, 3),
+                          size = c(200, 200), seed = 42, save_files = FALSE)
+are_pieces_adjacent(1, 2, result)  # TRUE (horizontally adjacent)
+are_pieces_adjacent(1, 5, result)  # FALSE (diagonal, not adjacent)
+}
+
+}

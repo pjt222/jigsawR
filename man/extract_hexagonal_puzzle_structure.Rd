@@ -8,7 +8,7 @@ extract_hexagonal_puzzle_structure(
   rings,
   seed,
   diameter = 240,
-  tabsize = 27,
+  tabsize = 6,
   jitter = 5,
   do_warp = FALSE,
   do_trunc = FALSE
