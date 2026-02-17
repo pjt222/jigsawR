@@ -93,7 +93,7 @@ get_puzzle_colors <- function(n, palette = NULL, invert = FALSE) {
 
   if (!palette %in% valid_palettes) {
     log_warn("Invalid palette '{palette}', using 'black' instead")
-    palette <- "black"
+    return(rep("#000000", n))
   }
 
   # Generate colors using viridis
