@@ -183,7 +183,7 @@ generate_hex_edge_map <- function(rings, seed, diameter, tabsize = 6, jitter = 5
         # the warped boundary vertices are already at approximately this distance,
         # so projection causes minimal distortion.
         circle_radius <- diameter / 2
-        cat(sprintf("Truncation enabled - projecting boundary to radius %.2f\n", circle_radius))
+        log_info("Truncation enabled - projecting boundary to radius {round(circle_radius, 2)}")
 
         # Project only boundary vertices to circle radius
         for (piece_id in 1:num_pieces) {
@@ -237,12 +237,12 @@ generate_hex_edge_map <- function(rings, seed, diameter, tabsize = 6, jitter = 5
         }
       }
 
-      cat(sprintf("Hexagonal truncation enabled - boundary at radius %.2f\n", max_boundary_dist))
+      log_info("Hexagonal truncation enabled - boundary at radius {round(max_boundary_dist, 2)}")
     }
 
     # Log if neither warp nor trunc is applied (shouldn't reach here due to outer if)
     if (!do_warp && !do_trunc) {
-      cat("No transformation (zigzag boundary)\n")
+      log_info("No transformation (zigzag boundary)")
     }
   }
 

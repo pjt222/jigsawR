@@ -54,13 +54,13 @@ launch_jigsaw_app <- function(port = NULL,
   }
   
   # Inform user
-  message("Launching jigsawR Shiny Application...")
-  message("App directory: ", app_dir)
-  
+  cli::cli_inform("Launching jigsawR Shiny Application...")
+  cli::cli_inform("App directory: {.path {app_dir}}")
+
   if (is.null(port)) {
-    message("Running on a random port...")
+    cli::cli_inform("Running on a random port...")
   } else {
-    message("Running on port: ", port)
+    cli::cli_inform("Running on port: {port}")
   }
   
   # Run the app
@@ -88,6 +88,10 @@ jigsawR_app <- function(...) {
 #' Checks if all required packages for the Shiny app are installed
 #' 
 #' @return Logical indicating if all dependencies are met
+#'
+#' @examples
+#' check_app_dependencies()
+#'
 #' @export
 check_app_dependencies <- function() {
   required_packages <- c("shiny", "bslib", "bsicons", "shinyjs", "colourpicker", "waiter")
@@ -97,22 +101,22 @@ check_app_dependencies <- function() {
   optional_installed <- sapply(optional_packages, requireNamespace, quietly = TRUE)
 
   if (all(required_installed)) {
-    message("[OK] All required Shiny app dependencies are installed")
+    cli::cli_alert_success("All required Shiny app dependencies are installed")
 
     if (!all(optional_installed)) {
       missing_optional <- optional_packages[!optional_installed]
-      message("[!] Optional package for enhanced features: ", paste(missing_optional, collapse = ", "))
-      message("    Install with: install.packages(c(",
-             paste0('"', missing_optional, '"', collapse = ", "), "))")
-      message("    Note: Required for downloading individual pieces as ZIP files")
+      cli::cli_alert_warning("Optional packages for enhanced features: {.pkg {missing_optional}}")
+      install_cmd <- paste0('install.packages(c(', paste0('"', missing_optional, '"', collapse = ", "), '))')
+      cli::cli_inform("Install with: {.code {install_cmd}}")
+      cli::cli_inform("Note: Required for downloading individual pieces as ZIP files")
     }
 
     return(invisible(TRUE))
   } else {
     missing <- required_packages[!required_installed]
-    message("[X] Missing required packages: ", paste(missing, collapse = ", "))
-    message("Install with: install.packages(c(",
-           paste0('"', missing, '"', collapse = ", "), "))")
+    cli::cli_alert_danger("Missing required packages: {.pkg {missing}}")
+    install_cmd <- paste0('install.packages(c(', paste0('"', missing, '"', collapse = ", "), '))')
+    cli::cli_inform("Install with: {.code {install_cmd}}")
     return(invisible(FALSE))
   }
 }

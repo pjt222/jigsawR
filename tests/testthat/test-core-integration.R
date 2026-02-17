@@ -274,7 +274,6 @@ test_that("main exported functions exist", {
 })
 
 test_that("Shiny app functions exist", {
-  skip_if_not(exists("launch_jigsaw_app"), "Shiny app not available")
   expect_true(is.function(launch_jigsaw_app))
 })
 

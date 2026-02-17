@@ -247,8 +247,6 @@ test_that("hexagonal puzzles handle edge cases", {
 # =============================================================================
 
 test_that("legacy generate_hex_jigsaw_svg produces valid output", {
-  skip_if_not(exists("generate_hex_jigsaw_svg"), "Legacy function not available")
-
   result <- generate_hex_jigsaw_svg(seed = 1234, rings = 3, diameter = 200)
 
   expect_type(result, "list")
@@ -281,9 +279,6 @@ test_that("hexagonal individual pieces via generate_puzzle", {
 })
 
 test_that("generate_hexagonal_individual_pieces works", {
-  skip_if_not(exists("generate_hexagonal_individual_pieces"),
-              "generate_hexagonal_individual_pieces not available")
-
   result <- generate_hexagonal_individual_pieces(seed = 1234, rings = 2)
 
   expect_type(result, "list")

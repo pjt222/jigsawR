@@ -186,41 +186,43 @@ extract_unique_endpoints <- function(segments, tolerance = 0.1) {
 #' @return List of individual pieces with their paths
 extract_hex_pieces_from_paths <- function(horizontal_path, vertical_path, border_path, rings) {
 
-  cat("Extracting hexagonal pieces from complete paths...\n")
+  log_info("Extracting hexagonal pieces from complete paths...")
 
   # Step 1: Split all paths into segments
   h_segments <- split_path_by_move(horizontal_path)
   v_segments <- split_path_by_move(vertical_path)
   b_segments <- split_path_by_move(border_path)
 
-  cat(sprintf("  Split into %d horizontal, %d vertical, %d border segments\n",
-              length(h_segments), length(v_segments), length(b_segments)))
+  n_h <- length(h_segments)
+  n_v <- length(v_segments)
+  n_b <- length(b_segments)
+  log_info("Split into {n_h} horizontal, {n_v} vertical, {n_b} border segments")
 
   # Step 2: Combine all segments
   all_segments <- c(h_segments, v_segments, b_segments)
 
   # Step 3: Build connectivity graph
-  cat("  Building connectivity graph...\n")
+  log_info("Building connectivity graph...")
   connectivity_graph <- build_segment_graph(all_segments, tolerance = 0.5)
 
   # Extract unique endpoints for analysis
   unique_points <- extract_unique_endpoints(all_segments, tolerance = 0.5)
 
-  cat(sprintf("  Found %d segments with %d unique junction points\n",
-              length(all_segments), length(unique_points)))
+  n_seg <- length(all_segments)
+  n_junc <- length(unique_points)
+  log_info("Found {n_seg} segments with {n_junc} unique junction points")
 
   # Verify connectivity
   connections_per_segment <- sapply(connectivity_graph, function(node) length(node$connections))
-  cat(sprintf("  Connections per segment: min=%d, max=%d, mean=%.1f\n",
-              min(connections_per_segment),
-              max(connections_per_segment),
-              mean(connections_per_segment)))
+  conn_min <- min(connections_per_segment)
+  conn_max <- max(connections_per_segment)
+  conn_mean <- round(mean(connections_per_segment), 1)
+  log_info("Connections per segment: min={conn_min}, max={conn_max}, mean={conn_mean}")
 
   expected_pieces <- 3 * rings * (rings - 1) + 1
 
-  cat(sprintf("  Expected %d pieces\n", expected_pieces))
-  cat("  Phase 1 Day 1: Connectivity graph built successfully\n")
-  cat("  Next: Implement cycle detection and piece tracing\n")
+  log_info("Expected {expected_pieces} pieces")
+  log_warn("Piece boundary tracing not yet implemented; returning connectivity graph only")
 
   return(list(
     segments = list(
@@ -259,8 +261,15 @@ generate_separated_hex_real <- function(rings = 3, seed = NULL,
     seed <- as.integer(runif(1) * 10000)
   }
 
-  cat(sprintf("Generating separated hexagonal puzzle (real pieces)...\n"))
-  cat(sprintf("  Rings: %d, Seed: %d\n", rings, seed))
+  warning(
+    "generate_separated_hex_real() is incomplete: piece extraction not yet implemented. ",
+    "Returning complete (unseparated) puzzle as fallback. ",
+    "Use generate_puzzle(type = 'hexagonal', offset = X) for separated pieces.",
+    call. = FALSE
+  )
+
+  log_info("Generating separated hexagonal puzzle (real pieces)...")
+  log_info("Rings: {rings}, Seed: {seed}")
 
   # Generate complete puzzle
   puzzle <- generate_hex_jigsaw_svg(
@@ -273,7 +282,7 @@ generate_separated_hex_real <- function(rings = 3, seed = NULL,
     do_trunc = do_trunc
   )
 
-  # Extract pieces
+  # Extract pieces (connectivity graph only - tracing not implemented)
   extraction <- extract_hex_pieces_from_paths(
     puzzle$horizontal,
     puzzle$vertical,
@@ -281,12 +290,6 @@ generate_separated_hex_real <- function(rings = 3, seed = NULL,
     rings
   )
 
-  cat("\n")
-  cat("CURRENT STATUS: Piece extraction in progress\n")
-  cat("For now, returning complete puzzle\n")
-  cat("Next step: Implement piece boundary tracing\n")
-
-  # For now, return the complete puzzle
-  # TODO: Replace with actual separated pieces
+  # Return the complete puzzle as fallback
   return(puzzle$svg)
 }

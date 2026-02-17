@@ -108,6 +108,16 @@ make_puzzle_layer <- function(puzzle_type,
 #' Renders puzzle pieces as filled polygons. Works with StatPuzzle to
 #' generate piece geometry from data.
 #'
+#' @examples
+#' \donttest{
+#' library(ggplot2)
+#' df <- data.frame(value = 1:4)
+#' ggplot(df, aes(fill = value)) +
+#'   geom_puzzle_rect(rows = 2, cols = 2, seed = 42) +
+#'   scale_fill_viridis_c() +
+#'   theme_void()
+#' }
+#'
 #' @export
 GeomPuzzle <- ggplot2::ggproto("GeomPuzzle", ggplot2::Geom,
 
@@ -374,7 +384,7 @@ GeomPuzzle <- ggplot2::ggproto("GeomPuzzle", ggplot2::Geom,
 #' @return A ggplot2 layer.
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' library(ggplot2)
 #'
 #' # Basic rectangular puzzle
@@ -496,7 +506,7 @@ geom_puzzle_rect <- function(mapping = NULL,
 #' @return A ggplot2 layer.
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' library(ggplot2)
 #'
 #' # Hexagonal puzzle with 3 rings (19 pieces)
@@ -616,7 +626,7 @@ geom_puzzle_hex <- function(mapping = NULL,
 #' @return A ggplot2 layer.
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' library(ggplot2)
 #'
 #' # Concentric puzzle with 3 rings (19 pieces)
@@ -729,7 +739,7 @@ geom_puzzle_conc <- function(mapping = NULL,
 #' @note Requires the 'deldir' package to be installed.
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' library(ggplot2)
 #'
 #' # Voronoi puzzle with 12 cells
@@ -839,7 +849,7 @@ geom_puzzle_voronoi <- function(mapping = NULL,
 #' @note Requires the 'RCDT' package to be installed.
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' library(ggplot2)
 #'
 #' # Random shape puzzle with ~12 interior points
@@ -951,7 +961,7 @@ geom_puzzle_random <- function(mapping = NULL,
 #'   not image fills. Use generate_puzzle() for image-filled SVG output.
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' library(ggplot2)
 #'
 #' # SNIC puzzle with ~20 superpixels

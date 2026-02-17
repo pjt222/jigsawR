@@ -186,13 +186,15 @@ get_inner_ring_neighbor <- function(piece_id, side, ring_info, rings) {
       # Outermost ring - border edge
       return(NA)
     } else {
-      # Connect to outer ring
-      # TODO: Implement outer ring connections
+      # Connect to outer ring - not implemented in this code path.
+      # NOTE: get_hex_neighbor_fast() in hexagonal_adjacency_cache.R uses
+      # axial coordinate math and handles all neighbor lookups correctly.
+      # This recursive approach is only used as a fallback.
       return(NA)
     }
   }
 
-  # Shouldn't reach here
+  # Unhandled side/ring combination - return NA as boundary
   return(NA)
 }
 

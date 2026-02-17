@@ -39,7 +39,7 @@ has_parallel <- function() {
 configure_data_table <- function(threads = NULL, verbose = FALSE) {
   if (!has_data_table()) {
     if (verbose) {
-      message("data.table not available - using base R")
+      cli::cli_inform("data.table not available - using base R")
     }
     return(invisible(1L))
   }
@@ -52,7 +52,7 @@ configure_data_table <- function(threads = NULL, verbose = FALSE) {
 
 
   if (verbose) {
-    message(sprintf("data.table configured with %d threads", threads))
+    cli::cli_inform("data.table configured with {threads} thread{?s}")
   }
 
   invisible(threads)

@@ -14,6 +14,12 @@ NULL
 #'
 #' @param config_name Configuration environment to load (default, development, production)
 #' @return List containing configuration values
+#'
+#' @examples
+#' cfg <- get_puzzle_config()
+#' cfg$seed
+#' cfg$styling$tabsize
+#'
 #' @export
 get_puzzle_config <- function(config_name = "default") {
   # Try multiple locations for config file
@@ -57,6 +63,17 @@ get_puzzle_config <- function(config_name = "default") {
 #' @param palette Palette name (black, viridis, magma, plasma, inferno, cividis, mako, rocket, turbo)
 #' @param invert Logical, if TRUE reverses the palette direction (default: FALSE)
 #' @return Character vector of hex colors
+#'
+#' @examples
+#' # Get 5 colors from the default palette
+#' get_puzzle_colors(5)
+#'
+#' # Use a specific viridis palette
+#' get_puzzle_colors(8, palette = "viridis")
+#'
+#' # Inverted palette direction
+#' get_puzzle_colors(4, palette = "plasma", invert = TRUE)
+#'
 #' @export
 get_puzzle_colors <- function(n, palette = NULL, invert = FALSE) {
   if (is.null(palette)) {

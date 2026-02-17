@@ -77,6 +77,16 @@ generate_svg_puzzle_layers <- function(seed = 1234, diameter = 240, rings = 4,
 #' Generate multiple puzzle variations
 #' @param variations List of variation parameters, each containing seed, rings, etc.
 #' @return List of results for each variation
+#'
+#' @examples
+#' \donttest{
+#' variations <- list(
+#'   list(seed = 42, rings = 3, base_filename = "puzzle_v1"),
+#'   list(seed = 99, rings = 4, base_filename = "puzzle_v2")
+#' )
+#' results <- generate_puzzle_variations(variations)
+#' }
+#'
 #' @export
 generate_puzzle_variations <- function(variations) {
 

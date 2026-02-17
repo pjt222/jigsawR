@@ -228,8 +228,19 @@ generate_hex_piece_bezier <- function(piece_id, rings, seed, diameter = 240,
     edge_id <- piece_id * 10 + side
 
     # Check if this is a border edge (no tab)
-    is_border <- FALSE  # For now, all edges have tabs
-    # TODO: Implement border detection for outer ring pieces
+    # NOTE: Border detection is not implemented in this code path.
+    # The main pipeline uses generate_hex_edge_map() which correctly identifies
+    # boundary edges via vertex sharing analysis. This function is only used
+    # for standalone piece generation.
+    is_border <- FALSE
+    if (piece_type == "edge" && !exists(".hex_bezier_border_warned", envir = baseenv())) {
+      warning(
+        "Hexagonal border detection not yet implemented in generate_hex_piece_bezier(); ",
+        "outer edges will have tabs. Use generate_puzzle() for correct boundary handling.",
+        call. = FALSE
+      )
+      assign(".hex_bezier_border_warned", TRUE, envir = baseenv())
+    }
 
     if (is_border) {
       # Straight edge

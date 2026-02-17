@@ -47,6 +47,10 @@ inst/shiny-app/www/pieces/
 # Claude Code settings (contains permissions but no sensitive data)
 .claude/settings.local.json
 
+# Development-only files
+CONTINUE_HERE.md
+GEMINI.md
+
 # Debug scripts (local development)
 debug_scripts/
 inst/debug/
@@ -55,7 +59,8 @@ inst/debug/
 svg_puzzle_*rings_*.png
 svg_puzzle_*rings.svg
 hexagonal_puzzle.svg
-circular_puzzle.svgtemp/
+circular_puzzle.svg
+temp/
 
 # Quarto
 quarto/_site/

@@ -66,6 +66,14 @@ get_piece_neighbors <- function(piece_id, puzzle_result, include_boundary = TRUE
 #'
 #' @return TRUE if pieces share an edge, FALSE otherwise
 #'
+#' @examples
+#' \donttest{
+#' result <- generate_puzzle(type = "rectangular", grid = c(3, 3),
+#'                           size = c(200, 200), seed = 42, save_files = FALSE)
+#' are_pieces_adjacent(1, 2, result)  # TRUE (horizontally adjacent)
+#' are_pieces_adjacent(1, 5, result)  # FALSE (diagonal, not adjacent)
+#' }
+#'
 #' @export
 are_pieces_adjacent <- function(piece_id_a, piece_id_b, puzzle_result) {
   # Normalize to integers
@@ -1006,6 +1014,16 @@ is_edge_fused <- function(piece_id, direction, fused_edge_data) {
 #' @param fused_edge_data Output from compute_fused_edges()
 #'
 #' @return Fusion group index (integer), or NA if piece is not in any group
+#'
+#' @examples
+#' \donttest{
+#' result <- generate_puzzle(type = "rectangular", grid = c(3, 3),
+#'                           size = c(200, 200), seed = 42, save_files = FALSE,
+#'                           fusion_groups = "1-2-3")
+#' fused <- compute_fused_edges(list(c(1, 2, 3)), result)
+#' get_piece_fusion_group(1, fused)  # 1 (in first fusion group)
+#' get_piece_fusion_group(5, fused)  # NA (not in any group)
+#' }
 #'
 #' @export
 get_piece_fusion_group <- function(piece_id, fused_edge_data) {

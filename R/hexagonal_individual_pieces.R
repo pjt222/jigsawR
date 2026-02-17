@@ -46,8 +46,7 @@ generate_hexagonal_individual_pieces <- function(rings = 3, seed = NULL,
   # Calculate number of pieces
   num_pieces <- 3 * rings * (rings - 1) + 1
 
-  cat(sprintf("Generating %d hexagonal pieces (rings: %d, seed: %d)...\n",
-              num_pieces, rings, seed))
+  log_info("Generating {num_pieces} hexagonal pieces (rings: {rings}, seed: {seed})...")
 
   # Generate pieces with edge mapping (compact positions for individual files)
   pieces <- generate_hex_pieces_with_edge_map(
@@ -83,7 +82,7 @@ generate_hexagonal_individual_pieces <- function(rings = 3, seed = NULL,
 
   # Save individual pieces
   if (save_individual) {
-    cat("Saving individual piece files...\n")
+    log_info("Saving individual piece files...")
     for (i in seq_along(pieces)) {
       piece <- pieces[[i]]
       filename <- save_hexagonal_piece_svg(
@@ -99,13 +98,14 @@ generate_hexagonal_individual_pieces <- function(rings = 3, seed = NULL,
       )
       individual_files <- c(individual_files, filename)
     }
-    cat(sprintf("Saved %d individual piece files.\n", length(individual_files)))
+    n_files <- length(individual_files)
+    log_success("Saved {n_files} individual piece files.")
   }
 
   # Save combined view
   combined_file <- NULL
   if (save_combined) {
-    cat("Saving combined view...\n")
+    log_info("Saving combined view...")
     combined_file <- save_hexagonal_combined_svg(
       pieces = pieces,
       seed = seed,
@@ -116,10 +116,10 @@ generate_hexagonal_individual_pieces <- function(rings = 3, seed = NULL,
                          width = view_width, height = view_height),
       opacity = opacity
     )
-    cat(sprintf("Combined view saved: %s\n", combined_file))
+    log_success("Combined view saved: {.path {combined_file}}")
   }
 
-  cat(sprintf("Successfully generated %d hexagonal pieces!\n", num_pieces))
+  log_success("Successfully generated {num_pieces} hexagonal pieces!")
 
   return(list(
     pieces = pieces,

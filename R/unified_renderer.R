@@ -30,6 +30,15 @@
 #'   Use TRUE when embedding SVG in HTML (e.g., Shiny apps). Default: FALSE.
 #' @param image_path Path to an image file for SNIC image-fill rendering (NULL for no image)
 #' @return Complete SVG string
+#'
+#' @examples
+#' \donttest{
+#' result <- generate_puzzle(type = "rectangular", grid = c(2, 2),
+#'                           size = c(200, 200), seed = 42, save_files = FALSE)
+#' svg <- render_puzzle_svg(result, fill = "white", stroke_width = 2)
+#' nchar(svg) > 0
+#' }
+#'
 #' @export
 render_puzzle_svg <- function(positioned, fill = "none", fills = NULL,
                                stroke_width = 1.5,
@@ -1590,6 +1599,15 @@ generate_and_render_puzzle <- function(type = "rectangular",
 #' @param label_color Label text color (default: "black")
 #' @param label_size Label font size in mm (default: auto-calculated)
 #' @return Complete SVG string for the single piece
+#'
+#' @examples
+#' \donttest{
+#' result <- generate_puzzle(type = "rectangular", grid = c(2, 2),
+#'                           size = c(200, 200), seed = 42, save_files = FALSE)
+#' piece_svg <- render_single_piece_svg(result$pieces[[1]], fill = "#cccccc")
+#' nchar(piece_svg) > 0
+#' }
+#'
 #' @export
 render_single_piece_svg <- function(piece,
                                      fill = "none",

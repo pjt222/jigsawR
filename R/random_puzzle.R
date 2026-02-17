@@ -52,7 +52,8 @@ generate_random_pieces_internal <- function(seed, grid, size, tabsize, jitter,
   if (!has_rcdt()) {
     cli::cli_abort(c(
       "Package {.pkg RCDT} is required for random shape puzzles.",
-      "i" = "Install with: {.code install.packages('RCDT')}"
+      "i" = "RCDT is archived from CRAN. Install from GitHub with:",
+      " " = "{.code remotes::install_github('stla/RCDT')}"
     ))
   }
 

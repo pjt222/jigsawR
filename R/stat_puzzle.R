@@ -31,6 +31,17 @@ NULL
 #' }
 #'
 #' @format A ggplot2 Stat ggproto object.
+#'
+#' @examples
+#' \donttest{
+#' library(ggplot2)
+#' df <- data.frame(value = 1:4)
+#' ggplot(df, aes(fill = value)) +
+#'   geom_puzzle_rect(rows = 2, cols = 2, seed = 42) +
+#'   scale_fill_viridis_c() +
+#'   theme_void()
+#' }
+#'
 #' @export
 StatPuzzle <- ggplot2::ggproto("StatPuzzle", ggplot2::Stat,
 

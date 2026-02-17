@@ -208,6 +208,12 @@ check_ambient_available <- function() {
 #'
 #' @param x Object to check
 #' @return TRUE if x is a noise fill spec, FALSE otherwise
+#'
+#' @examples
+#' is_noise_fill_spec(list(type = "noise", noise_type = "perlin"))
+#' is_noise_fill_spec("#FF0000")
+#' is_noise_fill_spec(list(type = "gradient"))
+#'
 #' @export
 is_noise_fill_spec <- function(x) {
   is.list(x) && !is.null(x$type) && x$type == "noise"

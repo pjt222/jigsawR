@@ -6,16 +6,12 @@
 # =============================================================================
 
 test_that("check_app_dependencies runs without error", {
-  skip_if_not(exists("check_app_dependencies"), "check_app_dependencies not available")
-
   result <- check_app_dependencies()
   expect_type(result, "logical")
   expect_length(result, 1)
 })
 
 test_that("check_conversion_tools runs without error", {
-  skip_if_not(exists("check_conversion_tools"), "check_conversion_tools not available")
-
   # Should not crash (output depends on system configuration)
   expect_no_error(check_conversion_tools())
 })
@@ -25,8 +21,6 @@ test_that("check_conversion_tools runs without error", {
 # =============================================================================
 
 test_that("create_gradient_circle_png creates output", {
-  skip_if_not(exists("create_gradient_circle_png"), "create_gradient_circle_png not available")
-
   result <- create_gradient_circle_png(size = 200)
 
   # Function returns a ggplot object (S7 in ggplot2 4.0+, list-based before)
@@ -38,8 +32,6 @@ test_that("create_gradient_circle_png creates output", {
 # =============================================================================
 
 test_that("get_puzzle_config returns valid config", {
-  skip_if_not(exists("get_puzzle_config"), "get_puzzle_config not available")
-
   config <- get_puzzle_config()
 
   expect_type(config, "list")
@@ -48,8 +40,6 @@ test_that("get_puzzle_config returns valid config", {
 })
 
 test_that("config has independent stroke palette settings", {
-  skip_if_not(exists("get_puzzle_config"), "get_puzzle_config not available")
-
   config <- get_puzzle_config()
 
   # Stroke palette settings should exist
@@ -66,8 +56,6 @@ test_that("config has independent stroke palette settings", {
 })
 
 test_that("config has independent fill palette settings", {
-  skip_if_not(exists("get_puzzle_config"), "get_puzzle_config not available")
-
   config <- get_puzzle_config()
 
   # Fill palette settings should exist
@@ -83,8 +71,6 @@ test_that("config has independent fill palette settings", {
 })
 
 test_that("config default palette is black for consistent stroke color", {
-  skip_if_not(exists("get_puzzle_config"), "get_puzzle_config not available")
-
   config <- get_puzzle_config()
 
   # "black" is handled as special case, not in viridis palettes list
@@ -94,8 +80,6 @@ test_that("config default palette is black for consistent stroke color", {
 })
 
 test_that("get_puzzle_colors returns color vector", {
-  skip_if_not(exists("get_puzzle_colors"), "get_puzzle_colors not available")
-
   colors <- get_puzzle_colors(4, palette = "viridis")
 
   expect_type(colors, "character")
@@ -109,8 +93,6 @@ test_that("get_puzzle_colors returns color vector", {
 # =============================================================================
 
 test_that("parse_svg_path parses path commands", {
-  skip_if_not(exists("parse_svg_path"), "parse_svg_path not available")
-
   path <- "M 0 0 L 10 10 C 20 20 30 30 40 40 Z"
   parsed <- parse_svg_path(path)
 
@@ -124,9 +106,6 @@ test_that("parse_svg_path parses path commands", {
 })
 
 test_that("reverse_path_segments reverses path direction", {
-  skip_if_not(exists("reverse_path_segments"), "reverse_path_segments not available")
-  skip_if_not(exists("parse_svg_path"), "parse_svg_path not available")
-
   path <- "M 0 0 L 10 0 L 10 10 Z"
   parsed <- parse_svg_path(path)
   reversed <- reverse_path_segments(parsed)
@@ -361,8 +340,6 @@ test_that("all parameters are preserved in result", {
 # =============================================================================
 
 test_that("get_puzzle_colors with invert=FALSE returns normal order", {
-  skip_if_not(exists("get_puzzle_colors"), "get_puzzle_colors not available")
-
   colors_normal <- get_puzzle_colors(4, palette = "magma", invert = FALSE)
 
   expect_type(colors_normal, "character")
@@ -370,8 +347,6 @@ test_that("get_puzzle_colors with invert=FALSE returns normal order", {
 })
 
 test_that("get_puzzle_colors with invert=TRUE reverses palette", {
-  skip_if_not(exists("get_puzzle_colors"), "get_puzzle_colors not available")
-
   colors_normal <- get_puzzle_colors(4, palette = "magma", invert = FALSE)
   colors_inverted <- get_puzzle_colors(4, palette = "magma", invert = TRUE)
 
@@ -380,8 +355,6 @@ test_that("get_puzzle_colors with invert=TRUE reverses palette", {
 })
 
 test_that("palette inversion works for all valid palettes", {
-  skip_if_not(exists("get_puzzle_colors"), "get_puzzle_colors not available")
-
   palettes <- c("viridis", "magma", "plasma", "inferno", "cividis", "mako", "rocket", "turbo")
 
   for (pal in palettes) {
@@ -394,8 +367,6 @@ test_that("palette inversion works for all valid palettes", {
 })
 
 test_that("black palette is not affected by inversion", {
-  skip_if_not(exists("get_puzzle_colors"), "get_puzzle_colors not available")
-
   colors_normal <- get_puzzle_colors(4, palette = "black", invert = FALSE)
   colors_inverted <- get_puzzle_colors(4, palette = "black", invert = TRUE)
 

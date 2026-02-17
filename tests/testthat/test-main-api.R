@@ -326,8 +326,6 @@ test_that("pieces have correct structure", {
 # =============================================================================
 
 test_that("generate_puzzle_batch works with multiple configurations", {
-  skip_if_not(exists("generate_puzzle_batch"), "generate_puzzle_batch not available")
-
   configs <- list(
     list(type = "rectangular", grid = c(2, 2), seed = 100, tabsize = 20),
     list(type = "hexagonal", grid = c(3), size = c(200), seed = 200),

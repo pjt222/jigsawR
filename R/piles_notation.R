@@ -655,6 +655,12 @@ to_piles <- function(fusion_groups, puzzle_result = NULL, compact = TRUE) {
 #'     \item{warnings}{Vector of warning messages}
 #'   }
 #'
+#' @examples
+#' validate_piles_syntax("1-2-3,4-5")
+#' validate_piles_syntax("1:6")
+#' validate_piles_syntax("1-2(-3)-4")
+#' validate_piles_syntax("((unbalanced")
+#'
 #' @export
 validate_piles_syntax <- function(piles) {
   if (is.null(piles) || !is.character(piles)) {
@@ -731,6 +737,16 @@ validate_piles_syntax <- function(piles) {
 #' @param auto_merge If TRUE, merge overlapping groups
 #'
 #' @return List of integer vectors (fusion groups)
+#'
+#' @examples
+#' # PILES notation
+#' parse_fusion("1-2-3,4-5")
+#'
+#' # Legacy parenthesized format
+#' parse_fusion("(1,2),(3,4)")
+#'
+#' # List input (pass-through)
+#' parse_fusion(list(c(1, 2), c(3, 4)))
 #'
 #' @export
 parse_fusion <- function(input, puzzle_result = NULL, auto_merge = TRUE) {

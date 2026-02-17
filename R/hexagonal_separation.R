@@ -100,7 +100,7 @@ generate_separated_hexagonal_svg <- function(rings = 3, seed = NULL,
   # Calculate number of pieces
   num_pieces <- 3 * rings * (rings - 1) + 1
 
-  cat(sprintf("Generating separated layout for %d pieces\n", num_pieces))
+  log_info("Generating separated layout for {num_pieces} pieces")
 
   # Calculate piece size (approximate)
   # Correct formula: diameter / (4 * rings - 2)
@@ -112,7 +112,7 @@ generate_separated_hexagonal_svg <- function(rings = 3, seed = NULL,
     cols <- ceiling(sqrt(num_pieces * 1.3))
     rows <- ceiling(num_pieces / cols)
 
-    cat(sprintf("Using rectangular grid: %d x %d\n", cols, rows))
+    log_info("Using rectangular grid: {cols} x {rows}")
 
     # Calculate viewBox
     total_width <- cols * (2 * piece_radius + offset) + offset
@@ -198,7 +198,7 @@ generate_separated_hexagonal_svg <- function(rings = 3, seed = NULL,
   # Generate pieces (bezier or placeholder)
   if (use_bezier) {
     # Generate real puzzle pieces with complementary edges
-    cat("Generating pieces with bezier curves and tabs...\n")
+    log_info("Generating pieces with bezier curves and tabs...")
 
     # Calculate spacing based on arrangement
     if (arrangement == "rectangular") {
@@ -289,8 +289,10 @@ generate_separated_hexagonal_svg <- function(rings = 3, seed = NULL,
 
       # Debug logging for first 3 pieces
       if (i <= 3) {
-        cat(sprintf("Piece %d: (x=%.1f, y=%.1f, rot=%.2f deg)\n",
-                    i, center_x, center_y, piece_rotation * 180 / pi))
+        rot_deg <- round(piece_rotation * 180 / pi, 2)
+        cx_fmt <- round(center_x, 1)
+        cy_fmt <- round(center_y, 1)
+        log_info("Piece {i}: (x={cx_fmt}, y={cy_fmt}, rot={rot_deg} deg)")
       }
     }
 

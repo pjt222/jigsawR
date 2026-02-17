@@ -311,9 +311,6 @@ test_that("hexagonal piece count follows formula", {
 # =============================================================================
 
 test_that("legacy generate_individual_pieces works", {
-  skip_if_not(exists("generate_individual_pieces"),
-              "generate_individual_pieces not available")
-
   result <- generate_individual_pieces(seed = 1234, xn = 2, yn = 2)
 
   expect_type(result, "list")
@@ -321,9 +318,6 @@ test_that("legacy generate_individual_pieces works", {
 })
 
 test_that("legacy hexagonal individual pieces works", {
-  skip_if_not(exists("generate_hexagonal_individual_pieces"),
-              "generate_hexagonal_individual_pieces not available")
-
   result <- generate_hexagonal_individual_pieces(seed = 1234, rings = 2)
 
   expect_type(result, "list")
@@ -335,8 +329,6 @@ test_that("legacy hexagonal individual pieces works", {
 # =============================================================================
 
 test_that("parse_svg_path parses basic commands", {
-  skip_if_not(exists("parse_svg_path"), "parse_svg_path not available")
-
   path <- "M 0 0 L 10 10 C 20 20 30 30 40 40 Z"
   parsed <- parse_svg_path(path)
 
@@ -349,9 +341,6 @@ test_that("parse_svg_path parses basic commands", {
 })
 
 test_that("reverse_path_segments reverses correctly", {
-  skip_if_not(exists("reverse_path_segments"), "reverse_path_segments not available")
-  skip_if_not(exists("parse_svg_path"), "parse_svg_path not available")
-
   path <- "M 0 0 L 10 0 L 10 10 Z"
   parsed <- parse_svg_path(path)
   reversed <- reverse_path_segments(parsed)
@@ -499,8 +488,6 @@ test_that("render_single_piece_svg supports none fill and stroke", {
 })
 
 test_that("calculate_piece_bounds extracts correct bounds", {
-  skip_if_not(exists("calculate_piece_bounds"), "calculate_piece_bounds not available")
-
   # Simple square path
   path <- "M 0 0 L 100 0 L 100 100 L 0 100 Z"
   bounds <- calculate_piece_bounds(path)

@@ -159,7 +159,8 @@ generate_puzzle <- function(type = "rectangular",
   if (type == "random" && !has_rcdt()) {
     cli::cli_abort(c(
       "Package {.pkg RCDT} is required for random shape puzzles.",
-      "i" = "Install with: {.code install.packages('RCDT')}"
+      "i" = "RCDT is archived from CRAN. Install from GitHub with:",
+      " " = "{.code remotes::install_github('stla/RCDT')}"
     ))
   }
   if (type == "snic") {
