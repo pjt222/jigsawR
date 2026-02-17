@@ -12,7 +12,7 @@
 
 ## Features
 
-- **5 Puzzle Types**: Rectangular, hexagonal, concentric, voronoi, and random
+- **6 Puzzle Types**: Rectangular, hexagonal, concentric, voronoi, random, and SNIC
 - **ggplot2 Integration**: Use `geom_puzzle_*()` functions in your plots
 - **PILES Notation**: Fuse pieces together with intuitive syntax
 - **Reproducible**: Same seed = same puzzle, every time
@@ -66,11 +66,11 @@ ggplot() +
 
 | Parameter | Default | Unit | Description |
 |-----------|---------|------|-------------|
-| `type` | "rectangular" | - | Puzzle type: rectangular, hexagonal, concentric, voronoi, random |
+| `type` | "rectangular" | - | Puzzle type: rectangular, hexagonal, concentric, voronoi, random, snic |
 | `grid` | c(3, 4) | - | Rows × cols (rect), rings (hex/conc), or cell count (voronoi/random) |
 | `size` | c(400, 300) | mm | Width × height (rect) or diameter (hex/conc) |
 | `seed` | random | - | Integer for reproducibility |
-| `tabsize` | 10 | % | Tab size as percentage of edge length |
+| `tabsize` | 6 | % | Tab size as percentage of edge length |
 | `jitter` | 2 | % | Random variation in tab shape |
 | `offset` | 0 | mm | Piece separation (0 = complete puzzle) |
 | `layout` | "grid" | - | Layout algorithm: "grid" or "repel" |
@@ -80,14 +80,15 @@ ggplot() +
 - **Concentric**: `center_shape` ("hexagon"/"circle"), `boundary_facing`
 - **Voronoi**: `point_distribution` ("fermat"/"uniform"/"jittered")
 - **Random**: `n_corner` (3-8 for base polygon shape)
+- **SNIC**: `image_path`, `compactness`, `n_superpixels`
 
 See the [full API reference](https://pjt222.github.io/jigsawR/api/generate-puzzle.html) for all parameters.
 
 ## Gallery
 
-| Rectangular | Hexagonal | Concentric | Voronoi | Random |
-|:-----------:|:---------:|:----------:|:-------:|:------:|
-| <img src="man/figures/thumb-rectangular.png" width="100"> | <img src="man/figures/thumb-hexagonal.png" width="100"> | <img src="man/figures/thumb-concentric.png" width="100"> | <img src="man/figures/thumb-voronoi.png" width="100"> | <img src="man/figures/thumb-random.png" width="100"> |
+| Rectangular | Hexagonal | Concentric | Voronoi | Random | SNIC |
+|:-----------:|:---------:|:----------:|:-------:|:------:|:----:|
+| <img src="man/figures/thumb-rectangular.png" width="100"> | <img src="man/figures/thumb-hexagonal.png" width="100"> | <img src="man/figures/thumb-concentric.png" width="100"> | <img src="man/figures/thumb-voronoi.png" width="100"> | <img src="man/figures/thumb-random.png" width="100"> | <img src="man/figures/thumb-snic.png" width="100"> |
 
 [View full gallery](https://pjt222.github.io/jigsawR/gallery/rectangular.html)
 
@@ -111,7 +112,7 @@ devtools::install_github("pjt222/jigsawR", dependencies = TRUE)
 ### Requirements
 
 - **R**: 4.0 or higher
-- **Core packages**: ggplot2, ggforce, ggfx, viridis
+- **Core packages**: ggplot2, ggfx, viridis
 - **Optional**: rsvg, magick (for PNG conversion)
 
 ## Contributing

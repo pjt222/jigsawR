@@ -1,30 +1,11 @@
 # Tests for hexagonal individual piece extraction functionality
 # Issue #9: Test and validate hexagonal individual piece extraction
 
-# Helper to source required files
-source_hexagonal_files <- function() {
-  # Source from package root (for testthat context)
-  if (file.exists("../../R/hexagonal_topology.R")) {
-    source("../../R/hexagonal_topology.R")
-    source("../../R/hexagonal_neighbors.R")
-    source("../../R/hexagonal_bezier_generation.R")
-    source("../../R/hexagonal_edge_generation_fixed.R")
-    source("../../R/hexagonal_individual_pieces.R")
-  } else if (file.exists("R/hexagonal_topology.R")) {
-    source("R/hexagonal_topology.R")
-    source("R/hexagonal_neighbors.R")
-    source("R/hexagonal_bezier_generation.R")
-    source("R/hexagonal_edge_generation_fixed.R")
-    source("R/hexagonal_individual_pieces.R")
-  }
-}
-
 # ============================================================================
 # 1. Basic Functionality Tests
 # ============================================================================
 
 test_that("extracts correct number of pieces for 2-ring puzzle", {
-  source_hexagonal_files()
 
   result <- generate_hexagonal_individual_pieces(
     rings = 2,
@@ -40,7 +21,6 @@ test_that("extracts correct number of pieces for 2-ring puzzle", {
 })
 
 test_that("extracts correct number of pieces for 3-ring puzzle", {
-  source_hexagonal_files()
 
   result <- generate_hexagonal_individual_pieces(
     rings = 3,
@@ -56,7 +36,6 @@ test_that("extracts correct number of pieces for 3-ring puzzle", {
 })
 
 test_that("extracts correct number of pieces for various ring counts", {
-  source_hexagonal_files()
 
   for (rings in 2:5) {
     result <- generate_hexagonal_individual_pieces(
@@ -78,7 +57,6 @@ test_that("extracts correct number of pieces for various ring counts", {
 # ============================================================================
 
 test_that("all pieces have valid SVG paths", {
-  source_hexagonal_files()
 
   result <- generate_hexagonal_individual_pieces(
     rings = 2,
@@ -112,7 +90,6 @@ test_that("all pieces have valid SVG paths", {
 })
 
 test_that("combined SVG is valid", {
-  source_hexagonal_files()
 
   svg <- create_hexagonal_individual_pieces_svg(rings = 2, seed = 42)
 
@@ -131,10 +108,10 @@ test_that("combined SVG is valid", {
 # ============================================================================
 
 test_that("saves individual piece files correctly", {
-  source_hexagonal_files()
 
   temp_dir <- file.path(tempdir(), "hex_test_individual")
   if (dir.exists(temp_dir)) unlink(temp_dir, recursive = TRUE)
+  on.exit(unlink(temp_dir, recursive = TRUE), add = TRUE)
 
   result <- generate_hexagonal_individual_pieces(
     rings = 2,
@@ -160,16 +137,13 @@ test_that("saves individual piece files correctly", {
     expect_true(grepl("</svg>", content))
     expect_true(grepl("<path", content))
   }
-
-  # Cleanup
-  unlink(temp_dir, recursive = TRUE)
 })
 
 test_that("saves combined file correctly", {
-  source_hexagonal_files()
 
   temp_dir <- file.path(tempdir(), "hex_test_combined")
   if (dir.exists(temp_dir)) unlink(temp_dir, recursive = TRUE)
+  on.exit(unlink(temp_dir, recursive = TRUE), add = TRUE)
 
   result <- generate_hexagonal_individual_pieces(
     rings = 2,
@@ -191,9 +165,6 @@ test_that("saves combined file correctly", {
   # Should have 7 paths
   path_matches <- gregexpr("<path", content)[[1]]
   expect_equal(length(path_matches), 7)
-
-  # Cleanup
-  unlink(temp_dir, recursive = TRUE)
 })
 
 # ============================================================================
@@ -201,7 +172,6 @@ test_that("saves combined file correctly", {
 # ============================================================================
 
 test_that("same seed produces identical results", {
-  source_hexagonal_files()
 
   result1 <- generate_hexagonal_individual_pieces(
     rings = 2,
@@ -228,7 +198,6 @@ test_that("same seed produces identical results", {
 })
 
 test_that("different seeds produce different results", {
-  source_hexagonal_files()
 
   result1 <- generate_hexagonal_individual_pieces(
     rings = 2,
@@ -262,7 +231,6 @@ test_that("different seeds produce different results", {
 # ============================================================================
 
 test_that("pieces have correct metadata", {
-  source_hexagonal_files()
 
   result <- generate_hexagonal_individual_pieces(
     rings = 2,
@@ -291,7 +259,6 @@ test_that("pieces have correct metadata", {
 })
 
 test_that("center piece is at ring 0", {
-  source_hexagonal_files()
 
   result <- generate_hexagonal_individual_pieces(
     rings = 2,
@@ -315,7 +282,6 @@ test_that("center piece is at ring 0", {
 # ============================================================================
 
 test_that("parameters are preserved in result", {
-  source_hexagonal_files()
 
   result <- generate_hexagonal_individual_pieces(
     rings = 3,
@@ -340,7 +306,6 @@ test_that("parameters are preserved in result", {
 # ============================================================================
 
 test_that("edge map generates correct number of unique edges", {
-  source_hexagonal_files()
 
   # For 2-ring puzzle: center has 6 edges, ring 1 has additional 6 edges
   # Total internal edges = 6 (center to ring 1)
@@ -365,7 +330,6 @@ test_that("edge map generates correct number of unique edges", {
 # ============================================================================
 
 test_that("path bounds are calculated correctly", {
-  source_hexagonal_files()
 
   # Simple test path
   test_path <- "M 10 20 L 30 40 L 50 20 Z"
@@ -384,7 +348,6 @@ test_that("path bounds are calculated correctly", {
 # ============================================================================
 
 test_that("create_hexagonal_individual_pieces_svg works without files", {
-  source_hexagonal_files()
 
   svg <- create_hexagonal_individual_pieces_svg(
     rings = 2,
@@ -409,7 +372,6 @@ test_that("create_hexagonal_individual_pieces_svg works without files", {
 # ============================================================================
 
 test_that("custom colors are applied", {
-  source_hexagonal_files()
 
   custom_colors <- c("#FF0000", "#00FF00", "#0000FF")
 

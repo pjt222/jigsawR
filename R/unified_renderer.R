@@ -2,6 +2,23 @@
 # Part of Epic #32 - Unified Puzzle Generation Pipeline
 # Renders positioned pieces to SVG with consistent styling
 
+#' Sanitize a string for safe use in SVG attributes
+#'
+#' Strips characters that could enable SVG injection attacks.
+#' Allows alphanumeric, hex color codes, named colors, CSS functions,
+#' and common SVG attribute characters.
+#'
+#' @param value Character string to sanitize
+#' @return Sanitized character string safe for SVG attribute interpolation
+#' @keywords internal
+sanitize_svg_attr <- function(value) {
+  if (is.null(value) || is.na(value)) return("none")
+  value <- as.character(value)
+  # Allow only safe characters for SVG attributes
+  gsub("[^a-zA-Z0-9#(),. %_-]", "", value)
+}
+
+
 #' Render positioned pieces to SVG
 #'
 #' Takes output from apply_piece_positioning() and renders to a complete SVG string.
@@ -413,8 +430,8 @@ render_piece <- function(piece, fill, stroke_color, stroke_width, opacity) {
   sprintf(
     '<path d="%s" fill="%s" stroke="%s" stroke-width="%.2f" stroke-linecap="round" stroke-linejoin="round"%s/>',
     piece$path,
-    fill,
-    stroke_color,
+    sanitize_svg_attr(fill),
+    sanitize_svg_attr(stroke_color),
     stroke_width,
     opacity_attr
   )
@@ -501,7 +518,7 @@ render_piece_label <- function(piece, index, color, font_size) {
   # Use dominant-baseline and text-anchor for proper centering
   sprintf(
     '<text x="%.2f" y="%.2f" font-family="sans-serif" font-size="%.1f" font-weight="bold" fill="%s" text-anchor="middle" dominant-baseline="central">%d</text>',
-    cx, cy, font_size, color, index
+    cx, cy, font_size, sanitize_svg_attr(color), index
   )
 }
 

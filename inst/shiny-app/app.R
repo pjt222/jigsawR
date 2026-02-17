@@ -306,6 +306,10 @@ ui <- page_fluid(
     "))
   ),
 
+  # Skip-to-content link for keyboard/screen reader users (#109)
+  tags$a(href = "#puzzle_display", class = "visually-hidden-focusable",
+         "Skip to puzzle preview"),
+
   # Application title
   titlePanel(
     div(
@@ -323,7 +327,9 @@ ui <- page_fluid(
       # Generate and Reset buttons - ALWAYS VISIBLE at top of sidebar (Issue #75)
       actionButton("generate", "Generate Puzzle",
                   icon = icon("puzzle-piece"),
-                  class = "btn-primary btn-lg w-100 mb-2"),
+                  class = "btn-primary btn-lg w-100 mb-2",
+                  `aria-label` = "Generate puzzle with current settings",
+                  accesskey = "g"),
 
       actionButton("reset", "Reset to Defaults",
                   icon = icon("undo"),
@@ -1373,6 +1379,113 @@ resolve_stroke_spec <- function(input, n_pieces) {
        stroke_palette = stroke_palette, stroke_palette_invert = stroke_palette_invert)
 }
 
+# ============================================================================
+# Shared helper: Build puzzle parameters from input widgets (#107)
+# Used by both the generate handler and download_complete handler to avoid
+# duplicating grid/size/boundary/type-specific parameter resolution.
+# ============================================================================
+build_puzzle_params <- function(input, puzzle_type = NULL) {
+  if (is.null(puzzle_type)) puzzle_type <- input$puzzle_type
+
+  # Build grid and size parameters based on puzzle type
+  if (puzzle_type == "hexagonal") {
+    grid_param <- c(input$rings)
+    size_param <- c(input$diameter)
+  } else if (puzzle_type == "concentric") {
+    grid_param <- c(input$rings_conc)
+    size_param <- c(input$diameter_conc)
+  } else if (puzzle_type == "voronoi") {
+    grid_param <- c(input$n_cells)
+    size_param <- c(input$vor_height, input$vor_width)
+  } else if (puzzle_type == "random") {
+    grid_param <- c(input$n_interior)
+    size_param <- c(input$rnd_height, input$rnd_width)
+  } else if (puzzle_type == "snic") {
+    grid_param <- c(if (is.null(input$n_superpixels)) 50 else input$n_superpixels)
+    size_param <- c(
+      if (is.null(input$snic_height)) 200 else input$snic_height,
+      if (is.null(input$snic_width)) 200 else input$snic_width
+    )
+  } else {
+    grid_param <- c(input$rows, input$cols)
+    size_param <- c(input$height, input$width)
+  }
+
+  # Get boundary parameters
+  boundary_params <- get_hex_boundary_params(input$hex_boundary)
+  conc_boundary_facing <- if (is.null(input$conc_boundary_facing)) "outward" else input$conc_boundary_facing
+  conc_boundary_params <- get_conc_boundary_params(input$conc_boundary, conc_boundary_facing)
+  center_shape_value <- "hexagon"
+
+  # Determine circular border and facing based on puzzle type
+  do_circular_border_val <- if (puzzle_type == "hexagonal") {
+    boundary_params$do_circular_border
+  } else if (puzzle_type == "concentric") {
+    conc_boundary_params$do_circular_border
+  } else {
+    FALSE
+  }
+
+  boundary_facing_val <- if (puzzle_type == "concentric") {
+    conc_boundary_params$boundary_facing
+  } else {
+    "outward"
+  }
+
+  # Type-specific parameters
+  point_distribution_val <- if (is.null(input$point_distribution)) "fermat" else input$point_distribution
+  n_corner_val <- if (is.null(input$n_corner)) 4 else input$n_corner
+
+  # Layout parameters
+  layout_val <- if (is.null(input$layout)) "grid" else input$layout
+  repel_margin_val <- if (is.null(input$repel_margin)) 2 else input$repel_margin
+  repel_max_iter_val <- if (is.null(input$repel_max_iter)) 100 else input$repel_max_iter
+
+  # Fusion groups
+  fusion_groups_str <- input$fusion_groups
+  has_fusion <- !is.null(fusion_groups_str) && nchar(trimws(fusion_groups_str)) > 0
+
+  # SNIC-specific
+  image_path_val <- if (puzzle_type == "snic" && !is.null(input$snic_image)) {
+    input$snic_image$datapath
+  } else {
+    NULL
+  }
+  compactness_val <- if (is.null(input$compactness)) 0.5 else input$compactness
+  seed_type_val <- if (is.null(input$snic_seed_type)) "hexagonal" else input$snic_seed_type
+
+  # Tab size constraints
+  min_tab_size_val <- if (is.null(input$min_tab_size) || isTRUE(input$min_tab_size == 0)) NULL else input$min_tab_size
+  max_tab_size_val <- if (is.null(input$max_tab_size) || isTRUE(input$max_tab_size == 0)) NULL else input$max_tab_size
+
+  # Fill direction
+  fill_direction_val <- if (is.null(input$fill_direction)) "forward" else input$fill_direction
+
+  list(
+    type = puzzle_type,
+    grid = grid_param,
+    size = size_param,
+    boundary_params = boundary_params,
+    conc_boundary_params = conc_boundary_params,
+    center_shape = center_shape_value,
+    do_circular_border = do_circular_border_val,
+    boundary_facing = boundary_facing_val,
+    point_distribution = point_distribution_val,
+    n_corner = n_corner_val,
+    layout = layout_val,
+    repel_margin = repel_margin_val,
+    repel_max_iter = repel_max_iter_val,
+    fusion_groups_str = fusion_groups_str,
+    has_fusion = has_fusion,
+    image_path = image_path_val,
+    compactness = compactness_val,
+    seed_type = seed_type_val,
+    min_tab_size = min_tab_size_val,
+    max_tab_size = max_tab_size_val,
+    fill_direction = fill_direction_val
+  )
+}
+
 # Define server logic
 server <- function(input, output, session) {
 
@@ -1439,6 +1552,62 @@ server <- function(input, output, session) {
   sync_slider_numeric("opacity", "opacity_num")
   sync_slider_numeric("label_size", "label_size_num")
   sync_slider_numeric("bg_noise_frequency", "bg_noise_frequency_num")
+
+  # Auto-generate default puzzle on first load (#111)
+  observe({
+    # Only trigger once when no puzzle has been generated yet
+    req(is.null(puzzle_data()))
+    isolate({
+      tryCatch({
+        result <- generate_puzzle(
+          type = "rectangular",
+          grid = c(cfg_rect$rows, cfg_rect$cols),
+          size = c(cfg_rect$height, cfg_rect$width),
+          seed = cfg$seed,
+          save_files = FALSE
+        )
+        # Store base settings so reactive rendering works
+        base_settings(list(
+          type = "rectangular",
+          seed = cfg$seed,
+          grid = c(cfg_rect$rows, cfg_rect$cols),
+          size = c(cfg_rect$height, cfg_rect$width),
+          boundary_params = list(do_warp = FALSE, do_trunc = FALSE, do_circular_border = FALSE),
+          conc_boundary_params = list(do_circular_border = FALSE, boundary_facing = "outward"),
+          center_shape = "hexagon",
+          fusion_groups = "",
+          layout = "grid",
+          repel_margin = 2,
+          repel_max_iter = 100,
+          point_distribution = "fermat",
+          n_corner = 4,
+          image_path = NULL,
+          compactness = 0.5,
+          seed_type = "hexagonal"
+        ))
+        # Store puzzle metadata
+        puzzle_data(list(
+          type = "rectangular",
+          rows = cfg_rect$rows,
+          cols = cfg_rect$cols,
+          width = cfg_rect$width,
+          height = cfg_rect$height,
+          seed = cfg$seed,
+          total_pieces = cfg_rect$rows * cfg_rect$cols,
+          offset = cfg_style$offset
+        ))
+        # Enable download buttons
+        shinyjs::enable("download_complete")
+        shinyjs::enable("download_wysiwyg")
+        shinyjs::enable("download_png")
+        shinyjs::enable("download_pieces")
+        log_success("Auto-generated default puzzle on load")
+      }, error = function(e) {
+        # Silently fail on auto-generate - user can click Generate
+        log_warn("Auto-generate failed: {e$message}")
+      })
+    })
+  }) |> bindEvent(session$clientData$url_protocol, once = TRUE)
 
   # Randomize seed
   observeEvent(input$randomize, {
@@ -1507,87 +1676,117 @@ server <- function(input, output, session) {
     log_header("Generate button clicked")
     log_info("Puzzle type: {.strong {input$puzzle_type}}")
 
-    tryCatch({
-      puzzle_type <- input$puzzle_type
+    # Server-side input validation (#104)
+    puzzle_type <- input$puzzle_type
+    validation_errors <- character(0)
 
-      # Build parameters based on puzzle type
-      if (puzzle_type == "hexagonal") {
-        grid_param <- c(input$rings)
-        size_param <- c(input$diameter)
-      } else if (puzzle_type == "concentric") {
-        grid_param <- c(input$rings_conc)
-        size_param <- c(input$diameter_conc)
-      } else if (puzzle_type == "voronoi") {
-        grid_param <- c(input$n_cells)
-        size_param <- c(input$vor_height, input$vor_width)  # height first to match API convention
-      } else if (puzzle_type == "random") {
-        grid_param <- c(input$n_interior)
-        size_param <- c(input$rnd_height, input$rnd_width)  # height first to match API convention
-      } else if (puzzle_type == "snic") {
-        grid_param <- c(if (is.null(input$n_superpixels)) 50 else input$n_superpixels)
-        size_param <- c(
-          if (is.null(input$snic_height)) 200 else input$snic_height,
-          if (is.null(input$snic_width)) 200 else input$snic_width
-        )
-      } else {
-        grid_param <- c(input$rows, input$cols)
-        size_param <- c(input$height, input$width)  # height first to match API convention
+    if (puzzle_type == "rectangular") {
+      if (!is.numeric(input$rows) || is.na(input$rows) || input$rows < 1 || input$rows > 20) {
+        validation_errors <- c(validation_errors, "Rows must be between 1 and 20")
       }
+      if (!is.numeric(input$cols) || is.na(input$cols) || input$cols < 1 || input$cols > 20) {
+        validation_errors <- c(validation_errors, "Columns must be between 1 and 20")
+      }
+      if (!is.numeric(input$width) || is.na(input$width) || input$width < 50 || input$width > 1000) {
+        validation_errors <- c(validation_errors, "Width must be between 50 and 1000 mm")
+      }
+      if (!is.numeric(input$height) || is.na(input$height) || input$height < 50 || input$height > 1000) {
+        validation_errors <- c(validation_errors, "Height must be between 50 and 1000 mm")
+      }
+    } else if (puzzle_type == "hexagonal") {
+      if (!is.numeric(input$rings) || is.na(input$rings) || input$rings < 1 || input$rings > 10) {
+        validation_errors <- c(validation_errors, "Rings must be between 1 and 10")
+      }
+      if (!is.numeric(input$diameter) || is.na(input$diameter) || input$diameter < 50 || input$diameter > 1000) {
+        validation_errors <- c(validation_errors, "Diameter must be between 50 and 1000 mm")
+      }
+    } else if (puzzle_type == "concentric") {
+      if (!is.numeric(input$rings_conc) || is.na(input$rings_conc) || input$rings_conc < 1 || input$rings_conc > 10) {
+        validation_errors <- c(validation_errors, "Rings must be between 1 and 10")
+      }
+      if (!is.numeric(input$diameter_conc) || is.na(input$diameter_conc) || input$diameter_conc < 50 || input$diameter_conc > 1000) {
+        validation_errors <- c(validation_errors, "Diameter must be between 50 and 1000 mm")
+      }
+    } else if (puzzle_type == "voronoi") {
+      if (!is.numeric(input$n_cells) || is.na(input$n_cells) || input$n_cells < 5 || input$n_cells > 100) {
+        validation_errors <- c(validation_errors, "Number of cells must be between 5 and 100")
+      }
+      if (!is.numeric(input$vor_width) || is.na(input$vor_width) || input$vor_width < 50 || input$vor_width > 1000) {
+        validation_errors <- c(validation_errors, "Width must be between 50 and 1000 mm")
+      }
+      if (!is.numeric(input$vor_height) || is.na(input$vor_height) || input$vor_height < 50 || input$vor_height > 1000) {
+        validation_errors <- c(validation_errors, "Height must be between 50 and 1000 mm")
+      }
+    } else if (puzzle_type == "random") {
+      if (!is.numeric(input$n_interior) || is.na(input$n_interior) || input$n_interior < 3 || input$n_interior > 50) {
+        validation_errors <- c(validation_errors, "Interior points must be between 3 and 50")
+      }
+      if (!is.numeric(input$rnd_width) || is.na(input$rnd_width) || input$rnd_width < 50 || input$rnd_width > 1000) {
+        validation_errors <- c(validation_errors, "Width must be between 50 and 1000 mm")
+      }
+      if (!is.numeric(input$rnd_height) || is.na(input$rnd_height) || input$rnd_height < 50 || input$rnd_height > 1000) {
+        validation_errors <- c(validation_errors, "Height must be between 50 and 1000 mm")
+      }
+    } else if (puzzle_type == "snic") {
+      if (!is.numeric(input$n_superpixels) || is.na(input$n_superpixels) || input$n_superpixels < 10 || input$n_superpixels > 500) {
+        validation_errors <- c(validation_errors, "Superpixels must be between 10 and 500")
+      }
+      if (!is.numeric(input$snic_width) || is.na(input$snic_width) || input$snic_width < 50 || input$snic_width > 1000) {
+        validation_errors <- c(validation_errors, "Width must be between 50 and 1000 mm")
+      }
+      if (!is.numeric(input$snic_height) || is.na(input$snic_height) || input$snic_height < 50 || input$snic_height > 1000) {
+        validation_errors <- c(validation_errors, "Height must be between 50 and 1000 mm")
+      }
+      # File size check for SNIC image upload
+      if (!is.null(input$snic_image)) {
+        file_size <- file.info(input$snic_image$datapath)$size
+        if (!is.na(file_size) && file_size > 10 * 1024 * 1024) {
+          validation_errors <- c(validation_errors, "Image must be under 10MB")
+        }
+      }
+    }
 
-      # Get boundary parameters from radio button selection (hexagonal only)
-      boundary_params <- get_hex_boundary_params(input$hex_boundary)
+    # Validate seed (applies to all types)
+    if (!is.numeric(input$seed) || is.na(input$seed) || input$seed < 1 || input$seed > 99999) {
+      validation_errors <- c(validation_errors, "Seed must be between 1 and 99999")
+    }
 
-      # Get concentric boundary parameters (with arc direction)
-      conc_boundary_facing <- if (is.null(input$conc_boundary_facing)) "outward" else input$conc_boundary_facing
-      conc_boundary_params <- get_conc_boundary_params(input$conc_boundary, conc_boundary_facing)
+    if (length(validation_errors) > 0) {
+      showNotification(
+        paste(validation_errors, collapse = "\n"),
+        type = "error",
+        duration = 5
+      )
+      return()
+    }
 
-      # Center shape for concentric type (hardcoded to hexagon - see GitHub issue for future refinement)
-      center_shape_value <- "hexagon"
+    tryCatch({
+      # Build parameters using shared helper (#107)
+      params <- build_puzzle_params(input, puzzle_type)
 
-      # Store fusion groups STRING (not parsed) - parsing happens in generate_puzzle()
-      # This ensures keywords like "ring1", "R1", "boundary" are resolved with puzzle context
-      fusion_groups_str <- input$fusion_groups
-      if (!is.null(fusion_groups_str) && nchar(trimws(fusion_groups_str)) > 0) {
-        log_info("Fusion groups string: '{fusion_groups_str}'")
+      if (params$has_fusion) {
+        fusion_str <- params$fusion_groups_str
+        log_info("Fusion groups string: '{fusion_str}'")
       }
 
       # Store base settings - these trigger piece regeneration
-      # fusion_groups is stored as STRING and parsed by generate_puzzle() with context
-      # layout parameters are also stored here (computed on Generate, not reactively)
-      layout_val <- if (is.null(input$layout)) "grid" else input$layout
-      repel_margin_val <- if (is.null(input$repel_margin)) 2 else input$repel_margin
-      repel_max_iter_val <- if (is.null(input$repel_max_iter)) 100 else input$repel_max_iter
-
-      # Get Voronoi-specific parameters
-      point_distribution_val <- if (is.null(input$point_distribution)) "fermat" else input$point_distribution
-
-      # Get Random-specific parameters
-      n_corner_val <- if (is.null(input$n_corner)) 4 else input$n_corner
-
       base_settings(list(
         type = puzzle_type,
         seed = input$seed,
-        grid = grid_param,
-        size = size_param,
-        boundary_params = boundary_params,
-        conc_boundary_params = conc_boundary_params,
-        center_shape = center_shape_value,
-        fusion_groups = fusion_groups_str,  # Store STRING, not parsed - generate_puzzle() handles parsing
-        layout = layout_val,
-        repel_margin = repel_margin_val,
-        repel_max_iter = repel_max_iter_val,
-        # Voronoi-specific
-        point_distribution = point_distribution_val,
-        # Random-specific
-        n_corner = n_corner_val,
-        # SNIC-specific
-        image_path = if (puzzle_type == "snic" && !is.null(input$snic_image)) {
-          input$snic_image$datapath
-        } else {
-          NULL
-        },
-        compactness = if (is.null(input$compactness)) 0.5 else input$compactness,
-        seed_type = if (is.null(input$snic_seed_type)) "hexagonal" else input$snic_seed_type
+        grid = params$grid,
+        size = params$size,
+        boundary_params = params$boundary_params,
+        conc_boundary_params = params$conc_boundary_params,
+        center_shape = params$center_shape,
+        fusion_groups = params$fusion_groups_str,
+        layout = params$layout,
+        repel_margin = params$repel_margin,
+        repel_max_iter = params$repel_max_iter,
+        point_distribution = params$point_distribution,
+        n_corner = params$n_corner,
+        image_path = params$image_path,
+        compactness = params$compactness,
+        seed_type = params$seed_type
       ))
 
       # Store puzzle metadata for display and downloads
@@ -1925,15 +2124,19 @@ server <- function(input, output, session) {
     log_info("puzzle_display renderUI called, svg is NULL: {is.null(svg)}")
     if (is.null(svg)) {
       div(class = "text-center p-5 text-muted",
-        icon("puzzle-piece", class = "fa-3x mb-3"),
+        icon("puzzle-piece", class = "fa-3x mb-3", `aria-hidden` = "true"),
         h4("No puzzle generated yet"),
         p("Click 'Generate Puzzle' to create your first puzzle")
       )
     } else {
       svg_len <- nchar(svg)
       log_info("Rendering SVG to HTML, length: {svg_len}")
-      # Display SVG directly in HTML
-      HTML(svg)
+      # Display SVG in ARIA-labeled container (#109)
+      tags$div(
+        role = "img",
+        `aria-label` = "Generated jigsaw puzzle preview",
+        HTML(svg)
+      )
     }
   })
 
@@ -2178,145 +2381,47 @@ server <- function(input, output, session) {
       data <- puzzle_data()
       if (is.null(data)) return()
 
-      # Resolve fill, background from input widgets
+      # Build parameters using shared helper (#107)
+      params <- build_puzzle_params(input, data$type)
+
+      # Resolve fill, background, stroke from input widgets
       fill_spec_dl <- resolve_fill_spec(input, data$total_pieces)
-      fill_color_dl <- fill_spec_dl$fill_color
-      fills_dl <- fill_spec_dl$fill_colors
-
       background_value <- resolve_background_spec(input)
-
-      # Build parameters based on puzzle type
-      if (data$type == "hexagonal") {
-        grid_param <- c(input$rings)
-        size_param <- c(input$diameter)
-      } else if (data$type == "concentric") {
-        grid_param <- c(input$rings_conc)
-        size_param <- c(input$diameter_conc)
-      } else if (data$type == "voronoi") {
-        grid_param <- c(input$n_cells)
-        size_param <- c(input$vor_height, input$vor_width)  # height first to match API convention
-      } else if (data$type == "random") {
-        grid_param <- c(input$n_interior)
-        size_param <- c(input$rnd_height, input$rnd_width)  # height first to match API convention
-      } else if (data$type == "snic") {
-        grid_param <- c(if (is.null(input$n_superpixels)) 50 else input$n_superpixels)
-        size_param <- c(
-          if (is.null(input$snic_height)) 200 else input$snic_height,
-          if (is.null(input$snic_width)) 200 else input$snic_width
-        )
-      } else {
-        grid_param <- c(input$rows, input$cols)
-        size_param <- c(input$height, input$width)  # height first to match API convention
-      }
-
-      # Get voronoi and random specific parameters
-      point_distribution_dl <- if (is.null(input$point_distribution)) "fermat" else input$point_distribution
-      n_corner_dl <- if (is.null(input$n_corner)) 4 else input$n_corner
-
-      # Generate complete puzzle (offset=0)
-      # Get boundary parameters from radio button selection (hexagonal only)
-      boundary_params <- get_hex_boundary_params(input$hex_boundary)
-
-      # Get concentric boundary parameters (with arc direction)
-      conc_boundary_facing <- if (is.null(input$conc_boundary_facing)) "outward" else input$conc_boundary_facing
-      conc_boundary_params <- get_conc_boundary_params(input$conc_boundary, conc_boundary_facing)
-
-      # Center shape for concentric type (hardcoded to hexagon - see GitHub issue for future refinement)
-      center_shape_value <- "hexagon"
-
-      # Determine do_circular_border based on puzzle type
-      do_circular_border_val <- if (data$type == "hexagonal") {
-        boundary_params$do_circular_border
-      } else if (data$type == "concentric") {
-        conc_boundary_params$do_circular_border
-      } else {
-        FALSE
-      }
-
-      # Determine boundary_facing for concentric type
-      boundary_facing_val <- if (data$type == "concentric") {
-        conc_boundary_params$boundary_facing
-      } else {
-        "outward"
-      }
-
-      # Pass fusion groups STRING directly - generate_puzzle() handles parsing with context
-      # This ensures keywords like "ring1", "R1", "boundary", "ALL-5" work correctly
-      fusion_groups_str <- input$fusion_groups
-      has_fusion <- !is.null(fusion_groups_str) && nchar(trimws(fusion_groups_str)) > 0
-
-      # Resolve stroke from input widgets
       stroke_spec_dl <- resolve_stroke_spec(input, data$total_pieces)
-      stroke_width_dl <- stroke_spec_dl$stroke_width
-      stroke_colors_dl <- stroke_spec_dl$stroke_colors
-      stroke_palette_dl <- stroke_spec_dl$stroke_palette
-      stroke_palette_invert_dl <- stroke_spec_dl$stroke_palette_invert
-
-      # Get tab size constraints
-      min_tab_size_dl <- if (is.null(input$min_tab_size) || input$min_tab_size == 0) NULL else input$min_tab_size
-      max_tab_size_dl <- if (is.null(input$max_tab_size) || input$max_tab_size == 0) NULL else input$max_tab_size
-
-      # Get fill direction
-      fill_direction_dl <- if (is.null(input$fill_direction)) "forward" else input$fill_direction
 
       result <- generate_puzzle(
         type = data$type,
-        grid = grid_param,
-        size = size_param,
+        grid = params$grid,
+        size = params$size,
         seed = data$seed,
         tabsize = input$tabsize,
         jitter = input$jitter,
         offset = 0,  # Always complete for this download
-        fill_color = fill_color_dl,
-        fills = fills_dl,
-        stroke_width = stroke_width_dl,
-        colors = stroke_colors_dl,
-        palette = stroke_palette_dl,
-        palette_invert = stroke_palette_invert_dl,
-        fill_direction = fill_direction_dl,
+        fill_color = fill_spec_dl$fill_color,
+        fills = fill_spec_dl$fill_colors,
+        stroke_width = stroke_spec_dl$stroke_width,
+        colors = stroke_spec_dl$stroke_colors,
+        palette = stroke_spec_dl$stroke_palette,
+        palette_invert = stroke_spec_dl$stroke_palette_invert,
+        fill_direction = params$fill_direction,
         background = background_value,
         opacity = input$opacity / 100,
         save_files = FALSE,
-        do_warp = if (data$type == "hexagonal") boundary_params$do_warp else FALSE,
-        do_trunc = if (data$type == "hexagonal") boundary_params$do_trunc else FALSE,
-        do_circular_border = do_circular_border_val,
-        center_shape = center_shape_value,
-        boundary_facing = boundary_facing_val,
-        fusion_groups = if (has_fusion) fusion_groups_str else NULL,
+        do_warp = if (data$type == "hexagonal") params$boundary_params$do_warp else FALSE,
+        do_trunc = if (data$type == "hexagonal") params$boundary_params$do_trunc else FALSE,
+        do_circular_border = params$do_circular_border,
+        center_shape = params$center_shape,
+        boundary_facing = params$boundary_facing,
+        fusion_groups = if (params$has_fusion) params$fusion_groups_str else NULL,
         fusion_style = if (is.null(input$fusion_style)) "none" else input$fusion_style,
         fusion_opacity = if (is.null(input$fusion_opacity)) 0.3 else input$fusion_opacity / 100,
-        # Voronoi-specific parameters (with defensive NULL check)
-        point_distribution = if (data$type == "voronoi" && !is.null(point_distribution_dl)) {
-          point_distribution_dl
-        } else {
-          "fermat"
-        },
-        # Random-specific parameters (with defensive NULL check)
-        n_corner = if (data$type == "random" && !is.null(n_corner_dl)) {
-          n_corner_dl
-        } else {
-          4
-        },
-        # Tab size constraints (applies to all puzzle types)
-        min_tab_size = min_tab_size_dl,
-        max_tab_size = max_tab_size_dl,
-        # SNIC-specific parameters
-        image_path = if (data$type == "snic") {
-          settings <- base_settings()
-          if (!is.null(settings)) settings$image_path else NULL
-        } else {
-          NULL
-        },
-        compactness = if (data$type == "snic" && !is.null(data$compactness)) {
-          data$compactness
-        } else {
-          0.5
-        },
-        seed_type = if (data$type == "snic") {
-          if (!is.null(input$snic_seed_type)) input$snic_seed_type else "hexagonal"
-        } else {
-          "hexagonal"
-        }
+        point_distribution = if (data$type == "voronoi") params$point_distribution else "fermat",
+        n_corner = if (data$type == "random") params$n_corner else 4,
+        min_tab_size = params$min_tab_size,
+        max_tab_size = params$max_tab_size,
+        image_path = params$image_path,
+        compactness = params$compactness,
+        seed_type = params$seed_type
       )
 
       writeLines(result$svg_content, file)

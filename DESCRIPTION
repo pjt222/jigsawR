@@ -52,7 +52,6 @@ Suggests:
     rsvg,
     magick,
     zip
-VignetteBuilder: knitr
 Collate:
     'RcppExports.R'
     'adjacency_api.R'
