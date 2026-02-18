@@ -15,6 +15,7 @@ Description: R translations of Draradech's JavaScript jigsaw puzzle generators
 License: GPL-3 + file LICENSE
 URL: https://github.com/pjt222/jigsawR
 BugReports: https://github.com/pjt222/jigsawR/issues
+Remotes: stla/RCDT
 Depends: R (>= 4.1.0)
 Encoding: UTF-8
 RoxygenNote: 7.3.3
