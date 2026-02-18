@@ -75,7 +75,7 @@ create_gradient_circle_png <- function(size_px = NULL, diameter = NULL, palette 
   p <- ggplot() +
     # Create circle reference for masking
     as_reference(
-      geom_polygon(aes(x = x, y = y), data = circle_mask,
+      geom_polygon(aes(x = .data$x, y = .data$y), data = circle_mask,
                    fill = "white", color = NA),
       id = "circle_mask"
     ) +

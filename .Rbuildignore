@@ -18,3 +18,4 @@
 ^quarto$
 ^Rplots\.pdf$
 ^LICENSE\.md$
+inst/shiny-app/\.rscignore$

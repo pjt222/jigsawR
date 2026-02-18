@@ -16,7 +16,7 @@ List of results for each variation
 Generate multiple puzzle variations
 }
 \examples{
-\donttest{
+\dontrun{
 variations <- list(
   list(seed = 42, rings = 3, base_filename = "puzzle_v1"),
   list(seed = 99, rings = 4, base_filename = "puzzle_v2")

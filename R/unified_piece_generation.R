@@ -234,7 +234,7 @@ generate_rect_pieces_internal <- function(seed, grid, size, tabsize, jitter,
 
           if (is_fused) {
             # Calculate neighbor index based on direction
-            neighbor_idx <- switch(dir,
+            neighbor_idx <- switch(EXPR = dir,
               "N" = if (yi > 0) piece_idx - xn else NA,
               "E" = if (xi < xn - 1) piece_idx + 1 else NA,
               "S" = if (yi < yn - 1) piece_idx + xn else NA,

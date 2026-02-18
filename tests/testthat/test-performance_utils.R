@@ -98,7 +98,7 @@ test_that("get_performance_config parallel section has correct fields", {
 test_that("get_performance_config r_version is a string", {
   config <- get_performance_config()
   expect_type(config$r_version, "character")
-  expect_true(grepl("^R version", config$r_version))
+  expect_true(grepl("^R (version |Under development)", config$r_version))
 })
 
 test_that("get_performance_config platform is valid", {

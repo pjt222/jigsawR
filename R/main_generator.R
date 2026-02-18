@@ -79,7 +79,7 @@ generate_svg_puzzle_layers <- function(seed = 1234, diameter = 240, rings = 4,
 #' @return List of results for each variation
 #'
 #' @examples
-#' \donttest{
+#' \dontrun{
 #' variations <- list(
 #'   list(seed = 42, rings = 3, base_filename = "puzzle_v1"),
 #'   list(seed = 99, rings = 4, base_filename = "puzzle_v2")

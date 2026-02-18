@@ -808,7 +808,7 @@ get_complementary_edge_key <- function(edge_key, puzzle_result) {
 
   # Get the neighbor and opposite direction
   if (type == "rectangular") {
-    opposite <- switch(direction,
+    opposite <- switch(EXPR = direction,
       "N" = "S", "S" = "N", "E" = "W", "W" = "E",
       NA
     )
@@ -878,6 +878,7 @@ get_complementary_edge_key <- function(edge_key, puzzle_result) {
 #'     \item{piece_to_group}{Named list mapping piece IDs to fusion group index}
 #'   }
 #'
+#' @export
 compute_fused_edges <- function(fusion_groups, puzzle_result) {
   if (is.null(fusion_groups) || length(fusion_groups) == 0) {
     return(list(

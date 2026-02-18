@@ -213,11 +213,8 @@ generate_individual_pieces_svg <- function(seed = 1234, xn = 5, yn = 4,
       diameter = diameter,
       tabsize = tabsize,
       jitter = jitter,
-      do_warp = do_warp,
-      do_trunc = do_trunc,
       colors = piece_colors,
-      stroke_width = stroke_width,
-      save_files = TRUE
+      stroke_width = stroke_width
     ))
   }
   
