@@ -43,21 +43,7 @@ print(make_conc_rings(2) + make_conc_rings(3) + make_conc_rings(4))
 ## API
 
 ```{r}
-#| label: fig-conc-rings-api-code
-#| eval: false
-# API with varying ring counts
-result <- generate_puzzle(
-  type = "concentric",
-  grid = c(3),      # Number of rings
-  size = c(200),    # Diameter in mm
-  seed = 42
-)
-render_puzzle_preview(result)
-```
-
-```{r}
 #| label: fig-conc-rings-api
-#| echo: false
 
 # Generate ring previews in a grid
 rings <- c(2, 3, 4)
@@ -208,22 +194,7 @@ print((make_conc_palette("viridis") + make_conc_palette("magma") + make_conc_pal
 ## API
 
 ```{r}
-#| label: fig-conc-palettes-api-code
-#| eval: false
-# API with fill_palette for colored fills
-result <- generate_puzzle(
-  type = "concentric",
-  grid = c(3),
-  size = c(200),
-  seed = 42,
-  fill_palette = "viridis"  # Options: viridis, magma, plasma, inferno, cividis, turbo
-)
-render_puzzle_preview(result)
-```
-
-```{r}
 #| label: fig-conc-palettes-api
-#| echo: false
 
 # Generate all palette previews and combine into a grid
 palettes <- c("viridis", "magma", "plasma", "inferno", "cividis", "turbo")
@@ -268,7 +239,6 @@ print(make_direction_plot("forward") + make_direction_plot("reverse"))
 
 ```{r}
 #| label: fig-conc-direction-api
-#| echo: false
 
 directions <- c("forward", "reverse")
 items <- lapply(directions, function(dir) {
@@ -308,22 +278,7 @@ print(make_conc_offset(0) + make_conc_offset(5) + make_conc_offset(10) + make_co
 ## API
 
 ```{r}
-#| label: fig-conc-offset-api-code
-#| eval: false
-# API with offset for piece separation
-result <- generate_puzzle(
-  type = "concentric",
-  grid = c(3),
-  size = c(200),
-  offset = 10,  # Separation in mm
-  seed = 42
-)
-render_puzzle_preview(result)
-```
-
-```{r}
 #| label: fig-conc-offset-api
-#| echo: false
 
 # Generate offset previews in a grid
 offsets <- c(0, 5, 10, 15)

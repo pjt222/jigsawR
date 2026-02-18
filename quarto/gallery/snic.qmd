@@ -55,22 +55,8 @@ print(make_snic_cells(10) + make_snic_cells(25) + make_snic_cells(50))
 ## API
 
 ```{r}
-#| label: fig-snic-cell-counts-api-code
-#| eval: false
-# API with varying cell counts
-result <- generate_puzzle(
-  type = "snic",
-  grid = c(25),         # Number of cells
-  size = c(200, 200),   # height, width in mm
-  seed = 42
-)
-render_puzzle_preview(result)
-```
-
-```{r}
 #| label: fig-snic-cell-counts-api
 #| eval: !expr has_snic
-#| echo: false
 
 # Generate cell count previews in a grid
 cells <- c(10, 25, 50)
@@ -115,23 +101,8 @@ print(make_snic_compact(0.1) + make_snic_compact(0.5) + make_snic_compact(1.0) +
 ## API
 
 ```{r}
-#| label: fig-snic-compactness-api-code
-#| eval: false
-# API with compactness parameter
-result <- generate_puzzle(
-  type = "snic",
-  grid = c(20),
-  size = c(200, 200),
-  seed = 42,
-  compactness = 0.5  # Range: 0.0 to 2.0
-)
-render_puzzle_preview(result)
-```
-
-```{r}
 #| label: fig-snic-compactness-api
 #| eval: !expr has_snic
-#| echo: false
 
 compactness_vals <- c(0.1, 0.5, 1.0, 2.0)
 items <- lapply(compactness_vals, function(c_val) {
@@ -174,23 +145,8 @@ print((make_snic_palette("viridis") + make_snic_palette("magma") + make_snic_pal
 ## API
 
 ```{r}
-#| label: fig-snic-palettes-api-code
-#| eval: false
-# API with fill_palette for colored fills
-result <- generate_puzzle(
-  type = "snic",
-  grid = c(20),
-  size = c(200, 200),
-  seed = 42,
-  fill_palette = "viridis"  # Options: viridis, magma, plasma, inferno, cividis, turbo
-)
-render_puzzle_preview(result)
-```
-
-```{r}
 #| label: fig-snic-palettes-api
 #| eval: !expr has_snic
-#| echo: false
 
 # Generate all palette previews and combine into a grid
 palettes <- c("viridis", "magma", "plasma", "inferno", "cividis", "turbo")
@@ -232,23 +188,8 @@ print(make_snic_offset(0) + make_snic_offset(5) + make_snic_offset(10) + make_sn
 ## API
 
 ```{r}
-#| label: fig-snic-offset-api-code
-#| eval: false
-# API with offset for piece separation
-result <- generate_puzzle(
-  type = "snic",
-  grid = c(20),
-  size = c(200, 200),
-  offset = 10,  # Separation in mm
-  seed = 42
-)
-render_puzzle_preview(result)
-```
-
-```{r}
 #| label: fig-snic-offset-api
 #| eval: !expr has_snic
-#| echo: false
 
 # Generate offset previews in a grid
 offsets <- c(0, 5, 10, 20)
@@ -294,23 +235,8 @@ make_snic_seed_type("diamond") + make_snic_seed_type("random"))
 ## API
 
 ```{r}
-#| label: fig-snic-seed-types-api-code
-#| eval: false
-# API with seed_type for different grid patterns
-result <- generate_puzzle(
-  type = "snic",
-  grid = c(20),
-  size = c(200, 200),
-  seed = 42,
-  seed_type = "hexagonal"  # Options: hexagonal, rectangular, diamond, random
-)
-render_puzzle_preview(result)
-```
-
-```{r}
 #| label: fig-snic-seed-types-api
 #| eval: !expr has_snic
-#| echo: false
 
 seed_types <- c("hexagonal", "rectangular", "diamond", "random")
 items <- lapply(seed_types, function(st) {
@@ -354,22 +280,8 @@ print(make_snic_seed(1) + make_snic_seed(42) + make_snic_seed(123) + make_snic_s
 ## API
 
 ```{r}
-#| label: fig-snic-seeds-api-code
-#| eval: false
-# API with different seeds for unique patterns
-result <- generate_puzzle(
-  type = "snic",
-  grid = c(15),
-  size = c(200, 200),
-  seed = 42
-)
-render_puzzle_preview(result)
-```
-
-```{r}
 #| label: fig-snic-seeds-api
 #| eval: !expr has_snic
-#| echo: false
 
 seeds <- c(1, 42, 123, 999)
 items <- lapply(seeds, function(s) {

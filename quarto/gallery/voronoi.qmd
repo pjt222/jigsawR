@@ -43,21 +43,7 @@ print(make_vor_cells(10) + make_vor_cells(25) + make_vor_cells(50))
 ## API
 
 ```{r}
-#| label: fig-vor-cell-counts-api-code
-#| eval: false
-# API with varying cell counts
-result <- generate_puzzle(
-  type = "voronoi",
-  grid = c(25),         # Number of cells
-  size = c(200, 200),   # height, width in mm
-  seed = 42
-)
-render_puzzle_preview(result)
-```
-
-```{r}
 #| label: fig-vor-cell-counts-api
-#| echo: false
 
 # Generate cell count previews in a grid
 cells <- c(10, 25, 50)
@@ -104,22 +90,7 @@ print((make_vor_palette("viridis") + make_vor_palette("magma") + make_vor_palett
 ## API
 
 ```{r}
-#| label: fig-vor-palettes-api-code
-#| eval: false
-# API with fill_palette for colored fills
-result <- generate_puzzle(
-  type = "voronoi",
-  grid = c(20),
-  size = c(200, 200),
-  seed = 42,
-  fill_palette = "viridis"  # Options: viridis, magma, plasma, inferno, cividis, turbo
-)
-render_puzzle_preview(result)
-```
-
-```{r}
 #| label: fig-vor-palettes-api
-#| echo: false
 
 # Generate all palette previews and combine into a grid
 palettes <- c("viridis", "magma", "plasma", "inferno", "cividis", "turbo")
@@ -164,7 +135,6 @@ print(make_direction_plot("forward") + make_direction_plot("reverse"))
 
 ```{r}
 #| label: fig-vor-direction-api
-#| echo: false
 
 directions <- c("forward", "reverse")
 items <- lapply(directions, function(dir) {
@@ -204,22 +174,7 @@ print(make_vor_offset(0) + make_vor_offset(5) + make_vor_offset(10) + make_vor_o
 ## API
 
 ```{r}
-#| label: fig-vor-offset-api-code
-#| eval: false
-# API with offset for piece separation
-result <- generate_puzzle(
-  type = "voronoi",
-  grid = c(20),
-  size = c(200, 200),
-  offset = 10,  # Separation in mm
-  seed = 42
-)
-render_puzzle_preview(result)
-```
-
-```{r}
 #| label: fig-vor-offset-api
-#| echo: false
 
 # Generate offset previews in a grid
 offsets <- c(0, 5, 10, 20)
@@ -262,21 +217,7 @@ print(make_vor_seed(1) + make_vor_seed(42) + make_vor_seed(123) + make_vor_seed(
 ## API
 
 ```{r}
-#| label: fig-vor-seeds-api-code
-#| eval: false
-# API with different seeds for unique patterns
-result <- generate_puzzle(
-  type = "voronoi",
-  grid = c(15),
-  size = c(200, 200),
-  seed = 42  # Change seed for different patterns
-)
-render_puzzle_preview(result)
-```
-
-```{r}
 #| label: fig-vor-seeds-api
-#| echo: false
 
 # Generate seed variation previews in a grid
 seeds <- c(1, 42, 123, 999)

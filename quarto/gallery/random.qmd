@@ -43,21 +43,7 @@ print(make_rand_pieces(5) + make_rand_pieces(10) + make_rand_pieces(20))
 ## API
 
 ```{r}
-#| label: fig-rand-piece-counts-api-code
-#| eval: false
-# API with varying piece counts
-result <- generate_puzzle(
-  type = "random",
-  grid = c(10),         # Number of interior points
-  size = c(200, 200),   # height, width in mm
-  seed = 42
-)
-render_puzzle_preview(result)
-```
-
-```{r}
 #| label: fig-rand-piece-counts-api
-#| echo: false
 
 # Generate piece count previews in a grid
 counts <- c(5, 10, 20)
@@ -102,22 +88,7 @@ make_rand_corners(6, "6 corners") + make_rand_corners(8, "8 corners"))
 ## API
 
 ```{r}
-#| label: fig-rand-corners-api-code
-#| eval: false
-# API with n_corner for piece shape complexity
-result <- generate_puzzle(
-  type = "random",
-  grid = c(8),
-  size = c(200, 200),
-  seed = 42,
-  n_corner = 5  # 3-8, higher = more complex shapes
-)
-render_puzzle_preview(result)
-```
-
-```{r}
 #| label: fig-rand-corners-api
-#| echo: false
 
 # Generate corner variation previews in a grid
 corners <- c(3, 4, 6, 8)
@@ -159,22 +130,7 @@ print((make_rand_palette("viridis") + make_rand_palette("magma") + make_rand_pal
 ## API
 
 ```{r}
-#| label: fig-rand-palettes-api-code
-#| eval: false
-# API with fill_palette for colored fills
-result <- generate_puzzle(
-  type = "random",
-  grid = c(10),
-  size = c(200, 200),
-  seed = 42,
-  fill_palette = "viridis"  # Options: viridis, magma, plasma, inferno, cividis, turbo
-)
-render_puzzle_preview(result)
-```
-
-```{r}
 #| label: fig-rand-palettes-api
-#| echo: false
 
 # Generate all palette previews and combine into a grid
 palettes <- c("viridis", "magma", "plasma", "inferno", "cividis", "turbo")
@@ -219,7 +175,6 @@ print(make_direction_plot("forward") + make_direction_plot("reverse"))
 
 ```{r}
 #| label: fig-rand-direction-api
-#| echo: false
 
 directions <- c("forward", "reverse")
 items <- lapply(directions, function(dir) {
@@ -259,22 +214,7 @@ print(make_rand_offset(0) + make_rand_offset(5) + make_rand_offset(10) + make_ra
 ## API
 
 ```{r}
-#| label: fig-rand-offset-api-code
-#| eval: false
-# API with offset for piece separation
-result <- generate_puzzle(
-  type = "random",
-  grid = c(9),
-  size = c(200, 200),
-  offset = 10,  # Separation in mm
-  seed = 42
-)
-render_puzzle_preview(result)
-```
-
-```{r}
 #| label: fig-rand-offset-api
-#| echo: false
 
 # Generate offset previews in a grid
 offsets <- c(0, 5, 10, 20)
@@ -317,21 +257,7 @@ print(make_rand_seed(1) + make_rand_seed(42) + make_rand_seed(123) + make_rand_s
 ## API
 
 ```{r}
-#| label: fig-rand-seeds-api-code
-#| eval: false
-# API with different seeds for unique patterns
-result <- generate_puzzle(
-  type = "random",
-  grid = c(8),
-  size = c(200, 200),
-  seed = 42  # Change seed for different patterns
-)
-render_puzzle_preview(result)
-```
-
-```{r}
 #| label: fig-rand-seeds-api
-#| echo: false
 
 # Generate seed variation previews in a grid
 seeds <- c(1, 42, 123, 999)

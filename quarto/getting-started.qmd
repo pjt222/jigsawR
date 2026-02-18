@@ -104,7 +104,6 @@ cli::cli_alert_info("Canvas size: {canvas_w} x {canvas_h} mm")
 ```{r}
 #| label: first-puzzle-api-render
 #| fig-align: center
-#| echo: false
 render_puzzle_preview(result)
 ```
 

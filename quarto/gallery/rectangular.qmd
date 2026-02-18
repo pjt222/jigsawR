@@ -136,22 +136,7 @@ print((make_palette_plot("viridis") + make_palette_plot("magma") + make_palette_
 ## API
 
 ```{r}
-#| label: fig-rect-palettes-api-code
-#| eval: false
-# API with fill_palette for colored fills
-result <- generate_puzzle(
-  type = "rectangular",
-  grid = c(3, 4),
-  size = c(300, 400),
-  seed = 42,
-  fill_palette = "viridis"  # Options: viridis, magma, plasma, inferno, cividis, turbo
-)
-render_puzzle_preview(result)
-```
-
-```{r}
 #| label: fig-rect-palettes-api
-#| echo: false
 
 # Generate all palette previews and combine into a grid
 palettes <- c("viridis", "magma", "plasma", "inferno", "cividis", "turbo")
@@ -196,7 +181,6 @@ print(make_direction_plot("forward") + make_direction_plot("reverse"))
 
 ```{r}
 #| label: fig-rect-direction-api
-#| echo: false
 
 directions <- c("forward", "reverse")
 items <- lapply(directions, function(dir) {
@@ -239,23 +223,7 @@ print(make_offset_plot(0) + make_offset_plot(5) + make_offset_plot(10) + make_of
 ## API
 
 ```{r}
-#| label: fig-rect-offset-api-code
-#| eval: false
-# API with offset for piece separation
-result <- generate_puzzle(
-  type = "rectangular",
-  grid = c(3, 3),
-  size = c(300, 300),
-  offset = 10,  # Separation in mm
-  seed = 42,
-  fill_palette = "plasma"
-)
-render_puzzle_preview(result)
-```
-
-```{r}
 #| label: fig-rect-offset-api
-#| echo: false
 
 # Generate offset previews in a grid
 offsets <- c(0, 5, 10, 20)

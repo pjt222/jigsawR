@@ -169,35 +169,19 @@ Interactive web app for puzzle creation and download
 
 ```{r}
 #| label: quick-start
-#| eval: false
-library(jigsawR)
+#| fig-align: center
+#| out-width: "60%"
 
 # Generate a 3x4 rectangular puzzle
 result <- generate_puzzle(
   type = "rectangular",
   grid = c(3, 4),
   size = c(300, 400),
-  seed = 42
+  seed = 42,
+  fill_palette = "viridis"
 )
 
-# Save as SVG
-writeLines(result$svg_content, "my_puzzle.svg")
-```
-
-```{r}
-#| label: quick-start-output
-#| echo: false
-#| fig-align: center
-#| out-width: "60%"
-ggplot() +
-  geom_puzzle_rect(
-    aes(fill = after_stat(piece_id)),
-    cols = 4, rows = 3,
-    seed = 42
-  ) +
-  scale_fill_viridis_c(option = "viridis", guide = "none") +
-  coord_fixed() +
-  theme_puzzle()
+render_puzzle_preview(result)
 ```
 
 ## Gallery Preview
