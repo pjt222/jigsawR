@@ -1,7 +1,7 @@
 Package: jigsawR
 Type: Package
 Title: R Translations of JavaScript Jigsaw Puzzle Generators
-Version: 0.4.0
+Version: 0.4.0.9000
 Authors@R:
     person("Philipp", "Thoss", , "ph.thoss@gmx.de", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0002-4672-2792"))
