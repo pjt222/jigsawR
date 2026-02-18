@@ -156,7 +156,7 @@ piece <- list(
 rect <- generate_puzzle(
   type = "rectangular",
   grid = c(3, 4),
-  size = c(400, 300),
+  size = c(300, 400),
   seed = 42
 )
 n_pieces <- length(rect$pieces)
@@ -186,7 +186,7 @@ cli::cli_alert_info("Generated {n_hex_pieces} hexagonal pieces")
 fused <- generate_puzzle(
   type = "rectangular",
   grid = c(3, 4),
-  size = c(400, 300),
+  size = c(300, 400),
   seed = 42,
   fusion_groups = "1-2,5-6,11-12"
 )
@@ -214,7 +214,7 @@ separated <- generate_puzzle(
 result <- generate_puzzle(
   type = "rectangular",
   grid = c(3, 4),
-  size = c(400, 300),
+  size = c(300, 400),
   seed = 42,
   save_files = TRUE,
   output_dir = "puzzles"

@@ -172,11 +172,11 @@ Interactive web app for puzzle creation and download
 #| eval: false
 library(jigsawR)
 
-# Generate a 4x3 rectangular puzzle
+# Generate a 3x4 rectangular puzzle
 result <- generate_puzzle(
   type = "rectangular",
-  grid = c(4, 3),
-  size = c(400, 300),
+  grid = c(3, 4),
+  size = c(300, 400),
   seed = 42
 )
 
@@ -192,7 +192,7 @@ writeLines(result$svg_content, "my_puzzle.svg")
 ggplot() +
   geom_puzzle_rect(
     aes(fill = after_stat(piece_id)),
-    cols = 3, rows = 4,
+    cols = 4, rows = 3,
     seed = 42
   ) +
   scale_fill_viridis_c(option = "viridis", guide = "none") +
@@ -309,8 +309,8 @@ result <- generate_puzzle(
 # Custom fusion groups
 result <- generate_puzzle(
   type = "rectangular",
-  grid = c(4, 3),
-  size = c(400, 300),
+  grid = c(3, 4),
+  size = c(300, 400),
   fusion_groups = "1-2-3,7-8-9,10-11-12"
 )
 ```

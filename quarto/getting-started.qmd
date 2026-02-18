@@ -57,14 +57,14 @@ library(viridis)
 ggplot() +
   geom_puzzle_rect(
     aes(fill = after_stat(piece_id)),
-    rows = 4, cols = 3,    # Same as grid = c(4, 3)
+    rows = 3, cols = 4,    # Same as grid = c(3, 4)
     width = 400, height = 300,
     seed = 42
   ) +
   scale_fill_viridis_c(option = "viridis", guide = "none") +
   coord_fixed() +
   theme_puzzle() +
-  labs(title = "4x3 Rectangular Puzzle")
+  labs(title = "3x4 Rectangular Puzzle")
 ```
 
 **Save your puzzle:**
@@ -81,13 +81,14 @@ ggsave("my_puzzle.png", width = 8, height = 6, dpi = 300)
 #| message: false
 library(jigsawR)
 
-# Generate a 4x3 puzzle
+# Generate a 3x4 puzzle
 result <- generate_puzzle(
 
   type = "rectangular",
-  grid = c(4, 3),        # 4 rows, 3 columns
-  size = c(400, 300),    # height=400mm, width=300mm (portrait)
-  seed = 42              # For reproducibility
+  grid = c(3, 4),        # 3 rows, 4 columns
+  size = c(300, 400),    # height=300mm, width=400mm (landscape)
+  seed = 42,             # For reproducibility
+  fill_palette = "viridis"
 )
 
 # Check the result
@@ -133,8 +134,8 @@ The two approaches use equivalent parameters:
 | API (`generate_puzzle()`) | ggpuzzle (`geom_puzzle_rect()`) |
 |---------------------------|--------------------------------|
 | `type = "rectangular"` | Use `geom_puzzle_rect()` |
-| `grid = c(4, 3)` | `rows = 4, cols = 3` |
-| `size = c(400, 300)` | `height = 400, width = 300` |
+| `grid = c(3, 4)` | `rows = 3, cols = 4` |
+| `size = c(300, 400)` | `height = 300, width = 400` |
 | `seed = 42` | `seed = 42` |
 | `tabsize = 6` | `tabsize = 6` |
 | `offset = 10` | `offset = 10` |

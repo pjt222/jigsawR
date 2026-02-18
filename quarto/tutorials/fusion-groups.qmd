@@ -63,8 +63,9 @@ ggplot() +
 result <- generate_puzzle(
   type = "rectangular",
   seed = 42,
-  grid = c(4, 3),
-  size = c(300, 225)
+  grid = c(3, 4),
+  size = c(225, 300),
+  fill_palette = "viridis"
 )
 render_puzzle_preview(result)
 ```
@@ -105,9 +106,10 @@ ggplot() +
 result <- generate_puzzle(
   type = "rectangular",
   seed = 42,
-  grid = c(4, 3),
-  size = c(300, 225),
-  fusion_groups = "1-2,5-6,11-12"
+  grid = c(3, 4),
+  size = c(225, 300),
+  fusion_groups = "1-2,5-6,11-12",
+  fill_palette = "viridis"
 )
 render_puzzle_preview(result)
 ```
@@ -253,9 +255,10 @@ ggplot() +
 result <- generate_puzzle(
   type = "rectangular",
   seed = 42,
-  grid = c(4, 3),
-  size = c(300, 225),
-  fusion_groups = "1-2,3-4,5-6,7-8,9-10,11-12"
+  grid = c(3, 4),
+  size = c(225, 300),
+  fusion_groups = "1-2,3-4,5-6,7-8,9-10,11-12",
+  fill_palette = "plasma"
 )
 render_puzzle_preview(result)
 ```
@@ -293,9 +296,10 @@ ggplot() +
 result <- generate_puzzle(
   type = "rectangular",
   seed = 42,
-  grid = c(5, 3),
-  size = c(350, 210),
-  fusion_groups = "1:5,6:10,11:15"  # Ranges for each row
+  grid = c(3, 5),
+  size = c(210, 350),
+  fusion_groups = "1:5,6:10,11:15",  # Ranges for each row
+  fill_palette = "magma"
 )
 render_puzzle_preview(result)
 ```
@@ -334,9 +338,10 @@ ggplot() +
 result <- generate_puzzle(
   type = "rectangular",
   seed = 42,
-  grid = c(4, 3),
-  size = c(280, 210),
-  fusion_groups = "R1,R2,R3"
+  grid = c(3, 4),
+  size = c(210, 280),
+  fusion_groups = "R1,R2,R3",
+  fill_palette = "cividis"
 )
 render_puzzle_preview(result)
 ```
@@ -378,7 +383,8 @@ result <- generate_puzzle(
   seed = 42,
   grid = c(3),
   size = c(220),
-  fusion_groups = "center-ring1"
+  fusion_groups = "center-ring1",
+  fill_palette = "plasma"
 )
 render_puzzle_preview(result)
 ```
@@ -535,7 +541,8 @@ result <- generate_puzzle(
   seed = 42,
   grid = c(5, 5),
   size = c(300, 300),
-  fusion_groups = "7-8-9-12-13-14-17-18-19"  # 3x3 center
+  fusion_groups = "7-8-9-12-13-14-17-18-19",  # 3x3 center
+  fill_palette = "plasma"
 )
 render_puzzle_preview(result)
 ```
