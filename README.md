@@ -19,6 +19,48 @@
 - **Manufacturing-Ready**: Export individual SVG pieces for laser cutting
 - **Interactive App**: Shiny app for live preview and downloads
 
+## Architecture
+
+jigsawR uses a 4-stage pipeline: **generate → dispatch → position → render**.
+
+```mermaid
+flowchart TD
+    generate_puzzle(["generate_puzzle()"])
+    positioning["Piece Positioning"]
+    rand_gen["Random Generator"]
+    svg_render[["SVG Rendering"]]
+    snic_gen["SNIC Generator"]
+    type_dispatch{"Type Dispatch"}
+    rect_gen["Rectangular Generator"]
+    hex_gen["Hexagonal Generator"]
+    conc_gen["Concentric Generator"]
+    vor_gen["Voronoi Generator"]
+
+    generate_puzzle --> type_dispatch
+    type_dispatch --> rect_gen
+    type_dispatch --> hex_gen
+    type_dispatch --> conc_gen
+    type_dispatch --> vor_gen
+    type_dispatch --> rand_gen
+    type_dispatch --> snic_gen
+    rect_gen --> positioning
+    hex_gen --> positioning
+    conc_gen --> positioning
+    vor_gen --> positioning
+    rand_gen --> positioning
+    snic_gen --> positioning
+    positioning --> svg_render
+
+    classDef outputStyle fill:#dcfce7,stroke:#16a34a,stroke-width:2px,color:#15803d
+    class svg_render outputStyle
+    classDef decisionStyle fill:#fef3c7,stroke:#d97706,stroke-width:2px,color:#92400e
+    class type_dispatch decisionStyle
+    classDef startStyle fill:#fef3c7,stroke:#d97706,stroke-width:3px,color:#92400e
+    class generate_puzzle startStyle
+```
+
+<sub>Generated with [putior](https://github.com/pjt222/putior)</sub>
+
 ## Quick Start
 
 ```r
@@ -96,6 +138,7 @@ See the [full API reference](https://pjt222.github.io/jigsawR/api/generate-puzzl
 
 - [Getting Started](https://pjt222.github.io/jigsawR/getting-started.html)
 - [API Reference](https://pjt222.github.io/jigsawR/api/generate-puzzle.html)
+- [Architecture](https://pjt222.github.io/jigsawR/reference/architecture.html)
 - [Tutorials](https://pjt222.github.io/jigsawR/tutorials/basic-usage.html)
 - [Live Shiny App](https://pjt222.shinyapps.io/jigsawR)
 

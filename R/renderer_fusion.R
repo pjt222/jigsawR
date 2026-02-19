@@ -32,6 +32,7 @@ generate_arc_segment_path <- function(radius, start_angle, end_angle, center = c
 }
 
 
+# put id:"fusion_render", label:"Fusion Renderer", input:"edge_paths,fusion_groups", output:"svg_elements"
 #' Render pieces with styled fusion edges
 #'
 #' Three-pass rendering: fills, non-fused edges, fused edges with styling.

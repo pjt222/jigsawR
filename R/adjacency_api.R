@@ -11,6 +11,7 @@
 # MAIN DISPATCH FUNCTION
 # ============================================================================
 
+# put id:"adjacency", label:"Adjacency API", input:"pieces_raw", output:"neighbors"
 #' Get neighbors of a piece
 #'
 #' Returns all neighbors of a piece in any puzzle type. This is the main

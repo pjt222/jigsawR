@@ -5,6 +5,7 @@
 # Updated for Epic #32: Unified Puzzle Generation Pipeline
 # Now uses generate_pieces_internal() -> apply_piece_positioning() -> render_puzzle_svg()
 
+# put id:"generate_puzzle", label:"generate_puzzle()", node_type:"start", output:"puzzle_params"
 #' Main jigsaw puzzle generation function
 #'
 #' Single entry point for all puzzle generation with clean, reproducible output.

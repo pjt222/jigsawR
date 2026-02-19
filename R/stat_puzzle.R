@@ -4,6 +4,7 @@
 #' @include bezier_utils.R
 NULL
 
+# put id:"stat_puzzle", label:"StatPuzzle", input:"puzzle_params", output:"positioned"
 #' Compute puzzle piece geometry from data
 #'
 #' This stat generates puzzle piece polygon coordinates from input data.

@@ -1,3 +1,4 @@
+# put id:"edge_split", label:"Edge Splitting", input:"positioned", output:"edge_paths"
 # Edge Splitting Functions for SVG Rendering
 # Split from unified_renderer.R for maintainability
 # Contains type-specific path splitting for rectangular, hexagonal, and concentric puzzles

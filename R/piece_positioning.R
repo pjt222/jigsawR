@@ -2,6 +2,7 @@
 # Part of Epic #32 - Unified Puzzle Generation Pipeline
 # Applies separation transforms to piece positions based on offset parameter
 
+# put id:"positioning", label:"Piece Positioning", input:"pieces_raw", output:"positioned"
 #' Apply offset/separation to piece positions
 #'
 #' Transforms piece positions based on offset parameter.

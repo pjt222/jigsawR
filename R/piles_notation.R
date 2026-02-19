@@ -724,6 +724,7 @@ validate_piles_syntax <- function(piles) {
 
 #' Enhanced fusion input parser with PILES support
 #'
+# put id:"piles_parser", label:"PILES Parser", input:"fusion_spec", output:"fusion_groups"
 #' Extended version of parse_fusion_input that also accepts PILES notation.
 #' Automatically detects format based on input.
 #'

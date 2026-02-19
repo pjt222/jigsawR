@@ -9,6 +9,7 @@
 # Main Piece Generation
 # ============================================================================
 
+# put id:"vor_gen", label:"Voronoi Generator", input:"vor_path", output:"pieces_raw"
 #' Generate Voronoi puzzle pieces
 #'
 #' Creates puzzle pieces using Voronoi tessellation. Points can be distributed

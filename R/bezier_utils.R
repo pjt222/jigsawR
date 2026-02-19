@@ -1,3 +1,4 @@
+# put id:"bezier_utils", label:"Bezier Utilities", input:"edge_data", output:"bezier_curves"
 # Bezier curve utilities for puzzle piece generation
 
 #' Parse SVG path string into structured segments

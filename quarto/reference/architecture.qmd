@@ -1,0 +1,143 @@
+---
+title: "Architecture"
+description: "Pipeline architecture and module relationships"
+---
+
+## Pipeline Overview
+
+jigsawR processes puzzles through a 4-stage pipeline:
+
+1. **Entry** -- `generate_puzzle()` or `geom_puzzle_*()` accepts user parameters
+2. **Dispatch** -- `generate_pieces_internal()` routes to the correct type-specific generator
+3. **Position** -- `apply_piece_positioning()` arranges pieces with offset/repel layout
+4. **Render** -- `render_puzzle_svg()` produces the final SVG output
+
+```{mermaid}
+%%| label: fig-overview
+%%| fig-cap: "Core pipeline overview"
+flowchart TD
+    generate_puzzle(["generate_puzzle()"])
+    positioning["Piece Positioning"]
+    rand_gen["Random Generator"]
+    svg_render[["SVG Rendering"]]
+    snic_gen["SNIC Generator"]
+    type_dispatch{"Type Dispatch"}
+    rect_gen["Rectangular Generator"]
+    hex_gen["Hexagonal Generator"]
+    conc_gen["Concentric Generator"]
+    vor_gen["Voronoi Generator"]
+
+    generate_puzzle --> type_dispatch
+    type_dispatch --> rect_gen
+    type_dispatch --> hex_gen
+    type_dispatch --> conc_gen
+    type_dispatch --> vor_gen
+    type_dispatch --> rand_gen
+    type_dispatch --> snic_gen
+    rect_gen --> positioning
+    hex_gen --> positioning
+    conc_gen --> positioning
+    vor_gen --> positioning
+    rand_gen --> positioning
+    snic_gen --> positioning
+    positioning --> svg_render
+
+    classDef outputStyle fill:#dcfce7,stroke:#16a34a,stroke-width:2px,color:#15803d
+    class svg_render outputStyle
+    classDef decisionStyle fill:#fef3c7,stroke:#d97706,stroke-width:2px,color:#92400e
+    class type_dispatch decisionStyle
+    classDef startStyle fill:#fef3c7,stroke:#d97706,stroke-width:3px,color:#92400e
+    class generate_puzzle startStyle
+```
+
+## Full Architecture
+
+The complete module graph includes support systems: PILES notation parsing, fusion rendering, edge splitting, adjacency detection, and the ggplot2 stat/geom layer.
+
+```{mermaid}
+%%| label: fig-full
+%%| fig-cap: "Full architecture with support modules"
+flowchart LR
+    adjacency["Adjacency API"]
+    bezier_utils["Bezier Utilities"]
+    geom_puzzle(["geom_puzzle_*()"])
+    generate_puzzle(["generate_puzzle()"])
+    positioning["Piece Positioning"]
+    piles_parser["PILES Parser"]
+    rand_gen["Random Generator"]
+    edge_split["Edge Splitting"]
+    fusion_render["Fusion Renderer"]
+    svg_render[["SVG Rendering"]]
+    rng_iter["RNG Iterator"]
+    snic_gen["SNIC Generator"]
+    stat_puzzle["StatPuzzle"]
+    type_dispatch{"Type Dispatch"}
+    rect_gen["Rectangular Generator"]
+    hex_gen["Hexagonal Generator"]
+    conc_gen["Concentric Generator"]
+    apply_fusion["Apply Fusion"]
+    vor_gen["Voronoi Generator"]
+
+    rand_gen --> adjacency
+    snic_gen --> adjacency
+    rect_gen --> adjacency
+    hex_gen --> adjacency
+    conc_gen --> adjacency
+    vor_gen --> adjacency
+    rand_gen --> positioning
+    snic_gen --> positioning
+    rect_gen --> positioning
+    hex_gen --> positioning
+    conc_gen --> positioning
+    vor_gen --> positioning
+    type_dispatch --> rand_gen
+    positioning --> edge_split
+    stat_puzzle --> edge_split
+    edge_split --> fusion_render
+    piles_parser --> fusion_render
+    positioning --> svg_render
+    stat_puzzle --> svg_render
+    type_dispatch --> snic_gen
+    geom_puzzle --> stat_puzzle
+    generate_puzzle --> stat_puzzle
+    geom_puzzle --> type_dispatch
+    generate_puzzle --> type_dispatch
+    type_dispatch --> rect_gen
+    type_dispatch --> hex_gen
+    type_dispatch --> conc_gen
+    rand_gen --> apply_fusion
+    snic_gen --> apply_fusion
+    rect_gen --> apply_fusion
+    hex_gen --> apply_fusion
+    conc_gen --> apply_fusion
+    vor_gen --> apply_fusion
+    piles_parser --> apply_fusion
+    type_dispatch --> vor_gen
+
+    classDef outputStyle fill:#dcfce7,stroke:#16a34a,stroke-width:2px,color:#15803d
+    class svg_render outputStyle
+    classDef decisionStyle fill:#fef3c7,stroke:#d97706,stroke-width:2px,color:#92400e
+    class type_dispatch decisionStyle
+    classDef startStyle fill:#fef3c7,stroke:#d97706,stroke-width:3px,color:#92400e
+    class geom_puzzle startStyle
+    class generate_puzzle startStyle
+```
+
+## Key Modules
+
+| Module | File(s) | Role |
+|--------|---------|------|
+| `generate_puzzle()` | `jigsawR_clean.R` | Main entry point for all puzzle types |
+| Type Dispatch | `unified_piece_generation.R` | Routes to type-specific generators |
+| Piece Positioning | `piece_positioning.R` | Grid or repel layout with offset separation |
+| SVG Rendering | `renderer_main.R` | Assembles final SVG with backgrounds and styling |
+| PILES Parser | `piles_notation.R` | Parses fusion group notation |
+| Edge Splitting | `renderer_edge_splitting.R` | Splits piece paths into individual edges |
+| Fusion Renderer | `renderer_fusion.R` | Multi-pass rendering for fused pieces |
+| Adjacency API | `adjacency_api.R` | Neighbor detection across all puzzle types |
+| StatPuzzle | `stat_puzzle.R` | ggplot2 stat for puzzle geometry computation |
+| `geom_puzzle_*()` | `geom_puzzle.R` | ggplot2 layer factory for puzzle visualizations |
+
+::: {.callout-note}
+Diagrams are generated from `# put` annotations in the R source code using [putior](https://github.com/pjt222/putior). Run `Rscript inst/scripts/generate_workflow_diagrams.R` to regenerate.
+:::

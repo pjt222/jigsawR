@@ -28,6 +28,7 @@ ensure_puzzle_data <- function(data) {
   }
 }
 
+# put id:"geom_puzzle", label:"geom_puzzle_*()", node_type:"start", output:"puzzle_params"
 # Internal factory for puzzle geom layers.
 # All geom_puzzle_*() functions delegate here.
 #

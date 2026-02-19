@@ -91,6 +91,15 @@ jobs:
           }
         shell: Rscript {0}
 
+      - name: Install putior and generate workflow diagrams
+        env:
+          RENV_CONFIG_SANDBOX_ENABLED: "FALSE"
+          GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          pak::pak("pjt222/putior")
+          source("inst/scripts/generate_workflow_diagrams.R")
+        shell: Rscript {0}
+
       - name: Render Quarto Project
         env:
           # Prevent renv from interfering - we use workflow-installed packages

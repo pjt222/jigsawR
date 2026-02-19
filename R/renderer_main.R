@@ -19,6 +19,7 @@ sanitize_svg_attr <- function(value) {
 }
 
 
+# put id:"svg_render", label:"SVG Rendering", node_type:"output", input:"positioned", output:"svg_content"
 #' Render positioned pieces to SVG
 #'
 #' Takes output from apply_piece_positioning() and renders to a complete SVG string.

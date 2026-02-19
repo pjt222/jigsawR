@@ -9,6 +9,7 @@
 # Main Piece Generation
 # ============================================================================
 
+# put id:"rand_gen", label:"Random Generator", input:"rand_path", output:"pieces_raw"
 #' Generate random shape puzzle pieces
 #'
 #' Creates puzzle pieces using constrained Delaunay triangulation within a

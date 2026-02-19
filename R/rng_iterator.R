@@ -2,6 +2,7 @@
 # Provides pre-generated random values with same interface as per-call RNG
 # Uses C++ uniform_batch() when available for ~27x speedup
 
+# put id:"rng_iter", label:"RNG Iterator", input:"seed", output:"rng_values"
 #' Create an RNG iterator with pre-generated batch values
 #'
 #' Creates an iterator that pre-generates all random values using the

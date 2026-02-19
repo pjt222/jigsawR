@@ -77,6 +77,7 @@ load_image_for_snic <- function(image_path) {
 # Main Piece Generation
 # ============================================================================
 
+# put id:"snic_gen", label:"SNIC Generator", input:"snic_path", output:"pieces_raw"
 #' Generate SNIC puzzle pieces
 #'
 #' Creates puzzle pieces using SNIC superpixel segmentation. Boundaries follow

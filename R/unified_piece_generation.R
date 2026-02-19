@@ -2,6 +2,7 @@
 # Part of Epic #32 - Unified Puzzle Generation Pipeline
 # Always generates closed piece paths regardless of puzzle type
 
+# put id:"type_dispatch", label:"Type Dispatch", node_type:"decision", input:"puzzle_params", output:"rect_path,hex_path,conc_path,vor_path,rand_path,snic_path"
 #' Generate all puzzle pieces as closed paths
 #'
 #' Core function that generates piece objects with closed SVG paths.
@@ -160,6 +161,7 @@ generate_pieces_internal <- function(type = "rectangular",
 }
 
 
+# put id:"rect_gen", label:"Rectangular Generator", input:"rect_path", output:"pieces_raw"
 #' Generate rectangular puzzle pieces internally
 #'
 #' @param seed Random seed
@@ -298,6 +300,7 @@ generate_rect_pieces_internal <- function(seed, grid, size, tabsize, jitter,
 }
 
 
+# put id:"hex_gen", label:"Hexagonal Generator", input:"hex_path", output:"pieces_raw"
 #' Generate hexagonal puzzle pieces internally
 #'
 #' @param seed Random seed
@@ -505,6 +508,7 @@ generate_hex_pieces_internal <- function(seed, rings, diameter, tabsize, jitter,
 }
 
 
+# put id:"conc_gen", label:"Concentric Generator", input:"conc_path", output:"pieces_raw"
 #' Generate concentric ring puzzle pieces internally
 #'
 #' Creates pieces with constant radial height and trapezoidal shapes.
@@ -763,6 +767,7 @@ validate_pieces <- function(result) {
 # FUSION APPLICATION (Post-generation)
 # =============================================================================
 
+# put id:"apply_fusion", label:"Apply Fusion", input:"pieces_raw,fusion_groups", output:"pieces_fused"
 #' Apply fusion groups to generated pieces
 #'
 #' Applies fusion styling to pieces after they have been generated.

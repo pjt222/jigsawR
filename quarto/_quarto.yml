@@ -47,6 +47,10 @@ website:
             href: tutorials/aspect-ratios.qmd
           - text: "Fusion Groups"
             href: tutorials/fusion-groups.qmd
+      - text: "Reference"
+        menu:
+          - text: "Architecture"
+            href: reference/architecture.qmd
     right:
       - icon: github
         href: https://github.com/pjt222/jigsawR
@@ -68,6 +72,10 @@ website:
         - api/generate-puzzle.qmd
         - api/ggpuzzle.qmd
         - api/piles-notation.qmd
+
+    - title: "Reference"
+      contents:
+        - reference/architecture.qmd
 
   page-footer:
     left: |
