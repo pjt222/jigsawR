@@ -19,3 +19,6 @@
 ^Rplots\.pdf$
 ^LICENSE\.md$
 inst/shiny-app/\.rscignore$
+^Dockerfile$
+^\.dockerignore$
+^hf-spaces$

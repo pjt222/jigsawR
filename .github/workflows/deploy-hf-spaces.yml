@@ -1,0 +1,45 @@
+name: Deploy to Hugging Face Spaces
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - 'quarto/**'
+      - 'docs/**'
+      - 'tests/**'
+      - '*.md'
+      - '!hf-spaces/README.md'
+  workflow_dispatch:
+
+concurrency:
+  group: hf-spaces-deploy
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  deploy-hf:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          lfs: true
+
+      - name: Prepare HF Spaces deployment
+        run: |
+          # Replace README with HF Spaces version (YAML frontmatter for Docker SDK)
+          cp hf-spaces/README.md README.md
+
+      - name: Push to Hugging Face Spaces
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add -A
+          git commit -m "Deploy to HF Spaces" --allow-empty
+          git push --force https://pjt222:${HF_TOKEN}@huggingface.co/spaces/pjt222/jigsawR main
