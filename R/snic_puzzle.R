@@ -222,7 +222,7 @@ generate_snic_pieces_internal <- function(seed, grid, size, image_path,
 
   list(
     pieces = pieces,
-    canvas_size = size,
+    canvas_size = c(size[2], size[1]),  # Convert from c(height, width) to c(width, height)
     canvas_offset = c(0, 0),
     type = "snic",
     parameters = parameters,

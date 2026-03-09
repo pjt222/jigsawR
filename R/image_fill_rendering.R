@@ -93,15 +93,9 @@ render_image_filled_pieces <- function(pieces, image_data_uri, canvas_size,
     colors <- rep(colors, length(pieces))
   }
 
-  # Image dimensions in canvas mm units
+  # Image dimensions in canvas mm units — canvas_size is always c(width, height)
   img_w <- canvas_size[1]  # width
   img_h <- canvas_size[2]  # height
-  # If canvas_size is c(height, width), swap
-  if (!is.null(image_width) && !is.null(image_height)) {
-    # Use actual canvas_size values (already in mm from generate_puzzle)
-    img_w <- canvas_size[2]  # width is second element
-    img_h <- canvas_size[1]  # height is first element
-  }
 
   sapply(seq_along(pieces), function(i) {
     piece <- pieces[[i]]
