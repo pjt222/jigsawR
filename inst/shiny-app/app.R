@@ -506,7 +506,7 @@ ui <- page_fluid(
                   ),
                   column(6,
                     numericInput("snic_height", "Height (mm):",
-                                value = 200,
+                                value = 300,
                                 min = 50,
                                 max = 1000, step = 10)
                   )
