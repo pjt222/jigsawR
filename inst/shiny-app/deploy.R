@@ -144,7 +144,7 @@ rsconnect::deployApp(
   appDir = app_dir,
   appName = app_name,
   account = account,
-  appFiles = c("app.R", "www/", "R/", "DESCRIPTION", "config.yml", ".Rprofile"),
+  appFiles = c("app.R", "www/", "modules/", "R/", "DESCRIPTION", "config.yml", ".Rprofile"),
   forceUpdate = TRUE,
   launch.browser = FALSE,
   lint = FALSE,
