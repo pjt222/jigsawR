@@ -42,4 +42,5 @@ jobs:
           git config user.email "actions@github.com"
           git add -A
           git commit -m "Deploy to HF Spaces" --allow-empty
-          git push --force https://pjt222:${HF_TOKEN}@huggingface.co/spaces/pjt222/jigsawR main
+          git remote add hf https://oauth2:${HF_TOKEN}@huggingface.co/spaces/pjt222/jigsawR
+          git push --force hf main
