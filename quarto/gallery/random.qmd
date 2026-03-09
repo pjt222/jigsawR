@@ -286,7 +286,7 @@ Merge pieces together using PILES notation:
 #| label: fig-rand-fusion-ggpuzzle
 #| layout-ncol: 2
 #| fig-cap:
-#|   - "Standard 12-piece"
+#|   - "Standard (6 interior points)"
 #|   - "Adjacent pieces fused"
 
 # Standard
@@ -321,7 +321,7 @@ print(ggplot() +
 #| label: fig-rand-fusion-api
 #| layout-ncol: 2
 #| fig-cap:
-#|   - "Standard 12-piece"
+#|   - "Standard (6 interior points)"
 #|   - "Adjacent pieces fused"
 
 # Standard

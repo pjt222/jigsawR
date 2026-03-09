@@ -376,9 +376,7 @@ Voronoi tessellation divides a plane into regions based on distance to seed poin
 
 ```{r}
 #| label: demo-vor-code-ggpuzzle
-#| eval: false
-library(jigsawR)
-library(ggplot2)
+#| fig-align: center
 
 ggplot() +
   geom_puzzle_voronoi(
@@ -397,8 +395,7 @@ ggplot() +
 
 ```{r}
 #| label: demo-vor-code-api
-#| eval: false
-library(jigsawR)
+#| fig-align: center
 
 # Generate puzzle
 result <- generate_puzzle(
@@ -409,8 +406,7 @@ result <- generate_puzzle(
   offset = 5
 )
 
-# Save SVG
-writeLines(result$svg_content, "voronoi_puzzle.svg")
+# writeLines(result$svg_content, "voronoi_puzzle.svg")
 
 # Preview
 render_puzzle_preview(result)

@@ -487,8 +487,7 @@ Special keywords available for hexagonal puzzles:
 
 ```{r}
 #| label: demo-hex-code
-#| eval: false
-library(jigsawR)
+#| fig-align: center
 
 # Generate puzzle
 result <- generate_puzzle(
@@ -501,8 +500,8 @@ result <- generate_puzzle(
   offset = 5
 )
 
-# Save SVG
-writeLines(result$svg_content, "hexagonal_puzzle.svg")
+# writeLines(result$svg_content, "hexagonal_puzzle.svg")
+render_puzzle_preview(result)
 
 # Access piece info
 n_pieces <- length(result$pieces)

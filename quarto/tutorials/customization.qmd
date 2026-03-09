@@ -45,7 +45,7 @@ Use any ggplot2 color scale:
 #| label: custom-colors
 #| layout-ncol: 2
 #| fig-cap:
-#|   - "Gradient Blue to Red"
+#|   - "Gradient Blue to Cyan"
 #|   - "Brewer Spectral"
 
 # Custom gradient
@@ -364,7 +364,7 @@ print(make_alpha_demo(1.0, "alpha = 1.0 (opaque)") + make_alpha_demo(0.5, "alpha
 
 ```{r}
 #| label: save-png
-#| eval: false
+#| fig-align: center
 p <- ggplot() +
   geom_puzzle_hex(
     aes(fill = after_stat(piece_id)),
@@ -373,15 +373,11 @@ p <- ggplot() +
   scale_fill_viridis_c(option = "plasma", guide = "none") +
   coord_fixed() +
   theme_puzzle()
+print(p)
 
-# Standard quality
-ggsave("puzzle.png", p, width = 8, height = 8, dpi = 150)
-
-# High quality for print
-ggsave("puzzle_hq.png", p, width = 8, height = 8, dpi = 300)
-
-# Very high quality
-ggsave("puzzle_print.png", p, width = 12, height = 12, dpi = 600)
+# ggsave("puzzle.png", p, width = 8, height = 8, dpi = 150)
+# ggsave("puzzle_hq.png", p, width = 8, height = 8, dpi = 300)
+# ggsave("puzzle_print.png", p, width = 12, height = 12, dpi = 600)
 ```
 
 ### SVG (Vector)

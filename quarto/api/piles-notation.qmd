@@ -197,7 +197,6 @@ validate_piles_syntax("1-2(-3)")        # FALSE (invalid)
 ```{r}
 #| label: row-fusion
 #| fig-align: center
-#| eval: false
 # Fuse each row
 ggplot() +
   geom_puzzle_rect(
@@ -221,7 +220,6 @@ ggplot() +
 ```{r}
 #| label: column-fusion
 #| fig-align: center
-#| eval: false
 # Fuse each column
 ggplot() +
   geom_puzzle_rect(

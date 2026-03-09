@@ -28,8 +28,8 @@ Explore different grid sizes:
 #| layout-ncol: 3
 #| fig-cap:
 #|   - "2x2 (4 pieces)"
-#|   - "4x3 (12 pieces)"
-#|   - "6x5 (30 pieces)"
+#|   - "3x4 (12 pieces)"
+#|   - "5x6 (30 pieces)"
 
 print(ggplot() +
   geom_puzzle_rect(
@@ -51,7 +51,7 @@ print(ggplot() +
   scale_fill_viridis_c(option = "viridis", guide = "none") +
   coord_fixed() +
   theme_puzzle() +
-  labs(title = "4x3"))
+  labs(title = "3x4"))
 
 print(ggplot() +
   geom_puzzle_rect(
@@ -62,7 +62,7 @@ print(ggplot() +
   scale_fill_viridis_c(option = "viridis", guide = "none") +
   coord_fixed() +
   theme_puzzle() +
-  labs(title = "6x5"))
+  labs(title = "5x6"))
 ```
 
 ## API
@@ -72,8 +72,8 @@ print(ggplot() +
 #| layout-ncol: 3
 #| fig-cap:
 #|   - "2x2 (4 pieces)"
-#|   - "4x3 (12 pieces)"
-#|   - "6x5 (30 pieces)"
+#|   - "3x4 (12 pieces)"
+#|   - "5x6 (30 pieces)"
 
 result_2x2 <- generate_puzzle(
   type = "rectangular",
@@ -91,7 +91,7 @@ result_4x3 <- generate_puzzle(
   seed = 42,
   fill_palette = "viridis"
 )
-render_puzzle_preview(result_4x3, title = "4x3")
+render_puzzle_preview(result_4x3, title = "3x4")
 
 result_6x5 <- generate_puzzle(
   type = "rectangular",
@@ -100,7 +100,7 @@ result_6x5 <- generate_puzzle(
   seed = 42,
   fill_palette = "viridis"
 )
-render_puzzle_preview(result_6x5, title = "6x5")
+render_puzzle_preview(result_6x5, title = "5x6")
 ```
 
 :::
@@ -247,7 +247,7 @@ Merge pieces together using PILES notation:
 #| label: fig-rect-fusion-ggpuzzle
 #| layout-ncol: 2
 #| fig-cap:
-#|   - "Standard 4x3"
+#|   - "Standard 3x4"
 #|   - "Row fusion: R1,R2,R3"
 
 # Standard
@@ -282,7 +282,7 @@ print(ggplot() +
 #| label: fig-rect-fusion-api
 #| layout-ncol: 2
 #| fig-cap:
-#|   - "Standard 4x3"
+#|   - "Standard 3x4"
 #|   - "Row fusion: R1,R2,R3"
 
 # Standard
@@ -337,9 +337,7 @@ Rectangular puzzles handle any aspect ratio - wide, square, or tall. See the [As
 
 ```{r}
 #| label: demo-rect-usage-ggpuzzle
-#| eval: false
-library(jigsawR)
-library(ggplot2)
+#| fig-align: center
 
 # Visualize with ggplot2
 ggplot() +
@@ -352,16 +350,14 @@ ggplot() +
   coord_fixed() +
   theme_puzzle()
 
-# Save as PNG
-ggsave("rectangular_puzzle.png", width = 10, height = 8, dpi = 300)
+# ggsave("rectangular_puzzle.png", width = 10, height = 8, dpi = 300)
 ```
 
 ## API
 
 ```{r}
 #| label: demo-rect-usage-api
-#| eval: false
-library(jigsawR)
+#| fig-align: center
 
 # Generate puzzle
 result <- generate_puzzle(
@@ -372,8 +368,8 @@ result <- generate_puzzle(
   offset = 5           # Slight separation
 )
 
-# Save SVG
-writeLines(result$svg_content, "rectangular_puzzle.svg")
+# writeLines(result$svg_content, "rectangular_puzzle.svg")
+render_puzzle_preview(result)
 ```
 
 :::

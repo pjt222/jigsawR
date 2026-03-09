@@ -100,7 +100,7 @@ The API returns a list with `$svg_content`, `$pieces`, `$canvas_size`, and `$fil
 
 ```{r}
 #| label: save-puzzle-ggpuzzle
-#| eval: false
+#| fig-align: center
 # Save ggplot as PNG
 p <- ggplot() +
   geom_puzzle_rect(
@@ -111,8 +111,9 @@ p <- ggplot() +
   scale_fill_viridis_c(guide = "none") +
   coord_fixed() +
   theme_puzzle()
+print(p)
 
-ggsave("my_puzzle.png", p, width = 8, height = 6, dpi = 300)
+# ggsave("my_puzzle.png", p, width = 8, height = 6, dpi = 300)
 ```
 
 ## API

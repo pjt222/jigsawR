@@ -449,9 +449,7 @@ When using ggplot2 with concentric puzzles, you can map these variables:
 
 ```{r}
 #| label: demo-conc-ggpuzzle
-#| eval: false
-library(jigsawR)
-library(ggplot2)
+#| fig-align: center
 
 # Visualize with ggplot2
 ggplot() +
@@ -473,8 +471,7 @@ ggplot() +
 
 ```{r}
 #| label: demo-conc-api
-#| eval: false
-library(jigsawR)
+#| fig-align: center
 
 # Generate puzzle
 result <- generate_puzzle(
@@ -486,8 +483,7 @@ result <- generate_puzzle(
   offset = 5
 )
 
-# Save SVG
-writeLines(result$svg_content, "concentric_puzzle.svg")
+# writeLines(result$svg_content, "concentric_puzzle.svg")
 
 # Preview the puzzle
 render_puzzle_preview(result)

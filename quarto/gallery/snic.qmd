@@ -347,9 +347,7 @@ Image-based SNIC puzzles adapt piece boundaries to follow edges and features in 
 
 ```{r}
 #| label: demo-snic-ggpuzzle
-#| eval: false
-library(jigsawR)
-library(ggplot2)
+#| fig-align: center
 
 ggplot() +
   geom_puzzle_snic(
@@ -370,8 +368,7 @@ ggplot() +
 
 ```{r}
 #| label: demo-snic-api
-#| eval: false
-library(jigsawR)
+#| fig-align: center
 
 # Generate puzzle
 result <- generate_puzzle(
@@ -384,8 +381,7 @@ result <- generate_puzzle(
   offset = 5
 )
 
-# Save SVG
-writeLines(result$svg_content, "snic_puzzle.svg")
+# writeLines(result$svg_content, "snic_puzzle.svg")
 
 # Preview
 render_puzzle_preview(result)

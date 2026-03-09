@@ -350,7 +350,7 @@ print(ggplot() +
 
 ```{r}
 #| label: saving-plots
-#| eval: false
+#| fig-align: center
 # Create plot
 p <- ggplot() +
   geom_puzzle_hex(
@@ -362,15 +362,11 @@ p <- ggplot() +
   scale_fill_viridis_c(option = "turbo", guide = "none") +
   coord_fixed() +
   theme_puzzle()
+print(p)
 
-# Save as PNG
-ggsave("puzzle.png", p, width = 8, height = 8, dpi = 300)
-
-# Save as SVG
-ggsave("puzzle.svg", p, width = 8, height = 8)
-
-# Save as PDF
-ggsave("puzzle.pdf", p, width = 8, height = 8)
+# ggsave("puzzle.png", p, width = 8, height = 8, dpi = 300)
+# ggsave("puzzle.svg", p, width = 8, height = 8)
+# ggsave("puzzle.pdf", p, width = 8, height = 8)
 ```
 
 ## See Also
