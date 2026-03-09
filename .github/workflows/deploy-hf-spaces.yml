@@ -33,14 +33,14 @@ jobs:
         run: |
           # Replace README with HF Spaces version (YAML frontmatter for Docker SDK)
           cp hf-spaces/README.md README.md
+          # Remove files not needed in HF Space
+          rm -rf hf-spaces/
 
-      - name: Push to Hugging Face Spaces
+      - name: Install huggingface-cli
+        run: pip install huggingface_hub
+
+      - name: Upload to Hugging Face Spaces
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
-          git config user.name "GitHub Actions"
-          git config user.email "actions@github.com"
-          git add -A
-          git commit -m "Deploy to HF Spaces" --allow-empty
-          git remote add hf https://oauth2:${HF_TOKEN}@huggingface.co/spaces/pjt222/jigsawR
-          git push --force hf main
+          huggingface-cli upload pjt222/jigsawR . . --repo-type space --token $HF_TOKEN
