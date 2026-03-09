@@ -40,5 +40,6 @@ jobs:
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
-          pip install -q huggingface_hub
-          python -m huggingface_hub.cli upload pjt222/jigsawR . . --repo-type space --token $HF_TOKEN
+          pip install -q huggingface_hub[cli]
+          export PATH="$HOME/.local/bin:$PATH"
+          huggingface-cli upload pjt222/jigsawR . . --repo-type space --token $HF_TOKEN
