@@ -1272,8 +1272,13 @@ build_puzzle_params <- function(input, puzzle_type = NULL) {
   has_fusion <- !is.null(fusion_groups_str) && nchar(trimws(fusion_groups_str)) > 0
 
   # SNIC-specific
-  image_path_val <- if (puzzle_type == "snic" && !is.null(input$snic_image)) {
-    input$snic_image$datapath
+  image_path_val <- if (puzzle_type == "snic") {
+    if (!is.null(input$snic_image)) {
+      input$snic_image$datapath
+    } else {
+      # Fall back to bundled sample image
+      system.file("extdata", "sample_image.jpg", package = "jigsawR")
+    }
   } else {
     NULL
   }
@@ -1850,7 +1855,7 @@ server <- function(input, output, session) {
       "concentric" = "Ring-based puzzle radiating from center",
       "voronoi" = "Organic irregular shapes from Voronoi tessellation",
       "random" = "Random Delaunay triangulation shapes",
-      "snic" = "Image-aware superpixel segmentation (requires image)",
+      "snic" = "Image-aware superpixel segmentation (upload your own or use sample)",
       ""
     )
     tags$small(class = "text-muted", desc)
@@ -1927,7 +1932,8 @@ server <- function(input, output, session) {
         show_labels = show_labels_value,
         label_color = label_color_value,
         label_size = label_size_value,
-        inline = TRUE  # Omit XML declaration for inline HTML embedding
+        inline = TRUE,  # Omit XML declaration for inline HTML embedding
+        image_path = pos$parameters$image_path
       )
       result
     }, error = function(e) {
