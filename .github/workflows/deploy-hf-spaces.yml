@@ -36,11 +36,9 @@ jobs:
           # Remove files not needed in HF Space
           rm -rf hf-spaces/
 
-      - name: Install huggingface-cli
-        run: pip install huggingface_hub
-
       - name: Upload to Hugging Face Spaces
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
+          pip install -q huggingface_hub
           huggingface-cli upload pjt222/jigsawR . . --repo-type space --token $HF_TOKEN
