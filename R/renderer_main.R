@@ -192,12 +192,15 @@ render_puzzle_svg <- function(positioned, fill = "none", fills = NULL,
     # Get image dimensions from parameters
     img_w <- positioned$parameters$image_width
     img_h <- positioned$parameters$image_height
+    # Original canvas size before offset expansion — size is c(height, width)
+    original_canvas_size <- c(positioned$parameters$size[2], positioned$parameters$size[1])
     piece_elements <- render_image_filled_pieces(
       positioned$pieces, image_data_uri, positioned$canvas_size,
       canvas_offset = if (!is.null(positioned$canvas_offset)) positioned$canvas_offset else c(0, 0),
       stroke_width = stroke_width, colors = colors,
       opacity = opacity,
-      image_width = img_w, image_height = img_h
+      image_width = img_w, image_height = img_h,
+      original_canvas_size = original_canvas_size
     )
   }
 

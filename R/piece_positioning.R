@@ -397,7 +397,9 @@ apply_tessellation_positioning <- function(piece_result, offset) {
       is_boundary = piece$is_boundary,
       fusion_group = piece$fusion_group,
       fused_edges = piece$fused_edges,
-      fused_neighbor_ids = piece$fused_neighbor_ids
+      fused_neighbor_ids = piece$fused_neighbor_ids,
+      offset_dx = dx,
+      offset_dy = dy
     )
 
     # Copy the type-specific position data
@@ -957,6 +959,10 @@ translate_piece <- function(piece, dx, dy) {
       }
     }
   }
+
+  # Accumulate offset tracking for image fill positioning
+  piece$offset_dx <- (piece$offset_dx %||% 0) + dx
+  piece$offset_dy <- (piece$offset_dy %||% 0) + dy
 
   piece
 }

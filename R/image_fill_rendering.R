@@ -88,14 +88,16 @@ render_image_filled_pieces <- function(pieces, image_data_uri, canvas_size,
                                         canvas_offset = c(0, 0),
                                         stroke_width = 1.5, colors = "black",
                                         opacity = 1.0,
-                                        image_width = NULL, image_height = NULL) {
+                                        image_width = NULL, image_height = NULL,
+                                        original_canvas_size = NULL) {
   if (length(colors) == 1) {
     colors <- rep(colors, length(pieces))
   }
 
-  # Image dimensions in canvas mm units — canvas_size is always c(width, height)
-  img_w <- canvas_size[1]  # width
-  img_h <- canvas_size[2]  # height
+  # Use original (pre-offset-expansion) canvas for image dimensions
+  orig <- original_canvas_size %||% canvas_size
+  img_w <- orig[1]  # width
+  img_h <- orig[2]  # height
 
   sapply(seq_along(pieces), function(i) {
     piece <- pieces[[i]]
@@ -104,19 +106,23 @@ render_image_filled_pieces <- function(pieces, image_data_uri, canvas_size,
 
     opacity_attr <- if (opacity < 1.0) sprintf(' opacity="%.2f"', opacity) else ""
 
+    # Per-piece image offset (tracks radial/repel translation)
+    img_x <- piece$offset_dx %||% 0
+    img_y <- piece$offset_dy %||% 0
+
     # Clipped image group + stroke outline
     sprintf(paste0(
       '<g%s>\n',
       '  <clipPath id="piece-%d-clip"><path d="%s" /></clipPath>\n',
       '  <g clip-path="url(#piece-%d-clip)">\n',
-      '    <image href="%s" x="0" y="0" width="%.1f" height="%.1f" preserveAspectRatio="none" />\n',
+      '    <image href="%s" x="%.4f" y="%.4f" width="%.1f" height="%.1f" preserveAspectRatio="none" />\n',
       '  </g>\n',
       '  <path d="%s" fill="none" stroke="%s" stroke-width="%.1f" />\n',
       '</g>'),
       opacity_attr,
       piece_id, piece$path,
       piece_id,
-      image_data_uri, img_w, img_h,
+      image_data_uri, img_x, img_y, img_w, img_h,
       piece$path, color, stroke_width
     )
   })
