@@ -29,17 +29,19 @@ jobs:
           fetch-depth: 0
           lfs: true
 
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
       - name: Prepare HF Spaces deployment
         run: |
-          # Replace README with HF Spaces version (YAML frontmatter for Docker SDK)
           cp hf-spaces/README.md README.md
-          # Remove files not needed in HF Space
           rm -rf hf-spaces/
 
       - name: Upload to Hugging Face Spaces
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
-          pip install -q huggingface_hub[cli]
-          export PATH="$HOME/.local/bin:$PATH"
+          pip install huggingface_hub
           huggingface-cli upload pjt222/jigsawR . . --repo-type space --token $HF_TOKEN
