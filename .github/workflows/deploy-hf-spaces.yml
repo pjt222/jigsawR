@@ -44,4 +44,15 @@ jobs:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
           pip install huggingface_hub
-          huggingface-cli upload pjt222/jigsawR . . --repo-type space --token $HF_TOKEN
+          python -c "
+          from huggingface_hub import HfApi
+          import os
+          api = HfApi(token=os.environ['HF_TOKEN'])
+          api.upload_folder(
+              folder_path='.',
+              repo_id='pjt222/jigsawR',
+              repo_type='space',
+              ignore_patterns=['.git/*'],
+          )
+          print('Upload complete!')
+          "
