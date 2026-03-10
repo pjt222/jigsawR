@@ -81,6 +81,8 @@ render_image_clip_defs <- function(pieces) {
 #' @param opacity Piece opacity (0.0 to 1.0)
 #' @param image_width Original image width in pixels
 #' @param image_height Original image height in pixels
+#' @param original_canvas_size Original canvas size before offset expansion,
+#'   used to size the clipped image correctly. If NULL, uses canvas_size.
 #' @return Character vector of SVG group elements
 #'
 #' @keywords internal

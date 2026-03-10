@@ -298,8 +298,11 @@ When provided with an image, SNIC creates pieces that follow the image's visual 
 
 ```{r}
 #| label: snic-image-usage
-#| eval: false
-library(jigsawR)
+#| eval: !expr has_snic
+#| fig-align: center
+
+# Use the package's bundled sample image
+sample_image <- system.file("extdata", "sample_image.jpg", package = "jigsawR")
 
 # Generate SNIC puzzle from an image
 result <- generate_puzzle(
@@ -307,13 +310,10 @@ result <- generate_puzzle(
   grid = c(30),
   size = c(300, 400),
   seed = 42,
-  image_path = "photo.jpg",   # Path to your image
+  image_path = sample_image,
   compactness = 0.5,
   seed_type = "hexagonal"
 )
-
-# Save SVG
-writeLines(result$svg_content, "snic_puzzle.svg")
 
 # Preview
 render_puzzle_preview(result)
@@ -347,6 +347,7 @@ Image-based SNIC puzzles adapt piece boundaries to follow edges and features in 
 
 ```{r}
 #| label: demo-snic-ggpuzzle
+#| eval: !expr has_snic
 #| fig-align: center
 
 ggplot() +
@@ -368,6 +369,7 @@ ggplot() +
 
 ```{r}
 #| label: demo-snic-api
+#| eval: !expr has_snic
 #| fig-align: center
 
 # Generate puzzle

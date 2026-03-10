@@ -13,7 +13,8 @@ render_image_filled_pieces(
   colors = "black",
   opacity = 1,
   image_width = NULL,
-  image_height = NULL
+  image_height = NULL,
+  original_canvas_size = NULL
 )
 }
 \arguments{
@@ -34,6 +35,9 @@ render_image_filled_pieces(
 \item{image_width}{Original image width in pixels}
 
 \item{image_height}{Original image height in pixels}
+
+\item{original_canvas_size}{Original canvas size before offset expansion,
+used to size the clipped image correctly. If NULL, uses canvas_size.}
 }
 \value{
 Character vector of SVG group elements
