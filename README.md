@@ -5,6 +5,7 @@
 [![R-CMD-check](https://github.com/pjt222/jigsawR/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/pjt222/jigsawR/actions/workflows/R-CMD-check.yaml)
 [![License: GPL-3](https://img.shields.io/badge/License-GPL--3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![Documentation](https://img.shields.io/badge/docs-GitHub%20Pages-blue)](https://pjt222.github.io/jigsawR)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/pjt222/jigsawR)
 
 <p align="center">
   <img src="man/figures/readme-hero.png" alt="jigsawR puzzle types" width="600">
